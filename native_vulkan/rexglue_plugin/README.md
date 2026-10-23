@@ -294,3 +294,13 @@ The current-source Linux rerun described above also consumed the captured
 interrupts and dispatched callbacks. See the
 `gpu_interrupt_routing_update` and `post_scalar_destination_live_rerun` entries
 in the evidence JSON for the build and test details.
+
+On 2026-10-24, a fresh ADB screenshot of the still-running Redmi Note 8 Pro app
+was fully black. Its latest runtime log records one captured retail draw
+translated and submitted to the Vulkan presenter, but the
+`VK_FORMAT_A2B10G10R10_UNORM_PACK32` readback has zero non-black pixels
+(`B161DE6EEC272325`). This confirms the guest draw reaches Vulkan while visible
+retail output remains unready. The magenta path and other synthetic readbacks
+are diagnostics only. See
+[`process2_redmi_note8pro_current_black_output_20261024.txt`](../../evidence/process2_redmi_note8pro_current_black_output_20261024.txt)
+for device identity, screenshot/log hashes, and batch details.

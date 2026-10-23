@@ -1,0 +1,31 @@
+Process 2 Android retail-output check — 2026-10-24
+
+Device and app
+- Redmi Note 8 Pro (begonia), Android API 33, Mali-G76 MC4.
+- ADB device: 192.168.1.32:33153.
+- Foreground activity: com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity.
+- Package update time: 2026-10-23 23:57:39; running PID at check: 32421.
+
+Observed output
+- A fresh ADB screencap is fully black; SHA-256:
+  2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839.
+- Runtime log: files/nfs_shift/user/logs/nfs_shift_031.log.
+- Runtime-log SHA-256:
+  397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21.
+- The first logged batch contained 24 indexed draws with no supported raster
+  state and submitted no Vulkan frame.
+- The next batch contained 26 indexed draws: 25 had supported raster state,
+  24 were recognized as framebuffer no-ops, and one had complete captured
+  shader inputs, translated to project GLSL, and resolved resource bytes.
+- The plugin submitted that captured draw to the Vulkan presenter at 1280x720.
+  Its VK_FORMAT_A2B10G10R10_UNORM_PACK32 readback had zero non-black pixels
+  (FNV-1a B161DE6EEC272325). A later draw submission is also logged, without a
+  subsequent non-black retail readback.
+- The same log records one consumed PM4_INTERRUPT and one guest callback.
+
+Conclusion
+The Android app loads the Process 2 plugin and submits at least one captured
+retail draw through Vulkan, but the retail shader/output path still produces
+black. Therefore the Vulkan renderer is not ready for visible game frames.
+Synthetic magenta readback and renderer smoke tests remain diagnostic only and
+do not count as retail output.
