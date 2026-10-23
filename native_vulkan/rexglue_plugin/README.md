@@ -171,7 +171,8 @@ Xbox 360 controller created with `/dev/uinput`, and a default-keyboard Enter
 event left the foreground process, runtime log, screenshot, and PM4 output
 unchanged. In a follow-up check, Android InputReader registered the virtual
 controller as `GAMEPAD | JOYSTICK`; a two-second `BTN_START` press still did
-not advance the process or produce another PM4 batch. Direct `sendevent`
+not advance the process or produce another PM4 batch. A separate two-second
+`BTN_SOUTH`/Android `BUTTON_A` press had the same result. Direct `sendevent`
 injection into the phone's built-in `uinput-fpc` device is denied, and no
 physical controller was attached. The observations are recorded in the
 [`android_xbox_key_input_check_20261024`](../../evidence/process2_xbox_live_guest_ring_20261023.json)

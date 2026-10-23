@@ -37,9 +37,11 @@ Follow-up input check
 - A temporary Xbox 360 virtual controller created through `/dev/uinput` was
   registered by Android InputReader as a `GAMEPAD | JOYSTICK` device using
   `Vendor_045e_Product_028e.kl`.
-- `BTN_START` was held for two seconds, then released. A fresh screenshot
-  remained fully black with the same SHA-256 above, the runtime log kept the
-  same SHA-256 above, and no later PM4 batch or guest swap appeared.
+- `BTN_START` and, in a separate run, `BTN_SOUTH` (Android `BUTTON_A`) were
+  each held for two seconds, then released. InputReader registered each
+  temporary controller. Fresh screenshots after both presses remained fully
+  black with the same SHA-256 above, the runtime log kept the same SHA-256
+  above, and no later PM4 batch or guest swap appeared.
 - The controller was removed after the press; the NFS Shift process was left
   running in the foreground.
 
