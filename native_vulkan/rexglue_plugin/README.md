@@ -66,7 +66,9 @@ connected to the retail guest's PM4 path. A later opcode-only audit counted
 raw words; it cannot establish that the draws use DMA indices or that the
 inline shader payloads are valid. That retail run submitted zero Vulkan
 frames, so a retail draw through the plugin is still unconfirmed. The current
-worker logs one bounded raw packet sample for each opcode on its next live run. See
+debug worker logs the first 12 dwords of the first `0x2b` and `0x36` packets in
+each batch, plus the first indexed-draw decode rejection reason per batch. No
+live batch has yet been captured with these diagnostics. See
 [`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json).
 
 A separate Gamescope headless retry with the current plugin created its

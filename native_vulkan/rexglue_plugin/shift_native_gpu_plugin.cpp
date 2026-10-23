@@ -527,6 +527,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         uint32_t raw_register_writes = 0;
         std::array<uint32_t, 256> type3_opcode_counts{};
         std::array<std::string, 2> type3_packet_samples{};
+        bool logged_draw_decode_failure = false;
         if (expanded_ok) {
           for (const shift::xbox::ResolvedGuestPacket& resolved : expanded.packets) {
             const shift::xbox::PacketSpan& packet = resolved.packet;
@@ -682,6 +683,14 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 }
               } else {
                 ++unsupported_draws;
+                if (!logged_draw_decode_failure) {
+                  REXLOG_DEBUG("shift-native: rejected indexed draw opcode {} "
+                               "({} bytes): {}",
+                               packet.opcode, packet.byte_length,
+                               error.empty() ? "unsupported draw packet form"
+                                             : error);
+                  logged_draw_decode_failure = true;
+                }
               }
             } else if (packet.type == shift::xbox::PacketType::Type3 &&
                        packet.opcode == 0x64u) {
