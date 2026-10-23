@@ -222,9 +222,10 @@ bool emit_alu(std::ostringstream& glsl,
     if (instruction.vector_destination_relative) {
         return fail_at_slot("captured ALU uses a relative vector destination");
     }
-    if (instruction.scalar_destination_relative && !instruction.export_data) {
-        return fail_at_slot("captured ALU uses a relative scalar destination");
-    }
+    // Xenos scalar-destination-relative addressing is relative to aL. The
+    // current control-flow decoder rejects loop opcodes, so every shader that
+    // reaches this emitter has the initial aL value (zero). Loop-aware shader
+    // translation must replace this static mapping before accepting loops.
     if (instruction.absolute_constants) {
         return fail_at_slot("captured ALU uses absolute constants");
     }

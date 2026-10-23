@@ -15,7 +15,9 @@ image to a host window.
 
 The supported path is deliberately narrow: captured DMA-indexed triangle-list
 draws and AutoIndex point-list `DRAW_INDX_2` draws, including the observed
-vertex shader with no fetch inputs. It translates the captured shader pair
+vertex shader with no fetch inputs and its scalar destination relative to the
+initial `aL` value. The current control-flow subset rejects loops, so loop-aware
+relative addressing remains unsupported. It translates the captured shader pair
 (including inline `IM_LOAD_IMMEDIATE`), validates required constants, and
 resolves supported vertex and texture resources. Rectangle-list AutoIndex
 draws and unsupported raster/resource forms are rejected. The frame path clears the
@@ -76,6 +78,19 @@ for the retail frame remain unverified.
 See
 [`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json).
 
+A repeat run with the current checkout and rebuilt plugin (`ad6f329c…`) on
+2026-10-23 confirmed the current source path after adding the captured
+no-loop scalar-destination-relative case. It translated 25 retail draws in
+each of two swap batches, resolved 24 draw resource sets per batch, submitted
+24 AutoIndex point draws per frame, and dispatched one guest interrupt callback
+per batch. The run used Gamescope headless + Xwayland on the NVIDIA GeForce GTX
+950; its live log is `/tmp/process2-live-nfs/headless-20261023/retail-current-source/logs/retail.log`.
+This confirms routing through the current plugin and Vulkan presenter, not
+visible game output: the headless rerun did not capture the presented image,
+and the earlier window capture remained black. The process was stopped after
+the two swap submissions; the four rectangle-list draws and scene parity remain
+unverified.
+
 An earlier Gamescope headless retry used info-level logging and recorded no
 draw submission; the later debug run above supersedes that result.
 
@@ -108,7 +123,7 @@ each interrupt packet inside a batch is not verified. The decoder regression
 and Android API 33 guest-ring smoke passed on Redmi Note 8 Pro (Mali-G76 MC4),
 and the Linux plugin suite passed 2/2 with a separate Vulkan validation-layer
 run passing 1/1. These are parser/plugin checks, not a full Android game test.
-No retail Linux run has yet been repeated with this interrupt-routing update,
-so its effect on guest game progress and visible output is unknown. See the
-`gpu_interrupt_routing_update` entry in the evidence JSON for the build and
-test details.
+The current-source Linux rerun described above also consumed the captured
+interrupts and dispatched callbacks. See the
+`gpu_interrupt_routing_update` and `post_scalar_destination_live_rerun` entries
+in the evidence JSON for the build and test details.

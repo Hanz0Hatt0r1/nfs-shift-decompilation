@@ -113,6 +113,22 @@ int main() {
                     std::string::npos,
             "full/mini fetch translation lost the captured vertex layout");
 
+    std::vector<uint8_t> relative_scalar_destination = vertex_shader;
+    const uint32_t relative_scalar_trunc = (12u << 26) | (3u << 8) |
+                                           (1u << 14) | (1u << 20);
+    write_be32(relative_scalar_destination.data() + 4 * 12,
+               relative_scalar_trunc);
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Vertex,
+                relative_scalar_destination.data(),
+                relative_scalar_destination.size(), vertex_options,
+                &vertex_translated, &vertex_error),
+            "captured loop-relative scalar destination with initial aL did not translate");
+    require(vertex_translated.glsl.find(
+                "r[3].x = trunc(shift_vertex_constants.c[0].w)") !=
+                std::string::npos,
+            "initial aL=0 did not preserve the scalar destination register");
+
     const std::vector<uint8_t> shader = captured_pixel_shader_slice();
     shift::xbox::CapturedShaderTranslationOptions options{};
     options.pixel_b128 = true;

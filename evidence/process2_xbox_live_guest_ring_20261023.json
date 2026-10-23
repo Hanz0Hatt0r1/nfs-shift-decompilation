@@ -331,13 +331,92 @@
       "scope": "Android parser and guest-ring regression only; not a Vulkan retail game or full game build",
       "temporary_device_binary_removed": true
     },
-    "retail_rerun_after_update": false,
+    "retail_rerun_after_update": true,
     "visible_retail_output_verified": false
+  },
+  "post_scalar_destination_live_rerun": {
+    "date": "2026-10-23",
+    "source_checkout_head_before_fix": "b038c4fd426d11272efbf38cae1e9734807ea2b2",
+    "shader_change": "Translated captured scalar-destination-relative ALU writes against initial aL=0; loop control flow remains fail-closed.",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_sha256": "ad6f329c976a470c6a6252487a2cedc0a74f761d462330b7770e5dfc0dbdf26a",
+    "rexglue_runtime_sha256": "3249616d110308968b1224bce9c85fbea655f8255ac64f296a2edb73282ead63",
+    "gpu_plugin_selection": "shift-native; rexgpu-xenos was not requested",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "surface": "Gamescope headless + Xwayland",
+    "game_data_root": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+    "private_log": "/tmp/process2-live-nfs/headless-20261023/retail-current-source/logs/retail.log",
+    "guest_ring_address": "0x09752580",
+    "guest_ring_capacity_bytes": 32768,
+    "batches": [
+      {
+        "pm4_packets": 73,
+        "draw_indx_2_packets": 24,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 961,
+        "draw_indx_2_packets": 26,
+        "point_list_packets": 24,
+        "rectangle_list_packets": 2,
+        "draws_with_supported_raster_state": 25,
+        "shader_pairs_translated": 25,
+        "resource_sets_resolved": 24,
+        "submitted_point_draws": 24,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 1,
+        "presenter_extent": "1280x720",
+        "interrupt_packets_consumed": 1,
+        "guest_callbacks_dispatched": 1
+      },
+      {
+        "pm4_packets": 794,
+        "draw_indx_2_packets": 50,
+        "point_list_packets": 48,
+        "rectangle_list_packets": 2,
+        "draws_with_supported_raster_state": 25,
+        "shader_pairs_translated": 25,
+        "resource_sets_resolved": 24,
+        "submitted_point_draws": 24,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 1,
+        "presenter_extent": "1280x720",
+        "interrupt_packets_consumed": 1,
+        "guest_callbacks_dispatched": 1
+      }
+    ],
+    "totals": {
+      "pm4_packets": 1828,
+      "draw_indx_2_packets": 100,
+      "autoindex_point_draws_submitted": 48,
+      "guest_swaps": 2,
+      "vulkan_frames_submitted": 2,
+      "interrupt_packets_consumed": 2,
+      "guest_callbacks_dispatched": 2,
+      "dma_indexed_draws_observed": 0
+    },
+    "checks": {
+      "linux_native_renderer_and_parser_ctest": "4/4 passed",
+      "linux_plugin_ctest": "2/2 passed",
+      "linux_offscreen_vulkan_validation": "Synthetic Vulkan 1.1 AutoIndex point draw passed on NVIDIA GeForce GTX 950 with VK_LAYER_KHRONOS_validation enabled.",
+      "android_arm64_shader_translation_check": {
+        "device": "Redmi Note 8 Pro (begonia, Android API 33, arm64-v8a)",
+        "result": "shift_xbox_shader_translate_check exited 0",
+        "scope": "shader translation regression only; no Android retail game or Vulkan presenter run"
+      }
+    },
+    "headless_run_stop": "The isolated retail process was stopped after the two swap submissions with a 45-second timeout.",
+    "presented_image_captured": false,
+    "visible_retail_output_verified": false,
+    "full_scene_parity_verified": false,
+    "vulkan_validation_layer_enabled": false,
+    "result": "The current-source emulator-free plugin translated and submitted the captured retail point-list subset to Vulkan and dispatched the observed guest callbacks. This does not establish visible retail content or scene parity."
   },
   "remaining_blockers": [
     "All 100 observed DRAW_INDX_2 packets are AutoIndex (96 one-point draws and four three-index rectangle-list draws); no DMA-indexed draw packet was observed. The first live retail frame therefore covers the observed point-list path only.",
     "AutoIndex rectangle-list expansion remains unsupported, and the retail full/mini-fetch shader's rectangle draws are still skipped. Xenos EDRAM accumulation and the guest frontbuffer resolve path are not implemented.",
-    "The captured game window remained black after submission (apart from the cursor); the point-list pass is not yet producing visible retail content. The cause is not isolated, and no scene parity is established.",
+    "A previous captured game window was black after submission. The current-source rerun did not capture the presented image, so visible retail content remains unverified and no scene parity is established.",
     "The full Android game is not buildable yet: the Android NativeActivity target is only a Vulkan surface-lifecycle proof without game or ReXGlue integration, there is no game manifest/APK target, and the full plugin link is blocked by the Process 1-owned POSIX fiber backend."
   ]
 }
