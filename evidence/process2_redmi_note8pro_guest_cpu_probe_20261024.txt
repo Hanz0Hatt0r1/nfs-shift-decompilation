@@ -1,0 +1,23 @@
+# Redmi Note 8 Pro guest CPU probe
+
+Observed: 2026-10-23 21:58 UTC (2026-10-24 00:58 Europe/Moscow)
+Device: Redmi Note 8 Pro, Android 13/API 33, Mali-G76 MC4, Vulkan 1.1.131
+Package: `com.hanz0hatt0r.nfsshift`, PID `32421`, SDL activity remained focused.
+
+Command:
+
+```text
+adb shell top -H -b -d 2 -n 2 -p 32421
+```
+
+Two samples, approximately two seconds apart:
+
+| Thread | TID | Sample 1 CPU | Sample 2 CPU |
+| --- | ---: | ---: | ---: |
+| `Core 2/1: Main` | 32513 | 121% | 100% |
+| `SDLThread` | 32477 | 110% | 81% |
+| `SHIFT Native GP` | 32511 | 0% | 0% |
+
+The app screenshot stayed SHA-256 `2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839` and its runtime log stayed SHA-256 `397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21`; the log still contains only the two startup swaps and no later PM4 batches.
+
+Interpretation: the main/SDL execution threads are consuming CPU while the Vulkan ring worker is idle and receives no new draw work. This is consistent with a guest/runtime progress loop outside the renderer, but the CPU sample does not identify the guest function or prove the cause. Guest scheduling and execution remain Process 1 ownership; no Process 1 files were changed.

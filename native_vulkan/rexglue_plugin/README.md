@@ -176,6 +176,14 @@ Android, but visible retail output and scene parity are not verified. The
 `xenos` loader alias can be removed when the host preserves an explicit
 `gpu_plugin=shift-native` setting.
 
+A two-sample Android CPU probe showed `Core 2/1: Main` at 100–121% and
+`SDLThread` at 81–110% while `SHIFT Native GP` remained at 0%. The screenshot
+and runtime-log hashes were unchanged, with two startup swaps and no later PM4
+batch. This is consistent with main/SDL execution spinning while the Vulkan
+ring worker has no new commands; it does not identify the exact guest function
+or prove the cause. Guest execution and scheduling remain Process 1 ownership.
+See [`process2_redmi_note8pro_guest_cpu_probe_20261024.txt`](../../evidence/process2_redmi_note8pro_guest_cpu_probe_20261024.txt).
+
 A one-time Android debug diagnostic forced the fragment shader to magenta while
 leaving the captured retail vertex shader, geometry, draw, and Copy/Convert
 path intact. On the Redmi Note 8 Pro it produced 518,400 non-black pixels in

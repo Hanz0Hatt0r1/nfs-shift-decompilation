@@ -1008,5 +1008,24 @@
     "logged_guest_swaps": 2,
     "new_pm4_batches_or_swaps": 0,
     "result": "A/Start from default and gamepad sources and Enter from the default keyboard did not change the foreground app, runtime log, screenshot, or observed PM4 output. The vendor joystick node could not be injected by shell, so this does not establish that a real controller input route is ineffective."
+  },
+  "android_guest_cpu_probe_20261024": {
+    "observed_at_utc": "2026-10-23T21:58:08Z",
+    "device": "Redmi Note 8 Pro (Android 13/API 33, Mali-G76 MC4, Vulkan 1.1.131)",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 32421,
+    "focused_activity": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity",
+    "command": "adb shell top -H -b -d 2 -n 2 -p 32421",
+    "thread_samples": [
+      {"name": "Core 2/1: Main", "tid": 32513, "sample_1_cpu_percent": 121, "sample_2_cpu_percent": 100},
+      {"name": "SDLThread", "tid": 32477, "sample_1_cpu_percent": 110, "sample_2_cpu_percent": 81},
+      {"name": "SHIFT Native GP", "tid": 32511, "sample_1_cpu_percent": 0, "sample_2_cpu_percent": 0}
+    ],
+    "runtime_log_sha256": "397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21",
+    "screen_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+    "logged_guest_swaps": 2,
+    "later_pm4_batches": 0,
+    "evidence_file": "process2_redmi_note8pro_guest_cpu_probe_20261024.txt",
+    "interpretation": "The app main/SDL threads consume CPU while the Vulkan ring worker is idle and receives no new draw work. This is consistent with a guest/runtime progress loop outside the renderer, but these CPU samples do not identify the guest function or prove the cause. Guest scheduling/execution is Process 1 ownership; no Process 1 files were changed."
   }
 }
