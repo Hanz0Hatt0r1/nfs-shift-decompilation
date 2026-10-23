@@ -39,7 +39,11 @@ ctest --test-dir build/rexgpu-shift-native --output-on-failure
 ```
 
 The factory check loads the plugin and verifies ABI and factory rejection
-cases. The platform-independent Vulkan core also has an offscreen indexed-draw
+cases. The live-ring smoke publishes a fixture stream with two
+`IM_LOAD_IMMEDIATE` packets, `DRAW_INDX`, and DMA `DRAW_INDX_2`, then asserts
+the worker's decoded counters and read-pointer writeback. These packet bytes
+are regression fixtures, not an additional raw retail capture. The
+platform-independent Vulkan core also has an offscreen indexed-draw
 smoke. It passed with Vulkan validation on NVIDIA GeForce GTX 950, and on
 Redmi Note 8 Pro (Mali-G76 MC4) using Vulkan 1.1. Those smoke shaders are
 synthetic and verify pipeline/resource/layout operations only; they are not

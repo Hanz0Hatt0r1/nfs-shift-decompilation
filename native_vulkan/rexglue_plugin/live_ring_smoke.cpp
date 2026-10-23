@@ -5,12 +5,16 @@
 #include <dlfcn.h>
 #include <iostream>
 #include <memory>
+#include <sstream>
+#include <string>
 #include <thread>
 
+#include <rex/logging/api.h>
 #include <rex/system/function_dispatcher.h>
 #include <rex/system/gpu_plugin.h>
 #include <rex/system/mmio_handler.h>
 #include <rex/system/xmemory.h>
+#include <spdlog/sinks/ostream_sink.h>
 
 namespace {
 
@@ -19,11 +23,18 @@ constexpr uint32_t kWritebackAddress = 0x00012000u;
 constexpr uint32_t kRingSizeLog2 = 9u;
 constexpr uint32_t kWritePointerRegister = 0x7FC80714u;
 constexpr uint32_t kReadPointerRegister = 0x7FC80710u;
-constexpr std::array<uint8_t, 20> kCapturedDrawPacket = {
+constexpr std::array<uint8_t, 68> kFixturePm4Stream = {
+    0xC0, 0x02, 0x2B, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+    0xC0, 0x02, 0x2B, 0x00, 0x00, 0x00, 0x00, 0x01,
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
     0xC0, 0x03, 0x22, 0x01, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x06, 0x00, 0x04, 0x09, 0x75, 0xD7, 0xB0,
     0x40, 0x00, 0x00, 0x06,
+    0xC0, 0x02, 0x36, 0x00, 0x00, 0x06, 0x00, 0x04,
+    0x09, 0x75, 0xD7, 0xB0, 0x40, 0x00, 0x00, 0x06,
 };
+constexpr uint32_t kFixturePm4StreamDwords = kFixturePm4Stream.size() / 4u;
 
 uint32_t read_be32(const uint8_t* bytes) {
   return (uint32_t{bytes[0]} << 24) | (uint32_t{bytes[1]} << 16) |
@@ -39,6 +50,12 @@ int fail(const char* message) {
 
 int main(int argc, char** argv) {
   if (argc != 2) return 2;
+
+  rex::InitLogging(nullptr, spdlog::level::debug);
+  std::ostringstream log_output;
+  auto log_sink = std::make_shared<spdlog::sinks::ostream_sink_mt>(log_output);
+  rex::AddSink(log_sink);
+  rex::SetAllLevels(spdlog::level::debug);
 
   void* library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
   if (!library) {
@@ -71,7 +88,7 @@ int main(int argc, char** argv) {
   uint8_t* const ring_bytes = memory.TranslatePhysical<uint8_t*>(kRingAddress);
   uint8_t* const writeback_bytes = memory.TranslatePhysical<uint8_t*>(kWritebackAddress);
   std::memset(ring_bytes, 0, 0x3000u);
-  std::memcpy(ring_bytes, kCapturedDrawPacket.data(), kCapturedDrawPacket.size());
+  std::memcpy(ring_bytes, kFixturePm4Stream.data(), kFixturePm4Stream.size());
 
   rex::runtime::FunctionDispatcher dispatcher(&memory, nullptr);
   rex::system::GpuCreateInfo info{};
@@ -89,7 +106,7 @@ int main(int argc, char** argv) {
   graphics->EnableReadPointerWriteBack(kWritebackAddress, 0);
   graphics->InitializeRingBuffer(kRingAddress, kRingSizeLog2);
   auto* mmio = rex::runtime::MMIOHandler::global_handler();
-  if (!mmio || !mmio->CheckStore(kWritePointerRegister, 5u)) {
+  if (!mmio || !mmio->CheckStore(kWritePointerRegister, kFixturePm4StreamDwords)) {
     graphics->Shutdown();
     graphics.reset();
     dlclose(library);
@@ -97,18 +114,27 @@ int main(int argc, char** argv) {
   }
 
   const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
-  while (std::chrono::steady_clock::now() < deadline && read_be32(writeback_bytes) != 5u) {
+  while (std::chrono::steady_clock::now() < deadline &&
+         read_be32(writeback_bytes) != kFixturePm4StreamDwords) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
   uint32_t read_pointer = 0;
-  const bool consumed = read_be32(writeback_bytes) == 5u &&
+  const bool consumed = read_be32(writeback_bytes) == kFixturePm4StreamDwords &&
                         mmio->CheckLoad(kReadPointerRegister, &read_pointer) &&
-                        read_pointer == 5u;
+                        read_pointer == kFixturePm4StreamDwords;
 
   graphics->Shutdown();
   graphics.reset();
+  rex::RemoveSink(log_sink);
   dlclose(library);
-  if (!consumed) return fail("captured DRAW_INDX was not consumed through live PM4 MMIO");
-  std::cout << "live ReXGlue PM4 ring/MMIO consumption passed\n";
+  const std::string diagnostics = log_output.str();
+  if (!consumed) return fail("fixture PM4 stream was not consumed through live MMIO");
+  if (diagnostics.find("2 inline shader programs (0 unresolved)") == std::string::npos ||
+      diagnostics.find("2 captured indexed draw packets") == std::string::npos ||
+      diagnostics.find("type3 opcodes [22:1,2b:2,36:1") == std::string::npos) {
+    std::cerr << diagnostics << '\n';
+    return fail("live PM4 worker did not decode inline shaders and both indexed draw forms");
+  }
+  std::cout << "live ReXGlue PM4 ring decoded inline shaders and both indexed draw forms\n";
   return 0;
 }

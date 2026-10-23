@@ -61,8 +61,10 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   XCB/Wayland dependency. The frame currently starts with a black clear and
   does not reconstruct prior Xenos EDRAM or import the guest frontbuffer as a
   completed image. Regressions cover PM4 draw/swap framing, ring wraparound,
-  indirect buffers, and the plugin ABI. A separate offscreen indexed-draw
-  smoke passed Vulkan validation on Linux and executed on Redmi Note 8 Pro;
+  indirect buffers, and the plugin ABI; the plugin ring smoke checks its
+  decoded inline-shader and both indexed-draw counters. A separate offscreen
+  indexed-draw smoke passed Vulkan validation on Linux and executed on
+  Redmi Note 8 Pro;
   those smoke shaders are synthetic. On 2026-10-23, Wi-Fi ADB also ran the
   draw-input, guest-ring, shader-translation, and Vulkan 1.1 renderer checks on
   Redmi Note 8 Pro / Android 13 / Mali-G76 MC4. Android validation layers were

@@ -46,7 +46,7 @@
   "plugin_build": {
     "target": "rexgpu-shift-native",
     "factory_smoke": "passed",
-    "live_ring_abi_smoke": "passed on Linux: captured PM4_DRAW_INDX published through ReXGlue CP_RB_WPTR and guest read-pointer writeback",
+    "live_ring_abi_smoke": "passed on Linux: fixture stream with two IM_LOAD_IMMEDIATE packets, PM4_DRAW_INDX, and DMA PM4_DRAW_INDX_2 reached worker decoder; decoded counters and guest read-pointer writeback verified",
     "links_rexgpu_xenos": false,
     "sdk_requirement": "separate rexui-vulkan target"
   },
