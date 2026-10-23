@@ -16,6 +16,7 @@ struct CapturedVulkanDraw {
     CapturedShaderConstants constants;
     CapturedTextureSampling texture_sampling;
     std::vector<uint32_t> vertex_shader_spirv;
+    std::vector<uint32_t> geometry_shader_spirv;
     std::vector<uint32_t> pixel_shader_spirv;
     std::vector<uint8_t> vertices;
     std::vector<uint8_t> indices;
@@ -44,6 +45,7 @@ bool submit_captured_vulkan_frame(
     uint32_t output_height,
     const std::vector<CapturedVulkanDraw>& draws,
     std::string* error,
-    std::vector<uint32_t>* output_readback = nullptr);
+    std::vector<uint32_t>* output_readback = nullptr,
+    bool geometry_shader_enabled = false);
 
 }  // namespace shift::xbox

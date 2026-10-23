@@ -53,6 +53,35 @@ const std::string kDebugFragmentColorShader =
     "#version 450\n"
     "layout(location=0) out vec4 shift_color0;\n"
     "void main() { shift_color0 = vec4(1.0, 0.0, 1.0, 1.0); }\n";
+const std::string kRectangleListGeometryShader =
+    "#version 450\n"
+    "layout(triangles) in;\n"
+    "layout(triangle_strip, max_vertices=4) out;\n"
+    "layout(location=0) in vec4 shift_interpolator0_in[];\n"
+    "layout(location=0) out vec4 shift_interpolator0;\n"
+    "void main() {\n"
+    "  vec2 p0=gl_in[0].gl_Position.xy;\n"
+    "  vec2 p1=gl_in[1].gl_Position.xy;\n"
+    "  vec2 p2=gl_in[2].gl_Position.xy;\n"
+    "  float d01=dot(p1-p0,p1-p0);\n"
+    "  float d12=dot(p2-p1,p2-p1);\n"
+    "  float d20=dot(p0-p2,p0-p2);\n"
+    "  int a; int b; int c;\n"
+    "  if (d12>d20 && d12>d01) { a=0; b=1; c=2; }\n"
+    "  else if (d20>d01) { a=1; b=2; c=0; }\n"
+    "  else { a=2; b=0; c=1; }\n"
+    "  for (int i=0; i<3; ++i) {\n"
+    "    int v=i==0 ? a : (i==1 ? b : c);\n"
+    "    gl_Position=gl_in[v].gl_Position;\n"
+    "    shift_interpolator0=shift_interpolator0_in[v];\n"
+    "    EmitVertex();\n"
+    "  }\n"
+    "  gl_Position=-gl_in[a].gl_Position+gl_in[b].gl_Position+gl_in[c].gl_Position;\n"
+    "  shift_interpolator0=-shift_interpolator0_in[a]+\n"
+    "                     shift_interpolator0_in[b]+shift_interpolator0_in[c];\n"
+    "  EmitVertex();\n"
+    "  EndPrimitive();\n"
+    "}\n";
 
 bool DebugFragmentColorEnabled() {
   static const bool enabled = [] {
@@ -68,8 +97,9 @@ uint32_t ReadGuestDword(const uint8_t* bytes) {
          (static_cast<uint32_t>(bytes[2]) << 8) | bytes[3];
 }
 
-bool CompileCapturedShader(
-    shift::xbox::CapturedShaderStage stage,
+bool CompileVulkanShader(
+    const char* stage_name,
+    EShLanguage language,
     const std::string& source,
     std::vector<uint32_t>* spirv,
     std::string* error) {
@@ -77,7 +107,6 @@ bool CompileCapturedShader(
   static std::once_flag initialize_once;
   static std::mutex cache_mutex;
   static std::unordered_map<std::string, std::vector<uint32_t>> cache;
-  const char* stage_name = stage == shift::xbox::CapturedShaderStage::Vertex ? "vertex" : "pixel";
   const std::string key = std::string(stage_name) + '\0' + source;
   std::lock_guard<std::mutex> lock(cache_mutex);
   if (const auto it = cache.find(key); it != cache.end()) {
@@ -86,9 +115,6 @@ bool CompileCapturedShader(
   }
   std::call_once(initialize_once, [] { glslang::InitializeProcess(); });
 
-  const EShLanguage language = stage == shift::xbox::CapturedShaderStage::Vertex
-                                   ? EShLangVertex
-                                   : EShLangFragment;
   const char* source_ptr = source.data();
   const int source_length = static_cast<int>(source.size());
   glslang::TShader shader(language);
@@ -134,7 +160,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (presenter_) return X_STATUS_SUCCESS;
     if (!provider_) {
       // Native project renderer: do not enable ReXGlue's Xenos GPU features.
-      provider_ = rex::ui::vulkan::VulkanProvider::Create(false, true);
+      provider_ = rex::ui::vulkan::VulkanProvider::Create(false, true, true);
     }
     if (!provider_) {
       REXLOG_ERROR("shift-native: unable to create the Vulkan presentation provider");
@@ -470,11 +496,23 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     prepared.texture_width = texture_fetch.width;
     prepared.texture_height = texture_fetch.height;
     prepared.vertex_input_attributes = vertex_translation.vertex_input_attributes;
-    if (!CompileCapturedShader(shift::xbox::CapturedShaderStage::Vertex,
-                               vertex_translation.glsl, &prepared.vertex_shader_spirv, error) ||
-        !CompileCapturedShader(shift::xbox::CapturedShaderStage::Pixel,
-                               pixel_shader_source, &prepared.pixel_shader_spirv, error)) {
+    if (!CompileVulkanShader("vertex", EShLangVertex, vertex_translation.glsl,
+                             &prepared.vertex_shader_spirv, error) ||
+        !CompileVulkanShader("pixel", EShLangFragment, pixel_shader_source,
+                             &prepared.pixel_shader_spirv, error)) {
       return false;
+    }
+    if (draw.topology == shift::xbox::PrimitiveTopology::RectangleList) {
+      auto* device = provider_ ? provider_->vulkan_device() : nullptr;
+      if (!device || !device->properties().geometryShader) {
+        if (error) *error = "captured rectangle-list draw requires Vulkan geometryShader";
+        return false;
+      }
+      if (!CompileVulkanShader("rectangle-list-geometry", EShLangGeometry,
+                               kRectangleListGeometryShader,
+                               &prepared.geometry_shader_spirv, error)) {
+        return false;
+      }
     }
 
     constexpr uint32_t kMaxLiveIndexBytes = 2u * 1024u * 1024u;
@@ -484,7 +522,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     size_t guest_byte_length = 0;
     uint32_t maximum_vertex_index = 0;
     if (draw.auto_index) {
-      if (draw.topology != shift::xbox::PrimitiveTopology::PointList) {
+      if (draw.topology != shift::xbox::PrimitiveTopology::PointList &&
+          draw.topology != shift::xbox::PrimitiveTopology::RectangleList) {
         if (error) *error = "captured AutoIndex primitive expansion is unsupported";
         return false;
       }
@@ -1083,7 +1122,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                           context->image(), context->image_view(),
                           context->image_ever_written_previously(),
                           width, height, frame_draws, &render_error,
-                          capture_output ? &output_readback : nullptr);
+                          capture_output ? &output_readback : nullptr,
+                          device->properties().geometryShader);
                     });
                 if (refreshed) {
                   ++submitted_frames;

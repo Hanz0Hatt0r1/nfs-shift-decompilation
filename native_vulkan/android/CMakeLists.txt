@@ -41,6 +41,17 @@ if(GLSLANG_VALIDATOR)
     list(APPEND SHIFT_ANDROID_LIVE_DRAW_SPIRV
       ${SHIFT_ANDROID_SHADER_DIR}/live_draw_smoke.${stage}.spv)
   endforeach()
+  add_custom_command(
+    OUTPUT ${SHIFT_ANDROID_SHADER_DIR}/live_draw_rectlist.geom.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_ANDROID_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/../shaders/live_draw_rectlist.geom
+            -o ${SHIFT_ANDROID_SHADER_DIR}/live_draw_rectlist.geom.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../shaders/live_draw_rectlist.geom
+    VERBATIM
+  )
+  list(APPEND SHIFT_ANDROID_LIVE_DRAW_SPIRV
+    ${SHIFT_ANDROID_SHADER_DIR}/live_draw_rectlist.geom.spv)
   add_custom_target(shift_android_live_draw_smoke_shaders
     DEPENDS ${SHIFT_ANDROID_LIVE_DRAW_SPIRV})
   add_executable(xbox_live_vulkan_renderer_check ../tests/xbox_live_vulkan_renderer_check.cpp)

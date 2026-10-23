@@ -168,6 +168,8 @@ std::vector<uint8_t> make_pm4_stream() {
   // A second draw uses the supported DMA packet form; its payload is fixture
   // data.
   append_type3(&stream, 0x36u, {0x00060004u, kIndexAddress, 0x40000006u});
+  // The captured AutoIndex rectangle-list form consumes three fetched vertices.
+  append_type3(&stream, 0x36u, {0x00030088u});
   append_type3(&stream, 0x64u,
                {0x53574150u, kFrontbufferAddress, kTargetWidth, kTargetHeight});
   return stream;
@@ -358,17 +360,19 @@ int main(int argc, char** argv) {
   if (diagnostics.find("2 pointer-loaded shader programs (0 unresolved)") ==
           std::string::npos ||
       diagnostics.find(
-          "2 captured indexed draw packets (2 with supported raster state") ==
+          "3 captured indexed draw packets (3 with supported raster state") ==
           std::string::npos ||
-      diagnostics.find("2 with resolved resource bytes (0 unresolved)") ==
+      diagnostics.find("3 with resolved resource bytes (0 unresolved)") ==
           std::string::npos ||
       diagnostics.find("1 Vulkan frames submitted") == std::string::npos ||
-      diagnostics.find("submitted 2 captured indexed draw packets to the "
+      diagnostics.find("source=2/primitive=8:1") == std::string::npos ||
+      diagnostics.find("submitted 3 captured indexed draw packets to the "
                        "Vulkan presenter") == std::string::npos) {
     std::cerr << diagnostics << '\n';
     return fail("live PM4 fixture did not reach Vulkan presenter submission");
   }
-  std::cout << "live ReXGlue PM4 ring reached Vulkan 1.1 presenter submission; "
-               "fixture uses synthetic vertex/resource inputs\n";
+  std::cout << "live ReXGlue PM4 ring submitted DMA triangle and AutoIndex "
+               "rectangle-list draws through Vulkan 1.1; fixture uses synthetic "
+               "vertex/resource inputs\n";
   return 0;
 }

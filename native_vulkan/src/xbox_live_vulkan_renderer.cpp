@@ -32,6 +32,7 @@ struct DrawResources {
     ImageResource texture;
     VkSampler sampler = VK_NULL_HANDLE;
     VkShaderModule vertex_shader = VK_NULL_HANDLE;
+    VkShaderModule geometry_shader = VK_NULL_HANDLE;
     VkShaderModule pixel_shader = VK_NULL_HANDLE;
     VkDescriptorSetLayout descriptor_layouts[2]{};
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
@@ -63,6 +64,7 @@ struct FrameResources {
                 if (layout) vkDestroyDescriptorSetLayout(device, layout, nullptr);
             }
             if (draw.vertex_shader) vkDestroyShaderModule(device, draw.vertex_shader, nullptr);
+            if (draw.geometry_shader) vkDestroyShaderModule(device, draw.geometry_shader, nullptr);
             if (draw.pixel_shader) vkDestroyShaderModule(device, draw.pixel_shader, nullptr);
             if (draw.sampler) vkDestroySampler(device, draw.sampler, nullptr);
             destroy_image(draw.texture);
@@ -338,6 +340,7 @@ bool create_draw_resources(
     const VkPhysicalDeviceMemoryProperties& memory_properties,
     VkDevice device,
     VkRenderPass render_pass,
+    bool geometry_shader_enabled,
     DrawResources* output,
     std::string* error) {
     const uint32_t vertex_constants_size = sizeof(source.constants.vertex_float_constants);
@@ -350,6 +353,11 @@ bool create_draw_resources(
         source.index_count == 0 ||
         (source.auto_index ? !source.indices.empty() : source.indices.empty()) ||
         source.vertex_shader_spirv.empty() || source.pixel_shader_spirv.empty() ||
+        (source.topology == PrimitiveTopology::RectangleList &&
+         source.geometry_shader_spirv.empty()) ||
+        (source.topology != PrimitiveTopology::RectangleList &&
+         !source.geometry_shader_spirv.empty()) ||
+        (!source.geometry_shader_spirv.empty() && !geometry_shader_enabled) ||
         (has_vertex_inputs && source.vertex_stride_bytes == 0) ||
         source.texture_width == 0 || source.texture_height == 0 ||
         texture_size != source.texture_rgba8.size() || texture_size > (uint64_t{1} << 26)) {
@@ -415,6 +423,15 @@ bool create_draw_resources(
     shader_info.pCode = source.vertex_shader_spirv.data();
     result = vkCreateShaderModule(device, &shader_info, nullptr, &output->vertex_shader);
     if (result != VK_SUCCESS) return vk_fail("vkCreateShaderModule(vertex)", result, error);
+    if (!source.geometry_shader_spirv.empty()) {
+        shader_info.codeSize = source.geometry_shader_spirv.size() * sizeof(uint32_t);
+        shader_info.pCode = source.geometry_shader_spirv.data();
+        result = vkCreateShaderModule(device, &shader_info, nullptr,
+                                      &output->geometry_shader);
+        if (result != VK_SUCCESS) {
+            return vk_fail("vkCreateShaderModule(geometry)", result, error);
+        }
+    }
     shader_info.codeSize = source.pixel_shader_spirv.size() * sizeof(uint32_t);
     shader_info.pCode = source.pixel_shader_spirv.data();
     result = vkCreateShaderModule(device, &shader_info, nullptr, &output->pixel_shader);
@@ -497,15 +514,24 @@ bool create_draw_resources(
                                     &output->pipeline_layout);
     if (result != VK_SUCCESS) return vk_fail("vkCreatePipelineLayout", result, error);
 
-    VkPipelineShaderStageCreateInfo stages[2]{};
+    VkPipelineShaderStageCreateInfo stages[3]{};
     stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
     stages[0].module = output->vertex_shader;
     stages[0].pName = "main";
-    stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    stages[1].module = output->pixel_shader;
-    stages[1].pName = "main";
+    uint32_t stage_count = 1;
+    if (output->geometry_shader) {
+        stages[stage_count].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stages[stage_count].stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+        stages[stage_count].module = output->geometry_shader;
+        stages[stage_count].pName = "main";
+        ++stage_count;
+    }
+    stages[stage_count].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stages[stage_count].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stages[stage_count].module = output->pixel_shader;
+    stages[stage_count].pName = "main";
+    ++stage_count;
     const VkVertexInputBindingDescription vertex_binding{
         0, source.vertex_stride_bytes, VK_VERTEX_INPUT_RATE_VERTEX};
     std::vector<VkVertexInputAttributeDescription> vertex_attributes;
@@ -544,6 +570,8 @@ bool create_draw_resources(
         assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     } else if (source.topology == PrimitiveTopology::PointList) {
         assembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    } else if (source.topology == PrimitiveTopology::RectangleList) {
+        assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     } else {
         return fail("captured Vulkan primitive topology is unsupported", error);
     }
@@ -618,7 +646,7 @@ bool create_draw_resources(
     dynamic.pDynamicStates = dynamic_values;
     VkGraphicsPipelineCreateInfo pipeline_info{};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipeline_info.stageCount = 2;
+    pipeline_info.stageCount = stage_count;
     pipeline_info.pStages = stages;
     pipeline_info.pVertexInputState = &vertex_input;
     pipeline_info.pInputAssemblyState = &assembly;
@@ -651,7 +679,8 @@ bool submit_captured_vulkan_frame(
     uint32_t output_height,
     const std::vector<CapturedVulkanDraw>& draws,
     std::string* error,
-    std::vector<uint32_t>* output_readback) {
+    std::vector<uint32_t>* output_readback,
+    bool geometry_shader_enabled) {
     if (output_readback) output_readback->clear();
     if (!physical_device || !device || !queue || !output_image || !output_view ||
         !output_width || !output_height || draws.empty() || queue_family_index == UINT32_MAX) {
@@ -680,6 +709,11 @@ bool submit_captured_vulkan_frame(
         });
 
     for (const CapturedVulkanDraw& draw : draws) {
+        if (draw.topology == PrimitiveTopology::RectangleList &&
+            !geometry_shader_enabled) {
+            return fail("captured rectangle-list draw requires an enabled Vulkan geometry shader",
+                        error);
+        }
         const CapturedRasterState& raster = draw.raster;
         if (raster.sample_count != samples || raster.width == 0 || raster.height == 0 ||
             raster.scissor_x1 > raster.width || raster.scissor_y1 > raster.height ||
@@ -806,7 +840,7 @@ bool submit_captured_vulkan_frame(
         DrawResources& draw = resources.draws[i];
         // Recreate just the graphics pipeline with this frame's render pass.
         if (!create_draw_resources(draws[i], memory_properties, device, resources.render_pass,
-                                   &draw, error)) {
+                                   geometry_shader_enabled, &draw, error)) {
             return false;
         }
     }

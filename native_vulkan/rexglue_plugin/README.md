@@ -14,14 +14,19 @@ has no XCB or Wayland dependency; only the ReXGlue presenter attaches that
 image to a host window.
 
 The supported path is deliberately narrow: captured DMA-indexed triangle-list
-draws and AutoIndex point-list `DRAW_INDX_2` draws, including the observed
-vertex shader with no fetch inputs and its scalar destination relative to the
-initial `aL` value. The current control-flow subset rejects loops, so loop-aware
-relative addressing remains unsupported. It translates the captured shader pair
-(including inline `IM_LOAD_IMMEDIATE`), validates required constants, and
-resolves supported vertex and texture resources. Rectangle-list AutoIndex
-draws and unsupported raster/resource forms are rejected. The frame path clears the
-presenter image and renders the collected draws; it does not reconstruct Xenos
+draws, AutoIndex point-list draws, and the captured three-vertex AutoIndex
+rectangle-list form. Rectangle lists use a project-owned Vulkan geometry stage
+to expand each primitive into a two-triangle strip and carry the captured
+location-0 interpolator through the generated vertex. The optional
+`geometryShader` feature is requested from the Vulkan provider without enabling
+GPU emulation; rectangle draws fail closed when the selected device does not
+enable that feature. The path also covers the observed vertex shader with no
+fetch inputs and its scalar destination relative to the initial `aL` value. The
+current control-flow subset rejects loops, so loop-aware relative addressing
+remains unsupported. It translates the captured shader pair (including inline
+`IM_LOAD_IMMEDIATE`), validates required constants, and resolves supported
+vertex and texture resources. Other primitive, shader-interface, raster, and
+resource forms are rejected. The frame path clears the presenter image and renders the collected draws; it does not reconstruct Xenos
 EDRAM contents or read the guest frontbuffer as a finished image. The captured
 black texture border has unknown alpha, so transparent-black is still
 provisional. Target gamma conversion and the complete retail scene are not
@@ -68,21 +73,20 @@ The readback regression also passed with
 confirmed the layer was enabled and the run emitted no validation error or
 VUID diagnostics.
 
-The platform-independent Vulkan core also has a synthetic offscreen AutoIndex
-point-draw smoke with no vertex attributes or vertex buffer.
+The platform-independent Vulkan core also has synthetic offscreen AutoIndex
+point and rectangle-list draw coverage with no vertex attributes or vertex buffer.
 It passed with Vulkan validation on NVIDIA GeForce GTX 950, and on Redmi Note 8
 Pro (Mali-G76 MC4) using Vulkan 1.1. Those smoke shaders are synthetic and
 verify pipeline/resource/layout operations only; they are not retail output
 evidence.
 
-The renderer regression now matches the captured retail point-raster profile:
-one AutoIndex point, 4x MSAA, D24S8 with depth/stencil `ALWAYS`, a Y-flipped
-viewport, full 1280x720 scissor, and blending disabled. The updated check passed
-on GTX 950 with `VK_LAYER_KHRONOS_validation` and on Redmi Note 8 Pro (Android
-API 33, Mali-G76 MC4). A second synthetic run fed both devices the logged
-center-position VS shape and a constant-magenta PS; both produced non-black
-readback. These checks narrow the black live-retail result to data or state at
-the live integration boundary, but do not establish game output or parity.
+The renderer regression matches the captured retail point-raster profile:
+4x MSAA, D24S8 with depth/stencil `ALWAYS`, a Y-flipped viewport, full 1280x720
+scissor, and blending disabled. It checks the point path and, when geometry
+shaders are enabled, synthetic rectangle-list expansion with non-black
+readback. It passed on GTX 950 with `VK_LAYER_KHRONOS_validation` and on Redmi
+Note 8 Pro (Android API 33, Mali-G76 MC4). These shaders verify Vulkan pipeline
+and raster operations; they do not establish live game output or scene parity.
 
 On 2026-10-23, a headless retail Linux run with `--gpu_plugin=shift-native`
 mapped this plugin without mapping `rexgpu-xenos`, initialized the guest ring
@@ -91,11 +95,18 @@ The retail stream contained 100 AutoIndex draws (96 points and four rectangle
 lists), with no DMA-indexed draw observed. A later run with the updated plugin
 translated and resolved 24 point-list draws at each of two swaps, then
 submitted both 1280x720 frames to the Vulkan presenter. The same ring contained
-the 108-byte full/mini-fetch VS; the plugin translated it, but the rectangle
-list that uses it remains unsupported. This is the first confirmed live retail
+the 108-byte full/mini-fetch VS; the plugin translated it, but that run did not
+submit its rectangle-list draws. This is the first confirmed live retail
 Vulkan submission. A capture of the Gamescope Xwayland game window after the
 two submissions was black apart from the cursor, so no retail content was
 visible ([captured window](../../evidence/process2_xbox_live_retail_window_black_20261023.png)).
+
+A subsequent headless run with geometry-shader support enabled initialized the
+Vulkan provider and mapped `shift-native`, but the game process exited during
+guest startup before the PM4 ring reached the plugin. It produced no frame
+readback. The rectangle-list path is therefore verified by the synthetic PM4
+fixture and offscreen renderer checks only; current retail rectangle submission
+and visible game output remain unverified.
 Scene parity, EDRAM accumulation, and Vulkan validation-layer behavior
 for the retail frame remain unverified.
 See

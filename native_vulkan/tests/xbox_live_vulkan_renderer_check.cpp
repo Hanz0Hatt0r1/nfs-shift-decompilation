@@ -82,8 +82,8 @@ bool read_spirv(const char* path, std::vector<uint32_t>* output) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 3) {
-        std::cerr << "usage: xbox_live_vulkan_renderer_check vertex.spv fragment.spv\n";
+    if (argc != 4) {
+        std::cerr << "usage: xbox_live_vulkan_renderer_check vertex.spv fragment.spv geometry.spv\n";
         return 2;
     }
 
@@ -173,10 +173,15 @@ int main(int argc, char** argv) {
     queue_info.queueFamilyIndex = queue_family;
     queue_info.queueCount = 1;
     queue_info.pQueuePriorities = &queue_priority;
+    VkPhysicalDeviceFeatures supported_features{};
+    vkGetPhysicalDeviceFeatures(physical_device, &supported_features);
+    VkPhysicalDeviceFeatures enabled_features{};
+    enabled_features.geometryShader = supported_features.geometryShader;
     VkDeviceCreateInfo device_info{};
     device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     device_info.queueCreateInfoCount = 1;
     device_info.pQueueCreateInfos = &queue_info;
+    device_info.pEnabledFeatures = &enabled_features;
     VkDevice device = VK_NULL_HANDLE;
     result = vkCreateDevice(physical_device, &device_info, nullptr, &device);
     if (result != VK_SUCCESS) {
@@ -243,6 +248,12 @@ int main(int argc, char** argv) {
         std::cerr << "could not read valid Vulkan 1.1 SPIR-V smoke shaders\n";
         return 1;
     }
+    std::vector<uint32_t> rectangle_geometry_spirv;
+    if (enabled_features.geometryShader &&
+        !read_spirv(argv[3], &rectangle_geometry_spirv)) {
+        std::cerr << "could not read valid Vulkan 1.1 rectangle-list geometry SPIR-V\n";
+        return 1;
+    }
     draw.texture_rgba8 = {255, 0, 0, 255};
     draw.vertex_stride_bytes = 0;
     // Mirror the captured retail point path: one AutoIndex point, 4x MSAA,
@@ -281,22 +292,32 @@ int main(int argc, char** argv) {
     draw.texture_sampling.anisotropy = shift::xbox::TextureAnisotropy::Disabled;
     draw.texture_sampling.border_color = shift::xbox::TextureBorderColor::AbgrBlack;
 
+    std::vector<shift::xbox::CapturedVulkanDraw> draws;
+    draws.push_back(draw);
+    if (!rectangle_geometry_spirv.empty()) {
+        auto rectangle = draw;
+        rectangle.topology = shift::xbox::PrimitiveTopology::RectangleList;
+        rectangle.index_count = 3;
+        rectangle.geometry_shader_spirv = rectangle_geometry_spirv;
+        draws.push_back(std::move(rectangle));
+    }
+
     std::string error;
     std::vector<uint32_t> output_readback;
     const bool submitted = shift::xbox::submit_captured_vulkan_frame(
         physical_device, device, queue, queue_family, output_image, output_view, false,
-        64, 64, std::vector<shift::xbox::CapturedVulkanDraw>{std::move(draw)}, &error,
-        &output_readback);
+        64, 64, draws, &error, &output_readback, enabled_features.geometryShader);
     if (!submitted) {
         std::cerr << "captured Vulkan draw submission failed: " << error << '\n';
         return 1;
     }
 
     bool has_color = false;
+    size_t colored_pixels = 0;
     for (const uint32_t pixel : output_readback) {
         if (pixel & 0x3FFFFFFFu) {
             has_color = true;
-            break;
+            ++colored_pixels;
         }
     }
     vkDestroyImageView(device, output_view, nullptr);
@@ -314,6 +335,11 @@ int main(int argc, char** argv) {
         std::cerr << "Vulkan draw submission produced no non-black pixels\n";
         return 1;
     }
+    if (enabled_features.geometryShader && colored_pixels < 100) {
+        std::cerr << "Vulkan rectangle-list draw produced too few colored pixels: "
+                  << colored_pixels << '\n';
+        return 1;
+    }
     if (validation_errors != 0) {
         std::cerr << validation_errors << " Vulkan validation errors\n";
         return 1;
@@ -322,8 +348,9 @@ int main(int argc, char** argv) {
         std::cerr << "Vulkan output readback has the wrong pixel count\n";
         return 1;
     }
-    std::cout << "synthetic offscreen Vulkan 1.1 AutoIndex point draw and output readback "
-              << "passed on "
+    std::cout << "synthetic offscreen Vulkan 1.1 AutoIndex point"
+              << (enabled_features.geometryShader ? " and rectangle-list" : "")
+              << " draw and output readback passed on "
               << device_properties.deviceName
               << (use_validation ? " with validation enabled\n" : "\n");
     return 0;

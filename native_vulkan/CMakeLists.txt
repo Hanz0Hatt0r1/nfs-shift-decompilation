@@ -74,6 +74,15 @@ if(GLSLANG_VALIDATOR)
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/live_draw_smoke.frag
     VERBATIM
   )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/live_draw_rectlist.geom.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/live_draw_rectlist.geom
+            -o ${SHIFT_VULKAN_SHADER_DIR}/live_draw_rectlist.geom.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/live_draw_rectlist.geom
+    VERBATIM
+  )
   add_executable(xbox_live_vulkan_renderer_check tests/xbox_live_vulkan_renderer_check.cpp)
   add_dependencies(xbox_live_vulkan_renderer_check shift_xbox_live_vulkan_renderer)
   target_link_libraries(xbox_live_vulkan_renderer_check PRIVATE shift_xbox_live_vulkan_renderer)
@@ -81,6 +90,7 @@ if(GLSLANG_VALIDATOR)
     DEPENDS
       ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.vert.spv
       ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/live_draw_rectlist.geom.spv
   )
   add_dependencies(xbox_live_vulkan_renderer_check shift_xbox_live_vulkan_renderer_smoke_shaders)
   add_test(
@@ -88,6 +98,7 @@ if(GLSLANG_VALIDATOR)
     COMMAND xbox_live_vulkan_renderer_check
             ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.vert.spv
             ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/live_draw_rectlist.geom.spv
   )
   set_tests_properties(xbox_live_vulkan_renderer_check PROPERTIES SKIP_RETURN_CODE 77)
 
