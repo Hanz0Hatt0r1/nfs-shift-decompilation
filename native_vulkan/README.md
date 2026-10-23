@@ -35,10 +35,11 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   vertex fetch, captured ALU subset, texture fetch/swizzle, and exports. It
   rejects unsupported control flow and operations. The actual captured pair
   compiled to Vulkan 1.1-compatible SPIR-V and passed `spirv-val`.
-  `vfetch_mini` parsing is covered by a synthetic decoder regression. The live
-  retail VS uses a full fetch from constant 0 with format 57 and a seven-dword
-  stride followed by a mini fetch; translation still needs to resolve the
-  mini's inherited address and produce the captured vertex layout.
+  `vfetch_mini` parsing has both a synthetic decoder regression and a live
+  retail observation. The 108-byte VS uses a full fetch from constant 0 with
+  format 57 and a seven-dword stride, followed by a format-38 mini fetch at
+  dword offset 3. Translation still needs to inherit the full fetch's address,
+  constant, and stride and produce the captured vertex layout.
   The packet scanner frames contiguous big-endian type 0/1/2/3 PM4 packets and
   reports type-3 opcodes without applying state or executing commands. The
   project-owned `snapshot_guest_ring_batch` copies a committed dword-indexed

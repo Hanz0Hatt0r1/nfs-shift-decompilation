@@ -67,9 +67,11 @@ and `0x36` samples and draw-state diagnostics. It found 100 AutoIndex draws
 108 bytes and scheduled a full vertex fetch from constant 0 (format 57, stride
 7 dwords) followed by a mini fetch. The live binary at the time rejected the
 mini form and then reported the fixed constant-95 vertex descriptor incomplete.
-The project parser now recognizes the mini encoding, with a synthetic unit
-regression; live inherited-fetch resolution and Vulkan submission remain
-unverified. See
+The project parser now recognizes the mini encoding; a post-update retail run
+confirmed format 38 at dword offset 3, with stride inherited from the full
+fetch. This run still submitted zero Vulkan frames: effective fetch inheritance,
+dynamic descriptor 0 selection, and AutoIndex draw submission remain to be
+implemented. See
 [`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json).
 
 A separate Gamescope headless retry with the current plugin created its

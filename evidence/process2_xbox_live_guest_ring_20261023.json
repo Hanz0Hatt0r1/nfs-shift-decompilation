@@ -163,7 +163,7 @@
     "parser_update": {
       "result": "vfetch_mini is now identified and its encoded fields are decoded",
       "unit_fixture": "synthetic 96-bit instruction",
-      "live_rerun_after_update": false,
+      "live_rerun_after_update": true,
       "limit": "does not prove inherited address resolution, resource fetch, or Vulkan submission"
     },
     "validation_after_parser_update": {
@@ -171,6 +171,42 @@
       "xbox_draw_input_check": "1/1 passed",
       "xbox_shader_translate_check": "1/1 passed"
     }
+  },
+  "post_parser_live_run": {
+    "date": "2026-10-23",
+    "log": "/tmp/process2-live-nfs/headless-20261023/run-mini-parser/logs/nfs_shift.log",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_sha256": "3e047ac03432efbab660b92a2bb6043686cb9f9b591bc016ccd070e12de1d7a6",
+    "runtime_sha256": "d9e090c0b455972f9e70f9f54c1686f72e12938069b827b5d6a1c3f7d39d98ac",
+    "gpu_plugin_selection": "shift-native only; rexgpu-xenos was not requested",
+    "guest_ring_address": "0x09752580",
+    "guest_ring_capacity_bytes": 32768,
+    "pm4_batch_sizes": [73, 153, 808, 9, 194, 591],
+    "draw_indx_2_packets": 100,
+    "draw_indx_2_forms": {
+      "autoindex_point_list_count_1": 96,
+      "autoindex_rectangle_list_count_3": 4
+    },
+    "live_vertex_fetches": [
+      {
+        "kind": "vfetch_full",
+        "fetch_constant_index": 0,
+        "format_id": 57,
+        "stride_dwords": 7,
+        "offset_dwords": 0,
+        "destination_register": 1
+      },
+      {
+        "kind": "vfetch_mini",
+        "format_id": 38,
+        "offset_dwords": 3,
+        "destination_register": 0,
+        "stride": "inherited from preceding vfetch_full"
+      }
+    ],
+    "guest_swaps": 2,
+    "vulkan_frames_submitted": 0,
+    "result": "live parser decoded vfetch_mini fields; no retail draw reached Vulkan submission"
   },
   "remaining_blockers": [
     "All 100 live DRAW_INDX_2 packets are AutoIndex (96 one-point draws and 4 three-index rectangle-list draws); no DMA indexed draw/DrawIndexedPrimitive packet has been verified or submitted.",
