@@ -1,0 +1,86 @@
+{
+  "schema": "shift.xbox360.rexglue.gpu-interrupt-pristine-probe.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "linux_run": {
+    "host": "linux-amd64",
+    "gpu": "NVIDIA GeForce GTX 950",
+    "runtime_sha256": "ff31b096a4a0bbb212e4e145f029239e1093776145070a232267182ce2642b32",
+    "generated_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_sha256": "dbbacc40d993cac1a0b3519ab1ae7392b6fcb26457ebe5d8cb4faf3249dff05b",
+    "arguments": [
+      "--game_data_root=/tmp/nfs_shift_xbox_game_root_20261023",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "guest_memory_mutated_by_probe": false
+  },
+  "runtime_observations": {
+    "source0_callback_breakpoint": {
+      "guest_function": "0x823B37B8",
+      "condition": "PPCContext.r3 == 0",
+      "observed_interval_seconds_approx": 110,
+      "hits": 0,
+      "limitation": "No source-0 dispatch was observed in this run; this does not prove one can never occur in another execution state."
+    },
+    "interrupt_dispatcher": {
+      "observed_calls": 2,
+      "guest_callback": "0x823B37B8",
+      "arguments": [
+        [1, "0xB7365F00"],
+        [1, "0xB7365F00"]
+      ],
+      "caller": "ShiftNativeGraphicsSystem::RingWorkerLoop",
+      "observation_window_seconds_approx": 20
+    },
+    "source1_guest_callback": {
+      "guest_callback": "0x823B37B8",
+      "object": "0xB7365F00",
+      "predicate_byte_address": "0xB73689BD",
+      "predicate_byte_at_entry": "0x14",
+      "predicate_tested_mask": "0x02",
+      "predicate_tested_bit_set": false,
+      "object_plus_13432_address": "0xB7369378",
+      "object_plus_13432_raw_host_word_at_entry": "0x00000000",
+      "hardware_watchpoints": [
+        "guest predicate byte at object+0x2ABD",
+        "guest object+13432"
+      ],
+      "watchpoint_changes_after_entry": 0,
+      "observation_seconds_after_entry_approx": 90
+    }
+  },
+  "retail_callback_semantics": {
+    "function": "0x823B37B8",
+    "source1_branch": "Optionally calls the callback at the structure referenced by object+10900 (function pointer at +16, data at +20), then performs the associated spinlock/bit cleanup. It has no direct call to 0x823A4640.",
+    "source0_branch": "Checks GPU MMIO register 0x7FC86544 bit 0 and calls 0x823A4640 when the bit is set.",
+    "source_file": "/home/pes/work/nfsshift-rex/generated/default/nfs_shift_recomp.142.cpp",
+    "xex_identity": "The generated source belongs to the locked retail XEX identity above."
+  },
+  "current_process2_source_review": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "reviewed_commit": "c7806352f1d04690319f7f907f634b27d664b3cc",
+    "file": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+    "observed_behavior": "SetInterruptCallback stores the callback. The sole ExecuteInterrupt call dispatches PM4_INTERRUPT with args {1u, callback_data}; no source-0/vblank dispatch was found in this plugin source.",
+    "reference": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/c7806352f1d04690319f7f907f634b27d664b3cc/native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp"
+  },
+  "rexglue_default_vblank_reference": {
+    "source": "/home/pes/work/rexglue-sdk-rexui-vulkan-20261023/src/graphics/graphics_system.cpp",
+    "behavior": "GraphicsSystem::MarkVblank calls DispatchInterruptCallback(0, 2). The custom shift-native plugin path reviewed above does not call this method."
+  },
+  "interpretation": {
+    "supported": "This Linux run delivered PM4 source-1 callbacks to the exact retail callback, while the completion predicate byte and object+13432 remained unchanged during the observed interval. Source 0 was not observed. The latest Process 2 plugin source reviewed here contains PM4 source-1 routing but no source-0/vblank dispatch.",
+    "candidate_blocker": "Missing source-0/vblank delivery is a concrete Process 2 integration gap to investigate. Process 1 did not alter guest state or renderer code.",
+    "not_proven": "This does not prove source-0/vblank absence is the cause of the software-queue wait, nor that implementing it alone will reach the frontend or a race. The tested plugin binary is identified by hash, but its build commit is not independently bound to the latest Process 2 source commit. No visible retail frame or playable state is claimed."
+  },
+  "temporary_gdb_logs": {
+    "source0_callback_probe_sha256": "5130bfee34d4e66515bb9bf2b36f4cdca6fe059583e4147eec360fbbfbb12587",
+    "interrupt_dispatch_probe_sha256": "31df7edcdba1aeb7dfb311509bb8aa46c8b1b2b9d9dfecf855f4acd4f178954e",
+    "source1_watchpoint_probe_sha256": "19802811b6a7330410c4c318a580b51556d248beacb31a8774ac753d7a548101"
+  }
+}
