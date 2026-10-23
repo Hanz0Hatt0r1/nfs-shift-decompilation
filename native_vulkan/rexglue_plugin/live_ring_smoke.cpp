@@ -9,6 +9,7 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <memory>
@@ -137,12 +138,13 @@ std::vector<uint8_t> make_pm4_stream() {
   for (const auto& [index, value] : raster_registers)
     append_type0(&stream, index, value);
 
-  // Captured shader constant controls, the b128 value and the texture/vertex
-  // fetch descriptors. Constants are zero-filled test inputs, not retail bytes.
+  // Captured shader controls and fetch descriptors. The synthetic VS multiplies
+  // positions by c0, so use ones instead of collapsing the test geometry to 0.
   append_type0(&stream, 0x2307u, 0x000FF000u);
   append_type0(&stream, 0x2308u, 0x000FF100u);
   append_type0(&stream, 0x4904u, 0x00000001u);
-  append_type0(&stream, 0x4000u, {0u, 0u, 0u, 0u});
+  append_type0(&stream, 0x4000u,
+               {0x3F800000u, 0x3F800000u, 0x3F800000u, 0x3F800000u});
   append_type0(&stream, 0x4800u,
                {0x8800D8FEu, 0x09D57086u, 0x001FE3FFu, 0x01280C14u, 0x00000003u,
                 0x00000A10u});
@@ -320,6 +322,15 @@ int main(int argc, char** argv) {
   rex::RemoveSink(log_sink);
   dlclose(library);
   const std::string diagnostics = log_output.str();
+  const char* debug_fragment_color =
+      std::getenv("SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR");
+  if (debug_fragment_color &&
+      std::string(debug_fragment_color) == "magenta" &&
+      diagnostics.find("diagnostic fragment override is active") ==
+          std::string::npos) {
+    std::cerr << diagnostics << '\n';
+    return fail("debug fragment override was not activated");
+  }
   if (!consumed) {
     std::cerr << diagnostics << '\n';
     return fail("PM4 stream was not consumed through live MMIO");

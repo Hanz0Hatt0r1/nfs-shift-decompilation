@@ -48,6 +48,18 @@ constexpr uint32_t kGpuMmioSize = 0x0000FFFFu;
 constexpr uint32_t kRingWritePointerRegister = 0x01C5u;
 constexpr uint32_t kRingReadPointerRegister = 0x01C4u;
 constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
+const std::string kDebugFragmentColorShader =
+    "#version 450\n"
+    "layout(location=0) out vec4 shift_color0;\n"
+    "void main() { shift_color0 = vec4(1.0, 0.0, 1.0, 1.0); }\n";
+
+bool DebugFragmentColorEnabled() {
+  static const bool enabled = [] {
+    const char* value = std::getenv("SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR");
+    return value && std::string(value) == "magenta";
+  }();
+  return enabled;
+}
 
 uint32_t ReadGuestDword(const uint8_t* bytes) {
   return (static_cast<uint32_t>(bytes[0]) << 24) |
@@ -163,6 +175,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       provider_ = rex::ui::vulkan::VulkanProvider::Create(false, false);
     }
     if (!provider_) return X_STATUS_UNSUCCESSFUL;
+
+    if (DebugFragmentColorEnabled()) {
+      REXLOG_WARN("shift-native: diagnostic fragment override is active; "
+                  "submitted draws will be magenta");
+    }
 
     if (!memory_->AddVirtualMappedRange(kGpuMmioBase, kGpuMmioMask, kGpuMmioSize, this,
                                         ReadRegisterThunk, WriteRegisterThunk)) {
@@ -425,6 +442,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     *inputs_ready = true;
     *shaders_translated = true;
 
+    const std::string& pixel_shader_source = DebugFragmentColorEnabled()
+                                                 ? kDebugFragmentColorShader
+                                                 : pixel_translation.glsl;
     shift::xbox::CapturedVulkanDraw prepared{};
     prepared.raster = raster_state;
     prepared.constants = constants;
@@ -438,7 +458,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (!CompileCapturedShader(shift::xbox::CapturedShaderStage::Vertex,
                                vertex_translation.glsl, &prepared.vertex_shader_spirv, error) ||
         !CompileCapturedShader(shift::xbox::CapturedShaderStage::Pixel,
-                               pixel_translation.glsl, &prepared.pixel_shader_spirv, error)) {
+                               pixel_shader_source, &prepared.pixel_shader_spirv, error)) {
       return false;
     }
 

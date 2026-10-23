@@ -107,6 +107,16 @@ presenter image itself is black after the current draw submission; it does not
 identify whether the remaining cause is vertex positioning, shader output, or
 missing EDRAM/frontbuffer behavior.
 
+For that diagnosis, setting
+`SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR=magenta` replaces the translated
+pixel shader with a constant magenta output while preserving the captured
+vertex shader, input buffers, raster state, and draw submission. Use it with
+the readback path above: a colored result points to pixel-shader/resource
+translation; a black result points to the vertex/geometry, raster-state, or
+target-output path. The plugin smoke asserts that this opt-in mode was
+activated; neither the mode nor its synthetic fixture is retail image
+evidence.
+
 An earlier Gamescope headless retry used info-level logging and recorded no
 draw submission; the later debug run above supersedes that result.
 
