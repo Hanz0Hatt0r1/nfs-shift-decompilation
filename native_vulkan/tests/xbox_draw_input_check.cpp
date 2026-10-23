@@ -151,21 +151,41 @@ int main() {
                 fetch.vertex_stride == 5 && fetch.vertex_offset == -2 &&
                 fetch.source_relative && fetch.destination_relative,
             "vfetch_full fields changed");
+    const shift::xbox::CapturedShaderFetchInstruction full_fetch = fetch;
     uint8_t vertex_shader_mini_fetch_bytes[12];
-    write_be32(vertex_shader_mini_fetch_bytes, 0x82343840u);
+    write_be32(vertex_shader_mini_fetch_bytes, 0x42604060u);
     write_be32(vertex_shader_mini_fetch_bytes + 4, 0x40070123u);
-    write_be32(vertex_shader_mini_fetch_bytes + 8, 0x7FFFFF05u);
+    write_be32(vertex_shader_mini_fetch_bytes + 8, 0x7FFFFF00u);
     require(shift::xbox::decode_captured_shader_fetch_instruction(
                 vertex_shader_mini_fetch_bytes,
                 sizeof(vertex_shader_mini_fetch_bytes), &fetch, &error),
             "captured vfetch_mini instruction was rejected");
     require(fetch.kind == shift::xbox::CapturedShaderFetchKind::VertexMini &&
-                fetch.fetch_constant_index == 10 && fetch.source_register == 2 &&
-                fetch.destination_register == 3 && fetch.source_swizzle == 2 &&
+                fetch.fetch_constant_index == 19 && fetch.source_register == 3 &&
+                fetch.destination_register == 4 && fetch.source_swizzle == 1 &&
                 fetch.destination_swizzle == 0x123 && fetch.vertex_format == 7 &&
-                fetch.vertex_stride == 5 && fetch.vertex_offset == -1 &&
-                fetch.source_relative && fetch.destination_relative,
+                fetch.vertex_stride == 0 && fetch.vertex_offset == -1 &&
+                !fetch.source_relative && !fetch.destination_relative,
             "vfetch_mini fields changed");
+    shift::xbox::CapturedShaderFetchInstruction effective_mini_fetch{};
+    require(shift::xbox::inherit_captured_vertex_fetch_fields(
+                fetch, &full_fetch, &effective_mini_fetch, &error) &&
+                effective_mini_fetch.kind ==
+                    shift::xbox::CapturedShaderFetchKind::VertexMini &&
+                effective_mini_fetch.fetch_constant_index == 10 &&
+                effective_mini_fetch.source_register == 2 &&
+                effective_mini_fetch.source_swizzle == 2 &&
+                effective_mini_fetch.vertex_stride == 5 &&
+                effective_mini_fetch.vertex_format == 7 &&
+                effective_mini_fetch.vertex_offset == -1 &&
+                effective_mini_fetch.destination_register == 4 &&
+                effective_mini_fetch.source_relative &&
+                !effective_mini_fetch.destination_relative,
+            "vfetch_mini did not inherit the full-fetch addressing fields");
+    require(!shift::xbox::inherit_captured_vertex_fetch_fields(
+                fetch, nullptr, &effective_mini_fetch, &error) &&
+                error == "captured mini vertex fetch has no preceding full fetch",
+            "mini vertex fetch without a full fetch was accepted");
     require(shift::xbox::decode_captured_shader_fetch_instruction(
                 texture_shader_fetch_bytes, sizeof(texture_shader_fetch_bytes), &fetch, &error),
             "captured tfetch2D instruction was rejected");

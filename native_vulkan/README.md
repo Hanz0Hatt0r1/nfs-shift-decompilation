@@ -40,6 +40,9 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   format 57 and a seven-dword stride, followed by a format-38 mini fetch at
   dword offset 3. Translation still needs to inherit the full fetch's address,
   constant, and stride and produce the captured vertex layout.
+  A tested parser helper now applies those inherited fields while retaining the
+  mini's own format, destination, and offset; the live translator/resource path
+  does not consume that helper yet.
   The packet scanner frames contiguous big-endian type 0/1/2/3 PM4 packets and
   reports type-3 opcodes without applying state or executing commands. The
   project-owned `snapshot_guest_ring_batch` copies a committed dword-indexed

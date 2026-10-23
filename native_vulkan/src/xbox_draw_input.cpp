@@ -535,6 +535,35 @@ bool decode_captured_shader_fetch_instruction(
     return true;
 }
 
+bool inherit_captured_vertex_fetch_fields(
+    const CapturedShaderFetchInstruction& instruction,
+    const CapturedShaderFetchInstruction* preceding_full_fetch,
+    CapturedShaderFetchInstruction* output,
+    std::string* error) {
+    if (!output) {
+        return fail("invalid captured vertex-fetch inheritance output", error);
+    }
+    if (instruction.kind == CapturedShaderFetchKind::VertexFull) {
+        *output = instruction;
+    } else if (instruction.kind == CapturedShaderFetchKind::VertexMini) {
+        if (!preceding_full_fetch ||
+            preceding_full_fetch->kind != CapturedShaderFetchKind::VertexFull) {
+            return fail("captured mini vertex fetch has no preceding full fetch", error);
+        }
+        CapturedShaderFetchInstruction resolved = instruction;
+        resolved.source_register = preceding_full_fetch->source_register;
+        resolved.source_relative = preceding_full_fetch->source_relative;
+        resolved.source_swizzle = preceding_full_fetch->source_swizzle;
+        resolved.fetch_constant_index = preceding_full_fetch->fetch_constant_index;
+        resolved.vertex_stride = preceding_full_fetch->vertex_stride;
+        *output = resolved;
+    } else {
+        return fail("captured shader fetch is not a vertex fetch", error);
+    }
+    if (error) error->clear();
+    return true;
+}
+
 bool decode_captured_shader_alu_instruction(
     const uint8_t* instruction_bytes,
     size_t byte_length,

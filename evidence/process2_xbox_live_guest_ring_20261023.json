@@ -170,6 +170,33 @@
       "plugin_live_ring_ctest": "1/1 passed",
       "xbox_draw_input_check": "1/1 passed",
       "xbox_shader_translate_check": "1/1 passed"
+    },
+    "fetch_inheritance_regression": {
+      "preceding_full_fetch": {
+        "fetch_constant_index": 10,
+        "source_register": 2,
+        "source_swizzle": 2,
+        "stride_dwords": 5
+      },
+      "raw_mini_instruction": {
+        "fetch_constant_index": 19,
+        "source_register": 3,
+        "source_swizzle": 1,
+        "stride_dwords": 0,
+        "format_id": 7,
+        "offset_dwords": -1,
+        "destination_register": 4
+      },
+      "resolved_mini_fetch": {
+        "fetch_constant_index": 10,
+        "source_register": 2,
+        "source_swizzle": 2,
+        "stride_dwords": 5,
+        "format_id": 7,
+        "offset_dwords": -1,
+        "destination_register": 4
+      },
+      "result": "synthetic inheritance helper regression passed; helper is not yet wired into live translation"
     }
   },
   "post_parser_live_run": {

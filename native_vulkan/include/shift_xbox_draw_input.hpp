@@ -452,6 +452,16 @@ bool decode_captured_shader_fetch_instruction(
     CapturedShaderFetchInstruction* output,
     std::string* error);
 
+// Applies the vfetch_full address, source register/swizzle, fetch constant,
+// and stride to a following vfetch_mini. The mini's format and offset remain
+// its own. A full fetch resolves to itself; a mini without a preceding full
+// fetch is rejected.
+bool inherit_captured_vertex_fetch_fields(
+    const CapturedShaderFetchInstruction& instruction,
+    const CapturedShaderFetchInstruction* preceding_full_fetch,
+    CapturedShaderFetchInstruction* output,
+    std::string* error);
+
 // Decodes the raw ALU fields from one 96-bit instruction. Opcode semantics and
 // shader execution are intentionally outside this parser.
 bool decode_captured_shader_alu_instruction(
