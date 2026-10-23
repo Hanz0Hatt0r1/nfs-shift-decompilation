@@ -28,12 +28,14 @@ if(NOT TARGET rexruntime)
 elseif(TARGET rexui-vulkan)
   set(SHIFT_REXGLUE_VULKAN_PROVIDER_TARGET rexui-vulkan)
 elseif(TARGET rexui AND ANDROID)
-  # ReXGlue 0.10.0 keeps the Vulkan provider in rexruntime. Its older factory
-  # cannot request geometryShader independently, so the plugin fails closed on
-  # rectangle-list draws while keeping the native point-draw path available.
-  set(SHIFT_REXGLUE_LEGACY_VULKAN_PROVIDER ON)
+  # ReXGlue 0.10.0 keeps the Vulkan provider in rexruntime.
 else()
   message(FATAL_ERROR "ReXGlue checkout must define rexui-vulkan")
+endif()
+file(READ "${SHIFT_REXGLUE_SDK_ROOT}/include/rex/ui/vulkan/provider.h"
+     SHIFT_REXGLUE_VULKAN_PROVIDER_HEADER)
+if(SHIFT_REXGLUE_VULKAN_PROVIDER_HEADER MATCHES "bool with_geometry_shader")
+  set(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER ON)
 endif()
 find_package(Vulkan REQUIRED)
 get_target_property(SHIFT_REXGLUE_OUTPUT_DIRECTORY rexruntime LIBRARY_OUTPUT_DIRECTORY)
@@ -79,9 +81,9 @@ target_link_libraries(rexgpu-shift-native PRIVATE
   OSDependent
   OGLCompiler
 )
-if(SHIFT_REXGLUE_LEGACY_VULKAN_PROVIDER)
+if(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
   target_compile_definitions(rexgpu-shift-native PRIVATE
-    SHIFT_REXGLUE_LEGACY_VULKAN_PROVIDER=1
+    SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER=1
   )
 endif()
 set_target_properties(rexgpu-shift-native PROPERTIES

@@ -91,18 +91,24 @@ rexglue_setup_target(main GPU_PLUGINS shift-native)
 ```
 
 Pass `SHIFT_NATIVE_PLUGIN_DIR` from the Android Gradle CMake arguments. The
-existing ReXGlue 0.10.0 Android build has a monolithic `rexui` target, so the
-plugin uses its exported Vulkan provider through `rexruntime`; with that older
-provider API it does not request geometryShader and rejects rectangle-list
-draws, while point-list draws remain available. With the split `rexui-vulkan`
-target, the plugin requests geometryShader independently and can submit the
-captured rectangle-list form when the device supports it. Debug builds stage
+ReXGlue 0.10.0 Android build has a monolithic `rexui` target, so the plugin uses
+its exported Vulkan provider through `rexruntime`. When the SDK header exposes
+the optional `with_geometry_shader` factory overload, CMake detects it and
+enables that Vulkan feature without GPU emulation; otherwise rectangle draws
+fail closed and point draws remain available. The split `rexui-vulkan` target
+follows the same feature contract. Debug builds stage
 `librexgpu-shift-natived.so`, matching the host plugin loader's debug suffix.
 
-The host app must select the `shift-native` plugin through its existing
-`gpu_plugin` setting. An Android activity argument alone is insufficient if
-the app's `OnPreSetup` hook overwrites that setting. This integration does not
-change the app-owned startup hook.
+Some Android hosts hardcode the loader ID `xenos` in `OnPreSetup`. For those
+hosts, set `SHIFT_NATIVE_ANDROID_XENOS_LOADER_ALIAS=ON`, exclude the SDK's
+`rexgpu-xenos` target from the Android build, and stage a copy of
+`$<TARGET_FILE:rexgpu-shift-native>` as `$<TARGET_FILE:rexgpu-xenos>` next to
+the app library. Do not filter that alias out during Gradle JNI packaging. The
+alias file contains the Process 2 Vulkan plugin and exports the same ReXGlue
+GPU ABI; it does not contain or call the Xenos renderer. Keep the ordinary
+`librexgpu-shift-native.so` as well so hosts that honor the explicit setting
+can load it directly. Remove the alias once the app preserves a configured
+`gpu_plugin` value and selects `shift-native` explicitly.
 
 The renderer regression matches the captured retail point-raster profile:
 4x MSAA, D24S8 with depth/stencil `ALWAYS`, a Y-flipped viewport, full 1280x720
@@ -125,6 +131,28 @@ contract does not accept. This is fail-closed behavior, not a guessed state
 mapping. See
 [`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json).
 
+On 2026-10-23, the complete Android NFS Shift debug APK was built with
+`SHIFT_NATIVE_PLUGIN_DIR` pointing at this plugin and installed on a Redmi Note
+8 Pro (Android 13/API 33, Mali-G76 MC4, Vulkan 1.1.131). The Android host's
+startup hook selects the loader ID `xenos`, so Gradle stages the Process 2
+plugin bytes under both `librexgpu-shift-natived.so` and the loader alias
+`librexgpu-xenosd.so`; the two APK entries are identical and contain the Vulkan
+plugin, not the Xenos GPU emulator. Runtime logs confirm the emulator-free
+Vulkan frontend loaded and consumed the guest PM4 ring. The first build batched
+25 draws on the first swap, then rejected a later frame because the batch mixed
+1x and 4x-MSAA targets. The captured point draws had a zero color mask and
+disabled depth/stencil writes. Process 2 now identifies and elides their
+framebuffer effects; the rebuilt APK submits one framebuffer-writing retail
+rectangle at each guest swap without the target mismatch. The mode-6 EDRAM
+Copy/Convert rectangle is still rejected, and an active linear color target
+still fails closed until its Vulkan format mapping is implemented. The
+captured retail pixel shader/readback remains fully black
+(FNV-1a `B161DE6EEC272325`); the [device screenshot](../../evidence/process2_redmi_note8pro_native_vulkan_black_frame_20261023.png)
+shows the current app output. The game package and renderer are integrated on
+Android, but visible retail output and scene parity are not verified. The
+`xenos` loader alias can be removed when the host preserves an explicit
+`gpu_plugin=shift-native` setting.
+
 The optional `SHIFT_NATIVE_VULKAN_READBACK_PATH` captures the first successful
 presenter image as `VK_FORMAT_A2B10G10R10_UNORM_PACK32`. With the opt-in
 `SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR=magenta` override, the live retail
@@ -144,7 +172,7 @@ That is consistent with the black early-startup image, but does not prove later
 gameplay output or explain every skipped draw. The current retail window also
 remained black apart from the host cursor. These runs confirm live Vulkan draw
 submission and rectangle expansion; they do not demonstrate visible retail
-content, Android game integration, or scene parity. Xenos EDRAM accumulation,
+content or scene parity. Xenos EDRAM accumulation,
 frontbuffer resolution, other raster/resource states, and Vulkan validation
 for a live retail frame remain unverified.
 
@@ -156,14 +184,8 @@ ordering is preserved in the logs rather than hidden by synthesized defaults.
 The earlier one-draw capture bundle remains separate evidence for the project
 renderer, not proof of a complete scene.
 
-On Android NDK r28.2 / API 33, `rexui-vulkan` and the Android surface/window
-sources compile for arm64. Building the full plugin then stops in ReXGlue's
-POSIX fiber backend because Android Bionic does not provide
-`getcontext`/`makecontext`/`swapcontext`. That scheduler code belongs to
-Process 1. The repository also builds a minimal Android NativeActivity surface
-probe, but it does not integrate the game or ReXGlue runtime and has no game
-manifest/APK target. The Redmi Note 8 Pro checks cover the offscreen Vulkan
-renderer and parser only, not a full game build. The Android arm64 CI builds
+The repository also builds a minimal Android NativeActivity surface probe,
+separate from the complete Android app integration above. The Android arm64 CI builds
 the project Vulkan renderer smoke and publishes its executable plus Vulkan 1.1
 SPIR-V inputs. The earlier artifact from
 [CI run 39938067570](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/actions/runs/39938067570)
@@ -183,18 +205,17 @@ r28.2 with `ANDROID_ABI=arm64-v8a` and `ANDROID_PLATFORM=android-29`. On
 `xbox_live_vulkan_renderer_check` all exited successfully on the connected
 Redmi Note 8 Pro (Android API 33, Mali-G76 MC4). The renderer check submitted
 its synthetic Vulkan 1.1 AutoIndex point draw and verified output readback.
-This current-source device run covers the ARM64 parser, translator, and
-project renderer core; it did not load the ReXGlue plugin or run the retail
-guest ring. The full Android game build remains blocked by the runtime fiber
-backend and missing game Activity/APK integration described above.
+This earlier current-source device run covered the ARM64 parser, translator,
+and project renderer core before the complete Android app integration; it did
+not load the ReXGlue plugin or run the retail guest ring.
 
 Using the same NDK/API29 configuration, the current
 `shift_native_gpu_plugin.cpp` translation unit also compiled by itself for
 `aarch64-none-linux-android29` (exit 0). This isolates the renderer-owned
 plugin source from the full SDK link. Clang emitted one non-fatal warning in
 the SDK header `rex/platform/fpscr.h` about the ARM64 `fpcr` inline-assembly
-operand width. This was a translation-unit compile only: it did not link the
-ReXGlue runtime or run a game.
+operand width. This was a translation-unit compile only; the later Gradle build
+above links and runs the plugin in the complete Android app.
 
 The guest-ring path now decodes the captured `PM4_INTERRUPT` CPU mask and
 dispatches the registered GPU callback through a ReXGlue `XHostThread`, so the
@@ -203,8 +224,8 @@ ring batch is consumed and its read pointer is published; exact ordering at
 each interrupt packet inside a batch is not verified. The decoder regression
 and Android API 33 guest-ring smoke passed on Redmi Note 8 Pro (Mali-G76 MC4),
 and the Linux plugin suite passed 3/3 with the readback regression also passing
-under Vulkan validation. These are parser/plugin checks, not a full Android
-game test.
+under Vulkan validation. Those earlier checks preceded the complete Android
+game integration; a fresh host CTest run after that integration passed 4/4.
 The current-source Linux rerun described above also consumed the captured
 interrupts and dispatched callbacks. See the
 `gpu_interrupt_routing_update` and `post_scalar_destination_live_rerun` entries

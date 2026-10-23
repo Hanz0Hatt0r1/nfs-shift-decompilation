@@ -997,6 +997,26 @@ void GuestRasterRegisterState::apply(const GuestRegisterWrite& write) noexcept {
         registers_.stencil_refmask = write.value;
         return;
     }
+    switch (write.register_index) {
+        case 0x2318u:
+            registers_.copy_control = write.value;
+            registers_.copy_valid_mask |= 1u;
+            return;
+        case 0x2319u:
+            registers_.copy_dest_base = write.value;
+            registers_.copy_valid_mask |= 2u;
+            return;
+        case 0x231Au:
+            registers_.copy_dest_pitch = write.value;
+            registers_.copy_valid_mask |= 4u;
+            return;
+        case 0x231Bu:
+            registers_.copy_dest_info = write.value;
+            registers_.copy_valid_mask |= 8u;
+            return;
+        default:
+            break;
+    }
     uint32_t bit = 0;
     uint32_t* destination = nullptr;
     switch (write.register_index) {
@@ -1202,7 +1222,7 @@ bool decode_captured_raster_state(
     const uint32_t color_format = (registers.color_info >> 16) & 0xFu;
     const uint32_t depth_format = (registers.depth_info >> 16) & 0x1u;
     if (registers.mode_control != 4 || msaa_samples > 2 ||
-        color_format != 1 || depth_format != 0 ||
+        color_format > 1 || depth_format != 0 ||
         (registers.color_info & ~0x000F0FFFu) != 0 ||
         (registers.depth_info & ~0x00010FFFu) != 0 ||
         (registers.color_mask & ~0xFFFFu) != 0 || registers.window_offset != 0 ||
@@ -1254,7 +1274,8 @@ bool decode_captured_raster_state(
         surface_pitch,
         msaa_samples == 0 ? 1u : msaa_samples == 1 ? 2u : 4u,
         registers.color_info & 0xFFFu,
-        CapturedColorTargetFormat::Rgba8Gamma,
+        color_format == 0 ? CapturedColorTargetFormat::Rgba8Linear
+                          : CapturedColorTargetFormat::Rgba8Gamma,
         registers.depth_info & 0xFFFu,
         CapturedDepthTargetFormat::D24S8,
         registers.color_mask & 0xFu,
@@ -1275,6 +1296,13 @@ bool decode_captured_raster_state(
         error->clear();
     }
     return true;
+}
+
+bool captured_draw_has_no_framebuffer_effects(
+    const CapturedRasterState& raster) noexcept {
+    return !raster.scissor_has_area ||
+           (raster.color_write_mask == 0 && !raster.depth_test_enabled &&
+            !raster.depth_write_enabled && !raster.stencil_test_enabled);
 }
 
 bool decode_captured_shader_constants(

@@ -692,11 +692,33 @@ int main() {
                 live_raster_state.blend_control_0 == 0x00010001u,
             "live 4x-MSAA raster contract was rejected");
 
+    auto no_effect_raster = live_raster_state;
+    no_effect_raster.color_write_mask = 0;
+    no_effect_raster.depth_test_enabled = false;
+    no_effect_raster.depth_write_enabled = false;
+    no_effect_raster.stencil_test_enabled = false;
+    require(shift::xbox::captured_draw_has_no_framebuffer_effects(no_effect_raster),
+            "zero-write captured raster state was not identified as a no-op");
+    no_effect_raster.depth_write_enabled = true;
+    require(!shift::xbox::captured_draw_has_no_framebuffer_effects(no_effect_raster),
+            "depth-writing captured draw was incorrectly identified as a no-op");
+
+    live_raster_registers.color_info = 0x00000000u;
+    require(shift::xbox::decode_captured_raster_state(
+                live_raster_registers, &live_raster_state, &error) &&
+                live_raster_state.color_format ==
+                    shift::xbox::CapturedColorTargetFormat::Rgba8Linear,
+            "captured linear RGBA8 Xenos color target was rejected");
+    live_raster_registers.color_info = 0x00020000u;
+    require(!shift::xbox::decode_captured_raster_state(
+                live_raster_registers, &live_raster_state, &error),
+            "unsupported Xenos color target format was accepted");
+
     shift::xbox::GuestRasterRegisterState raster_register_state;
     shift::xbox::CapturedRasterRegisters tracked_raster_registers{};
     require(!raster_register_state.snapshot(&tracked_raster_registers, &error),
             "incomplete raster register state was accepted");
-    const std::array<shift::xbox::GuestRegisterWrite, 16> raster_writes{{
+    const std::array<shift::xbox::GuestRegisterWrite, 20> raster_writes{{
         {0x2000, captured_raster_registers.surface_info},
         {0x2001, captured_raster_registers.color_info},
         {0x2002, captured_raster_registers.depth_info},
@@ -713,11 +735,21 @@ int main() {
         {0x2081, captured_raster_registers.window_scissor_tl},
         {0x2082, captured_raster_registers.window_scissor_br},
         {0x2201, captured_raster_registers.blend_control_0},
+        {0x2318, 0x00100004u},
+        {0x2319, 0x0975E000u},
+        {0x231A, 0x02D00500u},
+        {0x231B, 0x00000306u},
     }};
     for (const auto& write : raster_writes) raster_register_state.apply(write);
     raster_register_state.apply({0x3000, 0xFFFFFFFFu});
     require(raster_register_state.snapshot(&tracked_raster_registers, &error),
             "captured PM4 raster register writes did not produce complete state");
+    require(tracked_raster_registers.copy_valid_mask == 0xFu &&
+                tracked_raster_registers.copy_control == 0x00100004u &&
+                tracked_raster_registers.copy_dest_base == 0x0975E000u &&
+                tracked_raster_registers.copy_dest_pitch == 0x02D00500u &&
+                tracked_raster_registers.copy_dest_info == 0x00000306u,
+            "captured Xenos EDRAM copy registers changed");
     shift::xbox::CapturedRasterState tracked_raster_state{};
     require(shift::xbox::decode_captured_raster_state(
                 tracked_raster_registers, &tracked_raster_state, &error) &&

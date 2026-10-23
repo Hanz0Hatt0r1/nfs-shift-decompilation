@@ -289,6 +289,7 @@ struct CapturedTextureSampling {
 };
 
 enum class CapturedColorTargetFormat : uint8_t {
+    Rgba8Linear,
     Rgba8Gamma,
 };
 
@@ -314,6 +315,11 @@ struct CapturedRasterRegisters {
     uint32_t window_scissor_br;
     uint32_t blend_control_0;
     uint32_t stencil_refmask = 0;
+    uint32_t copy_control = 0;
+    uint32_t copy_dest_base = 0;
+    uint32_t copy_dest_pitch = 0;
+    uint32_t copy_dest_info = 0;
+    uint32_t copy_valid_mask = 0;
 };
 
 // Retains only the raster registers used by the captured Xbox draw contract.
@@ -351,6 +357,10 @@ struct CapturedRasterState {
     uint32_t depth_control = 0;
     uint32_t stencil_refmask = 0;
 };
+
+// Checks only framebuffer effects represented by the captured raster state.
+bool captured_draw_has_no_framebuffer_effects(
+    const CapturedRasterState& raster) noexcept;
 
 struct CapturedShaderConstants {
     std::array<std::array<uint32_t, 4>, 256> vertex_float_constants;

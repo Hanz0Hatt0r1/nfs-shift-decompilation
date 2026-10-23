@@ -160,10 +160,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (presenter_) return X_STATUS_SUCCESS;
     if (!provider_) {
       // Native project renderer: do not enable ReXGlue's Xenos GPU features.
-#if defined(SHIFT_REXGLUE_LEGACY_VULKAN_PROVIDER)
-      provider_ = rex::ui::vulkan::VulkanProvider::Create(false, true);
-#else
+#if defined(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
       provider_ = rex::ui::vulkan::VulkanProvider::Create(false, true, true);
+#else
+      provider_ = rex::ui::vulkan::VulkanProvider::Create(false, true);
 #endif
     }
     if (!provider_) {
@@ -349,6 +349,12 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (!prepared_draw || !inputs_ready || !shaders_translated) return false;
     *inputs_ready = false;
     *shaders_translated = false;
+
+    if (raster_state.color_format !=
+        shift::xbox::CapturedColorTargetFormat::Rgba8Gamma) {
+      if (error) *error = "unsupported captured Vulkan color-target format";
+      return false;
+    }
 
     shift::xbox::CapturedShaderConstants constants{};
     std::array<uint32_t, 2> vertex_descriptor{};
@@ -716,6 +722,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
         uint32_t decoded_draws = 0;
         uint32_t draws_with_raster_state = 0;
+        uint32_t draws_elided_as_noops = 0;
         uint32_t draws_with_both_shader_programs = 0;
         uint32_t draws_with_captured_shader_inputs = 0;
         uint32_t draws_with_project_shader_translation = 0;
@@ -1049,6 +1056,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                         raster_registers, &raster_state, &error);
                 if (raster_state_ready) {
                   ++draws_with_raster_state;
+                  if (shift::xbox::captured_draw_has_no_framebuffer_effects(
+                          raster_state)) {
+                    ++draws_elided_as_noops;
+                    continue;
+                  }
                 }
                 if (!vertex_shader_program.empty() && !pixel_shader_program.empty()) {
                   ++draws_with_both_shader_programs;
@@ -1088,7 +1100,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                         "shift-native: rejected rectangle raster snapshot={} "
                         "decoded={} error={} surface={:08x} color={:08x} "
                         "depth={:08x} mode={:08x} mask={:08x} screen=[{:08x},{:08x}] "
-                        "window=[{:08x},{:08x}] blend={:08x}",
+                        "window=[{:08x},{:08x}] blend={:08x} copy=[{:08x},{:08x},"
+                        "{:08x},{:08x}] valid={:x}",
                         raster_registers_ready, raster_state_ready, error,
                         raster_registers.surface_info, raster_registers.color_info,
                         raster_registers.depth_info, raster_registers.mode_control,
@@ -1096,7 +1109,12 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                         raster_registers.screen_scissor_br,
                         raster_registers.window_scissor_tl,
                         raster_registers.window_scissor_br,
-                        raster_registers.blend_control_0);
+                        raster_registers.blend_control_0,
+                        raster_registers.copy_control,
+                        raster_registers.copy_dest_base,
+                        raster_registers.copy_dest_pitch,
+                        raster_registers.copy_dest_info,
+                        raster_registers.copy_valid_mask);
                   }
                 }
               } else {
@@ -1128,16 +1146,25 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                                             !readback_saved_;
                 std::vector<uint32_t> output_readback;
                 std::string render_error;
+                bool refresh_callback_called = false;
                 const bool refreshed = presenter_->RefreshGuestOutput(
                     swap.width, swap.height, swap.width, swap.height,
-                    [this, &frame_draws, &render_error, width = swap.width,
+                    [this, &frame_draws, &render_error, &refresh_callback_called,
+                     width = swap.width,
                      height = swap.height, capture_output, &output_readback](
                         rex::ui::Presenter::GuestOutputRefreshContext& base) {
-                      auto* context = dynamic_cast<
+                      refresh_callback_called = true;
+                      // This presenter was created by VulkanProvider below, so the refresh
+                      // context is Vulkan-specific. static_cast keeps the SDK context usable
+                      // across Android DSOs where hidden RTTI makes dynamic_cast fail.
+                      auto* context = static_cast<
                           rex::ui::vulkan::VulkanPresenter::VulkanGuestOutputRefreshContext*>(
                           &base);
                       auto* device = provider_->vulkan_device();
-                      if (!context || !device) return false;
+                      if (!device) {
+                        render_error = "Vulkan provider has no device during guest refresh";
+                        return false;
+                      }
                       const uint32_t family = device->queue_family_graphics_compute();
                       const auto queue = device->AcquireQueue(family, 0);
                       return shift::xbox::submit_captured_vulkan_frame(
@@ -1191,6 +1218,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     }
                   }
                 } else {
+                  if (render_error.empty()) {
+                    render_error = refresh_callback_called
+                        ? "refresh callback failed without a Vulkan diagnostic"
+                        : "presenter did not invoke refresh callback; guest output image unavailable";
+                  }
                   REXLOG_WARN("shift-native: Vulkan frame refresh failed for {}x{} "
                               "with {} captured draws: {}",
                               swap.width, swap.height, draw_count, render_error);
@@ -1250,7 +1282,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                        "{} pointer-loaded shader programs ({} unresolved), "
                        "{} inline shader programs ({} unresolved), "
                        "{} captured indexed draw packets ({} with supported raster state, "
-                       "{} with both shader programs, {} with complete captured shader inputs, "
+                       "{} elided as framebuffer no-ops, {} with both shader programs, "
+                       "{} with complete captured shader inputs, "
                        "{} translated to project GLSL, {} with resolved resource bytes "
                        "({} unresolved)), "
                        "{} guest swaps, {} Vulkan frames submitted, "
@@ -1259,8 +1292,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                        loaded_constant_spans, unresolved_constant_spans,
                        loaded_shader_programs, unresolved_shader_programs,
                        loaded_immediate_shader_programs, unresolved_immediate_shader_programs,
-                       decoded_draws,
-                       draws_with_raster_state, draws_with_both_shader_programs,
+                       decoded_draws, draws_with_raster_state, draws_elided_as_noops,
+                       draws_with_both_shader_programs,
                        draws_with_captured_shader_inputs, draws_with_project_shader_translation,
                        draws_with_resolved_resource_payloads,
                        draws_with_unresolved_resource_payloads, decoded_swaps, submitted_frames,
