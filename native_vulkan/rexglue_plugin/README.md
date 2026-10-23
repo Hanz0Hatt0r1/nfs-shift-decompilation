@@ -189,8 +189,10 @@ black retail readback (zero non-black pixels, FNV-1a
 `VdEnableRingBufferRPtrWriteBack` argument (`0x17AF403C`) and translated host
 address (`0x217af403c`). It identified the previously reported `0xB7AF4000`
 as the ring base, not the RPTR writeback destination, and observed writes at
-the correct destination. This closes the address discrepancy but does not
-establish later guest progression or retail output. The original APK was
+the correct destination. Its final snapshot included the guest queue-polling
+frame and GDB then killed the inferior; this does not prove an independent
+guest deadlock or later game progression. This closes the address discrepancy
+but does not establish retail output. The original APK was
 restored and left foregrounded; during the next 45 seconds it produced no
 further PM4 batches or swaps and stayed black. See
 [`process2_redmi_note8pro_rptr_writeback_20261023.txt`](../../evidence/process2_redmi_note8pro_rptr_writeback_20261023.txt)

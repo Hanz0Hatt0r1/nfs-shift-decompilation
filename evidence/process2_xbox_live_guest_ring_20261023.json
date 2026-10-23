@@ -944,7 +944,8 @@
   "linux_rptr_crosscheck_20261024": {
     "source_owner": "Process 1 read-only GDB runtime evidence; no Process 1 files changed",
     "source_log": "/tmp/p1-vdwriteback-probe-20261024/logs/gdb-vd-writeback-target.log",
-    "source_log_sha256": "9659c0aa7bbd1e724e339b8efefe72539d9db9839b3f7db5ea9ae767ce48041f",
+    "source_log_sha256": "82bea36b0cd951f50da0c623331e7a58a98b9c70809fce88ddce23f3fe3513a9",
+    "captured_at": "2026-10-24T00:20:44+03:00",
     "api_call": {
       "name": "VdEnableRingBufferRPtrWriteBack",
       "guest_argument": "0x17AF403C",
@@ -961,7 +962,8 @@
       {"old": "0x19000000", "new": "0x31000000"},
       {"old": "0x31000000", "new": "0x49000000"}
     ],
-    "debugger_state_at_capture": "GDB stopped the game thread at a hardware watchpoint on the writeback destination; the OS not-responding dialog is consistent with this debugger stop, not proof of a guest-runtime deadlock.",
-    "interpretation": "Linux and Android use the same VdEnableRingBufferRPtrWriteBack guest argument and translated host address. The prior 0xB7AF4000 comparison was a ring-base/writeback-destination mix-up. This verifies pointer routing only; visible retail pixels and progression beyond the observed draws remain unverified."
+    "final_guest_stack": "The final debugger snapshot included sub_823A0310, the guest queue-polling frame identified by Process 1.",
+    "debugger_state_at_capture": "GDB stopped the game thread at hardware watchpoints while reading the writeback target, then killed the inferior after capturing the final snapshot. The OS not-responding dialog during the probe is consistent with debugger suspension, not proof of an independent guest-runtime deadlock.",
+    "interpretation": "Linux and Android use the same VdEnableRingBufferRPtrWriteBack guest argument and translated host address. The prior 0xB7AF4000 comparison was a ring-base/writeback-destination mix-up. This verifies pointer routing only; the final stack snapshot does not establish that the guest advanced to visible gameplay, and retail pixels remain unverified."
   }
 }

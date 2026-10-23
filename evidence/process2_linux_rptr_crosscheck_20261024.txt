@@ -4,7 +4,8 @@ Date: 2026-10-24. This records read-only evidence from the Process 1 GDB run;
 no Process 1 runtime files were changed.
 
 Source log: `/tmp/p1-vdwriteback-probe-20261024/logs/gdb-vd-writeback-target.log`
-SHA-256: `9659c0aa7bbd1e724e339b8efefe72539d9db9839b3f7db5ea9ae767ce48041f`
+Captured at 2026-10-24 00:20:44 +03:00. SHA-256:
+`82bea36b0cd951f50da0c623331e7a58a98b9c70809fce88ddce23f3fe3513a9`.
 
 The call and watched addresses are distinct:
 
@@ -31,9 +32,10 @@ New value = 1224736768
 Those words are `0x00000000 -> 0x19000000 -> 0x31000000 -> 0x49000000` in the
 host's byte order, consistent with big-endian guest values `0x19`, `0x31`, and
 `0x49`. This verifies that the Linux plugin writes the guest RPTR destination.
-The GDB log ends while stopped on the writeback hardware watchpoint, so the
-desktop's not-responding dialog is consistent with debugger suspension; it is
-not evidence that the game independently deadlocked. This probe does not prove
-visible retail pixels or later game progression. The existing Android run also
-stayed black after two startup swaps with no later PM4 batches in its 45-second
-foreground observation.
+The final GDB snapshot included the guest stack frame `sub_823A0310`, identified
+in Process 1's trace as its queue-polling path. GDB later killed the inferior;
+the desktop's not-responding dialog during the capture is consistent with
+debugger suspension and does not prove that the game independently deadlocked.
+This probe does not prove later game progression or visible retail pixels. The
+existing Android run also stayed black after two startup swaps with no later
+PM4 batches in its 45-second foreground observation.
