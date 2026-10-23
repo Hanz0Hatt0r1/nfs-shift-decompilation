@@ -296,16 +296,27 @@
       "vulkan_frames_submitted": 2,
       "dma_indexed_draws_observed": 0
     },
-    "result": "The project-owned translator compiled and resolved 24 real retail point-list draws at each of two guest swaps. The ReXGlue Vulkan presenter accepted both frame submissions. The retail full/mini-fetch VS also translated, but its rectangle-list draws remain unsupported.",
+    "window_capture": {
+      "path": "process2_xbox_live_retail_window_black_20261023.png",
+      "sha256": "73046986e81df0e77e0a33d0e41af61ae828d8d37656bed18b485d8a214f8426",
+      "extent": "1920x1080",
+      "pixel_histogram": {
+        "black": 2073574,
+        "white_cursor": 26
+      },
+      "result": "The captured Gamescope Xwayland game window remained black apart from the cursor after both Vulkan frame submissions; no visible retail content was present."
+    },
+    "result": "The project-owned translator compiled and resolved 24 real retail point-list draws at each of two guest swaps. The ReXGlue Vulkan presenter accepted both submissions, but the captured game window stayed black. The retail full/mini-fetch VS also translated; its rectangle-list draws remain unsupported.",
     "retail_vulkan_submission_confirmed": true,
-    "visible_output_pixels_verified": false,
+    "game_window_capture_confirmed": true,
+    "visible_retail_content_confirmed": false,
     "full_scene_parity_verified": false,
     "vulkan_validation_layer_enabled": false
   },
   "remaining_blockers": [
     "All 100 observed DRAW_INDX_2 packets are AutoIndex (96 one-point draws and four three-index rectangle-list draws); no DMA-indexed draw packet was observed. The first live retail frame therefore covers the observed point-list path only.",
     "AutoIndex rectangle-list expansion remains unsupported, and the retail full/mini-fetch shader's rectangle draws are still skipped. Xenos EDRAM accumulation and the guest frontbuffer resolve path are not implemented.",
-    "The retail frame was submitted into the presenter image, but no screenshot/readback or output-pixel comparison confirms visible pixels or retail parity.",
+    "The captured game window remained black after submission (apart from the cursor); the point-list pass is not yet producing visible retail content. The cause is not isolated, and no scene parity is established.",
     "The full Android game is not buildable yet: the Android ReXGlue link is blocked by the Process 1-owned POSIX fiber backend and the game has no Android Activity/APK target."
   ]
 }

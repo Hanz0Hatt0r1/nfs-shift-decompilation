@@ -122,13 +122,25 @@
       "guest_swaps": 2,
       "vulkan_frames_submitted": 2
     },
+    "window_capture": {
+      "path": "process2_xbox_live_retail_window_black_20261023.png",
+      "sha256": "73046986e81df0e77e0a33d0e41af61ae828d8d37656bed18b485d8a214f8426",
+      "extent": "1920x1080",
+      "pixel_histogram": {
+        "black": 2073574,
+        "white_cursor": 26
+      },
+      "result": "The captured game window remained black apart from the cursor after both Vulkan submissions; no visible retail content was present."
+    },
     "draw_forms": {
       "autoindex_point_list_count_1": 96,
       "autoindex_rectangle_list_count_3": 4,
       "dma_indexed_draws_observed": 0
     },
-    "result": "The project translator compiled and resolved 24 retail point-list draws at each of two guest swaps; the ReXGlue Vulkan presenter accepted both frame submissions. Rectangle-list draws remain unresolved. This verifies live retail submission, not visible output pixels or parity.",
+    "result": "The project translator compiled and resolved 24 retail point-list draws at each of two guest swaps; the ReXGlue Vulkan presenter accepted both frame submissions. Rectangle-list draws remain unresolved, and the captured game window stayed black. This verifies submission, not retail image parity.",
     "retail_vulkan_submission_confirmed": true,
+    "game_window_capture_confirmed": true,
+    "visible_retail_content_confirmed": false,
     "retail_output_pixels_verified": false
   },
   "android_full_game_attempt": {
@@ -146,7 +158,7 @@
     "retail_frame_observed": false
   },
   "limits": [
-    "The live plugin submits the retail AutoIndex point-list draws, but no screenshot or output-pixel readback verifies their appearance.",
+    "The presenter accepted both retail point-list frames, but the captured game window stayed black apart from the cursor; visible retail content is not working yet.",
     "AutoIndex rectangle-list draws are still unsupported; each observed guest swap has one unresolved draw alongside the 24 submitted points.",
     "Each guest swap currently clears to black and composes only supported draws collected since that swap; Xenos EDRAM accumulation is not implemented.",
     "The captured output uses a gamma target while the presenter image is A2B10G10R10_UNORM; target gamma parity remains unverified.",

@@ -94,7 +94,10 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   submitted both 1280x720 frames to the Vulkan presenter. It also translated
   the retail full/mini-fetch shader, while rectangle-list draws remain
   unsupported. This confirms live retail Vulkan submission, not visible image
-  parity or complete scene rendering. No DMA-indexed draw, pointer `IM_LOAD`, or
+  parity or complete scene rendering. A capture of the game window after both
+  submissions was black apart from the cursor, so no retail content was visible
+  ([captured window](../evidence/process2_xbox_live_retail_window_black_20261023.png)).
+  No DMA-indexed draw, pointer `IM_LOAD`, or
   `LOAD_ALU_CONSTANT` was observed. See
   [`process2_xbox_live_guest_ring_20261023.json`](../evidence/process2_xbox_live_guest_ring_20261023.json).
   The private 19,784-byte capture scans as 247 packets with four bounded
@@ -134,8 +137,9 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   `rexgpu-xenos` renderer; ReXGlue's common runtime still includes generic
   Xenos format utilities. The Android verification exercises the platform
   independent renderer only, not ReXGlue window presentation. Live retail
-  submission is confirmed, but no screenshot or output-pixel comparison
-  verifies its appearance. Full-scene parity is not claimed. The product path must not load
+  submission is confirmed, but the captured host window remained black apart
+  from the cursor, so visible output is not working yet. Full-scene parity is
+  not claimed. The product path must not load
   `rexgpu-xenos` or another GPU renderer emulator;
 - Linux CI coverage for native smoke paths.
 

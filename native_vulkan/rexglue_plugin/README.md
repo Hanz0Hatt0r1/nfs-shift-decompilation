@@ -68,8 +68,11 @@ translated and resolved 24 point-list draws at each of two swaps, then
 submitted both 1280x720 frames to the Vulkan presenter. The same ring contained
 the 108-byte full/mini-fetch VS; the plugin translated it, but the rectangle
 list that uses it remains unsupported. This is the first confirmed live retail
-Vulkan submission. It does not verify visible output pixels, scene parity,
-EDRAM accumulation, or Vulkan validation-layer behavior for the retail frame.
+Vulkan submission. A capture of the Gamescope Xwayland game window after the
+two submissions was black apart from the cursor, so no retail content was
+visible ([captured window](../../evidence/process2_xbox_live_retail_window_black_20261023.png)).
+Scene parity, EDRAM accumulation, and Vulkan validation-layer behavior
+for the retail frame remain unverified.
 See
 [`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json).
 
