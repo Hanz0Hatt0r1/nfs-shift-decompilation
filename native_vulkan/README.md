@@ -38,11 +38,13 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   `vfetch_mini` parsing has both a synthetic decoder regression and a live
   retail observation. The 108-byte VS uses a full fetch from constant 0 with
   format 57 and a seven-dword stride, followed by a format-38 mini fetch at
-  dword offset 3. Translation still needs to inherit the full fetch's address,
-  constant, and stride and produce the captured vertex layout.
-  A tested parser helper now applies those inherited fields while retaining the
-  mini's own format, destination, and offset; the live translator/resource path
-  does not consume that helper yet.
+  dword offset 3. The project translator now applies the full fetch's inherited
+  address, constant, and stride while retaining the mini's own format,
+  destination, and offset. Its regression emits float3 and float4 inputs at
+  byte offsets 0 and 12 with the observed 28-byte stride. This verifies the
+  captured instruction contract translates; dynamic constant-0 descriptor
+  lookup and vertex-buffer resource resolution are still pending, and no live
+  retail shader has yet reached Vulkan submission.
   The packet scanner frames contiguous big-endian type 0/1/2/3 PM4 packets and
   reports type-3 opcodes without applying state or executing commands. The
   project-owned `snapshot_guest_ring_batch` copies a committed dword-indexed
@@ -85,10 +87,11 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   packets including two swaps. A later debug run recorded 100 `DRAW_INDX_2`
   packets, all AutoIndex (96 point draws and four rectangle-list draws), and
   decoded the inline VS/PS programs. Its 108-byte VS uses the full-fetch / mini-
-  fetch form described above. The current parser recognizes the mini encoding,
-  but live inherited-fetch resource resolution and shader translation remain
-  unsupported. The run submitted zero Vulkan frames; a first retail draw is
-  not yet confirmed. No DMA indexed draw, pointer `IM_LOAD`, or
+  fetch form described above. The shader translator now resolves the mini
+  fields in a targeted synthetic regression, but the live resource path still
+  selects descriptor 95 and only accepts the old float3/12-byte layout. The
+  run submitted zero Vulkan frames; a first retail draw is not yet confirmed.
+  No DMA indexed draw, pointer `IM_LOAD`, or
   `LOAD_ALU_CONSTANT` was observed. See
   [`process2_xbox_live_guest_ring_20261023.json`](../evidence/process2_xbox_live_guest_ring_20261023.json).
   The private 19,784-byte capture scans as 247 packets with four bounded

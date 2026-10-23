@@ -69,9 +69,11 @@ and `0x36` samples and draw-state diagnostics. It found 100 AutoIndex draws
 mini form and then reported the fixed constant-95 vertex descriptor incomplete.
 The project parser now recognizes the mini encoding; a post-update retail run
 confirmed format 38 at dword offset 3, with stride inherited from the full
-fetch. This run still submitted zero Vulkan frames: effective fetch inheritance,
-dynamic descriptor 0 selection, and AutoIndex draw submission remain to be
-implemented. See
+fetch. A targeted shader regression now applies the inherited full-fetch fields
+and emits the observed float3/float4 layout. The live resource path still selects
+descriptor 95 and only submits DMA-indexed draws, while retail currently emits
+AutoIndex draws. This run still submitted zero Vulkan frames; dynamic descriptor
+0 selection and AutoIndex draw submission remain to be implemented. See
 [`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json).
 
 A separate Gamescope headless retry with the current plugin created its

@@ -110,9 +110,18 @@ std::string scalar_constant(CapturedShaderStage stage, uint32_t reg,
            component_name(component);
 }
 
+const char* vertex_input_type(uint32_t format) {
+    switch (format) {
+        case 57: return "vec3";
+        case 38: return "vec4";
+        default: return nullptr;
+    }
+}
+
 bool append_fetch(std::ostringstream& glsl,
                   CapturedShaderStage stage,
                   const CapturedShaderFetchInstruction& fetch,
+                  uint32_t vertex_input_location,
                   const CapturedShaderTranslationOptions& options,
                   bool* texture_declared,
                   uint32_t* sampler_register,
@@ -121,24 +130,37 @@ bool append_fetch(std::ostringstream& glsl,
         return fail("captured shader fetch uses an unsupported relative or predicated form", error);
     }
     if (stage == CapturedShaderStage::Vertex) {
-        if (fetch.kind != CapturedShaderFetchKind::VertexFull ||
-            fetch.fetch_constant_index != options.vertex_fetch_constant_index ||
-            fetch.source_register != 0 ||
-            fetch.destination_register != 0 || fetch.vertex_format != 57 ||
-            fetch.vertex_stride != 3 || fetch.vertex_offset != 0 ||
-            fetch.source_swizzle != 0) {
-            return fail("captured vertex fetch is outside the decoded float3 descriptor", error);
+        const char* input_type = vertex_input_type(fetch.vertex_format);
+        const uint32_t attribute_words = fetch.vertex_format == 57 ? 3u : 4u;
+        if ((fetch.kind != CapturedShaderFetchKind::VertexFull &&
+             fetch.kind != CapturedShaderFetchKind::VertexMini) ||
+            !input_type || fetch.source_register != 0 ||
+            fetch.destination_register >= 64 || fetch.vertex_stride == 0 ||
+            fetch.vertex_offset < 0 ||
+            static_cast<uint64_t>(fetch.vertex_offset) + attribute_words >
+                fetch.vertex_stride || fetch.source_swizzle != 0) {
+            return fail("captured vertex fetch is outside the float3/float4 layout", error);
         }
-        glsl << "  vec4 fetched_" << *sampler_register
-             << " = vec4(shift_vertex0, 1.0);\n";
+        const std::string input =
+            "shift_vertex_input_" + std::to_string(vertex_input_location);
+        const std::string fetched =
+            "fetched_vertex_" + std::to_string(vertex_input_location);
+        glsl << "  vec4 " << fetched << " = ";
+        if (fetch.vertex_format == 57) {
+            glsl << "vec4(" << input << ", 1.0);\n";
+        } else {
+            glsl << input << ";\n";
+        }
         for (uint32_t lane = 0; lane < 4; ++lane) {
             const uint32_t selector = (fetch.destination_swizzle >> (lane * 3)) & 7u;
             std::string value;
-            if (!fetch_lane_expression(selector, "fetched_0", &value)) {
+            if (!fetch_lane_expression(selector, fetched.c_str(), &value)) {
                 return fail("captured vertex fetch destination swizzle is unsupported", error);
             }
-            if (!value.empty()) glsl << "  r[0]." << component_name(lane) << " = "
-                                     << value << ";\n";
+            if (!value.empty()) {
+                glsl << "  r[" << fetch.destination_register << "]."
+                     << component_name(lane) << " = " << value << ";\n";
+            }
         }
         return true;
     }
@@ -176,7 +198,7 @@ bool append_fetch(std::ostringstream& glsl,
         if (!fetch_lane_expression(selector, ("fetched_" + std::to_string(sampler)).c_str(), &value)) {
             return fail("captured texture fetch destination swizzle is unsupported", error);
         }
-        if (!value.empty()) glsl << "  r[0]." << component_name(lane) << " = "
+        if (!value.empty()) glsl << "  r[" << fetch.destination_register << "]." << component_name(lane) << " = "
                                  << value << ";\n";
     }
     *texture_declared = true;
@@ -367,8 +389,14 @@ bool translate_captured_shader_glsl(
     }
 
     std::vector<CapturedShaderInstructionSchedule> executed;
+    std::vector<CapturedShaderFetchInstruction> executed_fetches;
+    std::vector<CapturedVertexInputAttribute> vertex_input_attributes;
     bool has_texture = false;
     uint32_t sampler_register = 0;
+    bool has_vertex_fetch_constant = false;
+    uint32_t vertex_fetch_constant_index = 0;
+    CapturedShaderFetchInstruction preceding_vertex_full{};
+    bool has_preceding_vertex_full = false;
     for (uint32_t slot : path) {
         const auto& clause = control_flow[slot];
         if (clause.opcode != ShaderControlFlowOpcode::Exec &&
@@ -380,9 +408,48 @@ bool translate_captured_shader_glsl(
                     CapturedShaderFetchInstruction fetch{};
                     if (!decode_captured_shader_fetch_instruction(
                             shader_bytes + instruction.address * 12, 12, &fetch, error)) return false;
-                    if (fetch.kind == CapturedShaderFetchKind::Texture2D) {
-                        has_texture = true;
-                        sampler_register = fetch.fetch_constant_index;
+                    if (stage == CapturedShaderStage::Vertex) {
+                        CapturedShaderFetchInstruction effective_fetch{};
+                        if (!inherit_captured_vertex_fetch_fields(
+                                fetch,
+                                has_preceding_vertex_full
+                                    ? &preceding_vertex_full
+                                    : nullptr,
+                                &effective_fetch, error)) {
+                            return false;
+                        }
+                        if (effective_fetch.kind == CapturedShaderFetchKind::VertexFull) {
+                            preceding_vertex_full = effective_fetch;
+                            has_preceding_vertex_full = true;
+                        }
+                        if (has_vertex_fetch_constant &&
+                            vertex_fetch_constant_index !=
+                                effective_fetch.fetch_constant_index) {
+                            return fail("captured vertex shader uses multiple fetch constants", error);
+                        }
+                        has_vertex_fetch_constant = true;
+                        vertex_fetch_constant_index =
+                            effective_fetch.fetch_constant_index;
+                        const uint32_t location =
+                            static_cast<uint32_t>(vertex_input_attributes.size());
+                        vertex_input_attributes.push_back({
+                            location,
+                            effective_fetch.destination_register,
+                            effective_fetch.vertex_format,
+                            effective_fetch.vertex_stride,
+                            effective_fetch.vertex_offset,
+                        });
+                        executed_fetches.push_back(effective_fetch);
+                    } else {
+                        if (fetch.kind == CapturedShaderFetchKind::Texture2D) {
+                            if (has_texture &&
+                                sampler_register != fetch.fetch_constant_index) {
+                                return fail("captured pixel shader uses multiple samplers", error);
+                            }
+                            has_texture = true;
+                            sampler_register = fetch.fetch_constant_index;
+                        }
+                        executed_fetches.push_back(fetch);
                     }
                 }
             }
@@ -392,8 +459,15 @@ bool translate_captured_shader_glsl(
     std::ostringstream glsl;
     glsl << "#version 450\n";
     if (stage == CapturedShaderStage::Vertex) {
-        glsl << "layout(location=0) in vec3 shift_vertex0;\n"
-             << "layout(location=0) out vec4 shift_interpolator0;\n"
+        for (const CapturedVertexInputAttribute& attribute : vertex_input_attributes) {
+            const char* type = vertex_input_type(attribute.vertex_format);
+            if (!type) {
+                return fail("captured vertex format is outside the float3/float4 layout", error);
+            }
+            glsl << "layout(location=" << attribute.location << ") in " << type
+                 << " shift_vertex_input_" << attribute.location << ";\n";
+        }
+        glsl << "layout(location=0) out vec4 shift_interpolator0;\n"
              << "layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;\n";
     } else {
         glsl << "layout(location=0) in vec4 shift_interpolator0;\n"
@@ -415,6 +489,7 @@ bool translate_captured_shader_glsl(
     }
 
     uint32_t allocation_type = 0;
+    size_t fetch_index = 0;
     for (uint32_t slot : path) {
         const auto& clause = control_flow[slot];
         if (clause.opcode == ShaderControlFlowOpcode::Allocate) {
@@ -431,11 +506,17 @@ bool translate_captured_shader_glsl(
         for (const auto& instruction : executed) {
             if (instruction.control_flow_index != slot) continue;
             if (instruction.kind == ShaderScheduledInstructionKind::Fetch) {
-                CapturedShaderFetchInstruction fetch{};
-                if (!decode_captured_shader_fetch_instruction(
-                        shader_bytes + instruction.address * 12, 12, &fetch, error) ||
-                    !append_fetch(glsl, stage, fetch, options, &has_texture,
-                                  &sampler_register, error)) return false;
+                if (fetch_index >= executed_fetches.size()) {
+                    return fail("captured shader fetch schedule changed during translation", error);
+                }
+                const CapturedShaderFetchInstruction& fetch =
+                    executed_fetches[fetch_index];
+                if (!append_fetch(glsl, stage, fetch,
+                                  static_cast<uint32_t>(fetch_index), options,
+                                  &has_texture, &sampler_register, error)) {
+                    return false;
+                }
+                ++fetch_index;
             } else {
                 CapturedShaderAluInstruction alu{};
                 if (!decode_captured_shader_alu_instruction(
@@ -449,6 +530,11 @@ bool translate_captured_shader_glsl(
 
     CapturedShaderTranslation translated{};
     translated.glsl = glsl.str();
+    translated.vertex_input_attributes = std::move(vertex_input_attributes);
+    translated.has_vertex_fetch_constant = has_vertex_fetch_constant;
+    translated.vertex_fetch_constant_index = vertex_fetch_constant_index;
+    translated.uses_texture = has_texture;
+    translated.texture_fetch_constant_index = sampler_register;
     translated.executed_instruction_addresses.reserve(executed.size());
     for (const auto& instruction : executed) {
         translated.executed_instruction_addresses.push_back(instruction.address);

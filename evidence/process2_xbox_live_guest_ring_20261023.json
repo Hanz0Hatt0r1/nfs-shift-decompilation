@@ -196,7 +196,7 @@
         "offset_dwords": -1,
         "destination_register": 4
       },
-      "result": "synthetic inheritance helper regression passed; helper is not yet wired into live translation"
+      "result": "synthetic inheritance helper regression passed; helper is now wired into the shader translator, but live resource resolution is not verified"
     }
   },
   "post_parser_live_run": {
@@ -231,13 +231,18 @@
         "stride": "inherited from preceding vfetch_full"
       }
     ],
+    "shader_translation_regression": {
+      "result": "synthetic full/mini VS regression passed; translator inherits the full fetch's descriptor and stride and emits float3/float4 inputs at byte offsets 0/12 with stride 28",
+      "live_shader_translation_verified": false,
+      "descriptor_lookup_verified": false
+    },
     "guest_swaps": 2,
     "vulkan_frames_submitted": 0,
     "result": "live parser decoded vfetch_mini fields; no retail draw reached Vulkan submission"
   },
   "remaining_blockers": [
     "All 100 live DRAW_INDX_2 packets are AutoIndex (96 one-point draws and 4 three-index rectangle-list draws); no DMA indexed draw/DrawIndexedPrimitive packet has been verified or submitted.",
-    "No pointer IM_LOAD or LOAD_ALU_CONSTANT packets were observed. Inline IM_LOAD_IMMEDIATE programs were captured and their control-flow prefixes were decoded, but the mini-fetch resource contract is still unsupported.",
+    "No pointer IM_LOAD or LOAD_ALU_CONSTANT packets were observed. Inline IM_LOAD_IMMEDIATE programs were captured and their control-flow prefixes were decoded. Mini-fetch GLSL translation now has a targeted regression, but dynamic descriptor lookup and live resource resolution are still pending.",
     "No frame reached submit_captured_vulkan_frame; the two observed XE_SWAP packets had no supported draw to submit.",
     "Process 1 owns the original guest startup and scheduling path needed to reach the game's render-producing state."
   ]

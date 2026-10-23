@@ -8,6 +8,36 @@
 
 namespace {
 
+void write_be32(uint8_t* bytes, uint32_t value) {
+    bytes[0] = static_cast<uint8_t>(value >> 24);
+    bytes[1] = static_cast<uint8_t>(value >> 16);
+    bytes[2] = static_cast<uint8_t>(value >> 8);
+    bytes[3] = static_cast<uint8_t>(value);
+}
+
+std::vector<uint8_t> captured_full_mini_vertex_shader() {
+    std::vector<uint8_t> shader(5 * 12, 0);
+    const uint32_t exec_word0 = 2u | (2u << 12) | (5u << 16);
+    const uint32_t exec_word1 = 1u << 12;
+    const uint32_t end_word0 = 4u | (1u << 12);
+    const uint32_t end_word1 = 2u << 12;
+    write_be32(shader.data(), exec_word0);
+    write_be32(shader.data() + 4,
+               exec_word1 | ((end_word0 & 0xFFFFu) << 16));
+    write_be32(shader.data() + 8,
+               (end_word0 >> 16) | (end_word1 << 16));
+
+    write_be32(shader.data() + 2 * 12, (1u << 19) | (1u << 12));
+    write_be32(shader.data() + 2 * 12 + 4, (57u << 16) | 2696u);
+    write_be32(shader.data() + 2 * 12 + 8, 7u);
+    write_be32(shader.data() + 3 * 12, 1u << 19);
+    write_be32(shader.data() + 3 * 12 + 4,
+               (1u << 30) | (38u << 16) | 1672u);
+    write_be32(shader.data() + 3 * 12 + 8, 3u << 8);
+    write_be32(shader.data() + 4 * 12, 5u << 26);
+    return shader;
+}
+
 void require(bool condition, const char* message) {
     if (!condition) {
         std::cerr << message << '\n';
@@ -50,6 +80,39 @@ std::vector<uint8_t> captured_pixel_shader_slice() {
 }  // namespace
 
 int main() {
+    const std::vector<uint8_t> vertex_shader =
+        captured_full_mini_vertex_shader();
+    shift::xbox::CapturedShaderTranslationOptions vertex_options{};
+    shift::xbox::CapturedShaderTranslation vertex_translated{};
+    std::string vertex_error;
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Vertex,
+                vertex_shader.data(), vertex_shader.size(), vertex_options,
+                &vertex_translated, &vertex_error),
+            "captured full/mini vertex fetch pair did not translate");
+    require(vertex_translated.has_vertex_fetch_constant &&
+                vertex_translated.vertex_fetch_constant_index == 0 &&
+                vertex_translated.vertex_input_attributes.size() == 2 &&
+                vertex_translated.vertex_input_attributes[0].vertex_format == 57 &&
+                vertex_translated.vertex_input_attributes[0].stride_dwords == 7 &&
+                vertex_translated.vertex_input_attributes[0].offset_dwords == 0 &&
+                vertex_translated.vertex_input_attributes[0].destination_register == 1 &&
+                vertex_translated.vertex_input_attributes[1].vertex_format == 38 &&
+                vertex_translated.vertex_input_attributes[1].stride_dwords == 7 &&
+                vertex_translated.vertex_input_attributes[1].offset_dwords == 3 &&
+                vertex_translated.vertex_input_attributes[1].destination_register == 0 &&
+                vertex_translated.glsl.find(
+                    "layout(location=0) in vec3 shift_vertex_input_0") !=
+                    std::string::npos &&
+                vertex_translated.glsl.find(
+                    "layout(location=1) in vec4 shift_vertex_input_1") !=
+                    std::string::npos &&
+                vertex_translated.glsl.find("r[1].x = fetched_vertex_0.x") !=
+                    std::string::npos &&
+                vertex_translated.glsl.find("r[0].x = fetched_vertex_1.x") !=
+                    std::string::npos,
+            "full/mini fetch translation lost the captured vertex layout");
+
     const std::vector<uint8_t> shader = captured_pixel_shader_slice();
     shift::xbox::CapturedShaderTranslationOptions options{};
     options.pixel_b128 = true;
