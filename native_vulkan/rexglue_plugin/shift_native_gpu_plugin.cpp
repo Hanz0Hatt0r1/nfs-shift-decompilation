@@ -10,6 +10,7 @@
 #include <exception>
 #include <limits>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -43,6 +44,12 @@ constexpr uint32_t kGpuMmioSize = 0x0000FFFFu;
 constexpr uint32_t kRingWritePointerRegister = 0x01C5u;
 constexpr uint32_t kRingReadPointerRegister = 0x01C4u;
 constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
+
+uint32_t ReadGuestDword(const uint8_t* bytes) {
+  return (static_cast<uint32_t>(bytes[0]) << 24) |
+         (static_cast<uint32_t>(bytes[1]) << 16) |
+         (static_cast<uint32_t>(bytes[2]) << 8) | bytes[3];
+}
 
 bool CompileCapturedShader(
     shift::xbox::CapturedShaderStage stage,
@@ -505,15 +512,22 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         uint32_t draws_with_unresolved_resource_payloads = 0;
         uint32_t loaded_shader_programs = 0;
         uint32_t unresolved_shader_programs = 0;
+        uint32_t loaded_immediate_shader_programs = 0;
+        uint32_t unresolved_immediate_shader_programs = 0;
         uint32_t loaded_constant_spans = 0;
         uint32_t unresolved_constant_spans = 0;
         uint32_t unsupported_draws = 0;
         uint32_t decoded_swaps = 0;
         uint32_t submitted_frames = 0;
         uint32_t raw_register_writes = 0;
+        std::array<uint32_t, 256> type3_opcode_counts{};
+        std::array<std::string, 2> type3_packet_samples{};
         if (expanded_ok) {
           for (const shift::xbox::ResolvedGuestPacket& resolved : expanded.packets) {
             const shift::xbox::PacketSpan& packet = resolved.packet;
+            if (packet.type == shift::xbox::PacketType::Type3) {
+              ++type3_opcode_counts[packet.opcode & 0xFFu];
+            }
             const uint8_t* packet_bytes = nullptr;
             if (resolved.nesting_depth == 0) {
               packet_bytes = batch.bytes.data() + packet.byte_offset;
@@ -528,6 +542,22 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 continue;
               }
               packet_bytes = source_bytes + packet.byte_offset;
+            }
+
+            if (packet.type == shift::xbox::PacketType::Type3 &&
+                (packet.opcode == 0x2Bu || packet.opcode == 0x36u)) {
+              const size_t sample_index = packet.opcode == 0x2Bu ? 0u : 1u;
+              if (type3_packet_samples[sample_index].empty()) {
+                std::ostringstream sample;
+                sample << std::hex << packet.opcode << std::dec << '/'
+                       << packet.byte_length << ':';
+                const size_t word_count = std::min(packet.byte_length / 4u, size_t{12});
+                for (size_t word = 0; word < word_count; ++word) {
+                  sample << (word ? "," : "") << std::hex
+                         << ReadGuestDword(packet_bytes + word * 4u) << std::dec;
+                }
+                type3_packet_samples[sample_index] = sample.str();
+              }
             }
 
             if (packet.type == shift::xbox::PacketType::Type0 ||
@@ -563,6 +593,24 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 ++unresolved_constant_spans;
               }
             } else if (packet.type == shift::xbox::PacketType::Type3 &&
+                       packet.opcode == 0x2Bu) {
+              shift::xbox::CapturedImmediateShaderProgramLoad shader_load{};
+              if (shift::xbox::decode_captured_immediate_shader_program_load(
+                      packet_bytes, packet.byte_length, &shader_load, &error) &&
+                  shader_load.code_offset <= packet.byte_length &&
+                  shader_load.byte_length <= packet.byte_length - shader_load.code_offset) {
+                std::vector<uint8_t>& active_program =
+                    shader_load.stage == shift::xbox::GuestShaderStage::Vertex
+                        ? vertex_shader_program
+                        : pixel_shader_program;
+                active_program.assign(packet_bytes + shader_load.code_offset,
+                                      packet_bytes + shader_load.code_offset +
+                                          shader_load.byte_length);
+                ++loaded_immediate_shader_programs;
+              } else {
+                ++unresolved_immediate_shader_programs;
+              }
+            } else if (packet.type == shift::xbox::PacketType::Type3 &&
                        packet.opcode == 0x27u) {
               shift::xbox::CapturedShaderProgramLoad shader_load{};
               const uint8_t* shader_bytes = nullptr;
@@ -584,7 +632,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 ++unresolved_shader_programs;
               }
             } else if (packet.type == shift::xbox::PacketType::Type3 &&
-                       packet.opcode == 0x22u) {
+                       (packet.opcode == 0x22u || packet.opcode == 0x36u)) {
               shift::xbox::DecodedIndexedDraw draw{};
               if (shift::xbox::decode_captured_draw_indx(
                       packet_bytes, packet.byte_length, &draw, &error)) {
@@ -659,7 +707,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     });
                 if (refreshed) {
                   ++submitted_frames;
-                  REXLOG_INFO("shift-native: submitted {} captured DRAW_INDX packets to "
+                  REXLOG_INFO("shift-native: submitted {} captured indexed draw packets to "
                               "the Vulkan presenter at {}x{} (frontbuffer {:08X})",
                               draw_count, swap.width, swap.height,
                               swap.frontbuffer_guest_address);
@@ -670,28 +718,40 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 }
               }
               frame_draws.clear();
-            } else if (packet.type == shift::xbox::PacketType::Type3 &&
-                       packet.opcode == 0x36u) {
-              ++unsupported_draws;
             }
+          }
+          std::ostringstream type3_opcode_summary;
+          bool first_type3_opcode = true;
+          for (size_t opcode = 0; opcode < type3_opcode_counts.size(); ++opcode) {
+            if (!type3_opcode_counts[opcode]) continue;
+            if (!first_type3_opcode) type3_opcode_summary << ',';
+            type3_opcode_summary << std::hex << opcode << std::dec << ':'
+                                 << type3_opcode_counts[opcode];
+            first_type3_opcode = false;
+          }
+          for (const std::string& sample : type3_packet_samples) {
+            if (!sample.empty()) type3_opcode_summary << "; sample=" << sample;
           }
           REXLOG_DEBUG("shift-native: framed {} PM4 packets, {} raw register writes, "
                        "{} constant spans loaded ({} unresolved), "
                        "{} pointer-loaded shader programs ({} unresolved), "
-                       "{} captured DRAW_INDX packets ({} with supported raster state, "
+                       "{} inline shader programs ({} unresolved), "
+                       "{} captured indexed draw packets ({} with supported raster state, "
                        "{} with both shader programs, {} with complete captured shader inputs, "
                        "{} translated to project GLSL, {} with resolved resource bytes "
                        "({} unresolved)), "
                        "{} guest swaps, {} Vulkan frames submitted, "
-                       "{} unsupported packet/draw forms",
+                       "{} unsupported packet/draw forms, type3 opcodes [{}]",
                        expanded.packets.size(), raw_register_writes,
                        loaded_constant_spans, unresolved_constant_spans,
-                       loaded_shader_programs, unresolved_shader_programs, decoded_draws,
+                       loaded_shader_programs, unresolved_shader_programs,
+                       loaded_immediate_shader_programs, unresolved_immediate_shader_programs,
+                       decoded_draws,
                        draws_with_raster_state, draws_with_both_shader_programs,
                        draws_with_captured_shader_inputs, draws_with_project_shader_translation,
                        draws_with_resolved_resource_payloads,
                        draws_with_unresolved_resource_payloads, decoded_swaps, submitted_frames,
-                       unsupported_draws);
+                       unsupported_draws, type3_opcode_summary.str());
         } else {
           REXLOG_WARN("shift-native: dropped malformed PM4 batch at WPTR {:08X}: {}",
                       write_pointer, error);

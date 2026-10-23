@@ -369,6 +369,63 @@ int main() {
                 shader_load.guest_address == unchanged_shader_load.guest_address &&
                 shader_load.byte_length == unchanged_shader_load.byte_length,
             "unsupported shader stage changed decoded output");
+    const uint8_t captured_inline_shader_load[] = {
+        0xC0, 0x05, 0x2B, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x03,
+        0x11, 0x22, 0x33, 0x44,
+        0x55, 0x66, 0x77, 0x88,
+        0x99, 0xAA, 0xBB, 0xCC,
+        0xDE, 0xAD, 0xBE, 0xEF,
+    };
+    shift::xbox::CapturedImmediateShaderProgramLoad immediate_shader_load{};
+    require(shift::xbox::decode_captured_immediate_shader_program_load(
+                captured_inline_shader_load, sizeof(captured_inline_shader_load),
+                &immediate_shader_load, &error) &&
+                immediate_shader_load.stage == shift::xbox::GuestShaderStage::Vertex &&
+                immediate_shader_load.dword_count == 3u &&
+                immediate_shader_load.byte_length == 12u &&
+                immediate_shader_load.code_offset == 12u &&
+                read_be32(captured_inline_shader_load + immediate_shader_load.code_offset) ==
+                    0x11223344u,
+            "captured inline vertex shader payload decoded incorrectly");
+    auto captured_pixel_inline_shader_load = std::vector<uint8_t>(
+        captured_inline_shader_load,
+        captured_inline_shader_load + sizeof(captured_inline_shader_load));
+    captured_pixel_inline_shader_load[7] = 0x01;
+    require(shift::xbox::decode_captured_immediate_shader_program_load(
+                captured_pixel_inline_shader_load.data(),
+                captured_pixel_inline_shader_load.size(), &immediate_shader_load, &error) &&
+                immediate_shader_load.stage == shift::xbox::GuestShaderStage::Pixel &&
+                immediate_shader_load.dword_count == 3u &&
+                immediate_shader_load.code_offset == 12u,
+            "captured inline pixel shader payload decoded incorrectly");
+    const auto unchanged_immediate_shader_load = immediate_shader_load;
+    auto invalid_immediate_shader_load = captured_pixel_inline_shader_load;
+    invalid_immediate_shader_load[7] = 0x02;
+    require(!shift::xbox::decode_captured_immediate_shader_program_load(
+                invalid_immediate_shader_load.data(),
+                invalid_immediate_shader_load.size(), &immediate_shader_load, &error) &&
+                immediate_shader_load.stage == unchanged_immediate_shader_load.stage &&
+                immediate_shader_load.dword_count == unchanged_immediate_shader_load.dword_count &&
+                immediate_shader_load.code_offset == unchanged_immediate_shader_load.code_offset,
+            "unsupported inline shader stage changed decoded output");
+    invalid_immediate_shader_load = captured_pixel_inline_shader_load;
+    invalid_immediate_shader_load[9] = 0x01;
+    require(!shift::xbox::decode_captured_immediate_shader_program_load(
+                invalid_immediate_shader_load.data(),
+                invalid_immediate_shader_load.size(), &immediate_shader_load, &error),
+            "nonzero inline shader start address was accepted");
+    invalid_immediate_shader_load = captured_pixel_inline_shader_load;
+    invalid_immediate_shader_load[11] = 0x05;
+    require(!shift::xbox::decode_captured_immediate_shader_program_load(
+                invalid_immediate_shader_load.data(),
+                invalid_immediate_shader_load.size(), &immediate_shader_load, &error),
+            "inline shader code span larger than its PM4 payload was accepted");
+    require(!shift::xbox::decode_captured_immediate_shader_program_load(
+                captured_inline_shader_load, sizeof(captured_inline_shader_load) - 4u,
+                &immediate_shader_load, &error),
+            "truncated inline shader PM4 packet was accepted");
     const uint8_t captured_constant_load_packet[] = {
         0xC0, 0x02, 0x2F, 0x00, 0x09, 0xD5, 0x68, 0xA0,
         0x00, 0x00, 0x03, 0xF0, 0x00, 0x00, 0x00, 0x10,
@@ -428,6 +485,33 @@ int main() {
     require(shift::xbox::decode_captured_draw_indx(
                 kCapturedPacket, sizeof(kCapturedPacket), &input, &error),
             "captured retail packet was rejected");
+    const uint8_t captured_draw_indx_2[] = {
+        0xC0, 0x02, 0x36, 0x00,
+        0x00, 0x06, 0x00, 0x04,
+        0x09, 0x75, 0xD7, 0xB0,
+        0x40, 0x00, 0x00, 0x06,
+    };
+    shift::xbox::DecodedIndexedDraw draw_indx_2{};
+    require(shift::xbox::decode_captured_draw_indx(
+                captured_draw_indx_2, sizeof(captured_draw_indx_2),
+                &draw_indx_2, &error) &&
+                draw_indx_2.topology == input.topology &&
+                draw_indx_2.index_count == input.index_count &&
+                draw_indx_2.index_guest_address == input.index_guest_address &&
+                draw_indx_2.index_byte_length == input.index_byte_length,
+            "captured PM4_DRAW_INDX_2 DMA form decoded differently from DRAW_INDX");
+    auto captured_auto_index_draw = std::vector<uint8_t>(
+        captured_draw_indx_2,
+        captured_draw_indx_2 + sizeof(captured_draw_indx_2));
+    captured_auto_index_draw[7] = 0x84;
+    require(!shift::xbox::decode_captured_draw_indx(
+                captured_auto_index_draw.data(), captured_auto_index_draw.size(),
+                &draw_indx_2, &error),
+            "non-indexed DRAW_INDX_2 auto-index form was accepted as an indexed draw");
+    require(!shift::xbox::decode_captured_draw_indx(
+                captured_draw_indx_2, sizeof(captured_draw_indx_2) - 4u,
+                &draw_indx_2, &error),
+            "truncated PM4_DRAW_INDX_2 packet was accepted");
     require(input.topology == shift::xbox::PrimitiveTopology::TriangleList,
             "primitive topology changed");
     require(input.index_count == 6, "index count changed");

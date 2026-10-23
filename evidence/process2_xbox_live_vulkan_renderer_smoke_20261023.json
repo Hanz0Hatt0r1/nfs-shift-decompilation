@@ -2,7 +2,7 @@
   "format": "SHIFT.XboxLiveVulkanRendererSmoke/1",
   "status": "renderer_submission_path_built_and_validated; live_retail_frame_not_yet_observed",
   "project_path": {
-    "guest_packets": ["PM4_DRAW_INDX", "PM4_XE_SWAP"],
+    "guest_packets": ["PM4_DRAW_INDX", "PM4_DRAW_INDX_2 (DMA form)", "PM4_XE_SWAP"],
     "shader_path": "captured microcode -> project GLSL translator -> glslang -> Vulkan 1.1 SPIR-V",
     "resource_path": [
       "guest indices normalized to uint16",
@@ -27,7 +27,20 @@
       "device": "Redmi Note 8 Pro",
       "gpu": "Mali-G76 MC4",
       "validation_layer_enabled": false,
-      "result": "passed"
+      "result": "passed",
+      "latest_wifi_adb_run": {
+        "date": "2026-10-23",
+        "device_identity": "begonia, Android 13/API 33, arm64-v8a",
+        "checks_passed": [
+          "shift_xbox_draw_input_check",
+          "shift_xbox_guest_ring_check",
+          "shift_xbox_shader_translate_check",
+          "xbox_live_vulkan_renderer_check"
+        ],
+        "renderer_result": "Vulkan 1.1 offscreen indexed draw produced non-black pixels on Mali-G76 MC4",
+        "validation_layer_enabled": false,
+        "retail_frame_observed": false
+      }
     }
   },
   "plugin_build": {
@@ -39,9 +52,9 @@
   },
   "android_full_game_attempt": {
     "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, arm64-v8a)",
-    "renderer_regressions": "draw input, guest ring, shader translation, and Vulkan 1.1 offscreen indexed draw all passed on-device; the renderer test binary was built for Android API 24",
+    "renderer_regressions": "rebuilt for Android API 33 and rerun on Redmi Note 8 Pro: draw input, guest ring, shader translation, and synthetic Vulkan 1.1 offscreen indexed draw passed",
     "rexglue_plugin_ndk_build": "blocked before plugin link at Process 1-owned guest fiber backend",
-    "renderer_test_build_configuration": "Android NDK r28.2, arm64-v8a, API 24",
+    "renderer_test_build_configuration": "Android NDK r28.2, arm64-v8a, API 33",
     "plugin_build_configuration": "Android NDK r28.2, arm64-v8a, API 33",
     "sdk_platform_detection": "android-arm64",
     "sdk_android_compile_progress": "rexui-vulkan backend passed; Android SDL surface/window source objects passed; float parsing, chrono, and timer-thread compatibility sources compiled",

@@ -70,6 +70,21 @@
     "total_guest_swaps": 2,
     "total_vulkan_frames_submitted": 0
   },
+  "opcode_audit": {
+    "source_log": "/tmp/process2-live-nfs/opcode-run2/logs/shift-native-opcode.log",
+    "plugin_state": "histogram-only build before DRAW_INDX_2 and IM_LOAD_IMMEDIATE decoding",
+    "total_packets": 1828,
+    "batch_packet_counts": [73, 153, 808, 9, 785],
+    "type3_opcode_counts": {
+      "0x22_DRAW_INDX": 0,
+      "0x27_IM_LOAD": 0,
+      "0x2b_IM_LOAD_IMMEDIATE": 14,
+      "0x2f_LOAD_ALU_CONSTANT": 0,
+      "0x36_DRAW_INDX_2": 100
+    },
+    "raw_packet_words_saved": false,
+    "interpretation": "The histogram does not distinguish DMA indexed draws from AutoIndex DRAW_INDX_2 packets and does not validate inline shader payloads."
+  },
   "visual": {
     "screenshot": "/tmp/shift_native_live_20261023.png",
     "sha256": "c1161e09bb43363d2777bdb410b3e59e98b33eae3b374322b5e86079ab089a12",
@@ -78,12 +93,13 @@
   "validation": {
     "linux_plugin_ctest": "2/2 passed",
     "linux_renderer_ctest": "4/4 passed",
-    "log_evidence": "four per-batch shift-native summaries followed live CP_RB_WPTR notifications; no DRAW_INDX or shader loads appeared",
+    "log_evidence": "four initial and five opcode-audit per-batch shift-native summaries followed live CP_RB_WPTR notifications; raw words for 0x2b and 0x36 packets were not saved",
     "controller_input": "A and Start were sent after initialization; no additional guest draw batch followed",
     "result": "proves the retail runtime loaded the emulator-free plugin and its live PM4 ring consumer handled guest batches and swaps; does not prove retail draw routing or frame parity"
   },
   "remaining_blockers": [
-    "The guest did not publish a captured DRAW_INDX or load the captured shader pair during this run.",
+    "The opcode audit counted 100 DRAW_INDX_2 packets, but their raw dwords were not saved, so no DrawIndexedPrimitive form has been verified.",
+    "No pointer IM_LOAD or LOAD_ALU_CONSTANT packets were observed; 14 IM_LOAD_IMMEDIATE packets were counted but their shader payloads were not validated from raw bytes.",
     "No frame reached submit_captured_vulkan_frame; the two observed XE_SWAP packets had no supported draw to submit.",
     "Process 1 owns the original guest startup and scheduling path needed to reach the game's render-producing state."
   ]

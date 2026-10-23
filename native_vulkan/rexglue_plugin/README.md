@@ -13,14 +13,16 @@ project-owned Vulkan renderer to the presenter's output image. The renderer
 has no XCB or Wayland dependency; only the ReXGlue presenter attaches that
 image to a host window.
 
-The supported path is deliberately narrow: triangle-list `DRAW_INDX`, the
-captured FLOAT3 vertex fetch and format-6 texture, the observed shader pair,
-the captured raster register set, and the captured blend control. Unsupported
-draw state is rejected. The frame path clears the presenter image and renders
-the collected draws; it does not reconstruct Xenos EDRAM contents or read the
-guest frontbuffer as a finished image. The captured black texture border has
-unknown alpha, so transparent-black is still provisional. Target gamma
-conversion and the complete retail scene are not yet verified.
+The supported path is deliberately narrow: triangle-list DMA-indexed
+`DRAW_INDX` and `DRAW_INDX_2`, the captured FLOAT3 vertex fetch and format-6
+texture, the captured shader pair (pointer-loaded or inline
+`IM_LOAD_IMMEDIATE`), the captured raster register set, and the captured blend
+control. Unsupported draw state is rejected. The frame path clears the
+presenter image and renders the collected draws; it does not reconstruct Xenos
+EDRAM contents or read the guest frontbuffer as a finished image. The captured
+black texture border has unknown alpha, so transparent-black is still
+provisional. Target gamma conversion and the complete retail scene are not
+yet verified.
 
 ## Build and checks
 
@@ -47,10 +49,12 @@ On 2026-10-23, the retail Linux executable was run with `--gpu_plugin=shift-nati
 The runtime mapped this plugin without mapping `rexgpu-xenos`, initialized the
 guest ring at `0x09752580`, and the worker consumed four live batches (1,828
 PM4 packets) containing two `XE_SWAP` packets. This verifies the plugin is
-connected to the retail guest's PM4 path. That startup traffic contained no
-`DRAW_INDX`, shader program loads, or constant spans, so it submitted zero
-Vulkan frames and the window remained black. A retail draw through the plugin
-is still unconfirmed. See
+connected to the retail guest's PM4 path. A later opcode-only audit counted
+100 `DRAW_INDX_2` and 14 `IM_LOAD_IMMEDIATE` packets, but did not retain their
+raw words; it cannot establish that the draws use DMA indices or that the
+inline shader payloads are valid. That run submitted zero Vulkan frames, so a
+retail draw through the plugin is still unconfirmed. The current worker logs
+one bounded raw packet sample for each opcode on its next live run. See
 [`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json).
 
 The earlier one-draw capture bundle remains separate evidence for the project
@@ -62,4 +66,6 @@ POSIX fiber backend because Android Bionic does not provide
 `getcontext`/`makecontext`/`swapcontext`. That scheduler code belongs to
 Process 1. The game project also has no Android Activity or APK target yet, so
 the Redmi Note 8 Pro checks cover the offscreen Vulkan renderer only, not a
-full game build.
+full game build. The parser, guest-ring, shader-translation, and renderer
+checks were rebuilt for API 33 and rerun on the device; the renderer test uses
+synthetic shaders and does not show a retail frame.

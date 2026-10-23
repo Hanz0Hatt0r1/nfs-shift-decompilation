@@ -61,6 +61,13 @@ struct CapturedShaderProgramLoad {
     uint32_t byte_length;
 };
 
+struct CapturedImmediateShaderProgramLoad {
+    GuestShaderStage stage;
+    uint32_t dword_count;
+    uint32_t byte_length;
+    size_t code_offset;
+};
+
 enum class CapturedConstantBank : uint8_t {
     Alu,
     Fetch,
@@ -390,6 +397,12 @@ bool decode_captured_shader_program_load(
     CapturedShaderProgramLoad* output,
     std::string* error);
 
+bool decode_captured_immediate_shader_program_load(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedImmediateShaderProgramLoad* output,
+    std::string* error);
+
 // Decodes the captured PM4_LOAD_ALU_CONSTANT memory-copy form and its bounded
 // target bank. Loading the returned span is a caller-owned guest-memory action.
 bool decode_captured_constant_load(
@@ -447,8 +460,8 @@ bool schedule_captured_shader_instructions(
     std::vector<CapturedShaderInstructionSchedule>* output,
     std::string* error);
 
-// Translates only the captured PM4_DRAW_INDX form. This decodes the guest
-// command into renderer inputs; it does not execute or emulate Xenos state.
+// Decodes the supported captured PM4_DRAW_INDX and DMA-source DRAW_INDX_2
+// forms into renderer inputs; it does not execute or emulate Xenos state.
 bool decode_captured_draw_indx(
     const uint8_t* packet_bytes,
     size_t byte_length,

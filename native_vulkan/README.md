@@ -13,9 +13,10 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
 - cubemap packet;
 - SPIR-V reflection and interface gates;
 - BMW material→DDS→Vulkan adapter;
-- separately tested, bounded decoding of the captured Xbox `PM4_DRAW_INDX`
-  and vertex/texture fetch descriptors, plus normalization for the captured
-  index/vertex byte orders. The captured 1024x256, format-6, tiled 2D texture
+- separately tested, bounded decoding of captured Xbox `PM4_DRAW_INDX` and
+  DMA-source `PM4_DRAW_INDX_2` packets and vertex/texture fetch descriptors,
+  plus normalization for captured index/vertex byte orders. The captured
+  1024x256, format-6, tiled 2D texture
   can also be converted to linear texel order with its 8-in-32 byte swap. The
   descriptor decoder maps the captured channel selectors, signs, X/Y/Z clamp
   modes, border code, filters, and anisotropy to semantic values; they are not
@@ -50,8 +51,9 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   over-limit streams. The Linux ReXGlue plugin in
   `native_vulkan/rexglue_plugin` consumes the live ring and indirect buffers
   from `InitializeRingBuffer` / `CP_RB_WPTR` on an asynchronous worker. At each
-  supported `DRAW_INDX`, it checks the captured raster state, shader programs,
-  constants, and descriptors; translates the bounded shader pair to
+  supported DMA-source `DRAW_INDX` or `DRAW_INDX_2`, it checks the captured
+  raster state, shader programs (including bounded inline `IM_LOAD_IMMEDIATE`
+  code), constants, and descriptors; translates the bounded shader pair to
   project-owned GLSL; compiles Vulkan 1.1 SPIR-V; and resolves normalized
   index/vertex payloads plus the untiled texture. At `PM4_XE_SWAP`, the plugin
   batches those draws and submits them into the ReXGlue presenter's output
@@ -61,11 +63,17 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   completed image. Regressions cover PM4 draw/swap framing, ring wraparound,
   indirect buffers, and the plugin ABI. A separate offscreen indexed-draw
   smoke passed Vulkan validation on Linux and executed on Redmi Note 8 Pro;
-  those smoke shaders are synthetic. A live Linux retail run also loaded the
+  those smoke shaders are synthetic. On 2026-10-23, Wi-Fi ADB also ran the
+  draw-input, guest-ring, shader-translation, and Vulkan 1.1 renderer checks on
+  Redmi Note 8 Pro / Android 13 / Mali-G76 MC4. Android validation layers were
+  unavailable. A live Linux retail run also loaded the
   emulator-free plugin, initialized the guest ring, and consumed 1,828 PM4
-  packets including two swaps. That startup traffic contained no indexed draw
-  or shader loads, so the plugin submitted no Vulkan frame; a first retail
-  draw is not yet confirmed. See
+  packets including two swaps. A later opcode audit counted 100
+  `DRAW_INDX_2` and 14 `IM_LOAD_IMMEDIATE` packets, but no `DRAW_INDX`, pointer
+  `IM_LOAD`, or `LOAD_ALU_CONSTANT`. It saved opcode counts, not raw packet
+  words, so it does not establish whether those `DRAW_INDX_2` packets use DMA
+  indices or AutoIndex. No Vulkan frame was submitted in either run, so a first
+  retail draw is not yet confirmed. See
   [`process2_xbox_live_guest_ring_20261023.json`](../evidence/process2_xbox_live_guest_ring_20261023.json).
   The private 19,784-byte capture scans as 247 packets with four bounded
   `DRAW_INDX` packets. The capture decoders reject unsupported forms. The untile

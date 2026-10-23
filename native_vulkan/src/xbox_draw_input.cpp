@@ -14,7 +14,9 @@ constexpr uint32_t kPacketTypeMask = 0xC0000000u;
 constexpr uint32_t kPacketCountMask = 0x3FFF0000u;
 constexpr uint32_t kPacketOpcodeMask = 0x0000FF00u;
 constexpr uint32_t kDrawIndxOpcode = 0x22u;
+constexpr uint32_t kDrawIndx2Opcode = 0x36u;
 constexpr uint32_t kImLoadOpcode = 0x27u;
+constexpr uint32_t kImLoadImmediateOpcode = 0x2Bu;
 constexpr uint32_t kLoadAluConstantOpcode = 0x2Fu;
 constexpr uint32_t kIndirectBufferOpcode = 0x3Fu;
 constexpr uint32_t kXeSwapOpcode = 0x64u;
@@ -22,7 +24,7 @@ constexpr uint32_t kXeSwapSignature = 0x53574150u;  // Big-endian "SWAP".
 constexpr uint32_t kTriangleList = 4u;
 constexpr uint32_t kIndexCountMask = 0x00FFFFFFu;
 constexpr uint32_t kDmaSwapModeMask = 0xC0000000u;
-constexpr size_t kCapturedPacketBytes = 20;
+constexpr size_t kMinimumIndexedDrawPacketBytes = 16;
 
 uint64_t tiled_2d_offset_32bpp(uint32_t x, uint32_t y, uint32_t pitch_pixels) {
     const uint64_t outer_blocks =
@@ -199,6 +201,43 @@ bool decode_captured_shader_program_load(
         address_and_stage & ~0x3u,
         dword_count,
         dword_count * static_cast<uint32_t>(sizeof(uint32_t)),
+    };
+    if (error) error->clear();
+    return true;
+}
+
+bool decode_captured_immediate_shader_program_load(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedImmediateShaderProgramLoad* output,
+    std::string* error) {
+    if (!packet_bytes || !output || byte_length < 4u * sizeof(uint32_t) ||
+        (byte_length & 3u) != 0u) {
+        return fail("invalid PM4_IM_LOAD_IMMEDIATE packet", error);
+    }
+
+    const uint32_t header = read_be32(packet_bytes);
+    const uint32_t payload_count = ((header & kPacketCountMask) >> 16) + 1u;
+    if ((header & kPacketTypeMask) != kType3Header ||
+        ((header & kPacketOpcodeMask) >> 8) != kImLoadImmediateOpcode ||
+        payload_count < 3u || byte_length != (payload_count + 1u) * sizeof(uint32_t)) {
+        return fail("unsupported PM4_IM_LOAD_IMMEDIATE packet form", error);
+    }
+
+    const uint32_t stage = read_be32(packet_bytes + 4u);
+    const uint32_t start_and_size = read_be32(packet_bytes + 8u);
+    const uint32_t start = start_and_size >> 16;
+    const uint32_t dword_count = start_and_size & 0xFFFFu;
+    if (stage > 1u || start != 0u || dword_count == 0u ||
+        static_cast<uint64_t>(dword_count) + 2u > payload_count) {
+        return fail("invalid inline shader stage or program span", error);
+    }
+
+    *output = CapturedImmediateShaderProgramLoad{
+        stage == 0u ? GuestShaderStage::Vertex : GuestShaderStage::Pixel,
+        dword_count,
+        dword_count * static_cast<uint32_t>(sizeof(uint32_t)),
+        3u * sizeof(uint32_t),
     };
     if (error) error->clear();
     return true;
@@ -609,30 +648,35 @@ bool decode_captured_draw_indx(
     size_t byte_length,
     DecodedIndexedDraw* output,
     std::string* error) {
-    if (!packet_bytes || !output || byte_length < kCapturedPacketBytes) {
-        return fail("truncated PM4_DRAW_INDX packet", error);
+    if (!packet_bytes || !output || byte_length < kMinimumIndexedDrawPacketBytes) {
+        return fail("truncated indexed draw PM4 packet", error);
     }
 
     const uint32_t header = read_be32(packet_bytes);
+    const uint32_t opcode = (header & kPacketOpcodeMask) >> 8;
+    const bool has_viz_query = opcode == kDrawIndxOpcode;
     if ((header & kPacketTypeMask) != kType3Header ||
-        ((header & kPacketOpcodeMask) >> 8) != kDrawIndxOpcode) {
+        (!has_viz_query && opcode != kDrawIndx2Opcode)) {
         return fail("unsupported guest draw packet", error);
     }
 
-    // The captured packet header encodes four payload dwords.
     const uint32_t payload_count = ((header & kPacketCountMask) >> 16) + 1;
-    if (payload_count != 4 || byte_length != kCapturedPacketBytes) {
-        return fail("unsupported PM4_DRAW_INDX payload length", error);
+    const uint32_t expected_payload_count = has_viz_query ? 4u : 3u;
+    const size_t expected_byte_length =
+        (expected_payload_count + 1u) * sizeof(uint32_t);
+    if (payload_count != expected_payload_count || byte_length != expected_byte_length) {
+        return fail("unsupported indexed draw PM4 payload length", error);
     }
 
-    const uint32_t draw_initiator = read_be32(packet_bytes + 8);
+    const size_t initiator_offset = has_viz_query ? 8u : 4u;
+    const uint32_t draw_initiator = read_be32(packet_bytes + initiator_offset);
     const uint32_t primitive_type = draw_initiator & 0x3Fu;
     const uint32_t source_select = (draw_initiator >> 6) & 0x3u;
     const uint32_t major_mode = (draw_initiator >> 8) & 0x3u;
     const uint32_t index_size = (draw_initiator >> 11) & 0x1u;
     const uint32_t initiator_index_count = draw_initiator >> 16;
-    const uint32_t index_guest_address = read_be32(packet_bytes + 12);
-    const uint32_t dma_size = read_be32(packet_bytes + 16);
+    const uint32_t index_guest_address = read_be32(packet_bytes + initiator_offset + 4u);
+    const uint32_t dma_size = read_be32(packet_bytes + initiator_offset + 8u);
     const uint32_t dma_index_count = dma_size & kIndexCountMask;
     const uint32_t dma_endian_mode = (dma_size & kDmaSwapModeMask) >> 30;
 
