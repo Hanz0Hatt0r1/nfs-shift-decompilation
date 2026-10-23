@@ -187,7 +187,8 @@ back `0x19`, `0x1F`, and `0x49`. The run still had only two startup swaps and a
 black retail readback (zero non-black pixels, FNV-1a
 `B161DE6EEC272325`). This confirms RPTR writeback on this Android run, but does
 not resolve the separate Process 1 Linux/GDB report for `0xB7AF4000` or prove
-retail output. The original APK was restored and left foregrounded. See
+retail output. The original APK was restored and left foregrounded; during the
+next 45 seconds it produced no further PM4 batches or swaps and stayed black. See
 [`process2_redmi_note8pro_rptr_writeback_20261023.txt`](../../evidence/process2_redmi_note8pro_rptr_writeback_20261023.txt)
 and the `android_rptr_writeback_diagnostic_20261023` evidence object.
 

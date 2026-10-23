@@ -927,7 +927,16 @@
       "apk_sha256": "ff5c30af24013b315280e161cd383c4cd50874a1e096f0d0383364f004a311c6",
       "runtime_log": "files/nfs_shift/user/logs/nfs_shift_031.log",
       "foreground_pid": 32421,
-      "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839"
+      "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+      "foreground_observation": {
+        "duration_seconds": 45,
+        "runtime_log_sha256": "397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21",
+        "guest_swaps": 2,
+        "additional_draw_batches_after_second_swap": 0,
+        "process_remained_foreground": true,
+        "screen_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+        "result": "No further PM4 batches or swaps arrived during 45 seconds; the screen remained black."
+      }
     },
     "comparison_note": "This Android call argument (0x17AF403C) differs from the 0xB7AF4000 target reported by Process 1 in its Linux/GDB run; do not treat them as the same address without matching run evidence.",
     "interpretation": "The P2 Android plugin receives VdEnableRingBufferRPtrWriteBack and writes the translated guest read pointer correctly for this startup run. The retail Vulkan output remains black, and no later guest draw batch was observed after the two startup swaps. This rules out Android RPTR writeback as the cause of this run’s black frame but does not prove the Linux/GDB target or retail visual parity."
