@@ -938,7 +938,30 @@
         "result": "No further PM4 batches or swaps arrived during 45 seconds; the screen remained black."
       }
     },
-    "comparison_note": "This Android call argument (0x17AF403C) differs from the 0xB7AF4000 target reported by Process 1 in its Linux/GDB run; do not treat them as the same address without matching run evidence.",
-    "interpretation": "The P2 Android plugin receives VdEnableRingBufferRPtrWriteBack and writes the translated guest read pointer correctly for this startup run. The retail Vulkan output remains black, and no later guest draw batch was observed after the two startup swaps. This rules out Android RPTR writeback as the cause of this run’s black frame but does not prove the Linux/GDB target or retail visual parity."
+    "comparison_note": "A later same-title Linux/GDB probe confirmed that VdEnableRingBufferRPtrWriteBack also receives 0x17AF403C and translates it to 0x217af403c. Its 0xB7AF4000 observation is the ring base, not the RPTR destination.",
+    "interpretation": "The P2 Android plugin receives VdEnableRingBufferRPtrWriteBack and writes the translated guest read pointer correctly for this startup run. The retail Vulkan output remains black, and no later guest draw batch was observed after the two startup swaps. The separate Linux/GDB probe confirms the same pointer contract but does not establish later game progression or retail visual parity."
+  },
+  "linux_rptr_crosscheck_20261024": {
+    "source_owner": "Process 1 read-only GDB runtime evidence; no Process 1 files changed",
+    "source_log": "/tmp/p1-vdwriteback-probe-20261024/logs/gdb-vd-writeback-target.log",
+    "source_log_sha256": "9659c0aa7bbd1e724e339b8efefe72539d9db9839b3f7db5ea9ae767ce48041f",
+    "api_call": {
+      "name": "VdEnableRingBufferRPtrWriteBack",
+      "guest_argument": "0x17AF403C",
+      "block_log2": 6,
+      "translated_host_pointer": "0x217af403c"
+    },
+    "address_distinction": {
+      "guest_ring_base": "0xB7AF4000",
+      "rptr_writeback_destination": "0x17AF403C",
+      "same_as_android_writeback_destination": true
+    },
+    "host_word_watchpoint_changes": [
+      {"old": "0x00000000", "new": "0x19000000"},
+      {"old": "0x19000000", "new": "0x31000000"},
+      {"old": "0x31000000", "new": "0x49000000"}
+    ],
+    "debugger_state_at_capture": "GDB stopped the game thread at a hardware watchpoint on the writeback destination; the OS not-responding dialog is consistent with this debugger stop, not proof of a guest-runtime deadlock.",
+    "interpretation": "Linux and Android use the same VdEnableRingBufferRPtrWriteBack guest argument and translated host address. The prior 0xB7AF4000 comparison was a ring-base/writeback-destination mix-up. This verifies pointer routing only; visible retail pixels and progression beyond the observed draws remain unverified."
   }
 }
