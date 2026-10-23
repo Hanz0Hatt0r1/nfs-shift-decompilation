@@ -25,6 +25,25 @@ constexpr std::array<uint8_t, 20> kCapturedDrawPacket = {
 }  // namespace
 
 int main() {
+    size_t ring_byte_length = 99u;
+    std::string error;
+    require(shift::xbox::guest_ring_byte_length_from_size_log2(
+                0u, &ring_byte_length, &error) && ring_byte_length == 8u,
+            "minimum ReXGlue ring size was calculated incorrectly");
+    require(shift::xbox::guest_ring_byte_length_from_size_log2(
+                9u, &ring_byte_length, &error) && ring_byte_length == 4096u,
+            "captured ReXGlue ring size was calculated incorrectly");
+    require(shift::xbox::guest_ring_byte_length_from_size_log2(
+                23u, &ring_byte_length, &error) && ring_byte_length == 64u * 1024u * 1024u,
+            "maximum permitted ReXGlue ring size was calculated incorrectly");
+    require(!shift::xbox::guest_ring_byte_length_from_size_log2(
+                24u, &ring_byte_length, &error) &&
+                ring_byte_length == 64u * 1024u * 1024u,
+            "oversized ReXGlue ring size was accepted or changed output");
+    require(!shift::xbox::guest_ring_byte_length_from_size_log2(
+                UINT32_MAX, &ring_byte_length, &error),
+            "overflowing ReXGlue ring size was accepted");
+
     std::array<uint8_t, 32> ring{};
     for (size_t i = 0; i < kCapturedDrawPacket.size(); ++i) {
         const size_t ring_index = (24u + i) % ring.size();
@@ -32,7 +51,6 @@ int main() {
     }
 
     shift::xbox::GuestRingBatch batch{};
-    std::string error;
     require(shift::xbox::snapshot_guest_ring_batch(
                 ring.data(), ring.size(), 6, 3, &batch, &error),
             "captured DRAW_INDX spanning ring wrap was rejected");

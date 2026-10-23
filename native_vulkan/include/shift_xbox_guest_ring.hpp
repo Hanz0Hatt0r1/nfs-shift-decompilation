@@ -15,6 +15,13 @@ struct GuestRingBatch {
     uint32_t next_read_pointer_dwords = 0;
 };
 
+// ReXGlue's InitializeRingBuffer size_log2 describes 1 << (size_log2 + 3)
+// bytes. Reject values outside the same 64 MiB ceiling as the snapshot reader.
+bool guest_ring_byte_length_from_size_log2(
+    uint32_t size_log2,
+    size_t* output,
+    std::string* error);
+
 // Copies and frames the committed dword span of an Xbox guest ring. Read and
 // write pointers are dword indexes; packet data remains in guest byte order.
 // This is input transport only: it does not apply GPU state or issue draws.

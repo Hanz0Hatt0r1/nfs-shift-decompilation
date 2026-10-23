@@ -15,6 +15,19 @@ bool fail(const char* message, std::string* error) {
 
 }  // namespace
 
+bool guest_ring_byte_length_from_size_log2(
+    uint32_t size_log2,
+    size_t* output,
+    std::string* error) {
+    constexpr uint32_t kMaximumSizeLog2 = 23u;
+    if (!output || size_log2 > kMaximumSizeLog2) {
+        return fail("invalid Xbox guest ring size_log2", error);
+    }
+    *output = size_t{1} << (size_log2 + 3u);
+    if (error) error->clear();
+    return true;
+}
+
 bool snapshot_guest_ring_batch(
     const uint8_t* ring_bytes,
     size_t ring_byte_length,

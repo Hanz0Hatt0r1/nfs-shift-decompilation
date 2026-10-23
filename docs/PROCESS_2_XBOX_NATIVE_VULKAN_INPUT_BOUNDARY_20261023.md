@@ -330,6 +330,10 @@ decoder. This is a ring-consumption primitive only: it is not connected to the
 runtime write-pointer callback, does not advance guest memory, and does not
 interpret PM4 state or submit a Vulkan draw.
 
+The paired `guest_ring_byte_length_from_size_log2` helper implements the
+ReXGlue `1 << (size_log2 + 3)` capacity rule with the same 64 MiB ceiling and
+rejects overflow-sized inputs before any shift or allocation.
+
 As an offline cross-check, the same helper consumed the complete private 19,784
 byte diagnostic capture after its exact bytes were copied into a zero-filled
 32 KiB test ring. It framed all 247 packets and decoded the four captured

@@ -37,9 +37,11 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   The packet scanner frames contiguous big-endian type 0/1/2/3 PM4 packets and
   reports type-3 opcodes without applying state or executing commands. The
   project-owned `snapshot_guest_ring_batch` copies a committed dword-indexed
-  ring interval, including wraparound, then frames its packets; a regression
-  carries the captured `DRAW_INDX` across the ring boundary. It is not yet wired
-  to ReXGlue's live write-pointer service and does not apply register state.
+  ring interval, including wraparound, then frames its packets. The adjacent
+  size helper bounds ReXGlue's `1 << (size_log2 + 3)` ring capacity before use.
+  A regression carries the captured `DRAW_INDX` across the ring boundary. It
+  is not yet wired to ReXGlue's live write-pointer service and does not apply
+  register state.
   The private 19,784-byte capture scans as 247 packets with four bounded
   `DRAW_INDX` packets. The capture decoders reject unsupported forms. The untile
   path rejects other pitches, formats, dimensions, and layouts. Its address
