@@ -66,7 +66,8 @@ private:
                 return fail("expanded Xbox PM4 packet limit exceeded", error);
             }
             output->packets.push_back(
-                ResolvedGuestPacket{packet, source_guest_address, nesting_depth});
+                ResolvedGuestPacket{packet, source_guest_address, byte_length,
+                                    nesting_depth});
 
             if (packet.type != PacketType::Type3 ||
                 packet.opcode != kIndirectBufferOpcode) {

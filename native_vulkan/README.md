@@ -44,11 +44,14 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   decoded to a bounded guest address and dword length. The ring frontend can
   expand that form through a caller-supplied guest-memory reader, retaining
   packet source and nesting depth while rejecting short spans, cycles, and
-  over-limit streams. This expansion is not yet wired to ReXGlue's live memory
-  or ring callbacks and does not apply PM4 state or execute draws.
-  A regression carries the captured `DRAW_INDX` across the ring boundary. It
-  is not yet wired to ReXGlue's live write-pointer service and does not apply
-  register state.
+  over-limit streams. The Linux ReXGlue plugin in
+  `native_vulkan/rexglue_plugin` consumes the live ring and indirect buffers
+  from `InitializeRingBuffer` / `CP_RB_WPTR` on an asynchronous worker. It
+  frames type-0/type-1 register writes and decodes observed `DRAW_INDX` packets,
+  but does not apply state or submit those draws. Regressions cover ring
+  wraparound, captured draws, indirect-buffer framing, and the plugin factory
+  ABI. The live frontend remains an input tap until state/resource tracking
+  feeds the project Vulkan draw path.
   The private 19,784-byte capture scans as 247 packets with four bounded
   `DRAW_INDX` packets. The capture decoders reject unsupported forms. The untile
   path rejects other pitches, formats, dimensions, and layouts. Its address
@@ -75,10 +78,12 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
 - limitations for this isolated draw: the prior EDRAM contents were not
   captured, so the standalone bundle begins with an explicit black clear; the
   captured black texture-border alpha is unresolved, so the test bundle uses
-  Vulkan transparent-black border behavior provisionally. The tested ring-span
-  reader is not wired to ReXGlue's live write-pointer service, and the ReXGlue
-  plugin/runtime is not yet integrated with this renderer. Register/resource
-  state ingestion and broader shader coverage remain future integration work.
+  Vulkan transparent-black border behavior provisionally. The plugin has no
+  dependency on the runtime-loaded `rexgpu-xenos` renderer; ReXGlue's common
+  runtime still includes generic Xenos format utilities. Its SDK `rexui-vulkan`
+  presenter currently requires Vulkan 1.3, SDL, and Linux X11/Wayland. This is
+  separate from the project's Vulkan 1.1 renderer core and Android surface path.
+  Live state/resource ingestion and draw submission remain future work.
   The product path must use a project-owned ReXGlue graphics frontend and must
   not load `rexgpu-xenos` or another GPU emulator;
 - Linux CI coverage for native smoke paths.

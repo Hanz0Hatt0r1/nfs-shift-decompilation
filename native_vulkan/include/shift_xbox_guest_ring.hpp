@@ -20,6 +20,7 @@ struct ResolvedGuestPacket {
     // Zero for packets copied from the root ring batch. For nested packets,
     // this is the guest address of the indirect buffer containing the packet.
     uint32_t source_guest_address = 0;
+    size_t source_guest_buffer_byte_length = 0;
     uint32_t nesting_depth = 0;
 };
 

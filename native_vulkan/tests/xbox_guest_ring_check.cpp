@@ -137,6 +137,8 @@ int main() {
                 expanded.packets.front().nesting_depth == 0u &&
                 expanded.packets[1].packet.type == shift::xbox::PacketType::ZeroNop &&
                 expanded.packets[1].source_guest_address == 0x0975B660u &&
+                expanded.packets[1].source_guest_buffer_byte_length ==
+                    74u * sizeof(uint32_t) &&
                 expanded.packets[1].nesting_depth == 1u,
             "captured indirect span was not expanded with its packet provenance");
 
