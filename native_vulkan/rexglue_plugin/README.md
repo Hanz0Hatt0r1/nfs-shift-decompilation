@@ -157,6 +157,26 @@ validation layer; it does not show a retail frame. Temporary device files were
 removed. The parser, guest-ring, shader-translation, and renderer checks were
 also rebuilt for API 33 and rerun on the device.
 
+A fresh build from the current Process 2 checkout (`699b38a7`) used NDK
+r28.2 with `ANDROID_ABI=arm64-v8a` and `ANDROID_PLATFORM=android-29`. On
+2026-10-23, `shift_xbox_draw_input_check`, `shift_xbox_guest_ring_check`,
+`shift_xbox_shader_translate_check`, and
+`xbox_live_vulkan_renderer_check` all exited successfully on the connected
+Redmi Note 8 Pro (Android API 33, Mali-G76 MC4). The renderer check submitted
+its synthetic Vulkan 1.1 AutoIndex point draw and verified output readback.
+This current-source device run covers the ARM64 parser, translator, and
+project renderer core; it did not load the ReXGlue plugin or run the retail
+guest ring. The full Android game build remains blocked by the runtime fiber
+backend and missing game Activity/APK integration described above.
+
+Using the same NDK/API29 configuration, the current
+`shift_native_gpu_plugin.cpp` translation unit also compiled by itself for
+`aarch64-none-linux-android29` (exit 0). This isolates the renderer-owned
+plugin source from the full SDK link. Clang emitted one non-fatal warning in
+the SDK header `rex/platform/fpscr.h` about the ARM64 `fpcr` inline-assembly
+operand width. This was a translation-unit compile only: it did not link the
+ReXGlue runtime or run a game.
+
 The guest-ring path now decodes the captured `PM4_INTERRUPT` CPU mask and
 dispatches the registered GPU callback through a ReXGlue `XHostThread`, so the
 callback has a guest thread context. The callback is issued after the current

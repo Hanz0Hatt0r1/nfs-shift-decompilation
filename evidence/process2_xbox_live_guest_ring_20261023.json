@@ -456,6 +456,40 @@
         "validation_layer": false,
         "full_game_test": false,
         "temporary_device_files_removed": true
+      },
+      "android_current_source_arm64_device_run": {
+        "source_checkout_head": "699b38a72823b08821b53dc95e45da4d9340f20f",
+        "build": "NDK r28.2.13676358, arm64-v8a, android-29",
+        "device": "Redmi Note 8 Pro (begonia, Android API 33, Mali-G76 MC4)",
+        "tests": {
+          "shift_xbox_draw_input_check": {
+            "sha256": "11d7d1ce9742e0cb6728bcfc976ac5f47038a1fa232517b43219e2603ae6ba60",
+            "result": "exit 0; captured PM4 draw input check passed"
+          },
+          "shift_xbox_guest_ring_check": {
+            "sha256": "b6a5e914c6d214dcb3c200fd5cb1dcd4d3c0566731e3f8cbde544f8df627a97a",
+            "result": "exit 0"
+          },
+          "shift_xbox_shader_translate_check": {
+            "sha256": "8f46420a10446913ebb0b1b540bb84b617a986c7938a975240c7a72877d583a5",
+            "result": "exit 0"
+          },
+          "xbox_live_vulkan_renderer_check": {
+            "sha256": "ddbda400f4e0d2276a271b478f866d904b370f50107ea44126da697d39e84ee2",
+            "result": "synthetic offscreen Vulkan 1.1 AutoIndex point draw and output readback passed on Mali-G76 MC4"
+          }
+        },
+        "plugin_source_arm64_api29_compile": {
+          "source": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+          "source_sha256": "b141901879459088f8fd3458b5cce22490bd19bcb2b8a426d9f3ba818b5a565c",
+          "object_sha256": "9e511eaba290e057d55b4077102a1b45d12164578de67f28beefbef69be3d218",
+          "toolchain": "NDK r28.2.13676358, Clang 19.0.1, aarch64-none-linux-android29",
+          "result": "translation unit compiled with exit 0; no ReXGlue runtime link or game run",
+          "warning": "non-fatal -Wasm-operand-widths in rex/platform/fpscr.h:78"
+        },
+        "validation_layer": false,
+        "retail_game_or_live_ring_test": false,
+        "temporary_device_files_removed": true
       }
     },
     "vulkan_validation_layer_enabled": false,
