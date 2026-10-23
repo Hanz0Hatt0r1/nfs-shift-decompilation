@@ -1,6 +1,6 @@
 {
   "schema": "shift.xbox360.rexglue.status.v1",
-  "updated_on": "2026-10-23",
+  "updated_on": "2026-10-24",
   "strategy": "xbox360-rexglue-primary",
   "reference_workstream": "pc-retail-1.02",
   "required_vulkan": "1.1",
@@ -80,9 +80,11 @@
         "evidence/xbox360_runtime_queue_probe_20261023.json",
         "evidence/xbox360_guest_ring_wait_semantics_20261023.json",
         "evidence/xbox360_plugin_queue_watch_20261023.json",
-        "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/5cae789f/evidence/process2_xbox_live_guest_ring_20261023.json"
+        "evidence/xbox360_ring_writeback_progress_20261024.json",
+        "evidence/xbox360_software_queue_pristine_probe_20261024.json",
+        "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/cba8b0e905999394d68ec62f1e4b6c398e91b2dc/evidence/process2_xbox_live_guest_ring_20261023.json"
       ],
-      "note": "Exact-XEX bytes verify that 0x823B34A0 calls 0x823A0310, which tests object+0x2ABD bit 0x02. A plugin-enabled Linux AMD64 GDB probe used executable SHA-256 6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b, runtime SHA-256 ff31b096a4a0bbb212e4e145f029239e1093776145070a232267182ce2642b32, and shift-native plugin SHA-256 dbbacc40d993cac1a0b3519ab1ae7392b6fcb26457ebe5d8cb4faf3249dff05b. The guest interrupt callback 0x823B37B8 ran twice. At the first predicate sample, read head was 1 and tail was 21; afterward a hardware watchpoint confirmed the read-pointer word stayed at 1 and object+0x2ABD stayed 0x14 with mask 0x02 clear for about 25 seconds. The main guest thread remained in the original queue loop. The tail was not watched after the initial sample. The probe does not identify why write-back did not update the read pointer or provide a complete executable-to-XEX build record. Process 2 is checking the VdEnableRingBufferRPtrWriteBack address/store path. Keep guest wait and scheduler semantics unchanged until that path is verified."
+      "note": "The plugin-enabled Linux AMD64 probe verified the retail VdEnableRingBufferRPtrWriteBack call with physical address 0x17AF403C and block-size log2 6. The GPU worker advanced the big-endian readback at descriptor+0x3C through values 25, 49, and 73; exact-XEX helper 0x823B2920 reads that +0x3C field. A clean follow-up GDB run watched the distinct descriptor+0x00 word, object+0x2ABD predicate, current KTHREAD+0x58 and object+13432: the queue stayed at 1, predicate at 0x14, and the two fields at zero; retail helper 0x823B33A0 was not entered during the observed interval. The timeout helper 0x823BA9C8 traps when object+13432 is null, so fabricating its trigger is not a valid fix. New cross-boundary candidate: Process 2 currently passes r3=1 when routing PM4_INTERRUPT callbacks, while exact-XEX callback 0x823B37B8 has distinct r3=0 and r3=1 branches and the ReXGlue import comment labels r3=0 the normal interrupt. The correct PM4-to-callback source mapping and any effect on the queue remain unverified; Process 2 assessment is outstanding. Preserve guest wait and scheduler semantics until that mapping and producer path are traced. Hashes and limitations are recorded in the linked evidence."
     },
     "X3": {
       "key": "xenos_vulkan_retail_frame",
