@@ -245,25 +245,29 @@ int main(int argc, char** argv) {
     }
     draw.texture_rgba8 = {255, 0, 0, 255};
     draw.vertex_stride_bytes = 0;
-    draw.index_count = 3;
+    // Mirror the captured retail point path: one AutoIndex point, 4x MSAA,
+    // D24S8 with ALWAYS comparisons, a Y-flipped full-screen viewport/scissor,
+    // and blending disabled. The synthetic shader keeps this a renderer test.
+    draw.index_count = 1;
     draw.auto_index = true;
     draw.topology = shift::xbox::PrimitiveTopology::PointList;
     draw.texture_width = 1;
     draw.texture_height = 1;
-    draw.raster.width = 32;
-    draw.raster.height = 32;
+    draw.raster.width = 1280;
+    draw.raster.height = 720;
     draw.raster.sample_count = 4;
     draw.raster.color_write_mask = 0xFu;
     draw.raster.depth_test_enabled = true;
     draw.raster.depth_write_enabled = true;
     draw.raster.stencil_test_enabled = true;
-    draw.raster.depth_control = (7u << 4) | (7u << 8);
+    draw.raster.depth_control = 0x00008777u;
+    draw.raster.viewport_y_flipped = true;
     draw.raster.scissor_x0 = 0;
     draw.raster.scissor_y0 = 0;
-    draw.raster.scissor_x1 = 32;
-    draw.raster.scissor_y1 = 32;
+    draw.raster.scissor_x1 = 1280;
+    draw.raster.scissor_y1 = 720;
     draw.raster.scissor_has_area = true;
-    draw.raster.blend_control_0 = 0x07010706u;
+    draw.raster.blend_control_0 = 0x00010001u;
     draw.texture_sampling.swizzle = {shift::xbox::TextureComponent::X,
                                      shift::xbox::TextureComponent::Y,
                                      shift::xbox::TextureComponent::Z,

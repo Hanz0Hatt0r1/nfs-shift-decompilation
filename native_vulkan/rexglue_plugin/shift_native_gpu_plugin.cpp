@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <bit>
 #include <condition_variable>
 #include <cstdint>
 #include <cstdlib>
@@ -442,6 +443,20 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     *inputs_ready = true;
     *shaders_translated = true;
 
+    if (DebugFragmentColorEnabled()) {
+      static std::atomic<uint32_t> debug_vertex_shader_log_mask{0};
+      const uint32_t shader_log_bit = vertex_program.size() == 96 ? 1u
+                                      : vertex_program.size() == 108 ? 2u
+                                                                     : 4u;
+      const uint32_t previous = debug_vertex_shader_log_mask.fetch_or(
+          shader_log_bit, std::memory_order_relaxed);
+      if ((previous & shader_log_bit) == 0) {
+        REXLOG_DEBUG(
+            "shift-native: first translated captured vertex shader ({} bytes):\n{}",
+            vertex_program.size(), vertex_translation.glsl);
+      }
+    }
+
     const std::string& pixel_shader_source = DebugFragmentColorEnabled()
                                                  ? kDebugFragmentColorShader
                                                  : pixel_translation.glsl;
@@ -527,6 +542,42 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       }
     }
     prepared.vertex_stride_bytes = vertex_stride_bytes;
+    if (DebugFragmentColorEnabled()) {
+      static std::atomic<uint32_t> vertex_sample_index{0};
+      const uint32_t sample =
+          vertex_sample_index.fetch_add(1, std::memory_order_relaxed);
+      if (prepared.vertices.size() >= 12) {
+        const auto vertex_component = [&prepared](size_t component) {
+          const size_t offset = component * sizeof(uint32_t);
+          const uint32_t bits = static_cast<uint32_t>(prepared.vertices[offset]) |
+                                (static_cast<uint32_t>(prepared.vertices[offset + 1]) << 8) |
+                                (static_cast<uint32_t>(prepared.vertices[offset + 2]) << 16) |
+                                (static_cast<uint32_t>(prepared.vertices[offset + 3]) << 24);
+          return std::bit_cast<float>(bits);
+        };
+        REXLOG_DEBUG(
+            "shift-native: diagnostic vertex sample #{}: autoindex={}, topology={}, "
+            "vs-bytes={}, has-fetch-constant={}, fetch-constant={}, attributes={}, "
+            "guest={:08X}, endian={}, stride={}, bytes={}, position=({:.6g}, {:.6g}, {:.6g})",
+            sample, draw.auto_index, static_cast<uint32_t>(draw.topology),
+            vertex_program.size(), vertex_translation.has_vertex_fetch_constant,
+            vertex_translation.vertex_fetch_constant_index,
+            vertex_translation.vertex_input_attributes.size(),
+            vertex_fetch.guest_address, vertex_fetch.endian_mode,
+            vertex_stride_bytes, prepared.vertices.size(), vertex_component(0),
+            vertex_component(1), vertex_component(2));
+      } else {
+        REXLOG_DEBUG(
+            "shift-native: diagnostic vertex sample #{} has no position bytes: "
+            "autoindex={}, topology={}, vs-bytes={}, has-fetch-constant={}, "
+            "fetch-constant={}, attributes={}, stride={}, bytes={}",
+            sample, draw.auto_index, static_cast<uint32_t>(draw.topology),
+            vertex_program.size(), vertex_translation.has_vertex_fetch_constant,
+            vertex_translation.vertex_fetch_constant_index,
+            vertex_translation.vertex_input_attributes.size(),
+            vertex_stride_bytes, prepared.vertices.size());
+      }
+    }
     if (pixel_translation.uses_texture) {
       if (texture_fetch.byte_length > kMaxLiveTextureBytes ||
           !ReadGuestMemory(this, texture_fetch.guest_address,

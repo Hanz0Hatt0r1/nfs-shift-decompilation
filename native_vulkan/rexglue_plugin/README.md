@@ -75,6 +75,15 @@ Pro (Mali-G76 MC4) using Vulkan 1.1. Those smoke shaders are synthetic and
 verify pipeline/resource/layout operations only; they are not retail output
 evidence.
 
+The renderer regression now matches the captured retail point-raster profile:
+one AutoIndex point, 4x MSAA, D24S8 with depth/stencil `ALWAYS`, a Y-flipped
+viewport, full 1280x720 scissor, and blending disabled. The updated check passed
+on GTX 950 with `VK_LAYER_KHRONOS_validation` and on Redmi Note 8 Pro (Android
+API 33, Mali-G76 MC4). A second synthetic run fed both devices the logged
+center-position VS shape and a constant-magenta PS; both produced non-black
+readback. These checks narrow the black live-retail result to data or state at
+the live integration boundary, but do not establish game output or parity.
+
 On 2026-10-23, a headless retail Linux run with `--gpu_plugin=shift-native`
 mapped this plugin without mapping `rexgpu-xenos`, initialized the guest ring
 at `0x09752580`, and consumed 1,828 PM4 packets with two `XE_SWAP` packets.
@@ -130,6 +139,19 @@ translation; a black result points to the vertex/geometry, raster-state, or
 target-output path. The plugin smoke asserts that this opt-in mode was
 activated and that its synthetic fixture produces colored pixels. The mode
 and fixture are diagnostic evidence only, not retail image evidence.
+
+On 2026-10-23, the current-source retail run repeated the two-swap capture with
+this magenta override active. It submitted 24 captured point draws per frame,
+but the 1280x720 readback still contained only `0xC0000000` (921,600 black
+pixels; SHA-256 `62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1`).
+The logged 96-byte no-input vertex shader writes the clip-space center with
+point size 1. A standalone renderer check with that shader shape and the
+captured raster profile produces color on both GTX 950 and Mali-G76 MC4, so
+those core settings alone do not explain the black live image. The remaining
+difference is in live draw construction or target integration; its cause is
+still unverified. The first 73-packet batch was also skipped because register
+`0x2307` was absent; following swap batches supplied enough state to submit 24
+point draws. No retail parity is established.
 
 An earlier Gamescope headless retry used info-level logging and recorded no
 draw submission; the later debug run above supersedes that result.

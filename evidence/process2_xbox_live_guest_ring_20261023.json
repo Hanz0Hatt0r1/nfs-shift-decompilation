@@ -495,6 +495,124 @@
     "vulkan_validation_layer_enabled": false,
     "result": "The readback confirms the project Vulkan presenter image stayed at its opaque black clear value across all pixels after live retail point-draw submission. This does not establish why those submitted draws produced no color or prove visible retail output/scene parity."
   },
+  "post_fragment_override_retail_diagnostic": {
+    "date": "2026-10-23",
+    "source_checkout_head": "f4720cc52998a7c29856ab53fa12485879735034",
+    "plugin_source_sha256": "b141901879459088f8fd3458b5cce22490bd19bcb2b8a426d9f3ba818b5a565c",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_sha256": "07c2afdc1e1ad371e29d9bf941d924686edd340fdc2c28c6338cce5bbd783cdd",
+    "rexglue_runtime_sha256": "7d2072c33ec30e2f85a61620ff5eda0b289d8c17b6054d3c2702d284a18835f2",
+    "gpu_plugin_selection": "shift-native; rexgpu-xenos was not requested",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "surface": "Gamescope headless + Xwayland",
+    "debug_fragment_override": "plugin log confirms the constant magenta pixel shader was active",
+    "debug_log": "/tmp/process2-live-nfs/headless-20261023/retail-vulkan-magenta-current-20261023/logs/retail-debug.log",
+    "batches": [
+      {
+        "pm4_packets": 73,
+        "autoindex_point_draws": 24,
+        "vulkan_frames_submitted": 0,
+        "first_error": "missing vertex shader control register 0x2307"
+      },
+      {
+        "pm4_packets": 970,
+        "draw_indx_2_packets": 26,
+        "autoindex_point_draws_submitted": 24,
+        "rectangle_list_draws_skipped": 2,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 1
+      },
+      {
+        "pm4_packets": 785,
+        "draw_indx_2_packets": 50,
+        "autoindex_point_draws_submitted": 24,
+        "rectangle_list_draws_skipped": 2,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 1
+      }
+    ],
+    "totals": {
+      "autoindex_point_draws_submitted": 48,
+      "guest_swaps": 2,
+      "vulkan_frames_submitted": 2,
+      "dma_indexed_draws_observed": 0
+    },
+    "readback": {
+      "extent": "1280x720",
+      "vk_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "raw_file": "/tmp/process2-live-nfs/headless-20261023/retail-vulkan-magenta-current-20261023/readback-debug.a2b10g10r10",
+      "raw_bytes": 3686400,
+      "raw_sha256": "62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1",
+      "decoded_pixel_count": 921600,
+      "unique_packed_words": 1,
+      "packed_word_histogram": {"0xC0000000": 921600},
+      "non_black_pixel_count": 0,
+      "fnv1a64_from_plugin_log": "68D8B1C5D0E72325"
+    },
+    "interpretation": "The active constant magenta pixel shader still produced no visible pixels for the submitted retail point draws. A separate renderer regression using the logged center-position vertex shape and captured retail point-raster profile does produce color on GTX 950 and Mali-G76 MC4. The remaining difference is at the live draw construction or presenter-target boundary; this does not identify the cause or establish game-level frame parity."
+  },
+  "retail_vs_kinds_followup_run": {
+    "date": "2026-10-23",
+    "source_checkout_head": "f4720cc52998a7c29856ab53fa12485879735034",
+    "plugin_source_sha256": "099a3c7a2ef68a1b16901db2a0780f9464ea9db5c387a2e0df3ba549a8a496fe",
+    "gpu_plugin_sha256": "502095e803a91ee7b865716f06da74f68ab98a59262d61b01762de85ac7e3f17",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_selection": "shift-native; rexgpu-xenos was not requested",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "log": "/tmp/process2-live-nfs/headless-20261023/retail-vulkan-magenta-current-20261023/logs/retail-vs-kinds.log",
+    "log_sha256": "5df3abee28c71a062f7095dd4c85c1d06f9ef35e0623abcea5182f8ff6f00091",
+    "shader_and_draw_observations": {
+      "submitted_draws": "24 AutoIndex point-list draws at each of two guest swaps",
+      "vertex_shader": "96-byte no-input shader; translated gl_Position=(0,0,0,1) and gl_PointSize=1",
+      "pixel_shader": "constant magenta debug override active",
+      "initial_batch": "24 draws skipped because vertex shader control register 0x2307 was not yet present",
+      "rectangle_lists": "two rectangle-list draws per swap skipped as unsupported"
+    },
+    "readback": {
+      "path": "/tmp/process2-live-nfs/headless-20261023/retail-vulkan-magenta-current-20261023/readback-vs-kinds.a2b10g10r10",
+      "extent": "1280x720",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "bytes": 3686400,
+      "sha256": "62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1",
+      "pixels": 921600,
+      "packed_word_histogram": {"0xC0000000": 921600},
+      "non_black_pixels": 0
+    },
+    "interpretation": "The live app path submits the captured point packets but writes no pixels, while a standalone renderer regression using the same center-position shader shape and retail raster profile writes color on host and Mali. This isolates the unresolved issue to a live plugin draw/target input difference; it does not prove which difference is responsible or establish game-level frame parity."
+  },
+  "retail_point_raster_regression": {
+    "date": "2026-10-23",
+    "source": "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
+    "source_sha256": "b441273f0e6c7cb4d919f7b270e8975005e750a84a7de8eb7097e34bd11e638a",
+    "profile": {
+      "draw": "single AutoIndex point",
+      "extent": "1280x720 source scissor, scaled into the offscreen target",
+      "samples": 4,
+      "depth_stencil": "D24S8, depth and stencil enabled, compare ALWAYS",
+      "viewport": "Y-flipped",
+      "blend": "disabled"
+    },
+    "host": {
+      "device": "NVIDIA GeForce GTX 950",
+      "ctest": "xbox_live_vulkan_renderer_check passed",
+      "validation_layer_enabled": true,
+      "test_binary_sha256": "11eb3addc6f51844f1771ef90f0eff1bb7e212c0ddf131adcfa3e3321fd9a986"
+    },
+    "android": {
+      "device": "Redmi Note 8 Pro",
+      "android_api": 33,
+      "gpu": "Mali-G76 MC4",
+      "result": "rebuilt ARM64 offscreen renderer check passed with the retail raster profile",
+      "validation_layer_enabled": false,
+      "test_binary_sha256": "205b957b7abf89f091d857409ebe25b846d9654154f77599702d7c1b76d9abc2"
+    },
+    "exact_center_shader_fixture": {
+      "vertex_spirv_sha256": "7041cbbb3c64632c6bdd64d09c42d83cbcb9394b67c16a08e568fd4a28d113c5",
+      "magenta_fragment_spirv_sha256": "f89a8d99e1c5dd4a8de34bbc0a79c1071c5684a2590dd7a4c62f0050d2f66c9e",
+      "result": "synthetic center-point rendering and non-black readback passed on both devices"
+    },
+    "limit": "This validates the standalone project renderer with synthetic shaders and does not exercise the ReXGlue presenter target or claim retail output."
+  },
   "remaining_blockers": [
     "All 100 observed DRAW_INDX_2 packets are AutoIndex (96 one-point draws and four three-index rectangle-list draws); no DMA-indexed draw packet was observed. The first live retail frame therefore covers the observed point-list path only.",
     "AutoIndex rectangle-list expansion remains unsupported, and the retail full/mini-fetch shader's rectangle draws are still skipped. Xenos EDRAM accumulation and the guest frontbuffer resolve path are not implemented.",
