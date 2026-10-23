@@ -330,6 +330,14 @@ decoder. This is a ring-consumption primitive only: it is not connected to the
 runtime write-pointer callback, does not advance guest memory, and does not
 interpret PM4 state or submit a Vulkan draw.
 
+As an offline cross-check, the same helper consumed the complete private 19,784
+byte diagnostic capture after its exact bytes were copied into a zero-filled
+32 KiB test ring. It framed all 247 packets and decoded the four captured
+`DRAW_INDX` commands with index counts 6, 6, 6, and 60. The ring capacity and
+head/tail values in that check are synthetic harness values, so this is not
+live ReXGlue ring evidence. Details are in
+`evidence/process2_xbox_guest_ring_snapshot_20261023.json`.
+
 This is the first XEX-originated indexed draw submitted through the
 project-owned Vulkan path. Its fetch metadata indicates a textured resource,
 but the draw is not identified as a vehicle draw. The original packet, shader,
