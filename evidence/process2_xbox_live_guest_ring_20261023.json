@@ -671,8 +671,26 @@
     "The live ring has 96 one-index AutoIndex point draws and four three-index AutoIndex rectangle-list draws; no DMA-indexed draw packet was observed, so DMA indexed-draw behavior remains unverified.",
     "Two rectangle-list draws reached Vulkan, one per guest swap; two other rectangle variants were rejected because captured mode_control=0x00000006 and color_info=0 are outside the decoded raster contract. Xenos EDRAM accumulation and guest-frontbuffer resolution remain unimplemented.",
     "The native captured-shader presenter readback was black in the tested early-startup state. The magenta override produces non-black pixels, but visible original retail content and scene parity are not established.",
-    "The full Android game is not buildable yet: the Android NativeActivity target is only a Vulkan surface-lifecycle proof without game or ReXGlue integration, there is no game manifest/APK target, and the full plugin link is blocked by the Process 1-owned POSIX fiber backend."
+    "The integrated Android APK also showed a black screen in this startup capture; no later guest draw batches were observed, so visible retail gameplay and scene parity remain unverified."
   ],
+  "android_app_vulkan_integration_20261023": {
+    "date": "2026-10-23",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "apk": "/home/pes/work/nfsshift-rex/android/app/build/outputs/apk/debug/app-debug.apk",
+    "apk_sha256": "09bffa81c7aabba2bb0c8acd864ab12db0e66a91d32131e0e4ff3f8a33b655e8",
+    "installed_update_time": "2026-10-23 22:19:28",
+    "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, arm64-v8a, Mali-G76 MC4, Vulkan 1.1.131)",
+    "gpu_plugin_loader_id": "xenos (Android host startup hook alias)",
+    "apk_gpu_plugin_entries": {
+      "lib/arm64-v8a/librexgpu-shift-natived.so": "4fdcf9cf8ab37dea4afec030fa1b1e42e6fa258a36a30f2d486e96ce81012618",
+      "lib/arm64-v8a/librexgpu-xenosd.so": "4fdcf9cf8ab37dea4afec030fa1b1e42e6fa258a36a30f2d486e96ce81012618",
+      "identical": true,
+      "interpretation": "Both entries contain the Process 2 Vulkan plugin; the xenos-named entry is only a loader alias and is not the Xenos GPU emulator."
+    },
+    "runtime_log": "files/nfs_shift/user/logs/nfs_shift_024.log",
+    "runtime_observation": "The emulator-free Vulkan frontend loaded on Mali-G76 MC4, consumed the guest PM4 ring, and submitted two 1280x720 frames with one framebuffer-writing retail draw each. The two mode-6 EDRAM Copy/Convert variants remain rejected. The app screen was black in this early-startup run; no visible retail scene or parity is established.",
+    "pm4_progress": "The captured startup batches contained no later guest PM4 after the two swaps, so this run cannot establish gameplay rendering."
+  },
   "latest_live_rectangle_submission": {
     "date": "2026-10-23",
     "source_checkout_head": "38c6e890e6e7225a03f00dbc22ac59aca3b87e69",
