@@ -43,6 +43,11 @@ struct GuestRegisterWrite {
     uint32_t value;
 };
 
+struct CapturedIndirectBuffer {
+    uint32_t guest_address;
+    uint32_t dword_count;
+};
+
 enum class ShaderControlFlowOpcode : uint8_t {
     Nop = 0,
     Exec = 1,
@@ -302,6 +307,14 @@ bool decode_guest_register_writes(
     const uint8_t* packet_bytes,
     size_t byte_length,
     std::vector<GuestRegisterWrite>* output,
+    std::string* error);
+
+// Decodes the captured three-dword PM4_INDIRECT_BUFFER form. It reports the
+// guest span only; it does not read or execute the indirect command buffer.
+bool decode_captured_indirect_buffer(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedIndirectBuffer* output,
     std::string* error);
 
 // Decodes the bounded control-flow prefix of the captured Xbox shader format.

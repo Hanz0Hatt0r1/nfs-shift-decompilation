@@ -14,6 +14,7 @@ constexpr uint32_t kPacketTypeMask = 0xC0000000u;
 constexpr uint32_t kPacketCountMask = 0x3FFF0000u;
 constexpr uint32_t kPacketOpcodeMask = 0x0000FF00u;
 constexpr uint32_t kDrawIndxOpcode = 0x22u;
+constexpr uint32_t kIndirectBufferOpcode = 0x3Fu;
 constexpr uint32_t kTriangleList = 4u;
 constexpr uint32_t kIndexCountMask = 0x00FFFFFFu;
 constexpr uint32_t kDmaSwapModeMask = 0xC0000000u;
@@ -162,6 +163,41 @@ bool decode_guest_register_writes(
     }
 
     *output = std::move(writes);
+    if (error) error->clear();
+    return true;
+}
+
+bool decode_captured_indirect_buffer(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedIndirectBuffer* output,
+    std::string* error) {
+    constexpr size_t kPacketBytes = 3u * sizeof(uint32_t);
+    constexpr uint32_t kAddressMask = 0xFFFFFFFFu;
+    constexpr uint32_t kLengthMask = 0x000FFFFFu;
+    if (!packet_bytes || !output || byte_length != kPacketBytes) {
+        return fail("invalid captured PM4_INDIRECT_BUFFER packet size", error);
+    }
+
+    const uint32_t header = read_be32(packet_bytes);
+    const uint32_t payload_count = ((header & kPacketCountMask) >> 16) + 1u;
+    if ((header & kPacketTypeMask) != kType3Header ||
+        ((header & kPacketOpcodeMask) >> 8) != kIndirectBufferOpcode ||
+        payload_count != 2u) {
+        return fail("unsupported captured PM4_INDIRECT_BUFFER form", error);
+    }
+
+    const uint32_t guest_address = read_be32(packet_bytes + 4u) & kAddressMask;
+    const uint32_t length = read_be32(packet_bytes + 8u);
+    if ((guest_address & 3u) != 0u || length == 0u ||
+        (length & ~kLengthMask) != 0u ||
+        static_cast<uint64_t>(guest_address) +
+                static_cast<uint64_t>(length) * sizeof(uint32_t) >
+            (uint64_t{1} << 32)) {
+        return fail("invalid captured PM4_INDIRECT_BUFFER guest span", error);
+    }
+
+    *output = CapturedIndirectBuffer{guest_address, length};
     if (error) error->clear();
     return true;
 }

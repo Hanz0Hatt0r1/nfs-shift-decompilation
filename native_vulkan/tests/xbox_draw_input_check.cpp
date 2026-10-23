@@ -270,6 +270,28 @@ int main() {
                 packet_spans[4].byte_offset == 32 && packet_spans[4].byte_length == 20 &&
                 packet_spans[4].opcode == 0x22,
             "type-3 DRAW_INDX framing changed");
+    const uint8_t captured_indirect_buffer[] = {
+        0xC0, 0x01, 0x3F, 0x00, 0x09, 0x75, 0xB6, 0x60,
+        0x00, 0x00, 0x00, 0x4A,
+    };
+    shift::xbox::CapturedIndirectBuffer indirect_buffer{};
+    require(shift::xbox::decode_captured_indirect_buffer(
+                captured_indirect_buffer, sizeof(captured_indirect_buffer),
+                &indirect_buffer, &error) &&
+                indirect_buffer.guest_address == 0x0975B660u &&
+                indirect_buffer.dword_count == 74u,
+            "captured PM4_INDIRECT_BUFFER span decoded incorrectly");
+    auto invalid_indirect_buffer = std::vector<uint8_t>(
+        captured_indirect_buffer,
+        captured_indirect_buffer + sizeof(captured_indirect_buffer));
+    invalid_indirect_buffer[11] = 0x00;
+    const auto unchanged_indirect_buffer = indirect_buffer;
+    require(!shift::xbox::decode_captured_indirect_buffer(
+                invalid_indirect_buffer.data(), invalid_indirect_buffer.size(),
+                &indirect_buffer, &error) &&
+                indirect_buffer.guest_address == unchanged_indirect_buffer.guest_address &&
+                indirect_buffer.dword_count == unchanged_indirect_buffer.dword_count,
+            "invalid PM4_INDIRECT_BUFFER changed decoded output");
     std::vector<shift::xbox::GuestRegisterWrite> register_writes;
     require(shift::xbox::decode_guest_register_writes(
                 framed_stream + packet_spans[0].byte_offset,

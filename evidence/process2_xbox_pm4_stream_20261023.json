@@ -24,6 +24,31 @@
       "type2": 21,
       "type3": 64
     },
+    "type3_opcode_counts": {
+      "0x22_DRAW_INDX": 4,
+      "0x27_IM_LOAD": 5,
+      "0x2b_IM_LOAD_IMMEDIATE": 3,
+      "0x2f_LOAD_ALU_CONSTANT": 5,
+      "0x36_DRAW_INDX_2": 2,
+      "0x3b_INVALIDATE_STATE": 3,
+      "0x3c_WAIT_REG_MEM": 27,
+      "0x3f_INDIRECT_BUFFER": 6,
+      "0x46_EVENT_WRITE": 1,
+      "0x54_INTERRUPT": 1,
+      "0x58_EVENT_WRITE_SHD": 2,
+      "0x60": 2,
+      "0x61": 1,
+      "0x62": 1,
+      "0x63": 1
+    },
+    "indirect_buffers": [
+      {"offset": "0x40", "guest_address": "0x0975b660", "dword_count": 74},
+      {"offset": "0x4c", "guest_address": "0x0975bba0", "dword_count": 13},
+      {"offset": "0x58", "guest_address": "0x0975cfe0", "dword_count": 48},
+      {"offset": "0x4a20", "guest_address": "0x0975b660", "dword_count": 74},
+      {"offset": "0x4a2c", "guest_address": "0x0975c3a0", "dword_count": 13},
+      {"offset": "0x4a38", "guest_address": "0x0975cfe0", "dword_count": 48}
+    ],
     "draw_indx_count": 4,
     "draw_indx_packets": [
       {"offset": "0x2c64", "index_count": 6, "index_guest_address": "0x0975d7b0", "bounded_decoder": "passed"},
@@ -36,6 +61,7 @@
     "unit_test": "shift_xbox_draw_input_check passed",
     "cases": [
       "type-0, type-1, type-2, type-3, and zero-dword NOP framing",
+      "captured PM4_INDIRECT_BUFFER address/length extraction and invalid span rejection",
       "captured type-3 DRAW_INDX span handed to the bounded draw decoder",
       "unaligned stream rejection",
       "truncated type-3 payload rejection without partial output mutation"
@@ -45,6 +71,7 @@
   "limitations": [
     "This is contiguous packet framing, not a live Xbox ring consumer; guest head/tail, wraparound, synchronization, and read-pointer writeback are not implemented.",
     "Register and shader state tracking are not implemented by this scanner.",
+    "The captured PM4_INDIRECT_BUFFER packets are decoded to guest spans only; their referenced command bytes are not resolved or executed.",
     "No project-owned Xenos microcode translation, Vulkan resource binding, EDRAM mapping, draw submission, phone rendering, or retail parity is claimed.",
     "The raw capture remains outside the repository; the committed regression tests use a compact constructed framing stream."
   ]

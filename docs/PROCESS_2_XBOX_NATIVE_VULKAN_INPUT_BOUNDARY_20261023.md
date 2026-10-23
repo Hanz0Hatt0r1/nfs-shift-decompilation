@@ -322,6 +322,13 @@ cross-checked against public Xenia
 for documentation only; no Xenia runtime code is used. Evidence is recorded in
 `evidence/process2_xbox_pm4_stream_20261023.json`.
 
+The same private stream contains six `PM4_INDIRECT_BUFFER` packets. A bounded
+decoder now extracts their observed 32-bit guest addresses and dword lengths
+(three distinct spans, two reused); it does not resolve guest memory or execute
+those packets. The compact regression uses the captured first span
+(`0x0975b660`, 74 dwords) and rejects an empty range. Resolving those spans from
+the live ReXGlue guest address space is still a separate frontend step.
+
 The platform-independent `snapshot_guest_ring_batch` helper now accepts a ring
 memory span and committed read/write dword indexes, copies the unread interval
 across wraparound, and frames the copied PM4 packets. Its test places the exact
@@ -377,6 +384,9 @@ for the isolated draw, not Android game integration or retail-frame parity.
 - `shift_xbox_guest_ring_check`: passed on Linux and as an arm64-v8a binary on
   Redmi Note 8 Pro. It covers ring wraparound, captured `DRAW_INDX` framing,
   empty spans, truncation, invalid capacity, and out-of-range pointers.
+- `shift_xbox_draw_input_check`: passed on Linux and as an arm64-v8a binary on
+  Redmi Note 8 Pro; this includes the captured `PM4_INDIRECT_BUFFER` span
+  decoder regression. The device reports Android API 33 / `arm64-v8a`.
 - Linux CMake build and CTest: 3/3 passed. The captured bundle executed on a GTX 950
   with Vulkan validation enabled and zero errors; the logo pixels come from the
   XEX-originated draw, not synthetic geometry.
