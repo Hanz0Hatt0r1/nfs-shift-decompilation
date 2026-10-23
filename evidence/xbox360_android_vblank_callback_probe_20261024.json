@@ -1,0 +1,43 @@
+{
+  "schema": "shift.xbox360.android-vblank-callback-probe.v1",
+  "captured_on": "2026-10-24",
+  "capture_time_local": "02:38:48-02:38:51 Europe/Moscow",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "host": {
+    "platform": "Android arm64",
+    "device": "Redmi Note 8 Pro (begonia), Mali-G76 MC4",
+    "application_id": "com.hanz0hatt0r.nfsshift",
+    "application_log": "files/nfs_shift/user/logs/nfs_shift_034.log",
+    "application_log_sha256": "0bb52fc5dbe79bb4ef2b5c6a1b9af78f6fe77ac4d296af0fd58751091ee75688",
+    "application_log_bytes": 30215,
+    "plugin_binary_sha256": null,
+    "plugin_binary_identity_note": "Not recorded for this pre-instrumentation run."
+  },
+  "observed": {
+    "vblank_callbacks_dispatched_at_60_hz": 3,
+    "ring_read_pointer_writebacks": [25, 31, 73],
+    "pm4_interrupt_packets_consumed": 1,
+    "guest_callbacks_dispatched_for_pm4_interrupts": 1,
+    "final_ring_batch_packet_count": 1602,
+    "final_ring_batch_swap_count": 2,
+    "final_ring_batch_vulkan_frame_submissions": 2,
+    "final_ring_batch_packet_opcodes": {
+      "0x45": 512,
+      "0x46": 1,
+      "0x58": 18
+    },
+    "later_ring_batch_observed_in_this_log": false,
+    "completion_packet_samples_logged": false
+  },
+  "interpretation": {
+    "supported": "The selected shift-native plugin dispatches guest interrupt source 0 from its vblank worker; the log records three 60 Hz vblank callbacks. It also consumes one ring PM4_INTERRUPT and dispatches one guest callback. This supersedes the older claim that the current plugin has no source-0/vblank dispatch path.",
+    "not_proven": "This Android log does not watch the retail software queue head or predicate byte, so it does not prove that source-0 reaches the deferred callback queue, changes the queue, or advances the frontend. It is not a Linux AMD64 run and does not prove visible retail output or game readiness.",
+    "next_p1_probe": "With the packet-trace run, correlate a captured EVENT_WRITE_SHD destination with the guest descriptor; then watch descriptor+0, object+0x2ABD, and the main guest PC after vblank and ring callbacks. Preserve the guest wait semantics.",
+    "next_p2_probe": "Capture the packet words and origin for all observed 0x58 EVENT_WRITE_SHD packets. SDK semantics treat the low two address bits as endian, clear them before physical translation, and write either the packet value or GPU counter depending on initiator bit 31."
+  }
+}
