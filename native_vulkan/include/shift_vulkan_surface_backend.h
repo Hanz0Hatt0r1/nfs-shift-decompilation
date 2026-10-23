@@ -33,12 +33,14 @@ enum ShiftVulkanSurfaceProbeStatus {
     SHIFT_VULKAN_SURFACE_PROBE_SURFACE_FAILURE = 4,
     SHIFT_VULKAN_SURFACE_PROBE_PHYSICAL_DEVICE_FAILURE = 5,
     SHIFT_VULKAN_SURFACE_PROBE_QUEUE_FAMILY_FAILURE = 6,
+    SHIFT_VULKAN_SURFACE_PROBE_API_VERSION_FAILURE = 7,
 };
 
 // Creates a Vulkan instance from the backend-declared extension set, asks the
-// backend to create a surface, and proves that at least one physical-device
-// queue family supports both graphics and presentation. Returns a fail-closed
-// ShiftVulkanSurfaceProbeStatus value.
+// backend to create a surface, and proves that Vulkan 1.1 and at least one
+// Vulkan 1.1 physical-device queue family supporting both graphics and
+// presentation are available. No optional physical-device features are
+// required by this surface contract. Returns a fail-closed status value.
 int shift_vulkan_surface_probe_backend(
     const ShiftVulkanSurfaceBackend* backend);
 
