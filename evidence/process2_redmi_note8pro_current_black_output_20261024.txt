@@ -28,8 +28,9 @@ Observed output
 - A separate live Linux diagnostic of the same captured 108-byte vertex and
   36-byte pixel shader pair recorded vertex input location 1 as `(0,0,0,0)`;
   the vertex shader forwards it through location 0, and the pixel shader
-  forwards that interpolator to color. This explains the black output for this
-  early captured draw, but does not prove later retail shaders or frames.
+  forwards that interpolator to color. This is consistent with the black
+  output for this early captured draw, but does not prove later retail shaders
+  or frames.
 
 Conclusion
 The Android app loads the Process 2 plugin and submits at least one captured

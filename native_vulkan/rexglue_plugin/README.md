@@ -309,7 +309,7 @@ translated and submitted to the Vulkan presenter, but the
 retail output remains unverified. A separate live Linux diagnostic of this
 captured shader pair recorded vertex input location 1 as `(0,0,0,0)`; the
 vertex shader forwards it to the pixel shader, which forwards it to color.
-That explains the black result for this early captured draw, but does not prove
+That is consistent with the black result for this early captured draw, but does not prove
 later shaders or frames. The mode-6 rectangle is accepted through the
 source-0/sample-0 Copy/Convert path. The magenta path and other synthetic
 readbacks are diagnostics only. See
