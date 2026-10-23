@@ -57,6 +57,34 @@ next dword read index. It has no ReXGlue, XCB, Wayland, or Android types. This
 contract is implemented and tested, but the ReXGlue plugin that calls it is not
 yet connected. It requires no P-code or guest-scheduler change in Process 1.
 
+### ReXGlue plugin and presentation seam
+
+The current ReXGlue GPU plugin ABI already provides the needed guest-input
+boundary: a plugin implements `IGraphicsSystem`, receives
+`InitializeRingBuffer` and `EnableReadPointerWriteBack`, and sees the committed
+ring tail through the `CP_RB_WPTR` MMIO write in `SetupGuestGpu`. A replacement
+plugin can use this ABI without intercepting or changing recompiled title
+functions.
+
+There is one packaging constraint before that plugin can share ReXGlue's
+presentation path without loading its GPU emulator: the SDK's `VulkanProvider`
+implementation is currently exported from `librexgpu-xenos`, together with
+that plugin's Xenos command processor. Linking the project plugin to that
+library would violate the no-rendering-emulation requirement. The existing
+Vulkan provider API can be created with GPU-emulation features disabled and
+exposes the host `VulkanDevice`; its presenter refresh context supplies the
+active guest-output image, render pass, and command buffer.
+
+The minimal separate integration is to make the SDK's Vulkan provider and
+presenter a standalone linkable `rexui-vulkan` target, then have the
+project-owned `IGraphicsSystem` plugin depend on that target and the native
+renderer core only. The SDK continues to own platform window/surface and frame
+synchronization; the project core receives Vulkan device/queue and active frame
+render context plus translated guest draw inputs. No P-code, Ghidra, or guest
+scheduler API changes are needed. This target split is a proposal only; it is
+not implemented in the SDK or this project branch, and no Process 1 files were
+modified.
+
 ## What the existing renderer and captures prove
 
 The current remote `main` and Process 2 branch contain a Vulkan 1.1 native core
