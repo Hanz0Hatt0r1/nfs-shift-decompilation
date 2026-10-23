@@ -32,6 +32,17 @@ Observed output
   output for this early captured draw, but does not prove later retail shaders
   or frames.
 
+Follow-up input check
+- The foreground process remained PID 32421 after the input check.
+- A temporary Xbox 360 virtual controller created through `/dev/uinput` was
+  registered by Android InputReader as a `GAMEPAD | JOYSTICK` device using
+  `Vendor_045e_Product_028e.kl`.
+- `BTN_START` was held for two seconds, then released. A fresh screenshot
+  remained fully black with the same SHA-256 above, the runtime log kept the
+  same SHA-256 above, and no later PM4 batch or guest swap appeared.
+- The controller was removed after the press; the NFS Shift process was left
+  running in the foreground.
+
 Conclusion
 The Android app loads the Process 2 plugin and submits at least one captured
 retail draw through Vulkan, but the retail shader/output path still produces

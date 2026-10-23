@@ -161,22 +161,25 @@ accumulation or resolve every guest surface.
 
 The latest Android debug APK
 (`ff5c30af24013b315280e161cd383c4cd50874a1e096f0d0383364f004a311c6`) was
-installed on the Redmi Note 8 Pro. Log `nfs_shift_026.log` confirms one retail
-draw submitted at each of two guest swaps and the 1280x720 Copy/Convert
-destination matching the swap address. The first Vulkan presenter readback is
+installed on the Redmi Note 8 Pro. The current runtime log `nfs_shift_031.log`
+confirms one retail draw submitted at each of two guest swaps and the
+1280x720 Copy/Convert destination matching the swap address. The first Vulkan presenter readback is
 still all black (zero non-black pixels, FNV-1a `B161DE6EEC272325`), and the
 device screenshot remains black. No later PM4 draw batch was observed after
-startup. Android ADB A/Start events from both the default keyboard source and
-explicit gamepad source, plus a default-keyboard Enter event, left the
-foreground process, runtime log, screenshot, and PM4 output unchanged. The
-phone exposes a vendor `uinput-fpc` device with a JOYSTICK source, but Android
-denied shell `sendevent` injection, so no physical/controller button was
-delivered. The observations are recorded in the
+startup. Android A/Start events from the default keyboard source, a virtual
+Xbox 360 controller created with `/dev/uinput`, and a default-keyboard Enter
+event left the foreground process, runtime log, screenshot, and PM4 output
+unchanged. In a follow-up check, Android InputReader registered the virtual
+controller as `GAMEPAD | JOYSTICK`; a two-second `BTN_START` press still did
+not advance the process or produce another PM4 batch. Direct `sendevent`
+injection into the phone's built-in `uinput-fpc` device is denied, and no
+physical controller was attached. The observations are recorded in the
 [`android_xbox_key_input_check_20261024`](../../evidence/process2_xbox_live_guest_ring_20261023.json)
 evidence entry. This means visible retail output is not ready or verified; the
 successful synthetic Vulkan regression only validates the sample-zero
 conversion path. See
 [`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json)
+and [`process2_redmi_note8pro_current_black_output_20261024.txt`](../../evidence/process2_redmi_note8pro_current_black_output_20261024.txt)
 for build and device evidence. The game package and plugin are integrated on
 Android, but visible retail output and scene parity are not verified. The
 `xenos` loader alias can be removed when the host preserves an explicit
