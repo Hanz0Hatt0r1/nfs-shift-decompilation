@@ -82,9 +82,10 @@
         "evidence/xbox360_plugin_queue_watch_20261023.json",
         "evidence/xbox360_ring_writeback_progress_20261024.json",
         "evidence/xbox360_software_queue_pristine_probe_20261024.json",
-        "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/cba8b0e905999394d68ec62f1e4b6c398e91b2dc/evidence/process2_xbox_live_guest_ring_20261023.json"
+        "evidence/xbox360_source1_callback_pristine_probe_20261024.json",
+        "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/c7806352f1d04690319f7f907f634b27d664b3cc/evidence/process2_xbox_live_guest_ring_20261023.json"
       ],
-      "note": "The plugin-enabled Linux AMD64 probe verified the retail VdEnableRingBufferRPtrWriteBack call with physical address 0x17AF403C and block-size log2 6. The GPU worker advanced the big-endian readback at descriptor+0x3C through values 25, 49, and 73; exact-XEX helper 0x823B2920 reads that +0x3C field. A clean follow-up GDB run watched the distinct descriptor+0x00 word, object+0x2ABD predicate, current KTHREAD+0x58 and object+13432: the queue stayed at 1, predicate at 0x14, and the two fields at zero; retail helper 0x823B33A0 was not entered during the observed interval. The timeout helper 0x823BA9C8 traps when object+13432 is null, so fabricating its trigger is not a valid fix. New cross-boundary candidate: Process 2 currently passes r3=1 when routing PM4_INTERRUPT callbacks, while exact-XEX callback 0x823B37B8 has distinct r3=0 and r3=1 branches and the ReXGlue import comment labels r3=0 the normal interrupt. The correct PM4-to-callback source mapping and any effect on the queue remain unverified; Process 2 assessment is outstanding. Preserve guest wait and scheduler semantics until that mapping and producer path are traced. Hashes and limitations are recorded in the linked evidence."
+      "note": "The plugin-enabled Linux AMD64 probe verified the retail VdEnableRingBufferRPtrWriteBack call with physical address 0x17AF403C and block-size log2 6. The GPU worker advanced the big-endian readback at descriptor+0x3C through values 25, 49, and 73; exact-XEX helper 0x823B2920 reads that +0x3C field. A clean follow-up GDB run watched the distinct descriptor+0x00 word, object+0x2ABD predicate, current KTHREAD+0x58 and object+13432: the queue stayed at 1, predicate at 0x14, and the two fields at zero; retail helper 0x823B33A0 was not entered during the observed interval. The timeout helper 0x823BA9C8 traps when object+13432 is null, so fabricating its trigger is not a valid fix. Runtime evidence confirms PM4_INTERRUPT source r3=1 reaches retail callback 0x823B37B8; this matches upstream Xenia PM4 dispatch semantics, so the earlier source-mapping concern is resolved. In a separate pristine probe, source r3=0 was not observed for about 110 seconds, while the predicate stayed 0x14 after a source-1 callback. The latest Process 2 plugin source stores the guest callback and dispatches PM4 source 1, but has no source-0/vblank path; ReXGlue's default GraphicsSystem::MarkVblank sends source 0. This is a concrete Process 2 integration gap to verify, not a proven cause of the wait. Keep guest semantics unchanged until the source-0 path and queue producer are verified."
     },
     "X3": {
       "key": "xenos_vulkan_retail_frame",
@@ -93,9 +94,10 @@
         "evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence",
         "evidence/xbox360_runtime_queue_probe_20261023.json",
         "evidence/xbox360_guest_ring_wait_semantics_20261023.json",
-        "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/5cae789f/evidence/process2_xbox_live_guest_ring_20261023.json"
+        "evidence/xbox360_source1_callback_pristine_probe_20261024.json",
+        "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/c7806352f1d04690319f7f907f634b27d664b3cc/evidence/process2_xbox_live_guest_ring_20261023.json"
       ],
-      "note": "Process 2's Linux live evidence reports two Vulkan frame submissions from the retail ring under shift-native, with 1,828 PM4 packets and two guest swaps. A synthetic magenta readback rasterized the captured geometry, but the unmodified retail shader readback had zero non-black pixels; the window remained black, two mode-6 rectangles were rejected, and visible retail output/parity remain unverified. The P1 guest wait predicate and exact input-to-generated-executable correlation are still open; no playable frame or scene is claimed."
+      "note": "Process 2's latest Linux live evidence still reports two Vulkan frame submissions from the retail ring under shift-native, with two guest swaps; the unmodified retail output remains black and visible parity is unverified. P1's clean callback probe confirms source-1 PM4 delivery but does not observe source-0/vblank delivery. The missing source-0 path is a candidate integration gap for Process 2 to verify. The guest wait predicate and exact input-to-generated-executable correlation remain open; no playable frame or scene is claimed."
     },
     "X4": {
       "key": "linux_frontend_offline_race",
