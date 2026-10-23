@@ -14,10 +14,16 @@ find_library(SHIFT_LOG_LIB log REQUIRED)
 find_library(SHIFT_VULKAN_LIB vulkan REQUIRED)
 
 add_library(shift_xbox_draw_input STATIC ../src/xbox_draw_input.cpp)
+add_library(shift_xbox_guest_ring STATIC ../src/xbox_guest_ring.cpp)
 add_library(shift_xbox_shader_translate STATIC ../src/xbox_shader_translate.cpp)
 target_include_directories(shift_xbox_draw_input PUBLIC ../include)
+target_include_directories(shift_xbox_guest_ring PUBLIC ../include)
 target_include_directories(shift_xbox_shader_translate PUBLIC ../include)
+target_link_libraries(shift_xbox_guest_ring PUBLIC shift_xbox_draw_input)
 target_link_libraries(shift_xbox_shader_translate PUBLIC shift_xbox_draw_input)
+
+add_executable(shift_xbox_guest_ring_check ../tests/xbox_guest_ring_check.cpp)
+target_link_libraries(shift_xbox_guest_ring_check PRIVATE shift_xbox_guest_ring)
 
 add_executable(
   shift_xbox_shader_translate_check

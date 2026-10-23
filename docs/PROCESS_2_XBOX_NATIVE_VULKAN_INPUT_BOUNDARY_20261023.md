@@ -49,6 +49,14 @@ emulation that this project is explicitly excluding. A project-owned frontend
 can instead consume only the command subset proven by a real SHIFT capture and
 translate it into Vulkan draws; it should fail closed on unsupported packets.
 
+The minimal host/core seam is `GuestRingBatch` in
+`native_vulkan/include/shift_xbox_guest_ring.hpp`: the host owns ReXGlue
+callbacks, guest-memory access, and the read/write cursor; the platform-neutral
+core copies the committed bytes, returns framed packet spans, and reports the
+next dword read index. It has no ReXGlue, XCB, Wayland, or Android types. This
+contract is implemented and tested, but the ReXGlue plugin that calls it is not
+yet connected. It requires no P-code or guest-scheduler change in Process 1.
+
 ## What the existing renderer and captures prove
 
 The current remote `main` and Process 2 branch contain a Vulkan 1.1 native core
@@ -286,6 +294,14 @@ cross-checked against public Xenia
 for documentation only; no Xenia runtime code is used. Evidence is recorded in
 `evidence/process2_xbox_pm4_stream_20261023.json`.
 
+The platform-independent `snapshot_guest_ring_batch` helper now accepts a ring
+memory span and committed read/write dword indexes, copies the unread interval
+across wraparound, and frames the copied PM4 packets. Its test places the exact
+captured `DRAW_INDX` across the ring end and sends it through the bounded draw
+decoder. This is a ring-consumption primitive only: it is not connected to the
+runtime write-pointer callback, does not advance guest memory, and does not
+interpret PM4 state or submit a Vulkan draw.
+
 This is the first XEX-originated indexed draw submitted through the
 project-owned Vulkan path. Its fetch metadata indicates a textured resource,
 but the draw is not identified as a vehicle draw. The original packet, shader,
@@ -315,7 +331,10 @@ for the isolated draw, not Android game integration or retail-frame parity.
   `b129` path and confirms unsupported control flow is rejected. The VS/PS GLSL
   compiled with `glslangValidator -V --target-env vulkan1.1`, and both modules
   passed `spirv-val --target-env vulkan1.1`.
-- Linux CMake build and CTest passed. The captured bundle executed on a GTX 950
+- `shift_xbox_guest_ring_check`: passed on Linux and as an arm64-v8a binary on
+  Redmi Note 8 Pro. It covers ring wraparound, captured `DRAW_INDX` framing,
+  empty spans, truncation, invalid capacity, and out-of-range pointers.
+- Linux CMake build and CTest: 3/3 passed. The captured bundle executed on a GTX 950
   with Vulkan validation enabled and zero errors; the logo pixels come from the
   XEX-originated draw, not synthetic geometry.
 - The same captured bundle executed through the offscreen Android arm64-v8a
@@ -331,14 +350,14 @@ for the isolated draw, not Android game integration or retail-frame parity.
 
 ## Next native-renderer work
 
-Next, connect the ReXGlue guest graphics-service boundary to a project-owned
-ring consumer and add evidence-backed register/resource tracking for live ring
-updates. The current execution uses an isolated bundle built from captured
-inputs; it is not yet the running game's renderer. The frontend must load in
-ReXGlue without `rexgpu-xenos`, consume guest ring memory, and call the
-project-owned parser and Vulkan frontend directly. Extend the bounded shader,
+Next, connect `snapshot_guest_ring_batch` to the ReXGlue graphics-service and
+`CP_RB_WPTR` boundaries, and add evidence-backed register/resource tracking for
+live updates. The current Vulkan execution uses an isolated bundle built from
+captured inputs; it is not yet the running game's renderer. The frontend must
+load in ReXGlue without `rexgpu-xenos`, consume guest ring memory, and call the
+project-owned parser and Vulkan frontend directly. Extend bounded shader,
 texture/sampler, and render-target coverage only for packet forms observed in
-the captured title. Unsupported packet forms, resources, state, and shader
+the captured title. Unsupported packets, resources, state, and shader
 instructions must fail closed. Keep XCB/Wayland/Android surface integration
 outside the shared core. Vulkan validation proves API correctness; image and
 runtime comparisons must separately establish retail behavior.

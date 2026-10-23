@@ -34,12 +34,16 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   vertex fetch, captured ALU subset, texture fetch/swizzle, and exports. It
   rejects unsupported control flow and operations. The actual captured pair
   compiled to Vulkan 1.1-compatible SPIR-V and passed `spirv-val`.
-  packet scanner frames contiguous big-endian type 0/1/2/3 PM4 packets and
-  reports type-3 opcodes without applying state or executing commands. It
-  consumed the private 19,784-byte capture as 247 packets and identified four
-  bounded `DRAW_INDX` packets. This is not a live guest-ring consumer. The
-  capture decoders reject unsupported forms. The untile path rejects other pitches, formats,
-  dimensions, and layouts. Its address mapping is cross-checked against the public
+  The packet scanner frames contiguous big-endian type 0/1/2/3 PM4 packets and
+  reports type-3 opcodes without applying state or executing commands. The
+  project-owned `snapshot_guest_ring_batch` copies a committed dword-indexed
+  ring interval, including wraparound, then frames its packets; a regression
+  carries the captured `DRAW_INDX` across the ring boundary. It is not yet wired
+  to ReXGlue's live write-pointer service and does not apply register state.
+  The private 19,784-byte capture scans as 247 packets with four bounded
+  `DRAW_INDX` packets. The capture decoders reject unsupported forms. The untile
+  path rejects other pitches, formats, dimensions, and layouts. Its address
+  mapping is cross-checked against the public
   [Xenia `Tiled2D` implementation](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/texture_address.h);
   descriptor enum meanings are cross-checked against the public
   [Xenos register definitions](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h).
@@ -62,12 +66,12 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
 - limitations for this isolated draw: the prior EDRAM contents were not
   captured, so the standalone bundle begins with an explicit black clear; the
   captured black texture-border alpha is unresolved, so the test bundle uses
-  Vulkan transparent-black border behavior provisionally. The PM4 scanner is
-  still not a live guest-ring consumer, and the ReXGlue plugin/runtime is not
-  yet integrated with this renderer. Project-owned ring/resource ingestion and
-  broader shader coverage remain future integration work. The product path must
-  use a project-owned ReXGlue graphics frontend and must not load `rexgpu-xenos`
-  or another GPU emulator;
+  Vulkan transparent-black border behavior provisionally. The tested ring-span
+  reader is not wired to ReXGlue's live write-pointer service, and the ReXGlue
+  plugin/runtime is not yet integrated with this renderer. Register/resource
+  state ingestion and broader shader coverage remain future integration work.
+  The product path must use a project-owned ReXGlue graphics frontend and must
+  not load `rexgpu-xenos` or another GPU emulator;
 - Linux CI coverage for native smoke paths.
 
 ## Rules
