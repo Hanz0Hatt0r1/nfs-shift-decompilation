@@ -983,6 +983,18 @@
         "observation_delay_seconds": 5
       }
     ],
+    "joystick_device_probe": {
+      "focused_activity": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity",
+      "device_node": "/dev/input/event4",
+      "device_name": "uinput-fpc",
+      "android_sources": ["KEYBOARD", "JOYSTICK"],
+      "supported_button": "BTN_EAST (Linux code 305)",
+      "injection_command": "sendevent /dev/input/event4 1 305 1; ... release",
+      "injection_result": "Permission denied; no event was delivered",
+      "adb_keyevent_sdl_logs": ["Unknown keycode 96", "Unknown keycode 108"],
+      "screen_sha256_after_probe": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+      "interpretation": "The shell could not inject through this vendor input device, so this was not a controller-input test and cannot explain the absence of later guest draws."
+    },
     "runtime_log_sha256_before_and_after": "397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21",
     "screen_sha256_before_and_after": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
     "logged_guest_swaps": 2,
