@@ -8,7 +8,9 @@
   },
   "implementation": {
     "scanner": "native_vulkan/src/xbox_draw_input.cpp:scan_captured_packet_stream",
-    "contract": "big-endian dword framing for PM4 types 0, 1, 2, and 3 plus zero-dword NOP; reports packet spans and type-3 opcode only",
+    "ring_snapshot": "native_vulkan/src/xbox_guest_ring.cpp:snapshot_guest_ring_batch",
+    "indirect_buffer_expander": "native_vulkan/src/xbox_guest_ring.cpp:expand_guest_indirect_buffers",
+    "contract": "big-endian dword framing for PM4 types 0, 1, 2, and 3 plus zero-dword NOP; recursively frames only the captured three-dword PM4_INDIRECT_BUFFER form through a caller-supplied bounded guest-memory reader",
     "framing_crosscheck": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/command_processor.cc",
     "xenos_register_interpretation": false,
     "xenos_rendering_emulation": false,
@@ -58,20 +60,29 @@
     ]
   },
   "regression": {
-    "unit_test": "shift_xbox_draw_input_check passed",
+    "unit_tests": [
+      "shift_xbox_draw_input_check passed",
+      "shift_xbox_guest_ring_check passed on Linux and Redmi Note 8 Pro arm64-v8a"
+    ],
     "cases": [
       "type-0, type-1, type-2, type-3, and zero-dword NOP framing",
       "captured PM4_INDIRECT_BUFFER address/length extraction and invalid span rejection",
+      "bounded indirect-buffer expansion with source address and nesting-depth provenance",
+      "short guest-memory mapping and cyclic indirect-buffer rejection without output mutation",
       "captured type-3 DRAW_INDX span handed to the bounded draw decoder",
       "unaligned stream rejection",
       "truncated type-3 payload rejection without partial output mutation"
     ],
-    "private_capture_check": "host C++ scanner consumed all 19,784 bytes and decoded four DRAW_INDX spans at the listed offsets"
+    "private_capture_check": "host C++ scanner consumed all 19,784 bytes and decoded four DRAW_INDX spans at the listed offsets",
+    "indirect_buffer_fixture": {
+      "captured_root_span": {"guest_address": "0x0975b660", "dword_count": 74},
+      "test_payload": "constructed 74 zero-dword NOPs for memory-reader bounds/provenance test; not data from ring.bin"
+    }
   },
   "limitations": [
-    "This is contiguous packet framing, not a live Xbox ring consumer; guest head/tail, wraparound, synchronization, and read-pointer writeback are not implemented.",
+    "Ring snapshot and indirect-buffer expansion are not wired to ReXGlue InitializeRingBuffer, CP_RB_WPTR, live guest memory, synchronization, or read-pointer writeback.",
     "Register and shader state tracking are not implemented by this scanner.",
-    "The captured PM4_INDIRECT_BUFFER packets are decoded to guest spans only; their referenced command bytes are not resolved or executed.",
+    "ring.bin does not contain the bytes referenced by its PM4_INDIRECT_BUFFER packets; constructed expansion-test bytes are not evidence of the captured nested commands.",
     "No project-owned Xenos microcode translation, Vulkan resource binding, EDRAM mapping, draw submission, phone rendering, or retail parity is claimed.",
     "The raw capture remains outside the repository; the committed regression tests use a compact constructed framing stream."
   ]

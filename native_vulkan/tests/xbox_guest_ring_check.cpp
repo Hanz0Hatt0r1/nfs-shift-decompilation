@@ -22,6 +22,33 @@ constexpr std::array<uint8_t, 20> kCapturedDrawPacket = {
     0x40, 0x00, 0x00, 0x06,
 };
 
+constexpr std::array<uint8_t, 12> kCapturedIndirectBufferPacket = {
+    0xC0, 0x01, 0x3F, 0x00, 0x09, 0x75, 0xB6, 0x60,
+    0x00, 0x00, 0x00, 0x4A,
+};
+
+struct GuestMemoryFixture {
+    uint32_t guest_address = 0;
+    std::vector<uint8_t> bytes;
+    size_t available_bytes = 0;
+};
+
+bool read_guest_memory(
+    void* context,
+    uint32_t guest_address,
+    size_t,
+    const uint8_t** bytes,
+    size_t* available_bytes) {
+    auto* fixture = static_cast<GuestMemoryFixture*>(context);
+    if (!fixture || !bytes || !available_bytes ||
+        guest_address != fixture->guest_address) {
+        return false;
+    }
+    *bytes = fixture->bytes.data();
+    *available_bytes = fixture->available_bytes;
+    return true;
+}
+
 }  // namespace
 
 int main() {
@@ -91,5 +118,46 @@ int main() {
     require(!shift::xbox::snapshot_guest_ring_batch(
                 ring.data(), ring.size(), 0, 8, &unchanged, &error),
             "out-of-range guest ring pointer was accepted");
+
+    shift::xbox::GuestRingBatch indirect_root{};
+    indirect_root.bytes.assign(kCapturedIndirectBufferPacket.begin(),
+                               kCapturedIndirectBufferPacket.end());
+    GuestMemoryFixture indirect_memory{};
+    indirect_memory.guest_address = 0x0975B660u;
+    indirect_memory.bytes.resize(74u * sizeof(uint32_t));
+    indirect_memory.available_bytes = indirect_memory.bytes.size();
+    shift::xbox::ExpandedGuestCommandStream expanded{};
+    require(shift::xbox::expand_guest_indirect_buffers(
+                indirect_root, read_guest_memory, &indirect_memory,
+                &expanded, &error) &&
+                expanded.indirect_buffer_count == 1u &&
+                expanded.indirect_buffer_bytes == 74u * sizeof(uint32_t) &&
+                expanded.packets.size() == 75u &&
+                expanded.packets.front().packet.opcode == 0x3Fu &&
+                expanded.packets.front().nesting_depth == 0u &&
+                expanded.packets[1].packet.type == shift::xbox::PacketType::ZeroNop &&
+                expanded.packets[1].source_guest_address == 0x0975B660u &&
+                expanded.packets[1].nesting_depth == 1u,
+            "captured indirect span was not expanded with its packet provenance");
+
+    shift::xbox::ExpandedGuestCommandStream unchanged_expansion{};
+    unchanged_expansion.indirect_buffer_count = 9u;
+    indirect_memory.available_bytes = indirect_memory.bytes.size() - 4u;
+    require(!shift::xbox::expand_guest_indirect_buffers(
+                indirect_root, read_guest_memory, &indirect_memory,
+                &unchanged_expansion, &error) &&
+                unchanged_expansion.indirect_buffer_count == 9u &&
+                unchanged_expansion.packets.empty(),
+            "short guest-memory span partially changed expanded output");
+
+    indirect_memory.available_bytes = indirect_memory.bytes.size();
+    std::copy(kCapturedIndirectBufferPacket.begin(),
+              kCapturedIndirectBufferPacket.end(), indirect_memory.bytes.begin());
+    require(!shift::xbox::expand_guest_indirect_buffers(
+                indirect_root, read_guest_memory, &indirect_memory,
+                &unchanged_expansion, &error) &&
+                unchanged_expansion.indirect_buffer_count == 9u &&
+                unchanged_expansion.packets.empty(),
+            "cyclic indirect buffer was accepted or partially changed output");
     return 0;
 }

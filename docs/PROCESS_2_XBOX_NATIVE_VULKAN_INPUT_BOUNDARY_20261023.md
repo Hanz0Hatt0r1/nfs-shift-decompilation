@@ -323,11 +323,15 @@ for documentation only; no Xenia runtime code is used. Evidence is recorded in
 `evidence/process2_xbox_pm4_stream_20261023.json`.
 
 The same private stream contains six `PM4_INDIRECT_BUFFER` packets. A bounded
-decoder now extracts their observed 32-bit guest addresses and dword lengths
-(three distinct spans, two reused); it does not resolve guest memory or execute
-those packets. The compact regression uses the captured first span
-(`0x0975b660`, 74 dwords) and rejects an empty range. Resolving those spans from
-the live ReXGlue guest address space is still a separate frontend step.
+decoder extracts their observed 32-bit guest addresses and dword lengths
+(three distinct spans, two reused). `expand_guest_indirect_buffers` can resolve
+and frame those spans through a caller-supplied memory reader, retaining source
+address and nesting depth while rejecting short mappings, cycles, malformed
+packets, and over-limit streams. Its regression uses the captured first span
+(`0x0975b660`, 74 dwords) with a constructed 74-dword NOP payload; that payload
+tests span resolution only and is not represented as capture data. The private
+capture does not include bytes for the indirect spans, and the expander is not
+connected to the live ReXGlue guest address space.
 
 The platform-independent `snapshot_guest_ring_batch` helper now accepts a ring
 memory span and committed read/write dword indexes, copies the unread interval
@@ -383,6 +387,7 @@ for the isolated draw, not Android game integration or retail-frame parity.
   passed `spirv-val --target-env vulkan1.1`.
 - `shift_xbox_guest_ring_check`: passed on Linux and as an arm64-v8a binary on
   Redmi Note 8 Pro. It covers ring wraparound, captured `DRAW_INDX` framing,
+  bounded indirect-buffer expansion/provenance, short-span and cycle rejection,
   empty spans, truncation, invalid capacity, and out-of-range pointers.
 - `shift_xbox_draw_input_check`: passed on Linux and as an arm64-v8a binary on
   Redmi Note 8 Pro; this includes the captured `PM4_INDIRECT_BUFFER` span
@@ -403,9 +408,10 @@ for the isolated draw, not Android game integration or retail-frame parity.
 
 ## Next native-renderer work
 
-Next, connect `snapshot_guest_ring_batch` to the ReXGlue graphics-service and
-`CP_RB_WPTR` boundaries, and add evidence-backed register/resource tracking for
-live updates. The current Vulkan execution uses an isolated bundle built from
+Next, connect `snapshot_guest_ring_batch` and `expand_guest_indirect_buffers` to
+the ReXGlue `InitializeRingBuffer` and `CP_RB_WPTR` boundaries, then add
+evidence-backed register/resource tracking for live updates. The current Vulkan
+execution uses an isolated bundle built from
 captured inputs; it is not yet the running game's renderer. The frontend must
 load in ReXGlue without `rexgpu-xenos`, consume guest ring memory, and call the
 project-owned parser and Vulkan frontend directly. Extend bounded shader,

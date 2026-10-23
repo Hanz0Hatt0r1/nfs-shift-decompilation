@@ -41,8 +41,11 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   size helper bounds ReXGlue's `1 << (size_log2 + 3)` ring capacity before use.
   The PM4 type-0/type-1 decoder exposes raw register-write pairs without
   applying GPU state. The captured three-dword `PM4_INDIRECT_BUFFER` form is
-  decoded to a bounded guest address and dword length; referenced command
-  memory is not read or executed.
+  decoded to a bounded guest address and dword length. The ring frontend can
+  expand that form through a caller-supplied guest-memory reader, retaining
+  packet source and nesting depth while rejecting short spans, cycles, and
+  over-limit streams. This expansion is not yet wired to ReXGlue's live memory
+  or ring callbacks and does not apply PM4 state or execute draws.
   A regression carries the captured `DRAW_INDX` across the ring boundary. It
   is not yet wired to ReXGlue's live write-pointer service and does not apply
   register state.
