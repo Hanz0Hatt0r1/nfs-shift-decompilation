@@ -981,6 +981,14 @@
         "source": "gamepad",
         "command": "adb shell input gamepad keyevent KEYCODE_BUTTON_A KEYCODE_BUTTON_START",
         "observation_delay_seconds": 5
+      },
+      {
+        "source": "default keyboard",
+        "command": "adb shell input keyevent KEYCODE_ENTER",
+        "observation_delay_seconds": 5,
+        "screen_sha256_after": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+        "runtime_log_sha256_after": "397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21",
+        "new_pm4_batches_or_swaps": 0
       }
     ],
     "joystick_device_probe": {
@@ -999,6 +1007,6 @@
     "screen_sha256_before_and_after": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
     "logged_guest_swaps": 2,
     "new_pm4_batches_or_swaps": 0,
-    "result": "The app remained foreground and the black screen did not change after either input source. Neither attempt advanced the observed startup instance; this does not establish that every Android or gamepad input route is ineffective."
+    "result": "A/Start from default and gamepad sources and Enter from the default keyboard did not change the foreground app, runtime log, screenshot, or observed PM4 output. The vendor joystick node could not be injected by shell, so this does not establish that a real controller input route is ineffective."
   }
 }

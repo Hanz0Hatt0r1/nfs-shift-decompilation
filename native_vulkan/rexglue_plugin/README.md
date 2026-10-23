@@ -161,8 +161,11 @@ destination matching the swap address. The first Vulkan presenter readback is
 still all black (zero non-black pixels, FNV-1a `B161DE6EEC272325`), and the
 device screenshot remains black. No later PM4 draw batch was observed after
 startup. Android ADB A/Start events from both the default keyboard source and
-explicit gamepad source left the foreground process, runtime log, and
-screenshot unchanged; the observation is recorded in the
+explicit gamepad source, plus a default-keyboard Enter event, left the
+foreground process, runtime log, screenshot, and PM4 output unchanged. The
+phone exposes a vendor `uinput-fpc` device with a JOYSTICK source, but Android
+denied shell `sendevent` injection, so no physical/controller button was
+delivered. The observations are recorded in the
 [`android_xbox_key_input_check_20261024`](../../evidence/process2_xbox_live_guest_ring_20261023.json)
 evidence entry. This means visible retail output is not ready or verified; the
 successful synthetic Vulkan regression only validates the sample-zero
