@@ -180,6 +180,17 @@ retail pixel evidence or scene parity. The original APK was restored and is
 running; with the captured retail pixel shader, its startup readback remains
 fully black. The temporary override was removed from the working tree.
 
+A follow-up Android run logged the guest read-pointer writeback contract without
+changing fragment output. `VdEnableRingBufferRPtrWriteBack` passed
+`0x17AF403C`; the plugin translated it to `0x217af403c`, then wrote and read
+back `0x19`, `0x1F`, and `0x49`. The run still had only two startup swaps and a
+black retail readback (zero non-black pixels, FNV-1a
+`B161DE6EEC272325`). This confirms RPTR writeback on this Android run, but does
+not resolve the separate Process 1 Linux/GDB report for `0xB7AF4000` or prove
+retail output. The original APK was restored and left foregrounded. See
+[`process2_redmi_note8pro_rptr_writeback_20261023.txt`](../../evidence/process2_redmi_note8pro_rptr_writeback_20261023.txt)
+and the `android_rptr_writeback_diagnostic_20261023` evidence object.
+
 The optional `SHIFT_NATIVE_VULKAN_READBACK_PATH` captures the first successful
 presenter image as `VK_FORMAT_A2B10G10R10_UNORM_PACK32`. With the opt-in
 `SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR=magenta` override, the live retail

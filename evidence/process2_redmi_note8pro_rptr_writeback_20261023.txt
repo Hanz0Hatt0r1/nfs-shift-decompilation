@@ -1,0 +1,20 @@
+# Redmi Note 8 Pro Android RPTR writeback diagnostic
+
+Diagnostic APK SHA-256: `86129ac9b92d6d038b72a0e681a7b6e4a4200366d41b51356abdacaa880f9ed7`
+Both Vulkan plugin entries SHA-256: `dd985073cb1a919b42d9777bc98daa9c5fcf1b1f15547ba81275137ee521c577`
+Full on-device runtime log SHA-256: `93d109367dbdc24c23dd83a9fbc9227a512e5744b25c08ace1dcd40b51b623bf`
+
+Observed log lines:
+
+```text
+[2026-10-23 23:55:25.020] [info] shift-native: guest PM4 ring at 09752580, 32768 bytes
+[2026-10-23 23:55:25.020] [info] shift-native: RPTR writeback enabled guest=17AF403C, block_log2=6, physical_valid=true, translated=0x217af403c, initial=00000000
+[2026-10-23 23:55:25.030] [info] shift-native: RPTR writeback #0 guest=17AF403C, translated=0x217af403c, value=00000019, memory=00000000->00000019
+[2026-10-23 23:55:26.283] [info] shift-native: RPTR writeback #1 guest=17AF403C, translated=0x217af403c, value=0000001F, memory=00000019->0000001F
+[2026-10-23 23:55:26.481] [info] shift-native: read back Vulkan guest output 1280x720 as VK_FORMAT_A2B10G10R10_UNORM_PACK32 (Android debug only); non-black pixels 0, FNV-1a B161DE6EEC272325
+[2026-10-23 23:55:26.582] [info] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-23 23:55:26.583] [debug] shift-native: framed 1602 PM4 packets, 879 raw register writes, 50 captured indexed draw packets (49 with supported raster state, 48 elided as framebuffer no-ops, 1 translated to project GLSL), 2 guest swaps, 2 Vulkan frames submitted
+[2026-10-23 23:55:26.584] [info] shift-native: RPTR writeback #2 guest=17AF403C, translated=0x217af403c, value=00000049, memory=0000001F->00000049
+```
+
+The original APK (`ff5c30af24013b315280e161cd383c4cd50874a1e096f0d0383364f004a311c6`) was restored afterward and relaunched; PID 32421 was foreground and its screenshot SHA-256 was `2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839`. Its frame remains black. The Android run proves this P2 plugin's RPTR writeback path stores and reads back the guest value. It does not explain the separate Process 1 Linux/GDB report, whose observed target address was `0xB7AF4000`, or establish retail pixel output.

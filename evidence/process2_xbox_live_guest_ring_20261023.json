@@ -894,5 +894,42 @@
       "screen_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
       "result": "Original build restored and running; its retail startup frame remains black."
     }
+  },
+  "android_rptr_writeback_diagnostic_20261023": {
+    "date": "2026-10-23",
+    "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, Mali-G76 MC4, Vulkan 1.1.131)",
+    "diagnostic_apk_sha256": "86129ac9b92d6d038b72a0e681a7b6e4a4200366d41b51356abdacaa880f9ed7",
+    "plugin_entries_sha256": "dd985073cb1a919b42d9777bc98daa9c5fcf1b1f15547ba81275137ee521c577",
+    "runtime_log": "files/nfs_shift/user/logs/nfs_shift_030.log",
+    "runtime_log_sha256": "93d109367dbdc24c23dd83a9fbc9227a512e5744b25c08ace1dcd40b51b623bf",
+    "writeback": {
+      "guest_address": "0x17AF403C",
+      "block_size_log2": 6,
+      "translated_host_pointer": "0x217af403c",
+      "initial_guest_value": "0x00000000",
+      "verified_guest_values": [
+        "0x00000019",
+        "0x0000001F",
+        "0x00000049"
+      ],
+      "read_after_write_matched": true
+    },
+    "render_observation": {
+      "guest_swaps": 2,
+      "vulkan_frames_submitted": 2,
+      "live_draws_submitted": 1,
+      "readback_non_black_pixels": 0,
+      "readback_fnv1a64": "B161DE6EEC272325",
+      "screenshot": "process2_xbox_live_vulkan_output_readback_black_20261023.png",
+      "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839"
+    },
+    "restored_original_apk": {
+      "apk_sha256": "ff5c30af24013b315280e161cd383c4cd50874a1e096f0d0383364f004a311c6",
+      "runtime_log": "files/nfs_shift/user/logs/nfs_shift_031.log",
+      "foreground_pid": 32421,
+      "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839"
+    },
+    "comparison_note": "This Android call argument (0x17AF403C) differs from the 0xB7AF4000 target reported by Process 1 in its Linux/GDB run; do not treat them as the same address without matching run evidence.",
+    "interpretation": "The P2 Android plugin receives VdEnableRingBufferRPtrWriteBack and writes the translated guest read pointer correctly for this startup run. The retail Vulkan output remains black, and no later guest draw batch was observed after the two startup swaps. This rules out Android RPTR writeback as the cause of this run’s black frame but does not prove the Linux/GDB target or retail visual parity."
   }
 }

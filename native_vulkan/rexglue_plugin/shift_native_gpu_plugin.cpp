@@ -302,9 +302,21 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     ring_changed_.notify_one();
   }
 
-  void EnableReadPointerWriteBack(uint32_t guest_address, uint32_t) override {
+  void EnableReadPointerWriteBack(uint32_t guest_address,
+                                  uint32_t block_size_log2) override {
+    const bool valid = physical_span_valid(guest_address, sizeof(uint32_t));
+    auto *writeback_word =
+        valid ? memory_->TranslatePhysical<uint32_t *>(guest_address) : nullptr;
+    const uint32_t initial_value =
+        writeback_word ? rex::memory::load_and_swap<uint32_t>(writeback_word)
+                       : 0;
     std::lock_guard<std::mutex> lock(ring_mutex_);
     read_pointer_writeback_address_ = guest_address;
+    REXLOG_INFO(
+        "shift-native: RPTR writeback enabled guest={:08X}, block_log2={}, "
+        "physical_valid={}, translated={:p}, initial={:08X}",
+        guest_address, block_size_log2, valid,
+        static_cast<void *>(writeback_word), initial_value);
   }
 
   void Shutdown() override {
@@ -1398,9 +1410,29 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         ring_read_pointer_ = write_pointer;
         writeback_address = read_pointer_writeback_address_;
       }
-      if (writeback_address && physical_span_valid(writeback_address, sizeof(uint32_t))) {
-        rex::memory::store_and_swap<uint32_t>(
-            memory_->TranslatePhysical<uint32_t*>(writeback_address), write_pointer);
+      if (writeback_address &&
+          physical_span_valid(writeback_address, sizeof(uint32_t))) {
+        auto *writeback_word =
+            memory_->TranslatePhysical<uint32_t *>(writeback_address);
+        const uint32_t previous_value =
+            rex::memory::load_and_swap<uint32_t>(writeback_word);
+        rex::memory::store_and_swap<uint32_t>(writeback_word, write_pointer);
+        const uint32_t stored_value =
+            rex::memory::load_and_swap<uint32_t>(writeback_word);
+        static std::atomic<uint32_t> writeback_log_count{0};
+        const uint32_t log_index =
+            writeback_log_count.fetch_add(1, std::memory_order_relaxed);
+        if (log_index < 8 || stored_value != write_pointer) {
+          REXLOG_INFO(
+              "shift-native: RPTR writeback #{} guest={:08X}, translated={:p}, "
+              "value={:08X}, memory={:08X}->{:08X}",
+              log_index, writeback_address, static_cast<void *>(writeback_word),
+              write_pointer, previous_value, stored_value);
+        }
+      } else if (writeback_address) {
+        REXLOG_ERROR("shift-native: RPTR writeback address {:08X} is outside "
+                     "physical memory",
+                     writeback_address);
       }
       try {
         for (const uint32_t cpu_mask : pending_interrupt_masks) {
@@ -1430,7 +1462,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
             ++dispatched_interrupt_callbacks;
           }
         }
-      } catch (const std::exception& e) {
+      } catch (const std::exception &e) {
         REXLOG_ERROR("shift-native: guest GPU interrupt callback failed: {}", e.what());
       } catch (...) {
         REXLOG_ERROR("shift-native: guest GPU interrupt callback failed");
