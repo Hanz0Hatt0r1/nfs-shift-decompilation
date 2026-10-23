@@ -79,9 +79,10 @@
         "evidence/xbox360_frontier_82341198.json",
         "evidence/xbox360_runtime_queue_probe_20261023.json",
         "evidence/xbox360_guest_ring_wait_semantics_20261023.json",
+        "evidence/xbox360_plugin_queue_watch_20261023.json",
         "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/5cae789f/evidence/process2_xbox_live_guest_ring_20261023.json"
       ],
-      "note": "Exact-XEX bytes verify that the earlier no-plugin wait was the original guest ring/cursor loop: 0x823B34A0 calls 0x823A0310, which tests object+0x2ABD bit 0x02. That controlled no-plugin run kept the bit clear and head/tail at 1/21 while three Vd setup calls were ignored. Process 2 now reports a Linux plugin-enabled run for Title ID 454108B4: 1,828 PM4 packets and two guest swaps were consumed. Its evidence does not record this P1 predicate byte or next guest PC, and the generated executable is not yet explicitly correlated here to the pinned XEX SHA-256. Keep guest wait/scheduler semantics unchanged; repeat a P1-focused PC/flag probe with correlated input/runtime/plugin hashes."
+      "note": "Exact-XEX bytes verify that 0x823B34A0 calls 0x823A0310, which tests object+0x2ABD bit 0x02. A plugin-enabled Linux AMD64 GDB probe used executable SHA-256 6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b, runtime SHA-256 ff31b096a4a0bbb212e4e145f029239e1093776145070a232267182ce2642b32, and shift-native plugin SHA-256 dbbacc40d993cac1a0b3519ab1ae7392b6fcb26457ebe5d8cb4faf3249dff05b. The guest interrupt callback 0x823B37B8 ran twice. At the first predicate sample, read head was 1 and tail was 21; afterward a hardware watchpoint confirmed the read-pointer word stayed at 1 and object+0x2ABD stayed 0x14 with mask 0x02 clear for about 25 seconds. The main guest thread remained in the original queue loop. The tail was not watched after the initial sample. The probe does not identify why write-back did not update the read pointer or provide a complete executable-to-XEX build record. Process 2 is checking the VdEnableRingBufferRPtrWriteBack address/store path. Keep guest wait and scheduler semantics unchanged until that path is verified."
     },
     "X3": {
       "key": "xenos_vulkan_retail_frame",
