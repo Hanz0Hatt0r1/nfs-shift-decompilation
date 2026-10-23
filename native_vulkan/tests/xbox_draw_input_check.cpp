@@ -336,6 +336,38 @@ int main() {
                 &register_writes, &error) &&
                 register_writes.size() == unchanged_writes.size(),
             "truncated type-0 PM4 packet changed register-write output");
+    const uint8_t captured_vertex_im_load[] = {
+        0xC0, 0x01, 0x27, 0x00, 0x09, 0xD5, 0x68, 0xE0, 0x00, 0x00, 0x00, 0x69,
+    };
+    const uint8_t captured_pixel_im_load[] = {
+        0xC0, 0x01, 0x27, 0x00, 0x09, 0xD5, 0x04, 0x61, 0x00, 0x00, 0x00, 0x1E,
+    };
+    shift::xbox::CapturedShaderProgramLoad shader_load{};
+    require(shift::xbox::decode_captured_shader_program_load(
+                captured_vertex_im_load, sizeof(captured_vertex_im_load),
+                &shader_load, &error) &&
+                shader_load.stage == shift::xbox::GuestShaderStage::Vertex &&
+                shader_load.guest_address == 0x09D568E0u &&
+                shader_load.dword_count == 105u && shader_load.byte_length == 420u,
+            "captured vertex PM4_IM_LOAD span decoded incorrectly");
+    require(shift::xbox::decode_captured_shader_program_load(
+                captured_pixel_im_load, sizeof(captured_pixel_im_load),
+                &shader_load, &error) &&
+                shader_load.stage == shift::xbox::GuestShaderStage::Pixel &&
+                shader_load.guest_address == 0x09D50460u &&
+                shader_load.dword_count == 30u && shader_load.byte_length == 120u,
+            "captured pixel PM4_IM_LOAD span decoded incorrectly");
+    const auto unchanged_shader_load = shader_load;
+    uint8_t invalid_shader_load[sizeof(captured_pixel_im_load)];
+    std::copy_n(captured_pixel_im_load, sizeof(captured_pixel_im_load),
+                invalid_shader_load);
+    invalid_shader_load[7] = 0x62;
+    require(!shift::xbox::decode_captured_shader_program_load(
+                invalid_shader_load, sizeof(invalid_shader_load), &shader_load, &error) &&
+                shader_load.stage == unchanged_shader_load.stage &&
+                shader_load.guest_address == unchanged_shader_load.guest_address &&
+                shader_load.byte_length == unchanged_shader_load.byte_length,
+            "unsupported shader stage changed decoded output");
     shift::xbox::DecodedIndexedDraw framed_draw{};
     require(shift::xbox::decode_captured_draw_indx(
                 framed_stream + packet_spans[4].byte_offset,

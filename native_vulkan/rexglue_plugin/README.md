@@ -9,12 +9,14 @@ The write-pointer callback only queues work. A worker snapshots bounded ring
 intervals, resolves the captured indirect-buffer packet form, frames PM4, and
 decodes recognized register writes and `DRAW_INDX` packets. It does not apply
 the full register file. It retains the 15 captured target, viewport, and
-scissor registers across batches and checks that state at supported indexed
-draws. It does not resolve guest shaders or resources into Vulkan objects or
-submit a draw. A live game window therefore does not yet display game frames;
-the captured bundle runner remains the only path that submits the observed
-SHIFT logo draw. Guest GPU interrupts are not implemented, and reads from
-MMIO registers other than the ring read/write pointers currently return zero.
+scissor registers across batches and copies raw program spans from the captured
+pointer-based `IM_LOAD` packets. It checks that raster state and both shader
+programs are present at supported indexed draws. It does not translate the
+microcode to SPIR-V, bind guest vertex/index/texture resources, or submit a
+draw. A live game window therefore does not yet display game frames; the
+captured bundle runner remains the only path that submits the observed SHIFT
+logo draw. Guest GPU interrupts are not implemented, and reads from MMIO
+registers other than the ring read/write pointers currently return zero.
 
 ## Build and smoke check
 

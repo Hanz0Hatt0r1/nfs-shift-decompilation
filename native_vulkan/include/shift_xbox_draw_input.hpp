@@ -43,6 +43,18 @@ struct GuestRegisterWrite {
     uint32_t value;
 };
 
+enum class GuestShaderStage : uint8_t {
+    Vertex,
+    Pixel,
+};
+
+struct CapturedShaderProgramLoad {
+    GuestShaderStage stage;
+    uint32_t guest_address;
+    uint32_t dword_count;
+    uint32_t byte_length;
+};
+
 struct CapturedIndirectBuffer {
     uint32_t guest_address;
     uint32_t dword_count;
@@ -319,6 +331,14 @@ bool decode_guest_register_writes(
     const uint8_t* packet_bytes,
     size_t byte_length,
     std::vector<GuestRegisterWrite>* output,
+    std::string* error);
+
+// Decodes the captured pointer-based PM4_IM_LOAD form. It identifies the
+// guest microcode span only; callers still provide and bound guest-memory IO.
+bool decode_captured_shader_program_load(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedShaderProgramLoad* output,
     std::string* error);
 
 // Decodes the captured three-dword PM4_INDIRECT_BUFFER form. It reports the

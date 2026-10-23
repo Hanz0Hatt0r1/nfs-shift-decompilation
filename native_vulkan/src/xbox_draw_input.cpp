@@ -14,6 +14,7 @@ constexpr uint32_t kPacketTypeMask = 0xC0000000u;
 constexpr uint32_t kPacketCountMask = 0x3FFF0000u;
 constexpr uint32_t kPacketOpcodeMask = 0x0000FF00u;
 constexpr uint32_t kDrawIndxOpcode = 0x22u;
+constexpr uint32_t kImLoadOpcode = 0x27u;
 constexpr uint32_t kIndirectBufferOpcode = 0x3Fu;
 constexpr uint32_t kTriangleList = 4u;
 constexpr uint32_t kIndexCountMask = 0x00FFFFFFu;
@@ -163,6 +164,39 @@ bool decode_guest_register_writes(
     }
 
     *output = std::move(writes);
+    if (error) error->clear();
+    return true;
+}
+
+bool decode_captured_shader_program_load(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedShaderProgramLoad* output,
+    std::string* error) {
+    if (!packet_bytes || !output || byte_length != 3u * sizeof(uint32_t)) {
+        return fail("invalid captured PM4_IM_LOAD packet", error);
+    }
+    const uint32_t header = read_be32(packet_bytes);
+    if ((header & kPacketTypeMask) != kType3Header ||
+        ((header & kPacketOpcodeMask) >> 8) != kImLoadOpcode ||
+        ((header & kPacketCountMask) >> 16) != 1u) {
+        return fail("unsupported captured PM4_IM_LOAD packet form", error);
+    }
+
+    const uint32_t address_and_stage = read_be32(packet_bytes + 4);
+    const uint32_t start_and_size = read_be32(packet_bytes + 8);
+    const uint32_t stage = address_and_stage & 0x3u;
+    const uint32_t dword_count = start_and_size & 0xFFFFu;
+    if (stage > 1u || (start_and_size >> 16) != 0u || dword_count == 0u) {
+        return fail("unsupported captured shader stage or program span", error);
+    }
+
+    *output = CapturedShaderProgramLoad{
+        stage == 0u ? GuestShaderStage::Vertex : GuestShaderStage::Pixel,
+        address_and_stage & ~0x3u,
+        dword_count,
+        dword_count * static_cast<uint32_t>(sizeof(uint32_t)),
+    };
     if (error) error->clear();
     return true;
 }

@@ -16,9 +16,11 @@ packet, its resources, shaders, and a register-file snapshot. The project-owned
 path now translates the captured VS/PS subset and submits that captured draw
 from an isolated bundle through Vulkan 1.1. A project-owned ReXGlue plugin now
 receives the live ring and frames/decodes the bounded PM4 subset on a worker
-thread. It tracks only the 15 captured target, viewport, and scissor registers;
-resource binding and Vulkan draw submission remain unimplemented, and it does
-not render the complete title. The production path must remain emulator-free.
+thread. It tracks only the 15 captured target, viewport, and scissor registers
+and copies microcode spans from the captured pointer-based `IM_LOAD` form.
+Shader translation/SPIR-V compilation, vertex/texture binding, and Vulkan draw
+submission remain unimplemented; the plugin does not render the title yet.
+The production path must remain emulator-free.
 
 ## Source and branch baseline
 
@@ -80,11 +82,13 @@ desktop integration step and not the Android Vulkan 1.1 route.
 The project plugin implements that ABI and routes `CP_RB_WPTR` updates to a
 worker that snapshots the ring, expands indirect buffers, and records packet
 counts plus recognized `DRAW_INDX` commands. It tracks the captured raster
-register subset across batches and validates it at each supported indexed draw.
-It does not resolve guest resources, create Vulkan draw resources, or issue
-draw calls. The separate target split is in SDK PR #528; the plugin and ring
-bridge are in NFS Process 2 PR #2161. No P-code, Ghidra, or guest-scheduler API
-changes were needed, and no Process 1 files were modified.
+register subset across batches, copies the pointer-based `IM_LOAD` program
+spans, and validates both raster state and active VS/PS presence at each
+supported indexed draw. It does not translate microcode to SPIR-V, bind guest
+vertex/index/texture resources, create Vulkan draw resources, or issue draw
+calls. The separate target split is in SDK PR #528; the plugin and ring bridge
+are in NFS Process 2 PR #2161. No P-code, Ghidra, or guest-scheduler API changes
+were needed, and no Process 1 files were modified.
 
 ### Verification
 
@@ -374,8 +378,11 @@ head/tail values in that check are synthetic harness values, so this is not
 live ReXGlue ring evidence. The type-0 decoder also accepted all 162 observed
 type-0 packets and extracted 4,436 raw `(register, value)` pairs. In the live
 plugin, only the 15 captured raster registers are retained for a draw-state
-check; this is not general Xenos register emulation. Type-1 decoding is covered
-by a compact unit case. Details are in
+check; this is not general Xenos register emulation. The captured pointer-based
+`IM_LOAD` packets also identify the 105-dword VS at `0x09D568E0` and 30-dword
+PS at `0x09D50460`; the live plugin copies these bounded spans from guest
+memory but does not yet translate them to SPIR-V. Type-1 decoding is covered by
+a compact unit case. Details are in
 `evidence/process2_xbox_guest_ring_snapshot_20261023.json`.
 
 This is the first XEX-originated indexed draw submitted through the
@@ -401,7 +408,8 @@ for the isolated draw, not Android game integration or retail-frame parity.
 - `shift_xbox_draw_input_check`: passed; covers the captured packet, mismatched
   binding, target format/viewport/scissor state, shader constant addressing and
   branch values, bounded shader control-flow, instruction schedule, fetch, and
-  raw ALU-field decode, PM4 raster-register tracking, unsupported
+  raw ALU-field decode, captured pointer-based `IM_LOAD` decoding, PM4
+  raster-register tracking, unsupported
   opcode/layout/sampling values, non-zero window offsets, and truncated input.
 - `shift_xbox_shader_translate_check`: passed; selects the captured `b128` /
   `b129` path and confirms unsupported control flow is rejected. The VS/PS GLSL

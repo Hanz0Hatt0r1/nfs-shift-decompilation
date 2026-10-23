@@ -209,6 +209,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
   void RingWorkerLoop() {
     shift::xbox::GuestRasterRegisterState raster_register_state;
+    std::vector<uint8_t> vertex_shader_program;
+    std::vector<uint8_t> pixel_shader_program;
     uint64_t observed_ring_generation = 0;
     for (;;) {
       uint32_t read_pointer = 0;
@@ -231,6 +233,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       }
       if (ring_generation != observed_ring_generation) {
         raster_register_state.reset();
+        vertex_shader_program.clear();
+        pixel_shader_program.clear();
         observed_ring_generation = ring_generation;
       }
 
@@ -248,6 +252,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
         uint32_t decoded_draws = 0;
         uint32_t draws_with_raster_state = 0;
+        uint32_t draws_with_both_shader_programs = 0;
+        uint32_t loaded_shader_programs = 0;
+        uint32_t unresolved_shader_programs = 0;
         uint32_t unsupported_draws = 0;
         uint32_t raw_register_writes = 0;
         if (expanded_ok) {
@@ -280,6 +287,27 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 }
               }
             } else if (packet.type == shift::xbox::PacketType::Type3 &&
+                       packet.opcode == 0x27u) {
+              shift::xbox::CapturedShaderProgramLoad shader_load{};
+              const uint8_t* shader_bytes = nullptr;
+              size_t shader_byte_length = 0;
+              if (shift::xbox::decode_captured_shader_program_load(
+                      packet_bytes, packet.byte_length, &shader_load, &error) &&
+                  ReadGuestMemory(this, shader_load.guest_address,
+                                  shader_load.byte_length, &shader_bytes,
+                                  &shader_byte_length) &&
+                  shader_byte_length >= shader_load.byte_length) {
+                std::vector<uint8_t>& active_program =
+                    shader_load.stage == shift::xbox::GuestShaderStage::Vertex
+                        ? vertex_shader_program
+                        : pixel_shader_program;
+                active_program.assign(shader_bytes,
+                                      shader_bytes + shader_load.byte_length);
+                ++loaded_shader_programs;
+              } else {
+                ++unresolved_shader_programs;
+              }
+            } else if (packet.type == shift::xbox::PacketType::Type3 &&
                        packet.opcode == 0x22u) {
               shift::xbox::DecodedIndexedDraw draw{};
               if (shift::xbox::decode_captured_draw_indx(
@@ -292,6 +320,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                         raster_registers, &raster_state, &error)) {
                   ++draws_with_raster_state;
                 }
+                if (!vertex_shader_program.empty() && !pixel_shader_program.empty()) {
+                  ++draws_with_both_shader_programs;
+                }
               } else {
                 ++unsupported_draws;
               }
@@ -301,10 +332,14 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
             }
           }
           REXLOG_DEBUG("shift-native: framed {} PM4 packets, {} raw register writes, "
-                       "{} captured DRAW_INDX packets ({} with supported raster state), "
-                       "{} unsupported draw forms; Vulkan draw submission is not wired",
-                       expanded.packets.size(), raw_register_writes, decoded_draws,
-                       draws_with_raster_state, unsupported_draws);
+                       "{} pointer-loaded shader programs ({} unresolved), "
+                       "{} captured DRAW_INDX packets ({} with supported raster state, "
+                       "{} with both shader programs), {} unsupported draw forms; "
+                       "Vulkan draw submission is not wired",
+                       expanded.packets.size(), raw_register_writes,
+                       loaded_shader_programs, unresolved_shader_programs, decoded_draws,
+                       draws_with_raster_state, draws_with_both_shader_programs,
+                       unsupported_draws);
         } else {
           REXLOG_WARN("shift-native: dropped malformed PM4 batch at WPTR {:08X}: {}",
                       write_pointer, error);
