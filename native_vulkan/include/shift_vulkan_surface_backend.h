@@ -33,6 +33,7 @@ enum ShiftVulkanSurfaceProbeStatus {
     SHIFT_VULKAN_SURFACE_PROBE_SURFACE_FAILURE = 4,
     SHIFT_VULKAN_SURFACE_PROBE_PHYSICAL_DEVICE_FAILURE = 5,
     SHIFT_VULKAN_SURFACE_PROBE_QUEUE_FAMILY_FAILURE = 6,
+    SHIFT_VULKAN_SURFACE_PROBE_API_VERSION_FAILURE = 7,
 };
 
 // Creates a Vulkan instance from the backend-declared extension set, asks the
