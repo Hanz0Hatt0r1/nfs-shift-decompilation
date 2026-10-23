@@ -38,6 +38,7 @@ struct PacketSpan {
 };
 
 struct GuestRegisterWrite {
+    // PM4 register index (not a byte address) and decoded host-order value.
     uint32_t register_index;
     uint32_t value;
 };
@@ -295,8 +296,8 @@ bool scan_captured_packet_stream(
     std::vector<PacketSpan>* output,
     std::string* error);
 
-// Decodes the register writes in one PM4 type-0 or type-1 packet. It exposes
-// raw guest writes only; it does not update a GPU register file or apply state.
+// Decodes one PM4 type-0 or type-1 packet into raw host-order register writes.
+// It does not update a GPU register file or apply state.
 bool decode_guest_register_writes(
     const uint8_t* packet_bytes,
     size_t byte_length,
