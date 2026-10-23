@@ -852,6 +852,7 @@
     },
     "offscreen_renderer_regression": {
       "host_vulkan_ctest": "4/4 passed; validation layer enabled on host",
+      "linux_plugin_ctest": "3/3 passed with VK_LAYER_KHRONOS_validation enabled",
       "android_arm64": "synthetic Vulkan 1.1 sample-zero Copy/Convert and captured R/B swap passed on Mali-G76 MC4",
       "android_live_validation_layer": false,
       "scope": "Validates the bounded Vulkan pass and channel conversion only; it does not establish retail image output or parity."
