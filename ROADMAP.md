@@ -2,19 +2,19 @@
 
 **Adopted 2026-10-22.** The default development lane is now Xbox 360 retail → ReXGlue PowerPC AOT → Linux → Android ARM64. The existing PC 1.02 recompilation is retained for reference, verification and targeted maintenance, not deleted or represented as Xbox progress.
 
-The immediate goal is to **prove feasibility**, not claim the port has begun executing. Status: **no verified SHIFT Xbox 360 input, recompiled executable or gameplay**.
+The Xbox guest has begun executing through ReXGlue on Linux, but the game is not yet playable. X0 input identity is verified; the latest Linux evidence shows a plugin-enabled guest ring and two early Vulkan submissions, while the retail shader readback remains black. The exact input-to-generated-executable correlation, visible retail output, main menu and offline race remain open.
 
 ## Decision gates
 
 | Gate | Acceptance evidence | Current status |
 | --- | --- | --- |
-| X0 — retail input identity | User-owned `default.xex`, SHA-256, title/build identification, external asset inventory | Blocked: no verified XEX input |
-| X1 — ReXGlue feasibility | Pinned SDK revision; recorded XEX parse, PPC function/codegen coverage, imports and unresolved exceptions | Not started |
-| X2 — Linux link/boot | Recompiled executable links for Linux x86-64, reaches original guest entrypoint with deterministic logs | Not started |
-| X3 — real GPU work | Original Xenos commands reach Vulkan; first measured non-synthetic retail frame | Not started |
-| X4 — playable Linux | Original frontend, selectable offline race, input, audio and sustained game loop, with evidence | Not started |
+| X0 — retail input identity | User-owned `default.xex`, SHA-256, title/build identification, external asset inventory | Verified: exact input identity is in the status ledger; game bytes remain outside Git |
+| X1 — ReXGlue feasibility | Pinned SDK revision; recorded XEX parse, PPC function/codegen coverage, imports and unresolved exceptions | In progress: SDK pinned; 18 entries have focused evidence; runtime execution and broad coverage remain open |
+| X2 — Linux link/boot | Recompiled executable links for Linux x86-64, reaches original guest entrypoint with deterministic logs | In progress: plugin-enabled guest ring is active; exact P1 predicate/PC probe and executable lineage remain open |
+| X3 — real GPU work | Original Xenos commands reach Vulkan; first measured non-synthetic retail frame | In progress: two early Vulkan frames submitted; retail readback is black and visible output is unverified |
+| X4 — playable Linux | Original frontend, selectable offline race, input, audio and sustained game loop, with evidence | In progress: loading-screen observation is uncorrelated; main menu and offline race are unverified |
 | X5 — portability | Linux ARM64 build/runtime validated; Android ARM64 packaging, input, audio, lifecycle validated | Not started |
-| X6 — Vulkan 1.1 | Explicit capability inventory and successful native execution on a Vulkan 1.1 device without assuming 1.2/1.3 | Not started |
+| X6 — Vulkan 1.1 | Explicit capability inventory and successful native execution on a Vulkan 1.1 device without assuming 1.2/1.3 | In progress: source audit only; device capability and retail output proof remain open |
 
 The gate machine record is [coordination/xbox360_rexglue_status.json](coordination/xbox360_rexglue_status.json). Mark a gate verified only with an independently checkable evidence path, revision and observed result. SDK compilation alone does not prove SHIFT launches.
 
