@@ -124,6 +124,34 @@ black or identify whether the renderer's supported draw subset, guest scene
 resources, or scene progression is responsible. The renderer remains not
 ready.
 
+## Exact frame-500 draw follow-up (2026-10-24)
+
+A focused ARM64 diagnostic build logged the guest draw associated with its
+frame-500 readback. It was installed with the existing signer and retail XEX;
+the game data directory was preserved. The run submitted 521 Vulkan frames,
+749 indexed draw packets, and 521 accepted Copy/Convert operations. The
+1280x720 readback at 13:10:37.116 MSK again contained zero non-black pixels
+(FNV-1a `B161DE6EEC272325`).
+
+The matching captured draw was resolved draw #727: a 4x-MSAA, three-index
+auto-indexed rectangle-list draw, with no texture or constants. Its 108-byte
+vertex shader forwards vertex attribute 1 to interpolator 0; the three
+captured attribute values are all zero. Its 36-byte pixel shader writes
+`max(interpolator0, interpolator0)`, so this sampled guest draw evaluates to
+zero color. Copy/Convert was accepted immediately afterward. This ties the
+black readback to an exact late guest draw and shows that the draw reached the
+Vulkan submission path; it does not prove that every frame uses this contract
+or identify why the guest has not reached the visible menu/race scene.
+
+Four guest opens for `menu_background.xml` failed about four seconds after the
+readback. The temporal order and matching black scene do not establish
+causation. A screenshot taken earlier in this run was byte-identical to the
+saved post-splash black screenshot. Full draw details, APK/plugin/XEX hashes,
+readback metrics, and the compressed runtime log are recorded in
+[`process2_redmi_note8pro_vulkan_frame500_draw_20261024.json`](../evidence/process2_redmi_note8pro_vulkan_frame500_draw_20261024.json)
+and
+[`process2_redmi_note8pro_vulkan_frame500_draw_20261024.log.gz`](../evidence/process2_redmi_note8pro_vulkan_frame500_draw_20261024.log.gz).
+
 ## Checks
 
 - Native Vulkan/PM4 suite: 4/4 tests pass (`ctest` in the native Vulkan build).
@@ -131,6 +159,9 @@ ready.
   smoke tests pass.
 - Rebuilt the Linux AMD64 plugin from the current diagnostic source; the same
   three CTest checks passed 3/3.
+- Rebuilt the ARM64 diagnostic plugin with NDK 28.2.13676358 / Android API 29,
+  installed and ran it on the Redmi Note 8 Pro, then captured the exact guest
+  draw for submitted frame 500. Linux CTest remained 3/3.
 - Exact Linux AMD64 diagnostic plugin built from this source: `/home/pes/work/rexglue-sdk-rexui-vulkan-20261023/out/linux-amd64/librexgpu-shift-native.so`, SHA-256
   `e4115b0c58816d9f6225ef102583801fcc7253bf10f52d3e4356e76c8c36a5f0`.
 - Host Vulkan renderer regression: passes with

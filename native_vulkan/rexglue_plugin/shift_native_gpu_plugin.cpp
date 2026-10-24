@@ -469,6 +469,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       const shift::xbox::CapturedXboxShaderRegisterState& shader_state,
       const std::vector<uint8_t>& vertex_program,
       const std::vector<uint8_t>& pixel_program,
+      uint32_t diagnostic_submitted_frame,
       shift::xbox::CapturedVulkanDraw* prepared_draw,
       bool* inputs_ready,
       bool* shaders_translated,
@@ -782,13 +783,18 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
           late_sample_window
               ? late_dump_count.fetch_add(1, std::memory_order_relaxed)
               : 0;
-      if (initial_sample || (late_sample_window && late_dump_index < 8)) {
+      if (initial_sample || (late_sample_window && late_dump_index < 8) ||
+          diagnostic_submitted_frame != 0) {
         std::ostringstream dump;
         dump << "shift-native: resolved captured retail draw #" << dump_index;
         if (initial_sample) {
           dump << " (startup sample)";
         } else {
           dump << " (late sample #" << late_dump_index << ')';
+        }
+        if (diagnostic_submitted_frame != 0) {
+          dump << " (Vulkan readback target frame "
+               << diagnostic_submitted_frame << ')';
         }
         dump << " elapsed_ms="
              << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
@@ -1010,6 +1016,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     uint64_t observed_ring_generation = 0;
     uint32_t guest_swap_counter = 0;
     uint32_t readback_frame_counter = 0;
+#if defined(__ANDROID__) && !defined(NDEBUG)
+    constexpr uint32_t kAndroidDebugReadbackFrame = 500u;
+#else
+    constexpr uint32_t kAndroidDebugReadbackFrame = 0u;
+#endif
     for (;;) {
       uint32_t read_pointer = 0;
       uint32_t write_pointer = 0;
@@ -1473,10 +1484,17 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 bool shader_inputs_ready = false;
                 bool shaders_translated = false;
                 shift::xbox::CapturedVulkanDraw prepared_draw{};
+                const uint32_t upcoming_submitted_frame = readback_frame_counter + 1u;
+                const uint32_t diagnostic_submitted_frame =
+                    kAndroidDebugReadbackFrame != 0u &&
+                            upcoming_submitted_frame == kAndroidDebugReadbackFrame
+                        ? upcoming_submitted_frame
+                        : 0u;
                 const bool resources_resolved =
                     raster_state_ready && raster_state.scissor_has_area &&
                     PrepareCapturedDrawResources(draw, raster_state, shader_register_state,
                                                  vertex_shader_program, pixel_shader_program,
+                                                 diagnostic_submitted_frame,
                                                  &prepared_draw, &shader_inputs_ready,
                                                  &shaders_translated, &error);
                 if (shader_inputs_ready) {
@@ -1565,10 +1583,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 const char* readback_path = std::getenv("SHIFT_NATIVE_VULKAN_READBACK_PATH");
 #if defined(__ANDROID__) && !defined(NDEBUG)
                 constexpr bool kAndroidDebugReadback = true;
-                constexpr uint32_t kAndroidDebugReadbackFrame = 500u;
 #else
                 constexpr bool kAndroidDebugReadback = false;
-                constexpr uint32_t kAndroidDebugReadbackFrame = 0u;
 #endif
                 const bool capture_output = !readback_saved_ &&
                     ((kAndroidDebugReadback &&
