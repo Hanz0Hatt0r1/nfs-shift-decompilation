@@ -1,0 +1,83 @@
+{
+  "schema": "shift.xbox360.linux-xam-input-routing.v1",
+  "captured_on": "2026-10-24",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4"
+  },
+  "runtime": {
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b",
+    "gpu_plugin_sha256": "54348dd521b97b15be963d0b9f680172dbfb83c3ef5f2fbb979f618dc9c32aaa",
+    "log": {
+      "path": "/tmp/p1-virtual-input-20261024/logs/nfs_shift_017.log",
+      "sha256": "cf08bfdfef861de3e5a30fc2e1631af88a183f518b730578c014d365a54d4ba6"
+    },
+    "counts": {
+      "single_captured_indexed_draw_submissions": 199,
+      "accepted_copy_convert_entries": 697,
+      "menu_background_xml_not_found_attempts": 4
+    }
+  },
+  "input_setup": {
+    "virtual_device": "uinput Microsoft X-Box 360 pad, VID:PID 045e:028e",
+    "filtered_device": "SDL_GAMECONTROLLER_IGNORE_DEVICES=0x045e/0x0b12 filtered the already-connected Xbox Series X controller so the uinput device occupied guest user 0",
+    "sdl_instance_id": 6,
+    "gdb_log": {
+      "path": "/tmp/p1-virtual-input-20261024/gdb-xam-return-delayed.log",
+      "sha256": "db985d28054042c71a3f9768cd94c2853541fb4344622a4e1c6acf955f555ad9"
+    },
+    "input_driver_source": "Pinned ReXGlue SDK v0.10.0 SDL3 driver and SlotAssignment were not modified"
+  },
+  "observed_state_returns": [
+    {
+      "call": 109,
+      "user": 0,
+      "result": 0,
+      "packet": 2,
+      "buttons": "0x0010",
+      "button": "Start held"
+    },
+    {
+      "call": 185,
+      "user": 0,
+      "result": 0,
+      "packet": 3,
+      "buttons": "0x0000",
+      "button": "Start released"
+    },
+    {
+      "call": 264,
+      "user": 0,
+      "result": 0,
+      "packet": 4,
+      "buttons": "0x1000",
+      "button": "A held"
+    }
+  ],
+  "conclusion": "The retail XamInputGetState path returns Start and A for guest user 0 with success and advancing packet numbers. Earlier zero-state captures used an input pad assigned after a pre-existing physical controller; filtering the physical VID/PID for this controlled test resolved that test setup issue without changing guest or SDK semantics.",
+  "frontend_result": "Start/A did not advance the tested run to a new scene. The runtime continued the same single captured draw and Copy/Convert loop; four menu_background.xml opens returned 0xc000000f. Input route success is not menu or race proof.",
+  "limitations": [
+    "GDB stops at guest input calls and changes host timing.",
+    "A release was also observed in the preceding filtered run; this 50-second run ended before its A-release return was logged.",
+    "The physical controller was filtered only for this test process; no system device configuration was changed."
+  ],
+  "additional_release_observation": {
+    "gdb_log": {
+      "path": "/tmp/p1-virtual-input-20261024/gdb-xam-return-filtered.log",
+      "sha256": "5ae1676eeaaa469d302723ca196886223fddc8a9d9f113ae26452586adcc2d3a"
+    },
+    "event": {
+      "device_instance": 6,
+      "button": "A",
+      "transition": "released"
+    },
+    "xam_state_return": {
+      "user": 0,
+      "result": 0,
+      "packet": 4,
+      "buttons": "0x0000"
+    }
+  }
+}
