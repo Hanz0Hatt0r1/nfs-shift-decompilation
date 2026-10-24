@@ -12,6 +12,7 @@ enum class PrimitiveTopology : uint8_t {
     TriangleList,
     PointList,
     RectangleList,
+    TriangleStrip,
 };
 
 struct DecodedIndexedDraw {
@@ -291,6 +292,8 @@ struct CapturedTextureSampling {
 enum class CapturedColorTargetFormat : uint8_t {
     Rgba8Linear,
     Rgba8Gamma,
+    Rgb10A2Unorm,
+    Rgb10A2Float,
 };
 
 enum class CapturedCopyCommand : uint8_t {
@@ -568,7 +571,7 @@ bool decode_captured_vertex_fetch(
     CapturedVertexFetch* output,
     std::string* error);
 
-// Decodes only the captured format-6 tiled 2D texture descriptor.
+// Decodes captured format-6 tiled RGBA8 and format-19 DXT2/3 2D descriptors.
 bool decode_captured_texture_fetch(
     const uint32_t descriptor_words[6],
     CapturedTextureFetch* output,
@@ -612,8 +615,8 @@ bool decode_captured_shader_constants(
     CapturedShaderConstants* output,
     std::string* error);
 
-// Untiles the captured 8_8_8_8, 8-in-32, tiled 2D texture into linear texel
-// order while applying the captured per-dword byte swap. Other layouts fail.
+// Converts captured 8_8_8_8 tiled and DXT2/3 tiled or linear textures into
+// linear RGBA8 texels, applying the captured endian mode. Other layouts fail.
 bool untile_captured_texture_2d(
     const CapturedTextureFetch& texture,
     const uint8_t* guest_bytes,

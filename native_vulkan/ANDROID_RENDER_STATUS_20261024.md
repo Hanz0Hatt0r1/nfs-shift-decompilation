@@ -281,3 +281,23 @@ This is evidence of sustained command submission, not sustained visible
 graphics. The native renderer remains incomplete for full menu/race output;
 the next renderer implementation must be driven by a non-zero retail scene
 draw once the guest reaches and supplies one.
+
+
+## Loading-frame correction package check (2026-10-24)
+
+The latest Xenos relative-constant, gamma texture/target, and Copy/Convert
+channel fixes were built for `arm64-v8a` with NDK 28.2.13676358 / API 29 and
+packaged into APK SHA-256
+`f2cef95d4dd6d77cdf5f79b56fdb9a62c3f91322bcb847db0e69639d3de2a1df`. The
+embedded plugin SHA-256 is
+`c01d4006e900edc82c0c733474c6b513e83cd767d06fcc2ea05037cf793d114c`. The APK
+was installed with `adb install -r`; the external game directory remained
+present.
+
+A launch attempt on the Redmi Note 8 Pro started `NfsShiftActivity`, then
+`SDL_main` returned and the activity finished; the launcher became foreground
+and no Vulkan frame/readback was produced. Therefore this update has no
+on-device visual verification. Earlier Android logo and diagnostic evidence
+in this file records earlier APK/plugin builds and remains valid only for
+those builds. The current package launch symptom is recorded separately from
+the Linux retail frame result.

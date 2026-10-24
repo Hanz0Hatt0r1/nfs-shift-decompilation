@@ -32,6 +32,8 @@ struct CapturedVulkanDraw {
 
 struct CapturedVulkanCopy {
     CapturedCopyState state{};
+    uint32_t source_width = 0;
+    uint32_t source_height = 0;
     std::vector<uint32_t> vertex_shader_spirv;
     std::vector<uint32_t> pixel_shader_spirv;
     std::vector<uint32_t> single_sample_pixel_shader_spirv;

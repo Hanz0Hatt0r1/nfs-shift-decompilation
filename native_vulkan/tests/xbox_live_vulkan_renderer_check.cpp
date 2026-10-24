@@ -332,6 +332,44 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    auto linear_target_draw = draws[1];
+    linear_target_draw.raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
+    std::vector<uint32_t> gamma_linear_output;
+    std::string gamma_linear_error;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, {draws[0], linear_target_draw}, &gamma_linear_error,
+            &gamma_linear_output, enabled_features.geometryShader, &copy) ||
+        gamma_linear_output.size() != 1280u * 720u ||
+        std::none_of(gamma_linear_output.begin(), gamma_linear_output.end(),
+                     [](uint32_t pixel) { return (pixel & 0x3FFFFFFFu) != 0; })) {
+        std::cerr << "captured Gamma-to-Linear target format transition failed: "
+                  << gamma_linear_error << '\n';
+        return 1;
+    }
+
+    auto packed_vertex_inputs = draw;
+    packed_vertex_inputs.vertex_input_attributes = {
+        {0, 1, 6, 6, 3},
+        {1, 0, 37, 6, 4},
+    };
+    packed_vertex_inputs.vertex_stride_bytes = 24;
+    packed_vertex_inputs.vertices.resize(24);
+    std::vector<uint32_t> packed_vertex_output;
+    std::string packed_vertex_error;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, {packed_vertex_inputs}, &packed_vertex_error,
+            &packed_vertex_output, enabled_features.geometryShader, &copy) ||
+        packed_vertex_output.size() != 1280u * 720u ||
+        std::none_of(packed_vertex_output.begin(), packed_vertex_output.end(),
+                     [](uint32_t pixel) { return (pixel & 0x3FFFFFFFu) != 0; })) {
+        std::cerr << "captured 8_8_8_8/32_32_FLOAT Vulkan vertex inputs failed: "
+                  << packed_vertex_error << '\n';
+        return 1;
+    }
+
     auto triangle = draw;
     triangle.topology = shift::xbox::PrimitiveTopology::TriangleList;
     triangle.index_count = 3;
@@ -363,6 +401,9 @@ int main(int argc, char** argv) {
         return true;
     };
     if (!render_triangle(triangle, true)) return 1;
+    triangle.topology = shift::xbox::PrimitiveTopology::TriangleStrip;
+    if (!render_triangle(triangle, true)) return 1;
+    triangle.topology = shift::xbox::PrimitiveTopology::TriangleList;
     triangle.raster.cull_mode =
         shift::xbox::CapturedRasterState::CullMode::Front;
     if (!render_triangle(triangle, false)) return 1;
@@ -371,6 +412,47 @@ int main(int argc, char** argv) {
     triangle.raster.cull_mode =
         shift::xbox::CapturedRasterState::CullMode::Back;
     if (!render_triangle(triangle, false)) return 1;
+
+    auto float_target_triangle = triangle;
+    float_target_triangle.raster.width = 2560;
+    float_target_triangle.raster.height = 1440;
+    float_target_triangle.raster.surface_pitch = 1280;
+    float_target_triangle.raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgb10A2Float;
+    float_target_triangle.raster.cull_mode =
+        shift::xbox::CapturedRasterState::CullMode::None;
+    float_target_triangle.raster.front_face_ccw = true;
+    float_target_triangle.raster.scissor_x0 = 0;
+    float_target_triangle.raster.scissor_y0 = 0;
+    float_target_triangle.raster.scissor_x1 = 2560;
+    float_target_triangle.raster.scissor_y1 = 1440;
+    auto float_target_single_sample = float_target_triangle;
+    float_target_single_sample.raster.sample_count = 1;
+    float_target_single_sample.raster.depth_test_enabled = false;
+    float_target_single_sample.raster.depth_write_enabled = false;
+    float_target_single_sample.raster.stencil_test_enabled = false;
+    shift::xbox::CapturedVulkanCopy scaled_copy = copy;
+    scaled_copy.source_width = 2560;
+    scaled_copy.source_height = 1440;
+    std::vector<uint32_t> scaled_float_output;
+    std::string scaled_float_error;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720,
+            {float_target_triangle, float_target_single_sample},
+            &scaled_float_error, &scaled_float_output,
+            enabled_features.geometryShader, &scaled_copy)) {
+        std::cerr << "captured 4x 2_10_10_10_FLOAT Vulkan target failed: "
+                  << scaled_float_error << '\n';
+        return 1;
+    }
+    if (std::none_of(scaled_float_output.begin(), scaled_float_output.end(),
+                     [](uint32_t pixel) {
+                         return (pixel & 0x3FFFFFFFu) != 0;
+                     })) {
+        std::cerr << "captured float target and 2x Copy/Convert produced no pixels\n";
+        return 1;
+    }
 
     auto partial_viewport_draw = draw;
     partial_viewport_draw.topology = shift::xbox::PrimitiveTopology::PointList;
@@ -455,6 +537,8 @@ int main(int argc, char** argv) {
     mixed_sample_draws[1].raster.color_base_tiles = 0;
     mixed_sample_draws[1].raster.depth_base_tiles = 720;
     mixed_sample_draws[1].raster.surface_pitch = 1280;
+    mixed_sample_draws[1].raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
     mixed_sample_draws[1].raster.depth_test_enabled = false;
     mixed_sample_draws[1].raster.depth_write_enabled = false;
     mixed_sample_draws[1].raster.stencil_test_enabled = false;
@@ -470,13 +554,51 @@ int main(int argc, char** argv) {
         return 1;
     }
     bool mixed_has_color = false;
-    bool mixed_has_swapped_blue = false;
+    bool mixed_has_source_red = false;
     for (const uint32_t pixel : mixed_sample_output) {
         mixed_has_color |= (pixel & 0x3FFFFFFFu) != 0;
-        mixed_has_swapped_blue |= (pixel & 0x3FF00000u) != 0;
+        mixed_has_source_red |= (pixel & 0x000003FFu) != 0;
     }
-    if (!mixed_has_color || !mixed_has_swapped_blue) {
-        std::cerr << "mixed-sample Copy/Convert lost the retail draw color or R/B swap\n";
+    if (!mixed_has_color || !mixed_has_source_red) {
+        std::cerr << "mixed-sample Copy/Convert lost the canonical source red channel\n";
+        return 1;
+    }
+
+    auto trailing_stencil_draw = mixed_sample_draws[0];
+    trailing_stencil_draw.raster.sample_count = 4;
+    trailing_stencil_draw.raster.surface_pitch = 640;
+    trailing_stencil_draw.raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
+    trailing_stencil_draw.raster.color_write_mask = 0;
+    trailing_stencil_draw.raster.depth_test_enabled = false;
+    trailing_stencil_draw.raster.depth_write_enabled = false;
+    trailing_stencil_draw.raster.stencil_test_enabled = true;
+    auto trailing_msaa_draws = mixed_sample_draws;
+    trailing_msaa_draws.push_back(trailing_stencil_draw);
+    std::string trailing_msaa_error;
+    std::vector<uint32_t> trailing_msaa_output;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, trailing_msaa_draws, &trailing_msaa_error,
+            &trailing_msaa_output, enabled_features.geometryShader, &copy) ||
+        trailing_msaa_output != mixed_sample_output) {
+        std::cerr << "trailing 4x stencil-only retail draw changed the copied color: "
+                  << trailing_msaa_error << '\n';
+        return 1;
+    }
+
+    trailing_stencil_draw.raster.color_write_mask = 0xFu;
+    trailing_msaa_draws.back() = trailing_stencil_draw;
+    std::string trailing_color_write_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, trailing_msaa_draws, &trailing_color_write_error,
+            nullptr, enabled_features.geometryShader, &copy) ||
+        trailing_color_write_error.find(
+            "returns to 4x after its 1x draws with a color/depth-writing draw") ==
+            std::string::npos) {
+        std::cerr << "unsupported trailing color draw was not rejected precisely: "
+                  << trailing_color_write_error << '\n';
         return 1;
     }
 
@@ -513,14 +635,14 @@ int main(int argc, char** argv) {
     }
 
     bool has_color = false;
-    bool has_swapped_blue = false;
+    bool has_source_red = false;
     size_t colored_pixels = 0;
     for (const uint32_t pixel : output_readback) {
         if (pixel & 0x3FFFFFFFu) {
             has_color = true;
             ++colored_pixels;
         }
-        if (pixel & 0x3FF00000u) has_swapped_blue = true;
+        if (pixel & 0x000003FFu) has_source_red = true;
     }
     vkDestroyImageView(device, output_view, nullptr);
     vkDestroyImage(device, output_image, nullptr);
@@ -537,8 +659,8 @@ int main(int argc, char** argv) {
         std::cerr << "Vulkan sample-zero Copy/Convert produced no non-black pixels\n";
         return 1;
     }
-    if (!has_swapped_blue) {
-        std::cerr << "Vulkan Copy/Convert did not apply captured R/B destination swap\n";
+    if (!has_source_red) {
+        std::cerr << "Vulkan Copy/Convert lost the canonical source red channel\n";
         return 1;
     }
     if (enabled_features.geometryShader && colored_pixels < 100) {

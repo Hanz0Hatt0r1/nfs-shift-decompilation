@@ -221,7 +221,8 @@ bool create_texture_image(
     VkImageCreateInfo image_info{};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+    // Xenos TextureSign::Gamma is applied after sampling in the guest shader.
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_info.extent = {width, height, 1};
     image_info.mipLevels = 1;
     image_info.arrayLayers = 1;
@@ -251,7 +252,7 @@ bool create_texture_image(
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view_info.image = output->image;
     view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    view_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+    view_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     view_info.subresourceRange.levelCount = 1;
     view_info.subresourceRange.layerCount = 1;
@@ -364,6 +365,34 @@ VkSampleCountFlagBits sample_count_flag(uint32_t samples) {
         case 4: return VK_SAMPLE_COUNT_4_BIT;
         default: return VkSampleCountFlagBits{};
     }
+}
+
+VkFormat captured_color_format(CapturedColorTargetFormat format) {
+    switch (format) {
+        case CapturedColorTargetFormat::Rgba8Linear:
+        case CapturedColorTargetFormat::Rgba8Gamma:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case CapturedColorTargetFormat::Rgb10A2Unorm:
+            return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+        case CapturedColorTargetFormat::Rgb10A2Float:
+            return VK_FORMAT_R16G16B16A16_SFLOAT;
+    }
+    return VK_FORMAT_UNDEFINED;
+}
+
+void set_copy_resolution_constants(
+    CapturedVulkanDraw* draw,
+    uint32_t source_width,
+    uint32_t source_height,
+    uint32_t destination_width,
+    uint32_t destination_height) {
+    if (!draw || !destination_width || !destination_height) return;
+    const float scale[2] = {
+        static_cast<float>(source_width) / destination_width,
+        static_cast<float>(source_height) / destination_height,
+    };
+    std::memcpy(draw->constants.pixel_float_constants[0].data(), scale,
+                sizeof(scale));
 }
 
 bool create_draw_resources(
@@ -572,7 +601,11 @@ bool create_draw_resources(
         for (const CapturedVertexInputAttribute& input :
              source.vertex_input_attributes) {
             VkFormat format = VK_FORMAT_UNDEFINED;
-            if (input.vertex_format == 57) {
+            if (input.vertex_format == 6) {
+                format = VK_FORMAT_R8G8B8A8_UNORM;
+            } else if (input.vertex_format == 37) {
+                format = VK_FORMAT_R32G32_SFLOAT;
+            } else if (input.vertex_format == 57) {
                 format = VK_FORMAT_R32G32B32_SFLOAT;
             } else if (input.vertex_format == 38) {
                 format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -604,6 +637,8 @@ bool create_draw_resources(
         assembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     } else if (source.topology == PrimitiveTopology::RectangleList) {
         assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    } else if (source.topology == PrimitiveTopology::TriangleStrip) {
+        assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     } else {
         return fail("captured Vulkan primitive topology is unsupported", error);
     }
@@ -734,23 +769,75 @@ bool submit_mixed_sample_copy_frame(
                     error);
     }
 
-    bool reached_single_sample = false;
     bool needs_msaa_depth = false;
     bool needs_single_depth = false;
     const CapturedRasterState& target = draws.front().raster;
+    const VkFormat target_format = captured_color_format(target.color_format);
+    const uint32_t source_width = copy.source_width ? copy.source_width
+                                                   : target.width;
+    const uint32_t source_height = copy.source_height ? copy.source_height
+                                                       : target.height;
+    if (target_format == VK_FORMAT_UNDEFINED || source_width != target.width ||
+        source_height != target.height) {
+        return fail("mixed captured frame has an unsupported target format or Copy/Convert source extent",
+                    error);
+    }
+    size_t first_single_sample_draw = 0;
+    while (first_single_sample_draw < draws.size() &&
+           draws[first_single_sample_draw].raster.sample_count == 4) {
+        ++first_single_sample_draw;
+    }
+    size_t render_draw_count = draws.size();
+    bool reached_trailing_msaa_draws = false;
+    if (first_single_sample_draw == draws.size()) {
+        return fail("mixed captured frame has no single-sample draw", error);
+    }
     for (size_t i = 0; i < draws.size(); ++i) {
         const CapturedVulkanDraw& draw = draws[i];
         const CapturedRasterState& raster = draw.raster;
-        if (raster.sample_count == 1) {
-            reached_single_sample = true;
-        } else if (raster.sample_count != 4 || reached_single_sample) {
-            return fail("mixed captured frame currently supports a single 4x-MSAA to 1x target transition",
-                        error);
+        if (i >= first_single_sample_draw && raster.sample_count == 4) {
+            if (raster.color_write_mask != 0 || raster.depth_write_enabled) {
+                std::ostringstream message;
+                message << "mixed captured frame returns to 4x after its 1x draws "
+                           "with a color/depth-writing draw " << i
+                        << "; color_mask=0x" << std::hex
+                        << raster.color_write_mask << std::dec
+                        << " depth_write=" << raster.depth_write_enabled;
+                return fail(message.str(), error);
+            }
+            if (!reached_trailing_msaa_draws) {
+                render_draw_count = i;
+                reached_trailing_msaa_draws = true;
+            }
+        } else if (raster.sample_count != 1 && raster.sample_count != 4) {
+            std::ostringstream message;
+            message << "mixed captured frame currently supports a single 4x-MSAA "
+                       "to 1x target transition; captured draws=" << draws.size();
+            for (size_t j = 0; j < draws.size(); ++j) {
+                const CapturedRasterState& state = draws[j].raster;
+                message << " draw" << j << "={samples=" << state.sample_count
+                        << ",extent=" << state.width << 'x' << state.height
+                        << ",pitch=" << state.surface_pitch << ",color_base=0x"
+                        << std::hex << state.color_base_tiles << ",depth_base=0x"
+                        << state.depth_base_tiles << std::dec << ",color_format="
+                        << static_cast<unsigned>(state.color_format)
+                        << ",color_mask=0x" << std::hex
+                        << state.color_write_mask << std::dec << ",depth={test:"
+                        << state.depth_test_enabled << ",write:"
+                        << state.depth_write_enabled << ",stencil:"
+                        << state.stencil_test_enabled << "}}";
+            }
+            return fail(message.str(), error);
+        } else if (raster.sample_count == 1 && reached_trailing_msaa_draws) {
+            std::ostringstream message;
+            message << "mixed captured frame returns to 1x after its trailing 4x "
+                       "draws at draw " << i;
+            return fail(message.str(), error);
         }
         if (raster.width != target.width || raster.height != target.height ||
             raster.color_base_tiles != target.color_base_tiles ||
             raster.depth_base_tiles != target.depth_base_tiles ||
-            raster.color_format != target.color_format ||
+            captured_color_format(raster.color_format) != target_format ||
             raster.depth_format != target.depth_format) {
             std::ostringstream message;
             message << "mixed captured draw " << i
@@ -771,6 +858,7 @@ bool submit_mixed_sample_copy_frame(
                     << " has an invalid raster extent or scissor";
             return fail(message.str(), error);
         }
+        if (i >= render_draw_count) continue;
         needs_msaa_depth |= raster.sample_count == 4 &&
             (raster.depth_test_enabled || raster.depth_write_enabled ||
              raster.stencil_test_enabled);
@@ -778,9 +866,27 @@ bool submit_mixed_sample_copy_frame(
             (raster.depth_test_enabled || raster.depth_write_enabled ||
              raster.stencil_test_enabled);
     }
-    if (!reached_single_sample || target.width != output_width ||
-        target.height != output_height ||
-        (needs_msaa_depth && needs_single_depth) ||
+    if (needs_msaa_depth && needs_single_depth) {
+        std::ostringstream message;
+        message << "mixed captured frame requires depth/stencil in both 4x and 1x "
+                   "passes; depth preservation across the sample transition is "
+                   "not implemented";
+        for (size_t i = 0; i < render_draw_count; ++i) {
+            const CapturedRasterState& raster = draws[i].raster;
+            if (!(raster.depth_test_enabled || raster.depth_write_enabled ||
+                  raster.stencil_test_enabled)) {
+                continue;
+            }
+            message << " draw" << i << "={samples=" << raster.sample_count
+                    << ",depth_test=" << raster.depth_test_enabled
+                    << ",depth_write=" << raster.depth_write_enabled
+                    << ",stencil=" << raster.stencil_test_enabled << '}';
+        }
+        return fail(message.str(), error);
+    }
+    if (target.width == 0 || target.height == 0 ||
+        target.width > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()) ||
+        target.height > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()) ||
         copy.state.source_select != 0 || copy.state.sample_select != 0 ||
         copy.state.command != CapturedCopyCommand::Convert ||
         copy.state.destination_pitch != output_width ||
@@ -797,16 +903,16 @@ bool submit_mixed_sample_copy_frame(
     FrameResources resources{};
     resources.device = device;
     resources.queue = queue;
-    resources.draws.resize(draws.size());
+    resources.draws.resize(render_draw_count);
     if (!create_render_attachment(
-            memory_properties, device, output_width, output_height,
-            VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+            memory_properties, device, target.width, target.height,
+            target_format,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_1_BIT,
             &resources.mixed_color, error) ||
         !create_render_attachment(
-            memory_properties, device, output_width, output_height,
-            VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+            memory_properties, device, target.width, target.height,
+            target_format,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_4_BIT,
             &resources.mixed_msaa_color, error)) {
@@ -814,7 +920,7 @@ bool submit_mixed_sample_copy_frame(
     }
     if (needs_msaa_depth &&
         !create_render_attachment(
-            memory_properties, device, output_width, output_height,
+            memory_properties, device, target.width, target.height,
             VK_FORMAT_D24_UNORM_S8_UINT,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
@@ -823,7 +929,7 @@ bool submit_mixed_sample_copy_frame(
     }
     if (needs_single_depth &&
         !create_render_attachment(
-            memory_properties, device, output_width, output_height,
+            memory_properties, device, target.width, target.height,
             VK_FORMAT_D24_UNORM_S8_UINT,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
@@ -832,7 +938,7 @@ bool submit_mixed_sample_copy_frame(
     }
 
     std::vector<VkAttachmentDescription> msaa_attachments(2);
-    msaa_attachments[0].format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    msaa_attachments[0].format = target_format;
     msaa_attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
     msaa_attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     msaa_attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -840,7 +946,7 @@ bool submit_mixed_sample_copy_frame(
     msaa_attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     msaa_attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     msaa_attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    msaa_attachments[1].format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    msaa_attachments[1].format = target_format;
     msaa_attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
     msaa_attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     msaa_attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -907,15 +1013,15 @@ bool submit_mixed_sample_copy_frame(
     msaa_framebuffer_info.renderPass = resources.mixed_msaa_render_pass;
     msaa_framebuffer_info.attachmentCount = static_cast<uint32_t>(msaa_views.size());
     msaa_framebuffer_info.pAttachments = msaa_views.data();
-    msaa_framebuffer_info.width = output_width;
-    msaa_framebuffer_info.height = output_height;
+    msaa_framebuffer_info.width = target.width;
+    msaa_framebuffer_info.height = target.height;
     msaa_framebuffer_info.layers = 1;
     result = vkCreateFramebuffer(device, &msaa_framebuffer_info, nullptr,
                                  &resources.mixed_msaa_framebuffer);
     if (result != VK_SUCCESS) return vk_fail("vkCreateFramebuffer(mixed 4x)", result, error);
 
     std::vector<VkAttachmentDescription> single_attachments(1);
-    single_attachments[0].format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    single_attachments[0].format = target_format;
     single_attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
     single_attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
     single_attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -981,8 +1087,8 @@ bool submit_mixed_sample_copy_frame(
     single_framebuffer_info.renderPass = resources.mixed_single_render_pass;
     single_framebuffer_info.attachmentCount = static_cast<uint32_t>(single_views.size());
     single_framebuffer_info.pAttachments = single_views.data();
-    single_framebuffer_info.width = output_width;
-    single_framebuffer_info.height = output_height;
+    single_framebuffer_info.width = target.width;
+    single_framebuffer_info.height = target.height;
     single_framebuffer_info.layers = 1;
     result = vkCreateFramebuffer(device, &single_framebuffer_info, nullptr,
                                  &resources.mixed_single_framebuffer);
@@ -1041,12 +1147,8 @@ bool submit_mixed_sample_copy_frame(
                                  &resources.mixed_copy_framebuffer);
     if (result != VK_SUCCESS) return vk_fail("vkCreateFramebuffer(mixed Copy/Convert)", result, error);
 
-    size_t first_single_sample_draw = 0;
-    while (first_single_sample_draw < draws.size() &&
-           draws[first_single_sample_draw].raster.sample_count == 4) {
-        ++first_single_sample_draw;
-    }
     for (size_t i = 0; i < draws.size(); ++i) {
+        if (i >= render_draw_count) break;
         const VkRenderPass pass = i < first_single_sample_draw
             ? resources.mixed_msaa_render_pass
             : resources.mixed_single_render_pass;
@@ -1063,6 +1165,8 @@ bool submit_mixed_sample_copy_frame(
     copy_draw.texture_width = 1;
     copy_draw.texture_height = 1;
     copy_draw.texture_rgba8 = {0, 0, 0, 255};
+    set_copy_resolution_constants(&copy_draw, source_width, source_height,
+                                  output_width, output_height);
     copy_draw.raster.width = output_width;
     copy_draw.raster.height = output_height;
     copy_draw.raster.sample_count = 1;
@@ -1209,9 +1313,9 @@ bool submit_mixed_sample_copy_frame(
         if (source.raster.viewport_width != 0.0f &&
             source.raster.viewport_height != 0.0f && source.raster.width &&
             source.raster.height) {
-            const float scale_x = static_cast<float>(output_width) /
+            const float scale_x = static_cast<float>(target.width) /
                                   source.raster.width;
-            const float scale_y = static_cast<float>(output_height) /
+            const float scale_y = static_cast<float>(target.height) /
                                   source.raster.height;
             viewport.x = source.raster.viewport_x * scale_x;
             viewport.y = source.raster.viewport_y * scale_y;
@@ -1220,22 +1324,22 @@ bool submit_mixed_sample_copy_frame(
         } else {
             viewport.x = 0.0f;
             viewport.y = source.raster.viewport_y_flipped
-                             ? static_cast<float>(output_height) : 0.0f;
-            viewport.width = static_cast<float>(output_width);
+                             ? static_cast<float>(target.height) : 0.0f;
+            viewport.width = static_cast<float>(target.width);
             viewport.height = source.raster.viewport_y_flipped
-                                  ? -static_cast<float>(output_height)
-                                  : static_cast<float>(output_height);
+                                  ? -static_cast<float>(target.height)
+                                  : static_cast<float>(target.height);
         }
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
         const uint32_t x0 = scaled_edge(source.raster.scissor_x0,
-                                        source.raster.width, output_width, false);
+                                        source.raster.width, target.width, false);
         const uint32_t y0 = scaled_edge(source.raster.scissor_y0,
-                                        source.raster.height, output_height, false);
+                                        source.raster.height, target.height, false);
         const uint32_t x1 = scaled_edge(source.raster.scissor_x1,
-                                        source.raster.width, output_width, true);
+                                        source.raster.width, target.width, true);
         const uint32_t y1 = scaled_edge(source.raster.scissor_y1,
-                                        source.raster.height, output_height, true);
+                                        source.raster.height, target.height, true);
         VkRect2D scissor{{static_cast<int32_t>(x0), static_cast<int32_t>(y0)},
                          {x1 - x0, y1 - y0}};
         const VkDeviceSize vertex_offset = 0;
@@ -1265,7 +1369,7 @@ bool submit_mixed_sample_copy_frame(
     msaa_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     msaa_begin.renderPass = resources.mixed_msaa_render_pass;
     msaa_begin.framebuffer = resources.mixed_msaa_framebuffer;
-    msaa_begin.renderArea.extent = {output_width, output_height};
+    msaa_begin.renderArea.extent = {target.width, target.height};
     msaa_begin.clearValueCount = static_cast<uint32_t>(msaa_clears.size());
     msaa_begin.pClearValues = msaa_clears.data();
     vkCmdBeginRenderPass(command, &msaa_begin, VK_SUBPASS_CONTENTS_INLINE);
@@ -1297,11 +1401,13 @@ bool submit_mixed_sample_copy_frame(
     single_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     single_begin.renderPass = resources.mixed_single_render_pass;
     single_begin.framebuffer = resources.mixed_single_framebuffer;
-    single_begin.renderArea.extent = {output_width, output_height};
+    single_begin.renderArea.extent = {target.width, target.height};
     single_begin.clearValueCount = static_cast<uint32_t>(single_clears.size());
     single_begin.pClearValues = single_clears.data();
     vkCmdBeginRenderPass(command, &single_begin, VK_SUBPASS_CONTENTS_INLINE);
-    for (size_t i = first_single_sample_draw; i < draws.size(); ++i) record_draw(i);
+    for (size_t i = first_single_sample_draw; i < render_draw_count; ++i) {
+        record_draw(i);
+    }
     vkCmdEndRenderPass(command);
 
     VkImageMemoryBarrier source_to_sample{};
@@ -1501,6 +1607,45 @@ bool submit_captured_vulkan_frame(
             output_view, output_written_before, output_width, output_height,
             draws, error, output_readback, geometry_shader_enabled, *copy);
     }
+    const CapturedRasterState& frame_target = draws.front().raster;
+    const uint32_t source_width = copy && copy->source_width
+                                      ? copy->source_width
+                                      : frame_target.width;
+    const uint32_t source_height = copy && copy->source_height
+                                       ? copy->source_height
+                                       : frame_target.height;
+    const VkFormat raster_color_format =
+        copy ? captured_color_format(frame_target.color_format)
+             : VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    if (copy &&
+        (raster_color_format == VK_FORMAT_UNDEFINED ||
+         source_width != frame_target.width || source_height != frame_target.height ||
+         std::any_of(draws.begin(), draws.end(), [&](const CapturedVulkanDraw& draw) {
+             return draw.raster.width != frame_target.width ||
+                    draw.raster.height != frame_target.height ||
+                    captured_color_format(draw.raster.color_format) !=
+                        raster_color_format;
+         }))) {
+        std::ostringstream message;
+        message << "captured Copy/Convert source " << source_width << 'x'
+                << source_height << " does not match raster target 0 "
+                << frame_target.width << 'x' << frame_target.height
+                << "; draws=" << draws.size();
+        for (size_t i = 0; i < draws.size(); ++i) {
+            const CapturedRasterState& raster = draws[i].raster;
+            message << " draw" << i << "={extent=" << raster.width << 'x'
+                    << raster.height << ",pitch=" << raster.surface_pitch
+                    << ",samples=" << raster.sample_count << ",color_base=0x"
+                    << std::hex << raster.color_base_tiles << std::dec
+                    << ",color_format="
+                    << static_cast<unsigned>(raster.color_format)
+                    << ",depth_base=0x" << std::hex << raster.depth_base_tiles
+                    << std::dec << '}';
+        }
+        return fail(message.str(), error);
+    }
+    const uint32_t raster_width = copy ? source_width : output_width;
+    const uint32_t raster_height = copy ? source_height : output_height;
     const bool needs_depth = std::any_of(
         draws.begin(), draws.end(), [](const CapturedVulkanDraw& draw) {
             return draw.raster.depth_test_enabled ||
@@ -1556,8 +1701,8 @@ bool submit_captured_vulkan_frame(
 
     if (samples > 1 &&
         !create_render_attachment(
-            memory_properties, device, output_width, output_height,
-            VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+            memory_properties, device, raster_width, raster_height,
+            raster_color_format,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                 (copy ? VK_IMAGE_USAGE_SAMPLED_BIT : 0),
             VK_IMAGE_ASPECT_COLOR_BIT,
@@ -1581,7 +1726,7 @@ bool submit_captured_vulkan_frame(
     }
     if (needs_depth &&
         !create_render_attachment(
-            memory_properties, device, output_width, output_height,
+            memory_properties, device, raster_width, raster_height,
             VK_FORMAT_D24_UNORM_S8_UINT,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
@@ -1591,7 +1736,7 @@ bool submit_captured_vulkan_frame(
 
     std::vector<VkAttachmentDescription> attachments;
     VkAttachmentDescription color_attachment{};
-    color_attachment.format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    color_attachment.format = raster_color_format;
     color_attachment.samples = raster_samples;
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     color_attachment.storeOp = samples == 1 || copy ? VK_ATTACHMENT_STORE_OP_STORE
@@ -1662,8 +1807,8 @@ bool submit_captured_vulkan_frame(
     if (samples > 1 && !copy) framebuffer_views.push_back(output_view);
     framebuffer_info.attachmentCount = static_cast<uint32_t>(framebuffer_views.size());
     framebuffer_info.pAttachments = framebuffer_views.data();
-    framebuffer_info.width = output_width;
-    framebuffer_info.height = output_height;
+    framebuffer_info.width = raster_width;
+    framebuffer_info.height = raster_height;
     framebuffer_info.layers = 1;
     result = vkCreateFramebuffer(device, &framebuffer_info, nullptr, &resources.framebuffer);
     if (result != VK_SUCCESS) return vk_fail("vkCreateFramebuffer", result, error);
@@ -1713,6 +1858,8 @@ bool submit_captured_vulkan_frame(
         copy_draw.texture_width = 1;
         copy_draw.texture_height = 1;
         copy_draw.texture_rgba8 = {0, 0, 0, 255};
+        set_copy_resolution_constants(&copy_draw, source_width, source_height,
+                                     output_width, output_height);
         copy_draw.raster.width = output_width;
         copy_draw.raster.height = output_height;
         copy_draw.raster.sample_count = 1;
@@ -1883,7 +2030,7 @@ bool submit_captured_vulkan_frame(
     pass_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     pass_begin.renderPass = resources.render_pass;
     pass_begin.framebuffer = resources.framebuffer;
-    pass_begin.renderArea.extent = {output_width, output_height};
+    pass_begin.renderArea.extent = {raster_width, raster_height};
     pass_begin.clearValueCount = static_cast<uint32_t>(clear_values.size());
     pass_begin.pClearValues = clear_values.data();
     vkCmdBeginRenderPass(command, &pass_begin, VK_SUBPASS_CONTENTS_INLINE);
@@ -1895,9 +2042,9 @@ bool submit_captured_vulkan_frame(
         if (source.raster.viewport_width != 0.0f &&
             source.raster.viewport_height != 0.0f && source.raster.width &&
             source.raster.height) {
-            const float scale_x = static_cast<float>(output_width) /
+            const float scale_x = static_cast<float>(raster_width) /
                                   source.raster.width;
-            const float scale_y = static_cast<float>(output_height) /
+            const float scale_y = static_cast<float>(raster_height) /
                                   source.raster.height;
             viewport.x = source.raster.viewport_x * scale_x;
             viewport.y = source.raster.viewport_y * scale_y;
@@ -1906,12 +2053,12 @@ bool submit_captured_vulkan_frame(
         } else {
             viewport.x = 0.0f;
             viewport.y = source.raster.viewport_y_flipped
-                             ? static_cast<float>(output_height)
+                             ? static_cast<float>(raster_height)
                              : 0.0f;
-            viewport.width = static_cast<float>(output_width);
+            viewport.width = static_cast<float>(raster_width);
             viewport.height = source.raster.viewport_y_flipped
-                                  ? -static_cast<float>(output_height)
-                                  : static_cast<float>(output_height);
+                                  ? -static_cast<float>(raster_height)
+                                  : static_cast<float>(raster_height);
         }
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
@@ -1923,13 +2070,13 @@ bool submit_captured_vulkan_frame(
                 (round_up && numerator % source_extent != 0 ? 1u : 0u));
         };
         const uint32_t scissor_x0 = scaled_edge(source.raster.scissor_x0,
-                                                source.raster.width, output_width, false);
+                                                source.raster.width, raster_width, false);
         const uint32_t scissor_y0 = scaled_edge(source.raster.scissor_y0,
-                                                source.raster.height, output_height, false);
+                                                source.raster.height, raster_height, false);
         const uint32_t scissor_x1 = scaled_edge(source.raster.scissor_x1,
-                                                source.raster.width, output_width, true);
+                                                source.raster.width, raster_width, true);
         const uint32_t scissor_y1 = scaled_edge(source.raster.scissor_y1,
-                                                source.raster.height, output_height, true);
+                                                source.raster.height, raster_height, true);
         VkRect2D scissor{};
         scissor.offset = {static_cast<int32_t>(scissor_x0),
                           static_cast<int32_t>(scissor_y0)};

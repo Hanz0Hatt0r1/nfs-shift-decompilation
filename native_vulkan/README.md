@@ -4,6 +4,13 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
 
 Current retail-device output and Android ARM64 build status are tracked in
 [`ANDROID_RENDER_STATUS_20261024.md`](ANDROID_RENDER_STATUS_20261024.md).
+The Linux retail loading frame after relative constant addressing, Xenos gamma
+conversion, and Copy/Convert channel fixes is recorded in
+[`process2_linux_retail_loading_frame10_20261024.json`](../evidence/process2_linux_retail_loading_frame10_20261024.json).
+That frame is not evidence of a visible menu or race scene. The corrected
+ARM64 plugin builds and is packaged, but its current Android activity exits
+before producing a frame. The later 4x-to-1x depth/stencil transition still
+needs implementation.
 
 ## Implemented stages
 

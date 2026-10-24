@@ -1,0 +1,100 @@
+{
+  "format": "SHIFT.Process2LinuxRetailLoadingFrame/1",
+  "observed_at": "2026-10-24T21:02:34+03:00",
+  "input": {
+    "platform": "Linux AMD64, native shift-native Vulkan plugin",
+    "xbox_default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "plugin_sha256": "5f751140fb7182cc554578e2ab52aa681f910daf6b9617cb4bee4a485357cca4"
+  },
+  "captured_draw_contract": {
+    "loading_bar_draw": 6,
+    "loading_bar_scissor": [
+      392,
+      478,
+      888,
+      486
+    ],
+    "loading_bar_texture_guest_address": "0x09D57000",
+    "loading_bar_texture_extent": [
+      1024,
+      256
+    ],
+    "loading_bar_texture_format": 6,
+    "loading_bar_normalized_rgba8_sha256": "a23f182b6a3936fe24ee1a149ccb5347a5a8bfbaf06f69a792985056494833b7",
+    "loading_bar_source_texels": {
+      "x712_y0_rgba": [
+        185,
+        231,
+        255,
+        255
+      ],
+      "x712_y7_rgba": [
+        15,
+        173,
+        255,
+        255
+      ]
+    },
+    "loading_bar_target": "RGBA8_GAMMA",
+    "loading_text_draw": 7,
+    "loading_text_index_count": 60,
+    "loading_text_vertex_count": 40,
+    "loading_text_texture_guest_address": "0x09E57000",
+    "loading_text_texture_format": 19,
+    "loading_text_relative_uv_registers": "c68 through c103"
+  },
+  "changes": {
+    "relative_alu_constant": "The third DOT2ADD source now uses its captured a0 offset. The prior translation fetched fixed c68 for all ten glyphs and displayed repeated L characters.",
+    "gamma_texture_sampling": "Captured Gamma texture channels now use the Xenos piecewise gamma-to-linear function after sampling; alpha remains linear. Captured signs outside the unsigned/gamma subset fail closed.",
+    "gamma_render_target": "Pixel RGB exported to a captured RGBA8_GAMMA target uses Xenos piecewise linear-to-gamma encoding before storage; alpha remains linear.",
+    "copy_convert_channels": "The renderer already stores the guest target in canonical RGBA channel order. The captured destination R/B flag remains validated, but the presenter no longer applies a second host-side swap in Copy/Convert."
+  },
+  "retail_readback": {
+    "submitted_frame": 10,
+    "extent": [
+      1280,
+      720
+    ],
+    "vulkan_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "raw_sha256": "7b542506da938f4a2c3c1ee43b0356c6840ae7d4e50bedfe65baf5f6b8a0b9f8",
+    "non_black_pixels": 59101,
+    "fnv1a": "26C9600EEF8AB16F",
+    "png": "process2_linux_retail_loading_frame10_20261024.png",
+    "png_sha256": "c46700330e22268bd1efa229ad02ba88ad0d249dbf31ed18af295fde8c19c951",
+    "visual_observation": "The lower-right text reads Loading...; the filled bar is yellow-orange and its empty track is dark gray.",
+    "bar_pixel_392_480_rgb": [
+      249,
+      208,
+      130
+    ],
+    "empty_track_pixel_500_480_rgb": [
+      14,
+      14,
+      14
+    ]
+  },
+  "before_after": {
+    "relative_constant_fix": "The relative constant fix changed 1,381 pixels, all in the loading text region; the progress bar and logo were unchanged.",
+    "loading_color_fix": "Against the previous blue frame, the new image changes 343 pixels in the bar region. Pixel (392,480) changed from RGB (60,166,249) to (249,208,130); the empty track remains RGB (14,14,14)."
+  },
+  "checks": {
+    "native_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation",
+    "linux_plugin_ctest": "3/3 passed with VK_LAYER_KHRONOS_validation",
+    "android_arm64_plugin_build": "passed: rexgpu-shift-native target built for arm64-v8a with Android NDK 28.2.13676358 / API 29"
+  },
+  "limitations": [
+    "The shown frame is a genuine retail loading frame, not a synthetic parity claim.",
+    "A later retail frame still fails on depth and stencil preservation across the 4x-to-1x sample-count transition; a visible menu or race is not verified.",
+    "The latest corrected ARM64 plugin builds and is installed, but the current Android SDL entry returns immediately, so this update has no on-device visual verification. Earlier Android logo/readback evidence pertains to earlier APK/plugin builds."
+  ],
+  "android_device_install": {
+    "device": "Redmi Note 8 Pro (begonia), Android API 33, Mali-G76 MC4, Vulkan 1.1.131",
+    "adb_transport": "192.168.1.32:33153, device",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "apk_sha256": "f2cef95d4dd6d77cdf5f79b56fdb9a62c3f91322bcb847db0e69639d3de2a1df",
+    "arm64_plugin_sha256": "c01d4006e900edc82c0c733474c6b513e83cd767d06fcc2ea05037cf793d114c",
+    "install": "adb install -r succeeded; existing external game directory remained present",
+    "launch_observation": "NfsShiftActivity starts, SDL_main returns immediately, activity finishes, and launcher is foreground; no renderer frame/readback was produced by this installed APK",
+    "visual_retest": "not completed; do not infer phone parity from the Linux retail frame or earlier Android builds"
+  }
+}

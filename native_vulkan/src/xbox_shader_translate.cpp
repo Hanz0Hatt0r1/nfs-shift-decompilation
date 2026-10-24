@@ -53,8 +53,21 @@ std::string constant_block(CapturedShaderStage stage) {
 
 bool constant_relative(const CapturedShaderAluInstruction& instruction,
                        uint32_t source) {
-    return source == 0 ? instruction.const0_relative
-                       : source == 1 ? instruction.const1_relative : false;
+    switch (source) {
+        case 0:
+            return instruction.const0_relative;
+        case 1:
+            return instruction.source_is_temporary[0]
+                ? instruction.const0_relative
+                : instruction.const1_relative;
+        case 2:
+            return instruction.source_is_temporary[0] &&
+                           instruction.source_is_temporary[1]
+                ? instruction.const0_relative
+                : instruction.const1_relative;
+        default:
+            return false;
+    }
 }
 
 std::string swizzled_vector(const CapturedShaderAluInstruction& instruction,
@@ -97,7 +110,9 @@ std::string scalar_source(const CapturedShaderAluInstruction& instruction,
         if (instruction.source_temporary_absolute[source]) base = "abs(" + base + ")";
     } else {
         base = constant_block(stage) + ".c[" +
-               std::to_string(instruction.source_registers[source]) + "]";
+               std::to_string(instruction.source_registers[source]);
+        if (constant_relative(instruction, source)) base += " + a0";
+        base += "]";
     }
     std::string result = base + "." + component_name(component);
     if (instruction.source_negate[source]) result = "(-" + result + ")";
@@ -105,16 +120,49 @@ std::string scalar_source(const CapturedShaderAluInstruction& instruction,
 }
 
 std::string scalar_constant(CapturedShaderStage stage, uint32_t reg,
-                            uint32_t component) {
-    return constant_block(stage) + ".c[" + std::to_string(reg) + "]." +
-           component_name(component);
+                            uint32_t component, bool relative) {
+    return constant_block(stage) + ".c[" + std::to_string(reg) +
+           (relative ? " + a0" : "") + "]." + component_name(component);
 }
 
 const char* vertex_input_type(uint32_t format) {
     switch (format) {
+        case 6: return "vec4";
+        case 37: return "vec2";
         case 57: return "vec3";
         case 38: return "vec4";
         default: return nullptr;
+    }
+}
+
+uint32_t vertex_input_words(uint32_t format) {
+    switch (format) {
+        case 6: return 1;
+        case 37: return 2;
+        case 57: return 3;
+        case 38: return 4;
+        default: return 0;
+    }
+}
+
+const char* vertex_format_name(uint32_t format) {
+    switch (format) {
+        case 6: return "8_8_8_8";
+        case 7: return "2_10_10_10";
+        case 16: return "10_11_11";
+        case 17: return "11_11_10";
+        case 25: return "16_16";
+        case 26: return "16_16_16_16";
+        case 31: return "16_16_FLOAT";
+        case 32: return "16_16_16_16_FLOAT";
+        case 33: return "32";
+        case 34: return "32_32";
+        case 35: return "32_32_32_32";
+        case 36: return "32_FLOAT";
+        case 37: return "32_32_FLOAT";
+        case 38: return "32_32_32_32_FLOAT";
+        case 57: return "32_32_32_FLOAT";
+        default: return "unknown";
     }
 }
 
@@ -131,7 +179,7 @@ bool append_fetch(std::ostringstream& glsl,
     }
     if (stage == CapturedShaderStage::Vertex) {
         const char* input_type = vertex_input_type(fetch.vertex_format);
-        const uint32_t attribute_words = fetch.vertex_format == 57 ? 3u : 4u;
+        const uint32_t attribute_words = vertex_input_words(fetch.vertex_format);
         if ((fetch.kind != CapturedShaderFetchKind::VertexFull &&
              fetch.kind != CapturedShaderFetchKind::VertexMini) ||
             !input_type || fetch.source_register != 0 ||
@@ -148,6 +196,8 @@ bool append_fetch(std::ostringstream& glsl,
         glsl << "  vec4 " << fetched << " = ";
         if (fetch.vertex_format == 57) {
             glsl << "vec4(" << input << ", 1.0);\n";
+        } else if (fetch.vertex_format == 37) {
+            glsl << "vec4(" << input << ", 0.0, 1.0);\n";
         } else {
             glsl << input << ";\n";
         }
@@ -166,25 +216,49 @@ bool append_fetch(std::ostringstream& glsl,
     }
 
     if (fetch.kind != CapturedShaderFetchKind::Texture2D ||
-        fetch.fetch_constant_index > 15 || fetch.source_register != 0 ||
-        fetch.destination_register != 0 || fetch.texture_dimension != 1 ||
-        fetch.source_swizzle != 4) {
-        return fail("captured texture fetch is outside the bound sampler-0 form", error);
+        fetch.fetch_constant_index >= 32 || fetch.source_register >= 64 ||
+        fetch.destination_register >= 64 || fetch.texture_dimension != 1) {
+        std::ostringstream message;
+        message << "captured texture fetch is outside the supported direct 2D form: "
+                   "fetch_constant=" << fetch.fetch_constant_index
+                << " source_register=" << fetch.source_register
+                << " destination_register=" << fetch.destination_register
+                << " source_swizzle=" << fetch.source_swizzle
+                << " destination_swizzle=0x" << std::hex
+                << fetch.destination_swizzle << std::dec
+                << " dimension=" << fetch.texture_dimension
+                << " source_relative=" << fetch.source_relative
+                << " destination_relative=" << fetch.destination_relative
+                << " predicated=" << fetch.predicated
+                << " predicate_condition=" << fetch.predicate_condition;
+        if (error) *error = message.str();
+        return false;
     }
     for (uint32_t selector : options.texture_swizzle) {
         if (selector > 5) {
             return fail("captured texture descriptor swizzle is unsupported", error);
         }
     }
+    for (TextureSign sign : options.texture_signs) {
+        if (sign != TextureSign::Unsigned && sign != TextureSign::Gamma) {
+            return fail("captured texture channel sign is outside the unsigned/gamma subset", error);
+        }
+    }
     const uint32_t sampler = fetch.fetch_constant_index;
     const uint32_t coord_x = fetch.source_swizzle & 3u;
     const uint32_t coord_y = (fetch.source_swizzle >> 2) & 3u;
-    if (coord_x > 3 || coord_y > 3) {
-        return fail("captured texture coordinate swizzle is unsupported", error);
-    }
     glsl << "  vec4 sampled_" << sampler << " = texture(shift_sampler_"
-         << sampler << ", r[0]." << component_name(coord_x)
-         << component_name(coord_y) << ");\n  vec4 fetched_" << sampler << " = vec4(";
+         << sampler << ", r[" << fetch.source_register << "]."
+         << component_name(coord_x)
+         << component_name(coord_y) << ");\n";
+    for (uint32_t lane = 0; lane < 4; ++lane) {
+        if (options.texture_signs[lane] == TextureSign::Gamma) {
+            glsl << "  sampled_" << sampler << '.' << component_name(lane)
+                 << "=shift_pwl_gamma_to_linear(sampled_" << sampler << '.'
+                 << component_name(lane) << ");\n";
+        }
+    }
+    glsl << "  vec4 fetched_" << sampler << " = vec4(";
     for (uint32_t lane = 0; lane < 4; ++lane) {
         if (lane) glsl << ", ";
         const uint32_t selector = options.texture_swizzle[lane];
@@ -320,7 +394,8 @@ bool emit_alu(std::ostringstream& glsl,
                     return fail("captured MULSC0 constant operand is not a constant", error);
                 }
                 scalar = scalar_constant(stage, instruction.source_registers[2],
-                                         instruction.scalar_constant_component) +
+                                         instruction.scalar_constant_component,
+                                         constant_relative(instruction, 2)) +
                          " * r[" + std::to_string(instruction.scalar_temporary_register) +
                          "]." + component_name(instruction.scalar_temporary_component);
                 break;
@@ -493,7 +568,28 @@ bool translate_captured_shader_glsl(
         for (const CapturedVertexInputAttribute& attribute : vertex_input_attributes) {
             const char* type = vertex_input_type(attribute.vertex_format);
             if (!type) {
-                return fail("captured vertex format is outside the float3/float4 layout", error);
+                std::ostringstream message;
+                message << "captured vertex format is outside the float3/float4 layout: "
+                           "shader_bytes=" << byte_length << " attributes="
+                        << vertex_input_attributes.size() << " rejected={location="
+                        << attribute.location << ",destination=r"
+                        << attribute.destination_register << ",format="
+                        << attribute.vertex_format << '('
+                        << vertex_format_name(attribute.vertex_format) << ")"
+                        << ",stride_dwords=" << attribute.stride_dwords
+                        << ",offset_dwords=" << attribute.offset_dwords << '}';
+                for (const CapturedVertexInputAttribute& other :
+                     vertex_input_attributes) {
+                    if (&other == &attribute) continue;
+                    message << " other{location=" << other.location
+                            << ",destination=r" << other.destination_register
+                            << ",format=" << other.vertex_format << '('
+                            << vertex_format_name(other.vertex_format) << ")"
+                            << ",stride_dwords=" << other.stride_dwords
+                            << ",offset_dwords=" << other.offset_dwords << '}';
+                }
+                if (error) *error = message.str();
+                return false;
             }
             glsl << "layout(location=" << attribute.location << ") in " << type
                  << " shift_vertex_input_" << attribute.location << ";\n";
@@ -508,6 +604,21 @@ bool translate_captured_shader_glsl(
             glsl << "layout(set=1,binding=0) uniform sampler2D shift_sampler_"
                  << sampler_register << ";\n";
         }
+    }
+    if (stage == CapturedShaderStage::Pixel && has_texture &&
+        std::find(options.texture_signs.begin(), options.texture_signs.end(),
+                  TextureSign::Gamma) != options.texture_signs.end()) {
+        glsl << "float shift_pwl_gamma_to_linear(float gamma) {\n"
+             << "  gamma=clamp(gamma,0.0,1.0);\n"
+             << "  float scale=gamma>=192.0/255.0 ? 8.0/1024.0 : "
+                "gamma>=96.0/255.0 ? 4.0/1024.0 : "
+                "gamma>=64.0/255.0 ? 2.0/1024.0 : 1.0/1024.0;\n"
+             << "  float offset=gamma>=192.0/255.0 ? -1024.0 : "
+                "gamma>=96.0/255.0 ? -256.0 : "
+                "gamma>=64.0/255.0 ? -64.0 : 0.0;\n"
+             << "  float linear=gamma*(255.0*1024.0)*scale+offset;\n"
+             << "  return (linear+trunc(linear*scale))/1023.0;\n"
+             << "}\n";
     }
     glsl << "void main() {\n  vec4 r[64];\n"
          << "  for (int i=0; i<64; ++i) r[i]=vec4(0.0);\n"
@@ -604,6 +715,25 @@ bool translate_captured_shader_glsl(
                               allocation_type, error)) return false;
             }
         }
+    }
+    if (stage == CapturedShaderStage::Pixel && options.gamma_color_target) {
+        // Xenos RGBA8_GAMMA encodes RGB before storing to the render target;
+        // alpha stays linear. The copied surface contains these encoded bytes.
+        glsl << "  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);\n"
+             << "  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),"
+                "step(vec3(64.0/1023.0),linear_rgb));\n"
+             << "  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),"
+                "step(vec3(128.0/1023.0),linear_rgb));\n"
+             << "  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),"
+                "step(vec3(512.0/1023.0),linear_rgb));\n"
+             << "  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),"
+                "step(vec3(64.0/1023.0),linear_rgb));\n"
+             << "  gamma_offset=mix(gamma_offset,vec3(64.0),"
+                "step(vec3(128.0/1023.0),linear_rgb));\n"
+             << "  gamma_offset=mix(gamma_offset,vec3(128.0),"
+                "step(vec3(512.0/1023.0),linear_rgb));\n"
+             << "  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)"
+                "/255.0;\n";
     }
     glsl << "}\n";
 

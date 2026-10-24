@@ -555,6 +555,57 @@ int main() {
                     shift::xbox::PrimitiveTopology::RectangleList &&
                 draw_indx_2.index_count == 3,
             "live AutoIndex rectangle-list packet was not decoded");
+    const uint8_t draw_indx_autoindex_rectangle_list[] = {
+        0xC0, 0x01, 0x22, 0x01,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x03, 0x00, 0x88,
+    };
+    require(shift::xbox::decode_captured_draw_indx(
+                draw_indx_autoindex_rectangle_list,
+                sizeof(draw_indx_autoindex_rectangle_list), &draw_indx_2,
+                &error) &&
+                draw_indx_2.auto_index &&
+                draw_indx_2.topology ==
+                    shift::xbox::PrimitiveTopology::RectangleList &&
+                draw_indx_2.index_count == 3,
+            "DRAW_INDX AutoIndex packet with its visibility-query prefix was rejected");
+    const uint8_t draw_indx_autoindex_triangle_list[] = {
+        0xC0, 0x01, 0x22, 0x01,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x03, 0x00, 0x84,
+    };
+    require(shift::xbox::decode_captured_draw_indx(
+                draw_indx_autoindex_triangle_list,
+                sizeof(draw_indx_autoindex_triangle_list), &draw_indx_2,
+                &error) &&
+                draw_indx_2.auto_index &&
+                draw_indx_2.topology == shift::xbox::PrimitiveTopology::TriangleList &&
+                draw_indx_2.index_count == 3,
+            "DRAW_INDX AutoIndex triangle-list packet was rejected");
+    const uint8_t draw_indx_autoindex_triangle_strip[] = {
+        0xC0, 0x01, 0x22, 0x01,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x04, 0x00, 0x86,
+    };
+    require(shift::xbox::decode_captured_draw_indx(
+                draw_indx_autoindex_triangle_strip,
+                sizeof(draw_indx_autoindex_triangle_strip), &draw_indx_2,
+                &error) &&
+                draw_indx_2.auto_index &&
+                draw_indx_2.topology ==
+                    shift::xbox::PrimitiveTopology::TriangleStrip &&
+                draw_indx_2.index_count == 4,
+            "captured AutoIndex triangle strip packet was rejected");
+    const uint8_t draw_indx_autoindex_invalid_triangle_count[] = {
+        0xC0, 0x01, 0x22, 0x01,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x02, 0x00, 0x84,
+    };
+    require(!shift::xbox::decode_captured_draw_indx(
+                draw_indx_autoindex_invalid_triangle_count,
+                sizeof(draw_indx_autoindex_invalid_triangle_count), &draw_indx_2,
+                &error) && error == "unsupported AutoIndex primitive type 4 count 2",
+            "invalid AutoIndex triangle count was accepted or lost its diagnostic");
     auto captured_auto_index_draw = std::vector<uint8_t>(
         captured_draw_indx_2,
         captured_draw_indx_2 + sizeof(captured_draw_indx_2));
@@ -627,6 +678,22 @@ int main() {
                 dxt2_3_fetch.pitch == 1024 &&
                 dxt2_3_fetch.byte_length == 1024u * 512u,
             "captured retail DXT2/3 fetch descriptor was rejected or misdecoded");
+    uint32_t captured_linear_dxt2_3_descriptor[6];
+    std::copy(std::begin(captured_dxt2_3_descriptor),
+              std::end(captured_dxt2_3_descriptor),
+              std::begin(captured_linear_dxt2_3_descriptor));
+    captured_linear_dxt2_3_descriptor[0] &= ~0x80000000u;
+    shift::xbox::CapturedTextureFetch linear_dxt2_3_fetch{};
+    require(shift::xbox::decode_captured_texture_fetch(
+                captured_linear_dxt2_3_descriptor, &linear_dxt2_3_fetch, &error) &&
+                linear_dxt2_3_fetch.format == 19 &&
+                linear_dxt2_3_fetch.endian_mode == 1 &&
+                !linear_dxt2_3_fetch.tiled &&
+                linear_dxt2_3_fetch.width == 1024 &&
+                linear_dxt2_3_fetch.height == 512 &&
+                linear_dxt2_3_fetch.pitch == 1024 &&
+                linear_dxt2_3_fetch.byte_length == 1024u * 512u,
+            "captured retail linear DXT2/3 fetch descriptor was rejected or misdecoded");
     shift::xbox::CapturedTextureSampling dxt2_3_sampling{};
     require(shift::xbox::decode_captured_texture_sampling(
                 dxt2_3_fetch, &dxt2_3_sampling, &error),
@@ -830,9 +897,53 @@ int main() {
                     shift::xbox::CapturedColorTargetFormat::Rgba8Linear,
             "captured linear RGBA8 Xenos color target was rejected");
     live_raster_registers.color_info = 0x00020000u;
+    require(shift::xbox::decode_captured_raster_state(
+                live_raster_registers, &live_raster_state, &error) &&
+                live_raster_state.color_format ==
+                    shift::xbox::CapturedColorTargetFormat::Rgb10A2Unorm,
+            "captured Xenos 2_10_10_10 target format was rejected");
+    live_raster_registers.color_info = 0x00030000u;
+    require(shift::xbox::decode_captured_raster_state(
+                live_raster_registers, &live_raster_state, &error) &&
+                live_raster_state.color_format ==
+                    shift::xbox::CapturedColorTargetFormat::Rgb10A2Float,
+            "captured Xenos 2_10_10_10_FLOAT target format was rejected");
+    live_raster_registers.color_info = 0x00040000u;
     require(!shift::xbox::decode_captured_raster_state(
                 live_raster_registers, &live_raster_state, &error),
             "unsupported Xenos color target format was accepted");
+
+    auto captured_float_target_registers = live_raster_registers;
+    captured_float_target_registers.surface_info = 0x14020500u;
+    captured_float_target_registers.color_info = 0x00030000u;
+    captured_float_target_registers.depth_info = 0x00000400u;
+    captured_float_target_registers.mode_control = 0x00000004u;
+    captured_float_target_registers.depth_control = 0x00008777u;
+    captured_float_target_registers.color_mask = 0x0000FFFFu;
+    captured_float_target_registers.viewport_x_scale = 0x44200000u;
+    captured_float_target_registers.viewport_x_offset = 0x44200000u;
+    captured_float_target_registers.viewport_y_scale = 0xC3000000u;
+    captured_float_target_registers.viewport_y_offset = 0x43000000u;
+    captured_float_target_registers.screen_scissor_tl = 0x00000000u;
+    captured_float_target_registers.screen_scissor_br = 0x20002000u;
+    captured_float_target_registers.window_offset = 0x00000000u;
+    captured_float_target_registers.window_scissor_tl = 0x00000000u;
+    captured_float_target_registers.window_scissor_br = 0x20002000u;
+    captured_float_target_registers.blend_control_0 = 0x00010001u;
+    require(shift::xbox::decode_captured_raster_state(
+                captured_float_target_registers, &live_raster_state, &error,
+                2560, 1440) &&
+                live_raster_state.color_format ==
+                    shift::xbox::CapturedColorTargetFormat::Rgb10A2Float &&
+                live_raster_state.surface_pitch == 1280 &&
+                live_raster_state.sample_count == 4 &&
+                live_raster_state.width == 2560 &&
+                live_raster_state.height == 1440 &&
+                live_raster_state.viewport_x == 0.0f &&
+                live_raster_state.viewport_y == 256.0f &&
+                live_raster_state.viewport_width == 1280.0f &&
+                live_raster_state.viewport_height == -256.0f,
+            "captured 4x float target/viewport from the Redmi draw was decoded incorrectly");
 
     shift::xbox::GuestRasterRegisterState raster_register_state;
     shift::xbox::CapturedRasterRegisters tracked_raster_registers{};
@@ -1193,6 +1304,28 @@ int main() {
                     decoded_dxt2_3[pixel + 3u] == 255u,
                 "captured DXT2/3 block tiling, byte order, or decode changed");
     };
+    require_dxt2_3_pixel(1, 1, 0, 0);
+    require_dxt2_3_pixel(32, 1, 8, 0);
+    require_dxt2_3_pixel(1, 64, 0, 16);
+    require_dxt2_3_pixel(127, 127, 31, 31);
+
+    std::vector<uint8_t> linear_dxt2_3(tiled_dxt2_3.size());
+    for (uint32_t block_y = 0; block_y < 32; ++block_y) {
+        for (uint32_t block_x = 0; block_x < 32; ++block_x) {
+            const size_t source = dxt2_3_tiled_offset(
+                block_x, block_y, dxt2_3_test_fetch.pitch / 4u);
+            const size_t destination =
+                (static_cast<size_t>(block_y) * 32u + block_x) * 16u;
+            std::copy_n(tiled_dxt2_3.data() + source, 16u,
+                        linear_dxt2_3.data() + destination);
+        }
+    }
+    dxt2_3_test_fetch.tiled = false;
+    require(shift::xbox::untile_captured_texture_2d(
+                dxt2_3_test_fetch, linear_dxt2_3.data(), linear_dxt2_3.size(),
+                &decoded_dxt2_3, &error) &&
+                decoded_dxt2_3.size() == 128u * 128u * 4u,
+            "captured linear DXT2/3 texture did not decode to Vulkan RGBA8");
     require_dxt2_3_pixel(1, 1, 0, 0);
     require_dxt2_3_pixel(32, 1, 8, 0);
     require_dxt2_3_pixel(1, 64, 0, 16);

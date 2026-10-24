@@ -724,17 +724,30 @@ bool decode_captured_draw_indx(
       return fail("unsupported immediate-index draw source", error);
     }
     if (source_select == 2u) {
-      if (has_viz_query || payload_count != 1u || major_mode != 0u ||
+      const uint32_t expected_payload_count = has_viz_query ? 2u : 1u;
+      if (payload_count != expected_payload_count || major_mode != 0u ||
           index_size != 0u || initiator_index_count == 0u) {
-        return fail("unsupported AutoIndex DRAW_INDX_2 form", error);
+        return fail(has_viz_query ? "unsupported AutoIndex DRAW_INDX form"
+                                  : "unsupported AutoIndex DRAW_INDX_2 form",
+                    error);
       }
       PrimitiveTopology topology{};
       if (primitive_type == 1u) {
         topology = PrimitiveTopology::PointList;
+      } else if (primitive_type == kTriangleList &&
+                 initiator_index_count % 3u == 0u) {
+        topology = PrimitiveTopology::TriangleList;
+      } else if (primitive_type == 6u && initiator_index_count >= 3u) {
+        topology = PrimitiveTopology::TriangleStrip;
       } else if (primitive_type == 8u && initiator_index_count % 3u == 0u) {
         topology = PrimitiveTopology::RectangleList;
       } else {
-        return fail("unsupported AutoIndex primitive type or count", error);
+        if (error) {
+          *error = "unsupported AutoIndex primitive type " +
+                   std::to_string(primitive_type) + " count " +
+                   std::to_string(initiator_index_count);
+        }
+        return false;
       }
       *output = DecodedIndexedDraw{
           topology, initiator_index_count, 0, 0, 0, 0, true};
@@ -889,7 +902,7 @@ bool decode_captured_texture_fetch(
 
     const bool rgba8 = format == 6 && endian_mode == 2;
     const bool dxt2_3 = format == 19 && endian_mode == 1;
-    if (fetch_type != 2 || (!rgba8 && !dxt2_3) || !tiled || stacked ||
+    if (fetch_type != 2 || (!rgba8 && !dxt2_3) || (rgba8 && !tiled) || stacked ||
         stack_depth != 0 || dimension != 1 || mip_min != 0 || mip_max != 0) {
         return fail("unsupported captured texture-fetch descriptor", error);
     }
@@ -1249,7 +1262,7 @@ bool decode_captured_raster_state(
     const uint32_t depth_format = (registers.depth_info >> 16) & 0x1u;
     const bool depth_only = registers.mode_control == 5u;
     if ((registers.mode_control != 4u && !depth_only) || msaa_samples > 2 ||
-        color_format > 1 || depth_format != 0 ||
+        color_format > 3u || depth_format != 0 ||
         (registers.color_info & ~0x000F0FFFu) != 0 ||
         (registers.depth_info & ~0x00010FFFu) != 0 ||
         (registers.color_mask & ~0xFFFFu) != 0 || registers.window_offset != 0 ||
@@ -1336,7 +1349,9 @@ bool decode_captured_raster_state(
         msaa_samples == 0 ? 1u : msaa_samples == 1 ? 2u : 4u,
         registers.color_info & 0xFFFu,
         color_format == 0 ? CapturedColorTargetFormat::Rgba8Linear
-                          : CapturedColorTargetFormat::Rgba8Gamma,
+        : color_format == 1 ? CapturedColorTargetFormat::Rgba8Gamma
+        : color_format == 2 ? CapturedColorTargetFormat::Rgb10A2Unorm
+                            : CapturedColorTargetFormat::Rgb10A2Float,
         depth_only,
         registers.depth_info & 0xFFFu,
         CapturedDepthTargetFormat::D24S8,
@@ -1488,11 +1503,13 @@ bool untile_captured_texture_2d(
     const bool rgba8 = texture.format == 6 && texture.endian_mode == 2;
     const bool dxt2_3 = texture.format == 19 && texture.endian_mode == 1;
     if (!guest_bytes || !vulkan_bytes || (!rgba8 && !dxt2_3) ||
-        texture.dimension != 1 || !texture.tiled || !texture.width ||
+        texture.dimension != 1 || (rgba8 && !texture.tiled) || !texture.width ||
         !texture.height || texture.pitch != texture.width ||
         (rgba8 && ((texture.width & 31u) != 0 || (texture.height & 31u) != 0)) ||
-        (dxt2_3 && ((texture.width & 127u) != 0 ||
-                    (texture.height & 127u) != 0))) {
+        (dxt2_3 && ((texture.width & 3u) != 0 ||
+                    (texture.height & 3u) != 0)) ||
+        (dxt2_3 && texture.tiled &&
+         ((texture.width & 127u) != 0 || (texture.height & 127u) != 0))) {
         return fail("unsupported captured texture layout", error);
     }
 
@@ -1508,18 +1525,19 @@ bool untile_captured_texture_2d(
 
     if (dxt2_3) {
         const uint32_t pitch_blocks = texture.pitch / 4u;
-        if ((texture.pitch & 127u) != 0) {
+        if (texture.tiled && (texture.pitch & 127u) != 0) {
             return fail("unsupported captured DXT2/3 texture pitch", error);
         }
         std::vector<uint8_t> linear_blocks(static_cast<size_t>(expected_bytes));
         for (uint32_t y = 0; y < blocks_high; ++y) {
             for (uint32_t x = 0; x < blocks_wide; ++x) {
-                const size_t source = static_cast<size_t>(
-                    tiled_2d_offset_16bpb(x, y, pitch_blocks));
+                const size_t source = texture.tiled
+                    ? static_cast<size_t>(tiled_2d_offset_16bpb(x, y, pitch_blocks))
+                    : (static_cast<size_t>(y) * blocks_wide + x) * 16u;
                 const size_t destination =
                     (static_cast<size_t>(y) * blocks_wide + x) * 16u;
                 if (source + 16u > byte_length) {
-                    return fail("captured tiled DXT2/3 address exceeds its byte range", error);
+                    return fail("captured DXT2/3 address exceeds its byte range", error);
                 }
                 std::copy_n(guest_bytes + source, 16u,
                             linear_blocks.begin() + destination);

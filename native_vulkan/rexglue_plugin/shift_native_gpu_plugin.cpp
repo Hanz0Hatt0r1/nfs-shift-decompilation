@@ -116,23 +116,30 @@ const std::string kCopyResolveVertexShader =
     "                           vec2(-1.0, 3.0));\n"
     "  gl_Position = vec4(p[gl_VertexIndex], 0.0, 1.0);\n"
     "}\n";
+// The captured destination R/B swap describes guest memory packing. The
+// Vulkan render target is already normalized to canonical RGBA channels, so
+// another swizzle here would turn SHIFT's orange loading fill blue.
 const std::string kCopyResolvePixelShader =
     "#version 450\n"
+    "layout(set=0,binding=15) uniform PixelConstants { vec4 c[256]; } pc;\n"
     "layout(set=1,binding=0) uniform sampler2DMS source_image;\n"
     "layout(location=0) out vec4 shift_color0;\n"
     "void main() {\n"
-    "  vec4 c = texelFetch(source_image, ivec2(gl_FragCoord.xy), 0);\n"
-    "  c = floor(clamp(c, 0.0, 1.0) * 255.0 + 0.5) / 255.0;\n"
-    "  shift_color0 = c.bgra;\n"
+    "  ivec2 p = ivec2(gl_FragCoord.xy * pc.c[0].xy);\n"
+    "  vec4 color = texelFetch(source_image, p, 0);\n"
+    "  color = floor(clamp(color, 0.0, 1.0) * 255.0 + 0.5) / 255.0;\n"
+    "  shift_color0 = color;\n"
     "}\n";
 const std::string kCopyResolveSingleSamplePixelShader =
     "#version 450\n"
+    "layout(set=0,binding=15) uniform PixelConstants { vec4 c[256]; } pc;\n"
     "layout(set=1,binding=0) uniform sampler2D source_image;\n"
     "layout(location=0) out vec4 shift_color0;\n"
     "void main() {\n"
-    "  vec4 c = texelFetch(source_image, ivec2(gl_FragCoord.xy), 0);\n"
-    "  c = floor(clamp(c, 0.0, 1.0) * 255.0 + 0.5) / 255.0;\n"
-    "  shift_color0 = c.bgra;\n"
+    "  ivec2 p = ivec2(gl_FragCoord.xy * pc.c[0].xy);\n"
+    "  vec4 color = texelFetch(source_image, p, 0);\n"
+    "  color = floor(clamp(color, 0.0, 1.0) * 255.0 + 0.5) / 255.0;\n"
+    "  shift_color0 = color;\n"
     "}\n";
 
 bool DebugFragmentColorEnabled() {
@@ -498,7 +505,13 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     *shaders_translated = false;
 
     if (raster_state.color_format !=
-        shift::xbox::CapturedColorTargetFormat::Rgba8Gamma) {
+            shift::xbox::CapturedColorTargetFormat::Rgba8Gamma &&
+        raster_state.color_format !=
+            shift::xbox::CapturedColorTargetFormat::Rgba8Linear &&
+        raster_state.color_format !=
+            shift::xbox::CapturedColorTargetFormat::Rgb10A2Unorm &&
+        raster_state.color_format !=
+            shift::xbox::CapturedColorTargetFormat::Rgb10A2Float) {
       if (error) *error = "unsupported captured Vulkan color-target format";
       return false;
     }
@@ -540,6 +553,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     shift::xbox::CapturedShaderTranslationOptions options{};
     options.pixel_b128 = constants.pixel_b128;
     options.pixel_b129 = constants.pixel_b129;
+    options.gamma_color_target =
+        raster_state.color_format ==
+        shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
     shift::xbox::CapturedShaderTranslation vertex_translation{};
     shift::xbox::CapturedShaderTranslation pixel_translation{};
     if (!shift::xbox::translate_captured_shader_glsl(
@@ -607,6 +623,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         options.texture_swizzle[i] =
             static_cast<uint32_t>(texture_sampling.swizzle[i]);
       }
+      options.texture_signs = texture_sampling.signs;
       if (!shift::xbox::translate_captured_shader_glsl(
               shift::xbox::CapturedShaderStage::Pixel, pixel_program.data(),
               pixel_program.size(), options, &pixel_translation, error)) {
@@ -694,7 +711,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     uint32_t maximum_vertex_index = 0;
     if (draw.auto_index) {
       if (draw.topology != shift::xbox::PrimitiveTopology::PointList &&
-          draw.topology != shift::xbox::PrimitiveTopology::RectangleList) {
+          draw.topology != shift::xbox::PrimitiveTopology::RectangleList &&
+          draw.topology != shift::xbox::PrimitiveTopology::TriangleList &&
+          draw.topology != shift::xbox::PrimitiveTopology::TriangleStrip) {
         if (error) *error = "captured AutoIndex primitive expansion is unsupported";
         return false;
       }
@@ -715,7 +734,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (!vertex_translation.vertex_input_attributes.empty()) {
       uint32_t maximum_attribute_end = 0;
       for (const auto& attribute : vertex_translation.vertex_input_attributes) {
-        const uint32_t attribute_size = attribute.vertex_format == 57 ? 12u
+        const uint32_t attribute_size = attribute.vertex_format == 6  ? 4u
+                                        : attribute.vertex_format == 37 ? 8u
+                                        : attribute.vertex_format == 57 ? 12u
                                         : attribute.vertex_format == 38 ? 16u
                                                                         : 0u;
         if (attribute_size == 0 || attribute.stride_dwords == 0 ||
@@ -889,7 +910,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
             const size_t byte_offset =
                 static_cast<size_t>(vertex_index) * vertex_stride_bytes +
                 static_cast<size_t>(attribute.offset_dwords) * sizeof(uint32_t);
-            const size_t component_count = attribute.vertex_format == 57   ? 3u
+            const size_t component_count = attribute.vertex_format == 6  ? 0u
+                                           : attribute.vertex_format == 37 ? 2u
+                                           : attribute.vertex_format == 57 ? 3u
                                            : attribute.vertex_format == 38 ? 4u
                                                                            : 0u;
             dump << "  vertex[" << vertex << "] index=" << vertex_index
@@ -897,22 +920,37 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                  << attribute.destination_register
                  << " format=" << attribute.vertex_format
                  << " offset=" << (attribute.offset_dwords * 4) << " values={";
-            for (size_t component = 0; component < component_count;
-                 ++component) {
-              const size_t offset = byte_offset + component * sizeof(uint32_t);
-              if (offset + sizeof(uint32_t) > prepared.vertices.size()) {
-                dump << (component ? ", " : "") << "out-of-range";
-                break;
+            if (attribute.vertex_format == 6) {
+              dump << "rgba8={";
+              for (size_t component = 0; component < 4; ++component) {
+                if (byte_offset + component >= prepared.vertices.size()) {
+                  dump << (component ? ", " : "") << "out-of-range";
+                  break;
+                }
+                dump << (component ? ", " : "")
+                     << static_cast<uint32_t>(prepared.vertices[byte_offset + component]);
               }
-              const uint32_t bits =
-                  static_cast<uint32_t>(prepared.vertices[offset]) |
-                  (static_cast<uint32_t>(prepared.vertices[offset + 1]) << 8) |
-                  (static_cast<uint32_t>(prepared.vertices[offset + 2]) << 16) |
-                  (static_cast<uint32_t>(prepared.vertices[offset + 3]) << 24);
-              dump << (component ? ", " : "") << std::hex << bits << std::dec
-                   << '(' << std::bit_cast<float>(bits) << ')';
+              dump << "}";
+            } else {
+              for (size_t component = 0; component < component_count;
+                   ++component) {
+                const size_t offset = byte_offset + component * sizeof(uint32_t);
+                if (offset + sizeof(uint32_t) > prepared.vertices.size()) {
+                  dump << (component ? ", " : "") << "out-of-range";
+                  break;
+                }
+                const uint32_t bits =
+                    static_cast<uint32_t>(prepared.vertices[offset]) |
+                    (static_cast<uint32_t>(prepared.vertices[offset + 1]) << 8) |
+                    (static_cast<uint32_t>(prepared.vertices[offset + 2]) << 16) |
+                    (static_cast<uint32_t>(prepared.vertices[offset + 3]) << 24);
+                dump << (component ? ", " : "") << std::hex << bits << std::dec
+                     << '(' << std::bit_cast<float>(bits) << ')';
+              }
             }
-            if (attribute.vertex_format == 57)
+            if (attribute.vertex_format == 37)
+              dump << ", 0(0), 1(1)";
+            else if (attribute.vertex_format == 57)
               dump << ", 1(1)";
             dump << "}\n";
           }
@@ -1489,6 +1527,33 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 shift::xbox::CapturedRasterState raster_state{};
                 const bool raster_registers_ready =
                     raster_register_state.snapshot(&raster_registers, &error);
+                uint32_t captured_target_width = last_guest_swap_width;
+                uint32_t captured_target_height = last_guest_swap_height;
+                if (raster_registers_ready && last_guest_swap_width != 0 &&
+                    last_guest_swap_height != 0) {
+                  const uint32_t surface_pitch =
+                      raster_registers.surface_info & 0x3FFFu;
+                  const uint32_t msaa_mode =
+                      (raster_registers.surface_info >> 16) & 0x3u;
+                  const uint64_t target_width =
+                      static_cast<uint64_t>(surface_pitch) *
+                      (msaa_mode == 2u ? 2u : 1u);
+                  if (target_width != 0 &&
+                      target_width <= std::numeric_limits<uint32_t>::max()) {
+                    const uint64_t target_height =
+                        (static_cast<uint64_t>(last_guest_swap_height) *
+                             target_width +
+                         last_guest_swap_width / 2u) /
+                        last_guest_swap_width;
+                    if (target_height != 0 &&
+                        target_height <= std::numeric_limits<uint32_t>::max()) {
+                      captured_target_width =
+                          static_cast<uint32_t>(target_width);
+                      captured_target_height =
+                          static_cast<uint32_t>(target_height);
+                    }
+                  }
+                }
                 if (!raster_registers_ready &&
                     error == "incomplete captured raster register state") {
                   std::ostringstream detail;
@@ -1499,7 +1564,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 const bool raster_state_ready = raster_registers_ready &&
                     shift::xbox::decode_captured_raster_state(
                         raster_registers, &raster_state, &error,
-                        last_guest_swap_width, last_guest_swap_height);
+                        captured_target_width, captured_target_height);
                 if (!raster_state_ready && raster_registers_ready &&
                     error == "unsupported captured target or raster state") {
                   std::ostringstream detail;
@@ -1556,6 +1621,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                           raster_registers, &copy_state, &error)) {
                     shift::xbox::CapturedVulkanCopy prepared_copy{};
                     prepared_copy.state = copy_state;
+                    prepared_copy.source_width = captured_target_width;
+                    prepared_copy.source_height = captured_target_height;
                     if (CompileCapturedCopyResolveShaders(&prepared_copy, &error)) {
                       frame_copy = std::move(prepared_copy);
                       frame_copy_ready = true;
@@ -1825,9 +1892,15 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                         ? "refresh callback failed without a Vulkan diagnostic"
                         : "presenter did not invoke refresh callback; guest output image unavailable";
                   }
-                  REXLOG_WARN("shift-native: Vulkan frame refresh failed for {}x{} "
-                              "with {} captured draws: {}",
-                              swap.width, swap.height, draw_count, render_error);
+                  static std::atomic<uint32_t> refresh_failure_count{0};
+                  const uint32_t failure_index = refresh_failure_count.fetch_add(
+                      1, std::memory_order_relaxed);
+                  if (failure_index < 8u || (failure_index & 0x3FFu) == 0u) {
+                    REXLOG_WARN("shift-native: Vulkan frame refresh failed for {}x{} "
+                                "with {} captured draws (failure {}): {}",
+                                swap.width, swap.height, draw_count, failure_index + 1u,
+                                render_error);
+                  }
                 }
               }
               frame_draws.clear();

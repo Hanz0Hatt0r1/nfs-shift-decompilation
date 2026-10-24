@@ -17,8 +17,12 @@ enum class CapturedShaderStage : uint8_t {
 struct CapturedShaderTranslationOptions {
     bool pixel_b128 = false;
     bool pixel_b129 = false;
+    bool gamma_color_target = false;
     // Resource descriptor selectors: X, Y, Z, W, zero, or one.
     std::array<uint32_t, 4> texture_swizzle = {2, 1, 0, 3};
+    std::array<TextureSign, 4> texture_signs = {
+        TextureSign::Unsigned, TextureSign::Unsigned,
+        TextureSign::Unsigned, TextureSign::Unsigned};
 };
 
 struct CapturedVertexInputAttribute {
