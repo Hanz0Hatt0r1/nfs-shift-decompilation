@@ -67,5 +67,60 @@
       "pixel_shader_replaced_by": "synthetic magenta fragment shader",
       "meaning": "Confirms captured geometry can cover the Vulkan presenter and be read back. Does not test retail pixel-shader output or establish retail image parity."
     }
+  },
+  "post_blend_retest": {
+    "runtime_log": {
+      "path": "/home/pes/work/p1-event-write-linux-probe-20261024/p2-alpha-readback-exact-30s-20261024/logs/nfs_shift_001.log",
+      "sha256": "4264e51660c2c91ad6be05cdffa6b7ca337cac4b783e2e6b9b6f2b204c6f1005",
+      "bytes": 430875,
+      "staged_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "plugin_sha256": "56a1d88e4c4fb952bd79578e4247603eb953fac41a942b14a9d1cc6d4bc7f0af",
+      "bounded_run_seconds": 30,
+      "single_draw_submissions": 26,
+      "frame_refresh_failures": 813,
+      "readback_saved_messages": 1
+    },
+    "readback": {
+      "path": "/home/pes/work/p1-event-write-linux-probe-20261024/p2-alpha-readback-exact-30s-20261024/retail.a2b10g10r10",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "width": 1280,
+      "height": 720,
+      "bytes": 3686400,
+      "sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+      "fnv1a64": "B161DE6EEC272325",
+      "non_black_rgb_pixels": 0,
+      "packed_word_histogram": {
+        "0x00000000": 518400,
+        "0xC0000000": 403200
+      }
+    },
+    "conclusion": "A lineage-verified 30-second retest with the exact staged host executable and the alpha-blend plugin produced the same fully black readback. The alpha-blend change did not resolve visible retail output; repeated multi-draw refreshes are still rejected. The earlier 15-second retest used a different host executable and is excluded from source-lineage evidence."
+  },
+  "exact_lineage_magenta_control": {
+    "runtime_log": {
+      "path": "/home/pes/work/p1-event-write-linux-probe-20261024/p2-alpha-magenta-exact-20261024/logs/nfs_shift_001.log",
+      "sha256": "c1ee5a8717ff6527c4a4ddf9b33991bb24375e65e28abe99481965bab0d9ebc3",
+      "bytes": 146990,
+      "staged_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "plugin_sha256": "56a1d88e4c4fb952bd79578e4247603eb953fac41a942b14a9d1cc6d4bc7f0af",
+      "single_draw_submissions": 2,
+      "frame_refresh_failures": 0,
+      "readback_saved_messages": 1
+    },
+    "readback": {
+      "path": "/home/pes/work/p1-event-write-linux-probe-20261024/p2-alpha-magenta-exact-20261024/magenta.a2b10g10r10",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "width": 1280,
+      "height": 720,
+      "bytes": 3686400,
+      "sha256": "21d2868e9e0b91638d96e30dfe446a4748ef217efaa09e10ed179697e95e35e8",
+      "fnv1a64": "DA74DA070BC0D725",
+      "non_black_rgb_pixels": 518400,
+      "packed_word_histogram": {
+        "0xFFF003FF": 518400,
+        "0xC0000000": 403200
+      }
+    },
+    "meaning": "The exact executable/plugin control confirms Vulkan submission and readback with the diagnostic magenta fragment output. This run logged only two one-draw submissions and no multi-draw refresh failures; it does not reproduce the retail multi-draw sequence or establish original shader output."
   }
 }

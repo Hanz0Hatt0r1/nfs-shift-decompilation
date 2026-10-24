@@ -364,3 +364,16 @@ coverage and presenter readback for this draw; it does not verify the retail
 pixel shader. A prior attempt with another output path failed to save and is
 excluded. See
 [`process2_linux_retail_black_output_20261024.json`](../../evidence/process2_linux_retail_black_output_20261024.json).
+The lineage-verified 30-second follow-up used the exact staged host executable
+and alpha-blend plugin and produced the identical black readback hash
+(`cd6226f8...`); it logged 813 multi-draw refresh failures. This confirms the
+blend-state fix did not change the startup image. An earlier 15-second retest
+used a different host executable and is excluded from source-lineage evidence.
+Renderer validation now reports the failing draw index and sample or scissor
+values instead of a generic target/scissor error. Synthetic host regressions
+cover the sample and scissor diagnostics; the updated plugin still needs a
+retail run to identify which live draw condition is rejecting those frames.
+An exact-executable/plugin magenta control also produced 518,400 non-black
+pixels with zero refresh failures, but logged only two one-draw submissions.
+It confirms that diagnostic output reaches readback; it does not replay the
+retail multi-draw sequence and therefore cannot identify or validate its fix.

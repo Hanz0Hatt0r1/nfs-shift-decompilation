@@ -107,6 +107,11 @@ bool fail(const char* message, std::string* error) {
     return false;
 }
 
+bool fail(const std::string& message, std::string* error) {
+    if (error) *error = message;
+    return false;
+}
+
 bool vk_fail(const char* operation, VkResult result, std::string* error) {
     if (error) {
         std::ostringstream stream;
@@ -732,17 +737,37 @@ bool submit_captured_vulkan_frame(
                    draw.raster.stencil_test_enabled;
         });
 
-    for (const CapturedVulkanDraw& draw : draws) {
+    for (size_t draw_index = 0; draw_index < draws.size(); ++draw_index) {
+        const CapturedVulkanDraw& draw = draws[draw_index];
         if (draw.topology == PrimitiveTopology::RectangleList &&
             !geometry_shader_enabled) {
             return fail("captured rectangle-list draw requires an enabled Vulkan geometry shader",
                         error);
         }
         const CapturedRasterState& raster = draw.raster;
-        if (raster.sample_count != samples || raster.width == 0 || raster.height == 0 ||
-            raster.scissor_x1 > raster.width || raster.scissor_y1 > raster.height ||
+        if (raster.sample_count != samples) {
+            std::ostringstream message;
+            message << "captured Vulkan draw " << draw_index << " sample count "
+                    << raster.sample_count << " differs from frame sample count "
+                    << samples;
+            return fail(message.str(), error);
+        }
+        if (raster.width == 0 || raster.height == 0) {
+            std::ostringstream message;
+            message << "captured Vulkan draw " << draw_index
+                    << " has zero raster extent " << raster.width << 'x'
+                    << raster.height;
+            return fail(message.str(), error);
+        }
+        if (raster.scissor_x1 > raster.width || raster.scissor_y1 > raster.height ||
             raster.scissor_x0 > raster.scissor_x1 || raster.scissor_y0 > raster.scissor_y1) {
-            return fail("captured draw target or scissor differs from PM4_XE_SWAP", error);
+            std::ostringstream message;
+            message << "captured Vulkan draw " << draw_index << " scissor ["
+                    << raster.scissor_x0 << ',' << raster.scissor_y0 << ','
+                    << raster.scissor_x1 << ',' << raster.scissor_y1
+                    << "] is outside raster extent " << raster.width << 'x'
+                    << raster.height;
+            return fail(message.str(), error);
         }
     }
 

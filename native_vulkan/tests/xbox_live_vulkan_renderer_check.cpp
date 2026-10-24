@@ -325,6 +325,36 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    auto mixed_sample_draws = draws;
+    mixed_sample_draws[1].raster.sample_count = 2;
+    std::string mixed_sample_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, mixed_sample_draws, &mixed_sample_error, nullptr,
+            enabled_features.geometryShader) ||
+        mixed_sample_error.find(
+            "draw 1 sample count 2 differs from frame sample count 4") ==
+            std::string::npos) {
+        std::cerr << "mixed-sample draw rejection did not identify the incompatible draw: "
+                  << mixed_sample_error << '\n';
+        return 1;
+    }
+
+    auto invalid_scissor_draws = draws;
+    invalid_scissor_draws[0].raster.scissor_x1 = 1281;
+    std::string invalid_scissor_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, invalid_scissor_draws, &invalid_scissor_error, nullptr,
+            enabled_features.geometryShader) ||
+        invalid_scissor_error.find(
+            "draw 0 scissor [0,0,1281,720] is outside raster extent 1280x720") ==
+            std::string::npos) {
+        std::cerr << "invalid scissor rejection did not identify the incompatible draw: "
+                  << invalid_scissor_error << '\n';
+        return 1;
+    }
+
     bool has_color = false;
     bool has_swapped_blue = false;
     size_t colored_pixels = 0;
