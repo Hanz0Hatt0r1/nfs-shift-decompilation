@@ -252,3 +252,32 @@ unavailable in this app run; validation was exercised on the host. Full raw
 log, hashes, root and readback details are recorded in
 [`process2_redmi_note8pro_vulkan_cull_state_20261024.json`](../evidence/process2_redmi_note8pro_vulkan_cull_state_20261024.json)
 and its [compressed device log](../evidence/process2_redmi_note8pro_vulkan_cull_state_20261024.log.gz).
+
+## Extended live ring follow-up (2026-10-24)
+
+The same installed APK and retail `default.xex` remained foreground on the
+Redmi Note 8 Pro. The captured runtime log records 527 successful Vulkan frame
+submissions and 527 accepted source-0/sample-0 Copy/Convert operations. The
+submissions contain 328 one-draw, 168 two-draw, and 31 three-draw frames, with
+no Vulkan refresh failures. The only output readback in this run is frame 4;
+its positive title-logo result is documented above.
+
+The eight delayed retail samples (#110–#117) use the same 108-byte VS and
+36-byte PS, with an untextured three-index AutoIndex rectangle-list draw.
+Captured vertex attribute 1 is zero for all three vertices, and the translated
+PS forwards that interpolator, so these sampled draws produce zero color.
+The guest later fails to open the `audio.bff`, `drivers2.lod`,
+`cameraconfig.xml`, and both `menu_background.xml` paths. The log ends at
+those scene-file failures; a fresh screenshot shows the same black screen as
+the saved post-splash capture while the activity remains foreground. This
+narrows the current failure to the scene/runtime path for this run, but does
+not prove the missing files are its only cause. The evidence and full raw log
+are in
+[`process2_redmi_note8pro_vulkan_live_ring_20261024.json`](../evidence/process2_redmi_note8pro_vulkan_live_ring_20261024.json)
+and
+[`process2_redmi_note8pro_vulkan_live_ring_20261024.log.gz`](../evidence/process2_redmi_note8pro_vulkan_live_ring_20261024.log.gz).
+
+This is evidence of sustained command submission, not sustained visible
+graphics. The native renderer remains incomplete for full menu/race output;
+the next renderer implementation must be driven by a non-zero retail scene
+draw once the guest reaches and supplies one.
