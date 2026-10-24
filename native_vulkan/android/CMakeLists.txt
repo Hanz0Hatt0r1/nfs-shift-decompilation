@@ -63,8 +63,18 @@ if(GLSLANG_VALIDATOR)
     list(APPEND SHIFT_ANDROID_LIVE_DRAW_SPIRV
       ${SHIFT_ANDROID_SHADER_DIR}/xenos_copy_sample0.${stage}.spv)
   endforeach()
+  add_custom_command(
+    OUTPUT ${SHIFT_ANDROID_SHADER_DIR}/xenos_copy_sample0_single.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_ANDROID_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/../shaders/xenos_copy_sample0_single.frag
+            -o ${SHIFT_ANDROID_SHADER_DIR}/xenos_copy_sample0_single.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../shaders/xenos_copy_sample0_single.frag
+    VERBATIM
+  )
   list(APPEND SHIFT_ANDROID_LIVE_DRAW_SPIRV
-    ${SHIFT_ANDROID_SHADER_DIR}/live_draw_rectlist.geom.spv)
+    ${SHIFT_ANDROID_SHADER_DIR}/live_draw_rectlist.geom.spv
+    ${SHIFT_ANDROID_SHADER_DIR}/xenos_copy_sample0_single.frag.spv)
   add_custom_target(shift_android_live_draw_smoke_shaders
     DEPENDS ${SHIFT_ANDROID_LIVE_DRAW_SPIRV})
   add_executable(xbox_live_vulkan_renderer_check ../tests/xbox_live_vulkan_renderer_check.cpp)

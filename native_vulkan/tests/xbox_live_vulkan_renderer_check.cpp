@@ -196,6 +196,7 @@ int main(int argc, char** argv) {
     vkGetPhysicalDeviceFeatures(physical_device, &supported_features);
     VkPhysicalDeviceFeatures enabled_features{};
     enabled_features.geometryShader = supported_features.geometryShader;
+    enabled_features.samplerAnisotropy = supported_features.samplerAnisotropy;
     std::vector<const char*> depth_resolve_extensions;
     const bool depth_resolve_extensions_supported =
         has_device_extension(physical_device, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME) &&
@@ -365,6 +366,40 @@ int main(int argc, char** argv) {
     if (!submitted) {
         std::cerr << "captured Vulkan draw submission failed: " << error << '\n';
         return 1;
+    }
+
+    auto anisotropic_draw = draws.front();
+    anisotropic_draw.textures[0].sampling.anisotropy =
+        shift::xbox::TextureAnisotropy::Max4To1;
+    const shift::xbox::CapturedVulkanSamplerCapabilities sampler_capabilities{
+        enabled_features.samplerAnisotropy != VK_FALSE,
+        device_properties.limits.maxSamplerAnisotropy,
+    };
+    std::vector<uint32_t> anisotropy_fallback_output;
+    std::string anisotropy_fallback_error;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, {anisotropic_draw}, &anisotropy_fallback_error,
+            &anisotropy_fallback_output, enabled_features.geometryShader, nullptr,
+            false, {false, 1.0f}) ||
+        anisotropy_fallback_output.size() != 1280u * 720u) {
+        std::cerr << "captured anisotropy capability fallback failed: "
+                  << anisotropy_fallback_error << '\n';
+        return 1;
+    }
+    if (enabled_features.samplerAnisotropy) {
+        std::vector<uint32_t> anisotropy_output;
+        std::string anisotropy_error;
+        if (!shift::xbox::submit_captured_vulkan_frame(
+                physical_device, device, queue, queue_family, output_image, output_view,
+                false, 1280, 720, {anisotropic_draw}, &anisotropy_error,
+                &anisotropy_output, enabled_features.geometryShader, nullptr, false,
+                sampler_capabilities) ||
+            anisotropy_output.size() != 1280u * 720u) {
+            std::cerr << "captured 4:1 anisotropic sampler failed: "
+                      << anisotropy_error << '\n';
+            return 1;
+        }
     }
 
     auto linear_target_draw = draws[1];
@@ -730,6 +765,32 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    if (can_resolve_sample_zero) {
+        auto interleaved_stencil_writer = stencil_preserve_draws[0];
+        interleaved_stencil_writer.raster.color_write_mask = 0;
+        interleaved_stencil_writer.raster.depth_test_enabled = false;
+        interleaved_stencil_writer.raster.depth_write_enabled = false;
+        interleaved_stencil_writer.raster.stencil_test_enabled = true;
+        interleaved_stencil_writer.raster.depth_control = (7u << 8) | (2u << 14);
+        interleaved_stencil_writer.raster.stencil_refmask = 0x00FFFF00u;
+        const std::vector<shift::xbox::CapturedVulkanDraw> interleaved_stencil_draws{
+            stencil_preserve_draws[0], stencil_preserve_draws[1],
+            interleaved_stencil_writer, stencil_preserve_draws[1]};
+        std::string interleaved_stencil_error;
+        std::vector<uint32_t> interleaved_stencil_output;
+        if (!shift::xbox::submit_captured_vulkan_frame(
+                physical_device, device, queue, queue_family, output_image,
+                output_view, false, 1280, 720, interleaved_stencil_draws,
+                &interleaved_stencil_error, &interleaved_stencil_output,
+                enabled_features.geometryShader, &copy, true) ||
+            interleaved_stencil_output != stencil_preserve_output) {
+            std::cerr << "4x stencil-only draw between 1x stencil consumers was not "
+                         "replayed through the resolved sample-zero attachment: "
+                      << interleaved_stencil_error << '\n';
+            return 1;
+        }
+    }
+
     auto trailing_stencil_draw = mixed_sample_draws[0];
     trailing_stencil_draw.raster.sample_count = 4;
     trailing_stencil_draw.raster.surface_pitch = 640;
@@ -750,6 +811,22 @@ int main(int argc, char** argv) {
         trailing_msaa_output != mixed_sample_output) {
         std::cerr << "trailing 4x stencil-only retail draw changed the copied color: "
                   << trailing_msaa_error << '\n';
+        return 1;
+    }
+
+    auto final_single_sample_draw = mixed_sample_draws[1];
+    auto interleaved_msaa_draws = mixed_sample_draws;
+    interleaved_msaa_draws.push_back(trailing_stencil_draw);
+    interleaved_msaa_draws.push_back(final_single_sample_draw);
+    std::string interleaved_msaa_error;
+    std::vector<uint32_t> interleaved_msaa_output;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, interleaved_msaa_draws, &interleaved_msaa_error,
+            &interleaved_msaa_output, enabled_features.geometryShader, &copy) ||
+        interleaved_msaa_output != mixed_sample_output) {
+        std::cerr << "non-writing 4x draw between 1x draws changed the copied color: "
+                  << interleaved_msaa_error << '\n';
         return 1;
     }
 

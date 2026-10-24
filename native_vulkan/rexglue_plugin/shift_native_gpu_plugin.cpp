@@ -1027,6 +1027,19 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
             dump << "} extent=" << std::dec << resolved.fetch.width << 'x'
                  << resolved.fetch.height << " format=" << resolved.fetch.format
                  << " byte_length=" << resolved.fetch.byte_length
+                 << " sampler={clamp:";
+            for (size_t axis = 0; axis < resolved.sampling.clamps.size(); ++axis) {
+              dump << (axis ? "," : "")
+                   << static_cast<uint32_t>(resolved.sampling.clamps[axis]);
+            }
+            dump << ",filter:"
+                 << static_cast<uint32_t>(resolved.sampling.mag_filter) << '/'
+                 << static_cast<uint32_t>(resolved.sampling.min_filter) << '/'
+                 << static_cast<uint32_t>(resolved.sampling.mip_filter)
+                 << ",aniso:" << static_cast<uint32_t>(resolved.sampling.anisotropy)
+                 << ",border:" << static_cast<uint32_t>(resolved.sampling.border_color)
+                 << ",border_alpha_known:" << resolved.sampling.border_alpha_known
+                 << "}"
                  << " rgba8_bytes=" << texture.rgba8.size()
                  << " rgba8_fnv1a=0x" << std::hex
                  << Fnv1a64(texture.rgba8.data(), texture.rgba8.size())
@@ -1905,7 +1918,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                           width, height, frame_draws, &render_error,
                           capture_output ? &output_readback : nullptr,
                           device->properties().geometryShader, copy_for_swap,
-                          depth_stencil_resolve_enabled);
+                          depth_stencil_resolve_enabled,
+                          {device->properties().samplerAnisotropy,
+                           device->properties().maxSamplerAnisotropy});
                     });
                 if (refreshed) {
                   ++submitted_frames;

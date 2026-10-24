@@ -48,6 +48,11 @@ struct CapturedVulkanCopy {
     std::vector<uint32_t> single_sample_pixel_shader_spirv;
 };
 
+struct CapturedVulkanSamplerCapabilities {
+    bool anisotropy_enabled = false;
+    float max_anisotropy = 1.0f;
+};
+
 // Records and submits the captured game draws into the ReXGlue presenter image.
 // The caller must externally synchronize the supplied graphics queue. The
 // renderer uses only Vulkan 1.1 and has no window-system dependency. Set
@@ -69,6 +74,7 @@ bool submit_captured_vulkan_frame(
     std::vector<uint32_t>* output_readback = nullptr,
     bool geometry_shader_enabled = false,
     const CapturedVulkanCopy* copy = nullptr,
-    bool depth_stencil_resolve_enabled = false);
+    bool depth_stencil_resolve_enabled = false,
+    CapturedVulkanSamplerCapabilities sampler_capabilities = {});
 
 }  // namespace shift::xbox

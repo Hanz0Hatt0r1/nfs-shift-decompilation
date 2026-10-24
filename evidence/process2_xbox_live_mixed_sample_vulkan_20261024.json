@@ -1,0 +1,110 @@
+{
+  "schema": "SHIFT.Process2XboxLiveMixedSampleVulkan/1",
+  "observed_at": "2026-10-24T23:52:00+03:00",
+  "retail_game": {
+    "platform": "Xbox 360 retail game running through the Linux guest runtime",
+    "default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "renderer": "project-owned native Vulkan plugin; ReXGlue Xenos GPU emulation disabled"
+  },
+  "captured_sampler_contract": {
+    "startup": {
+      "clamp": [6, 6, 0],
+      "filter": [1, 1, 2],
+      "anisotropy_enum": 0
+    },
+    "retail_texture_draw": {
+      "guest_texture_address": "0x679a000",
+      "descriptor_words": ["0x40048fe", "0x679a053", "0x3fe1ff", "0x6a80d10", "0xc03", "0x210"],
+      "extent": [512, 512],
+      "format": 19,
+      "clamp": [2, 2, 0],
+      "filter": [1, 1, 1],
+      "anisotropy_enum": 3,
+      "anisotropy_ratio": "4:1"
+    },
+    "implementation": "Sampler translation maps captured filter and anisotropy state to Vulkan. The plugin passes only provider-enabled features; with the current provider call using with_gpu_emulation=false, samplerAnisotropy is unavailable and safely falls back to 1:1. An additive provider feature request is proposed separately to Process 1.",
+    "source_log": "process2_xbox_live_sampler_capture_20261024.log.gz",
+    "source_log_sha256": "6aa1473cd667e48415d9dff1471ff8b0d995907132bca327575854b5a28b65e1"
+  },
+  "mixed_sample_path": {
+    "retail_observation": "The live frame changes from 4x MSAA to 1x, then contains 4x depth/stencil-only draws with stencil write mask 0xff. Other captured frames contain 4x no-write draws between 1x draws.",
+    "renderer_behavior": "Leading 4x draws render into the MSAA attachments and resolve to 1x. Interstitial 4x draws with no framebuffer writes are skipped. A post-transition 4x depth/stencil-only draw is replayed in the resolved 1x depth/stencil attachment only when a later 1x draw consumes depth/stencil; terminal depth/stencil-only writes are skipped because this renderer produces the frame color and does not retain guest depth/stencil across frames. Post-transition 4x color writes still fail closed.",
+    "targeted_regression": "Synthetic 4x -> 1x -> 4x stencil write -> 1x stencil read verifies the later 1x draw sees the sample-zero-resolved stencil update; a separate regression covers 4x -> 1x -> 4x no-write -> 1x.",
+    "retail_verification": "Not yet verified with the new replay path. The older plugin produced repeated mixed-sample failures on the captured stencil writer. Fresh launches of the rebuilt plugin exited with status 135 (SIGBUS) before guest PM4 capture, so no retail frame or readback was produced.",
+    "logs": [
+      {
+        "file": "process2_xbox_live_mixed_sample_retail_20261024.log.gz",
+        "sha256": "cd8cd07b3c03c081406c2cda28d11afca656956a99f73aba90819c42947a40b8"
+      },
+      {
+        "file": "process2_xbox_live_readback_startup_20261024.log.gz",
+        "sha256": "7cbef2bdb3ccdebd7361eb1128f3953dc0ece2afa6bc63ad38665c20b42836d7"
+      },
+      {
+        "file": "process2_xbox_live_clean_root_startup_20261024.log.gz",
+        "sha256": "0957bc75cda9357aaa3495db4ba5a629498482812c89b83e519d7663a20f5e88"
+      }
+    ]
+  },
+  "retail_draw_coverage": {
+    "previous_plugin_sha256": "3fd603dea3f2014b3ad73c3df51d515adf45cfbfb6481444451e5275691d3469",
+    "submitted_23_draw_packets": 107,
+    "remaining_unresolved_draws": [
+      {
+        "draw": 27,
+        "reason": "pixel shader uses an unsupported Xenos ALU vector opcode; the updated translator now includes opcode and instruction address in the error, but the rebuilt plugin did not reach a guest draw"
+      },
+      {
+        "draw": 28,
+        "reason": "unsupported captured texture-fetch descriptor",
+        "descriptor_words": ["0x840248fe", "0xa24b054", "0xe1ff", "0x6a80d10", "0xe43", "0xa24ba10"]
+      },
+      {
+        "draw": 29,
+        "reason": "unsupported captured texture-fetch descriptor",
+        "descriptor_words": ["0x804048fe", "0xa079086", "0x7e003", "0x6a80c14", "0xc03", "0xa10"]
+      }
+    ],
+    "source_log": "process2_xbox_live_mixed_sample_retail_20261024.log.gz"
+  },
+  "checks": {
+    "linux_native_ctest": "4/4 passed",
+    "linux_plugin_ctest": "4/4 passed",
+    "linux_vulkan_validation": {
+      "test": "xbox_live_vulkan_renderer_check",
+      "device": "NVIDIA GeForce GTX 950",
+      "layer": "VK_LAYER_KHRONOS_validation",
+      "validation_errors": 0,
+      "result": "Offscreen synthetic regressions passed, including both mixed-sample interleaving cases and the 4:1 sampler path when enabled."
+    },
+    "android_arm64": {
+      "ndk": "28.2.13676358",
+      "api": 24,
+      "abi": "arm64-v8a",
+      "built_targets": ["xbox_live_vulkan_renderer_check", "shift_vulkan_bundle_execute", "shift_vulkan_android_native_activity", "shift_xbox_shader_translate_check"],
+      "android_cmake_fix": "Added the missing Vulkan 1.1 SPIR-V generation for xenos_copy_sample0_single.frag, which the renderer regression executable requires."
+    },
+    "redmi_note_8_pro": {
+      "serial": "192.168.1.32:33153",
+      "gpu": "ARM Mali-G76 MC4",
+      "vulkan_api": "1.1.131",
+      "renderer_regression": "Synthetic offscreen 4x-to-1x draw and sample-zero depth/stencil resolve passed.",
+      "validation_layer": "Unavailable on device; this was an execution check without Vulkan validation."
+    }
+  },
+  "runtime_validation_findings": {
+    "layer": "VK_LAYER_KHRONOS_validation",
+    "vuid_destroy_swapchain": "VUID-vkDestroySwapchainKHR-swapchain-01282",
+    "vuid_present_semaphore_reuse": "VUID-vkQueueSubmit-pSignalSemaphores-00067",
+    "observation": "The live ReXGlue presenter reports these during early swapchain recreation/presentation, before sustained guest draw submissions. They are outside the offscreen renderer core and were sent to Process 1 for separate tracking.",
+    "source_log": "process2_xbox_live_validation_startup_20261024.log.gz",
+    "source_log_sha256": "1e3b1657b9bbf68098d9342828cb9cc4c2d009f62f6ee3b891b7a0610edbeb07"
+  },
+  "limitations": [
+    "The synthetic renderer regressions do not establish retail visual parity.",
+    "The latest rebuilt plugin has not completed a retail draw because test launches faulted before guest PM4 capture; the cause is undetermined.",
+    "Sampler anisotropy remains at 1:1 until ReXGlue exposes an explicit feature request independent of Xenos GPU emulation.",
+    "Retail draws 27, 28, and 29 still require shader/texture contract support."
+  ],
+  "latest_plugin_sha256": "f5380a9c35dc0b845279af4256b5d4dbdbcdfb23982640e293c103fec3777143"
+}

@@ -288,9 +288,9 @@ bool emit_alu(std::ostringstream& glsl,
               const CapturedShaderAluInstruction& instruction,
               uint32_t allocation_type,
               std::string* error) {
-    const auto fail_at_slot = [address, error](const char* reason) {
+    const auto fail_at_slot = [address, error](const std::string& reason) {
         if (error) {
-            *error = std::string(reason) + " at instruction " +
+            *error = reason + " at instruction " +
                      std::to_string(address);
         }
         return false;
@@ -361,7 +361,12 @@ bool emit_alu(std::ostringstream& glsl,
             case 12: operation = "mix(" + c + ", " + b + ", equal(" + a + ", vec4(0.0)))"; break;
             case 15: operation = "vec4(dot(" + a + ", " + b + "))"; break;
             case 17: operation = "vec4(dot(" + a + ".xy, " + b + ".xy) + " + c + ".x)"; break;
-            default: return fail("captured vertex/pixel ALU vector opcode is unsupported", error);
+            default: {
+                std::ostringstream message;
+                message << "captured vertex/pixel ALU vector opcode "
+                        << instruction.vector_opcode << " is unsupported";
+                return fail_at_slot(message.str());
+            }
         }
         glsl << "  vec4 " << result << " = " << operation << ";\n";
         if (instruction.vector_clamp) {

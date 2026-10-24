@@ -410,6 +410,7 @@ bool create_draw_resources(
     VkDevice device,
     VkRenderPass render_pass,
     bool geometry_shader_enabled,
+    CapturedVulkanSamplerCapabilities sampler_capabilities,
     DrawResources* output,
     std::string* error) {
     const uint32_t vertex_constants_size = sizeof(source.constants.vertex_float_constants);
@@ -514,7 +515,19 @@ bool create_draw_resources(
         sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         sampler_info.magFilter = sampler_filter(input.sampling->mag_filter, &sampler_supported);
         sampler_info.minFilter = sampler_filter(input.sampling->min_filter, &sampler_supported);
-        sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        switch (input.sampling->mip_filter) {
+            case TextureFilter::Point:
+            case TextureFilter::BaseMap:
+                sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+                break;
+            case TextureFilter::Linear:
+                sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                break;
+            default:
+                sampler_supported = false;
+                sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+                break;
+        }
         sampler_info.addressModeU = sampler_address_mode(input.sampling->clamps[0], &sampler_supported);
         sampler_info.addressModeV = sampler_address_mode(input.sampling->clamps[1], &sampler_supported);
         sampler_info.addressModeW = sampler_address_mode(input.sampling->clamps[2], &sampler_supported);
@@ -522,7 +535,35 @@ bool create_draw_resources(
         sampler_info.borderColor = input.sampling->border_alpha_known
                                        ? VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK
                                        : VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-        if (!sampler_supported || input.sampling->anisotropy != TextureAnisotropy::Disabled ||
+        float requested_anisotropy = 1.0f;
+        switch (input.sampling->anisotropy) {
+            case TextureAnisotropy::Disabled:
+            case TextureAnisotropy::Max1To1:
+                break;
+            case TextureAnisotropy::Max2To1:
+                requested_anisotropy = 2.0f;
+                break;
+            case TextureAnisotropy::Max4To1:
+                requested_anisotropy = 4.0f;
+                break;
+            case TextureAnisotropy::Max8To1:
+                requested_anisotropy = 8.0f;
+                break;
+            case TextureAnisotropy::Max16To1:
+                requested_anisotropy = 16.0f;
+                break;
+            default:
+                sampler_supported = false;
+                break;
+        }
+        if (sampler_capabilities.anisotropy_enabled &&
+            sampler_capabilities.max_anisotropy > 1.0f &&
+            requested_anisotropy > 1.0f) {
+            sampler_info.anisotropyEnable = VK_TRUE;
+            sampler_info.maxAnisotropy = std::min(
+                requested_anisotropy, sampler_capabilities.max_anisotropy);
+        }
+        if (!sampler_supported ||
             input.sampling->border_color != TextureBorderColor::AbgrBlack) {
             return fail("captured sampler state is outside the Vulkan 1.1 live-draw subset", error);
         }
@@ -1037,7 +1078,8 @@ bool submit_mixed_sample_copy_frame(
     std::vector<uint32_t>* output_readback,
     bool geometry_shader_enabled,
     const CapturedVulkanCopy& copy,
-    bool depth_stencil_resolve_enabled) {
+    bool depth_stencil_resolve_enabled,
+    CapturedVulkanSamplerCapabilities sampler_capabilities) {
     if (draws.empty() || draws.front().raster.sample_count != 4 ||
         copy.single_sample_pixel_shader_spirv.empty()) {
         return fail("mixed captured frame requires 4x-MSAA followed by 1x and a single-sample Copy/Convert shader",
@@ -1062,27 +1104,45 @@ bool submit_mixed_sample_copy_frame(
            draws[first_single_sample_draw].raster.sample_count == 4) {
         ++first_single_sample_draw;
     }
-    size_t render_draw_count = draws.size();
-    bool reached_trailing_msaa_draws = false;
     if (first_single_sample_draw == draws.size()) {
         return fail("mixed captured frame has no single-sample draw", error);
     }
+    std::vector<bool> remap_trailing_msaa_to_single(draws.size(), false);
+    std::vector<bool> later_single_depth_stencil_use(draws.size(), false);
+    bool has_later_single_depth_stencil_use = false;
+    for (size_t i = draws.size(); i-- > first_single_sample_draw;) {
+        later_single_depth_stencil_use[i] =
+            has_later_single_depth_stencil_use;
+        const CapturedRasterState& raster = draws[i].raster;
+        has_later_single_depth_stencil_use |= raster.sample_count == 1 &&
+            (raster.depth_test_enabled || raster.depth_write_enabled ||
+             raster.stencil_test_enabled);
+    }
+    std::vector<size_t> rendered_draw_indices;
+    rendered_draw_indices.reserve(draws.size());
     for (size_t i = 0; i < draws.size(); ++i) {
         const CapturedVulkanDraw& draw = draws[i];
         const CapturedRasterState& raster = draw.raster;
-        if (i >= first_single_sample_draw && raster.sample_count == 4) {
-            if (raster.color_write_mask != 0 || raster.depth_write_enabled) {
+        const bool skip_trailing_msaa_draw =
+            i >= first_single_sample_draw && raster.sample_count == 4;
+        if (skip_trailing_msaa_draw) {
+            const uint32_t stencil_write_mask =
+                (raster.stencil_refmask >> 16) & 0xFFu;
+            if (raster.color_write_mask != 0) {
                 std::ostringstream message;
                 message << "mixed captured frame returns to 4x after its 1x draws "
                            "with a color/depth-writing draw " << i
                         << "; color_mask=0x" << std::hex
                         << raster.color_write_mask << std::dec
-                        << " depth_write=" << raster.depth_write_enabled;
+                        << " depth_write=" << raster.depth_write_enabled
+                        << " stencil_write_mask=0x" << std::hex
+                        << stencil_write_mask << std::dec;
                 return fail(message.str(), error);
             }
-            if (!reached_trailing_msaa_draws) {
-                render_draw_count = i;
-                reached_trailing_msaa_draws = true;
+            const bool writes_depth_stencil = raster.depth_write_enabled ||
+                (raster.stencil_test_enabled && stencil_write_mask != 0);
+            if (writes_depth_stencil && later_single_depth_stencil_use[i]) {
+                remap_trailing_msaa_to_single[i] = true;
             }
         } else if (raster.sample_count != 1 && raster.sample_count != 4) {
             std::ostringstream message;
@@ -1102,11 +1162,6 @@ bool submit_mixed_sample_copy_frame(
                         << state.depth_write_enabled << ",stencil:"
                         << state.stencil_test_enabled << "}}";
             }
-            return fail(message.str(), error);
-        } else if (raster.sample_count == 1 && reached_trailing_msaa_draws) {
-            std::ostringstream message;
-            message << "mixed captured frame returns to 1x after its trailing 4x "
-                       "draws at draw " << i;
             return fail(message.str(), error);
         }
         if (raster.width != target.width || raster.height != target.height ||
@@ -1133,11 +1188,14 @@ bool submit_mixed_sample_copy_frame(
                     << " has an invalid raster extent or scissor";
             return fail(message.str(), error);
         }
-        if (i >= render_draw_count) continue;
-        needs_msaa_depth |= raster.sample_count == 4 &&
+        if (skip_trailing_msaa_draw && !remap_trailing_msaa_to_single[i]) continue;
+        rendered_draw_indices.push_back(i);
+        const bool render_as_single_sample = raster.sample_count == 1 ||
+            remap_trailing_msaa_to_single[i];
+        needs_msaa_depth |= !render_as_single_sample &&
             (raster.depth_test_enabled || raster.depth_write_enabled ||
              raster.stencil_test_enabled);
-        needs_single_depth |= raster.sample_count == 1 &&
+        needs_single_depth |= render_as_single_sample &&
             (raster.depth_test_enabled || raster.depth_write_enabled ||
              raster.stencil_test_enabled);
     }
@@ -1166,7 +1224,9 @@ bool submit_mixed_sample_copy_frame(
     FrameResources resources{};
     resources.device = device;
     resources.queue = queue;
-    resources.draws.resize(render_draw_count);
+    std::vector<size_t> draw_resource_indices(
+        draws.size(), std::numeric_limits<size_t>::max());
+    resources.draws.resize(rendered_draw_indices.size());
     if (!create_render_attachment(
             memory_properties, device, target.width, target.height,
             target_format,
@@ -1359,13 +1419,23 @@ bool submit_mixed_sample_copy_frame(
                                  &resources.mixed_copy_framebuffer);
     if (result != VK_SUCCESS) return vk_fail("vkCreateFramebuffer(mixed Copy/Convert)", result, error);
 
-    for (size_t i = 0; i < draws.size(); ++i) {
-        if (i >= render_draw_count) break;
-        const VkRenderPass pass = i < first_single_sample_draw
+    for (size_t resource_index = 0;
+         resource_index < rendered_draw_indices.size(); ++resource_index) {
+        const size_t draw_index = rendered_draw_indices[resource_index];
+        CapturedVulkanDraw resource_draw = draws[draw_index];
+        if (remap_trailing_msaa_to_single[draw_index]) {
+            // The guest switches the same target back to 4x for a
+            // depth/stencil-only draw. When a later 1x draw consumes that
+            // state, replay it at sample zero in the resolved 1x attachment.
+            resource_draw.raster.sample_count = 1;
+        }
+        const VkRenderPass pass = resource_draw.raster.sample_count == 4
             ? resources.mixed_msaa_render_pass
             : resources.mixed_single_render_pass;
-        if (!create_draw_resources(draws[i], memory_properties, device, pass,
-                                   geometry_shader_enabled, &resources.draws[i], error)) {
+        draw_resource_indices[draw_index] = resource_index;
+        if (!create_draw_resources(resource_draw, memory_properties, device, pass,
+                                   geometry_shader_enabled, sampler_capabilities,
+                                   &resources.draws[resource_index], error)) {
             return false;
         }
     }
@@ -1398,7 +1468,7 @@ bool submit_mixed_sample_copy_frame(
     copy_draw.texture_sampling.border_alpha_known = true;
     if (!create_draw_resources(copy_draw, memory_properties, device,
                                resources.mixed_copy_render_pass, false,
-                               &resources.copy_draw, error)) {
+                               sampler_capabilities, &resources.copy_draw, error)) {
         return false;
     }
     VkDescriptorImageInfo source_info{resources.copy_draw.textures[0].sampler,
@@ -1526,7 +1596,9 @@ bool submit_mixed_sample_copy_frame(
     };
     const auto record_draw = [&](size_t index) {
         const CapturedVulkanDraw& source = draws[index];
-        const DrawResources& draw = resources.draws[index];
+        const size_t resource_index = draw_resource_indices[index];
+        if (resource_index == std::numeric_limits<size_t>::max()) return;
+        const DrawResources& draw = resources.draws[resource_index];
         VkViewport viewport{};
         if (source.raster.viewport_width != 0.0f &&
             source.raster.viewport_height != 0.0f && source.raster.width &&
@@ -1625,8 +1697,11 @@ bool submit_mixed_sample_copy_frame(
     single_begin.clearValueCount = static_cast<uint32_t>(single_clears.size());
     single_begin.pClearValues = single_clears.data();
     vkCmdBeginRenderPass(command, &single_begin, VK_SUBPASS_CONTENTS_INLINE);
-    for (size_t i = first_single_sample_draw; i < render_draw_count; ++i) {
-        record_draw(i);
+    for (size_t i = first_single_sample_draw; i < draws.size(); ++i) {
+        if (draws[i].raster.sample_count == 1 ||
+            remap_trailing_msaa_to_single[i]) {
+            record_draw(i);
+        }
     }
     vkCmdEndRenderPass(command);
 
@@ -1781,7 +1856,8 @@ bool submit_captured_vulkan_frame(
     std::vector<uint32_t>* output_readback,
     bool geometry_shader_enabled,
     const CapturedVulkanCopy* copy,
-    bool depth_stencil_resolve_enabled) {
+    bool depth_stencil_resolve_enabled,
+    CapturedVulkanSamplerCapabilities sampler_capabilities) {
     if (output_readback) output_readback->clear();
     if (!physical_device || !device || !queue || !output_image || !output_view ||
         !output_width || !output_height || draws.empty() || queue_family_index == UINT32_MAX) {
@@ -1827,7 +1903,7 @@ bool submit_captured_vulkan_frame(
             physical_device, device, queue, queue_family_index, output_image,
             output_view, output_written_before, output_width, output_height,
             draws, error, output_readback, geometry_shader_enabled, *copy,
-            depth_stencil_resolve_enabled);
+            depth_stencil_resolve_enabled, sampler_capabilities);
     }
     const CapturedRasterState& frame_target = draws.front().raster;
     const uint32_t source_width = copy && copy->source_width
@@ -2101,7 +2177,7 @@ bool submit_captured_vulkan_frame(
         copy_draw.texture_sampling.border_alpha_known = true;
         if (!create_draw_resources(copy_draw, memory_properties, device,
                                    resources.copy_render_pass, false,
-                                   &resources.copy_draw, error)) {
+                                   sampler_capabilities, &resources.copy_draw, error)) {
             return false;
         }
         VkDescriptorImageInfo copy_image_info{
@@ -2125,7 +2201,8 @@ bool submit_captured_vulkan_frame(
         DrawResources& draw = resources.draws[i];
         // Recreate just the graphics pipeline with this frame's render pass.
         if (!create_draw_resources(draws[i], memory_properties, device, resources.render_pass,
-                                   geometry_shader_enabled, &draw, error)) {
+                                   geometry_shader_enabled, sampler_capabilities,
+                                   &draw, error)) {
             return false;
         }
     }
