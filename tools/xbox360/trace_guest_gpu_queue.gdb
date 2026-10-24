@@ -24,20 +24,19 @@ commands
   set $base = (unsigned char*)$rsi
   set $source = *(unsigned int*)$ctx
   if $source == 0
-    # r4 is the callback object on the source-0 path. Guest words are PPC
-    # big-endian in this little-endian host mapping, so retain the raw and
-    # decoded gate/queue words in each state-change sample.
+    # r4 is the callback object on the source-0 path. The retail MMIO read at
+    # 0x7FC86544 uses REX_MM_LOAD_U32, so base+guest-address is not its value.
+    # The consumer's guest LR (0x823B3844) below is the direct taken-path proof.
+    # Guest queue words are PPC big-endian in this little-endian host mapping.
     set $object = *(unsigned int*)($ctx+32)
-    set $gate_raw = *(unsigned int*)($base+0x7fc86544)
-    set $gate = (($gate_raw & 0xff)<<24) | (($gate_raw & 0xff00)<<8) | (($gate_raw & 0xff0000)>>8) | (($gate_raw & 0xff000000)>>24)
     set $read_raw = *(unsigned int*)($base+$object+0x413c)
     set $read_index = (($read_raw & 0xff)<<24) | (($read_raw & 0xff00)<<8) | (($read_raw & 0xff0000)>>8) | (($read_raw & 0xff000000)>>24)
     set $write_raw = *(unsigned int*)($base+$object+0x4140)
     set $write_index = (($write_raw & 0xff)<<24) | (($write_raw & 0xff00)<<8) | (($write_raw & 0xff0000)>>8) | (($write_raw & 0xff000000)>>24)
     set $predicate = *(unsigned char*)($base+$object+0x2abd)
-    set $source0_state = ((unsigned long long)$gate << 32) | ((unsigned long long)$read_index << 16) | ((unsigned long long)$write_index << 8) | $predicate
+    set $source0_state = ((unsigned long long)$read_index << 32) | ((unsigned long long)$write_index << 8) | $predicate
     if $interrupt_hits <= 8 || $source0_state != $last_source0_state
-      printf "source0_callback hit=%d gdb_thread=%d object=%#x gate_raw=%#x gate=%#x gate_bit0=%u queue_read=%u queue_write=%u predicate=%#x lr=%#llx\n", $interrupt_hits, $_thread, $object, $gate_raw, $gate, $gate & 1, $read_index, $write_index, $predicate, *(unsigned long long*)($ctx+256)
+      printf "source0_callback hit=%d gdb_thread=%d object=%#x queue_read=%u queue_write=%u predicate=%#x lr=%#llx\n", $interrupt_hits, $_thread, $object, $read_index, $write_index, $predicate, *(unsigned long long*)($ctx+256)
       set $last_source0_state = $source0_state
     end
   else
