@@ -1,0 +1,43 @@
+{
+  "schema": "shift.xbox360.menu-background-pak-index.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "path": "/tmp/nfs_shift_xbox_game_root_20261023/PakFiles/Menu_Background.bff",
+    "sha256": "38346e13ff13f8e3b1fa47afee12fb67ae2b43ab1256476dc6178add55fe8a63",
+    "bytes": 751727
+  },
+  "index_validation": {
+    "magic": "PAK ",
+    "entry_count": 57,
+    "record_table_bytes": 2394,
+    "record_size_bytes": 42,
+    "name_table_bytes": 3437,
+    "byte_order": "big-endian Xbox PAK index fields",
+    "checks": "All 57 names decoded; all name offsets and compressed-payload ranges stayed within the archive; no invalid entries."
+  },
+  "relevant_members": [
+    {
+      "path": "gui/menu_background/menu_background.sgx",
+      "compression_type": 2,
+      "compressed_bytes": 1528,
+      "uncompressed_bytes": 10716
+    },
+    {
+      "path": "gui/menu_background/menu_background.enx",
+      "compression_type": 0,
+      "compressed_bytes": 111,
+      "uncompressed_bytes": 111
+    },
+    {
+      "path": "tracks/textures/menu_background/menu_background_01.xtx",
+      "compression_type": 2,
+      "compressed_bytes": 418,
+      "uncompressed_bytes": 16436
+    }
+  ],
+  "exact_loose_xml_member_matches": [],
+  "interpretation": {
+    "supported": "The archive's Xbox big-endian table includes the menu background SGX/ENX and texture assets; it does not include a member named menu_background.xml. The earlier loose XML probes are not evidence that this archive can satisfy that exact filename.",
+    "not_proven": "This index-only check does not show whether the retail game opens this archive, which archive lookup fallback it uses, or whether the loose XML miss is fatal. No VFS alias or guest state change is justified by this evidence."
+  }
+}
