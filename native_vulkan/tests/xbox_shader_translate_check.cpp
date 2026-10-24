@@ -201,7 +201,7 @@ int main() {
             "captured RGBA8_GAMMA target lost its RGB-only write conversion");
 
     auto gamma_texture_options = options;
-    gamma_texture_options.texture_signs = {
+    gamma_texture_options.textures[0].signs = {
         shift::xbox::TextureSign::Gamma, shift::xbox::TextureSign::Gamma,
         shift::xbox::TextureSign::Gamma, shift::xbox::TextureSign::Unsigned};
     require(shift::xbox::translate_captured_shader_glsl(
@@ -214,12 +214,30 @@ int main() {
                 translated.glsl.find("sampled_0.w=shift_pwl_gamma_to_linear") ==
                     std::string::npos,
             "captured Gamma RGB texture signs did not preserve linear alpha");
-    gamma_texture_options.texture_signs[0] = shift::xbox::TextureSign::Signed;
+    gamma_texture_options.textures[0].signs[0] = shift::xbox::TextureSign::Signed;
     require(!shift::xbox::translate_captured_shader_glsl(
                 shift::xbox::CapturedShaderStage::Pixel, shader.data(), shader.size(),
                 gamma_texture_options, &translated, &error) &&
                 error == "captured texture channel sign is outside the unsigned/gamma subset",
             "uncaptured signed texture sign was silently accepted");
+
+    std::vector<uint8_t> multiple_samplers = shader;
+    write_be32(multiple_samplers.data() + 8, 0x12000005u);
+    write_be32(multiple_samplers.data() + 5 * 12, 0x10180001u);
+    write_be32(multiple_samplers.data() + 5 * 12 + 4, 0x1F1FF688u);
+    write_be32(multiple_samplers.data() + 5 * 12 + 8, 0x00004000u);
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                multiple_samplers.data(), multiple_samplers.size(), options,
+                &translated, &error) &&
+                translated.texture_fetch_constant_indices ==
+                    std::vector<uint32_t>{0u, 1u} &&
+                translated.glsl.find("layout(set=1,binding=0) uniform sampler2D shift_sampler_0") !=
+                    std::string::npos &&
+                translated.glsl.find("layout(set=1,binding=1) uniform sampler2D shift_sampler_1") !=
+                    std::string::npos &&
+                translated.glsl.find("texture(shift_sampler_1") != std::string::npos,
+            "captured pixel shader with two sampler constants did not translate");
 
     std::vector<uint8_t> nonzero_texture_registers = shader;
     write_be32(nonzero_texture_registers.data() + 4 * 12,

@@ -400,3 +400,30 @@ process was left running and still maps the older plugin SHA-256
 current rebuilt plugin hash is recorded in the evidence JSON below.
 Evidence and raw descriptors are in
 [`process2_retail_dxt4_5_texture_decode_20261024.json`](../evidence/process2_retail_dxt4_5_texture_decode_20261024.json).
+
+## Captured multi-sampler Vulkan path (2026-10-24)
+
+The retained retail Linux plugin log records draw #27 rejected because the
+captured pixel shader uses multiple samplers. The current path translates each
+active fetch constant into its own Vulkan set-1 descriptor binding, captures
+the matching guest descriptor/sampler/texture independently, and uploads a
+separate image per binding. The existing Linux log is evidence of the missing
+capability in the earlier plugin; no fresh retail run has tested the new code.
+
+Linux native CTest passed 4/4, including the synthetic two-binding Vulkan
+renderer regression under `VK_LAYER_KHRONOS_validation` with zero errors on a
+GTX 950. ReXGlue plugin CTest passed 4/4. The standalone Android native CMake
+build passed for `arm64-v8a` with NDK 28.2.13676358 / API 26. The renderer
+regression and shader translator regression both passed on the Redmi Note 8
+Pro (Android API 33, Mali-G76 MC4, Vulkan 1.1.131); Android validation layers
+were unavailable. The changed plugin translation unit also compiled as an
+ARM64 object.
+
+The complete ReXGlue plugin build still stops in its existing POSIX fiber
+source because Android Bionic does not declare `getcontext`, `makecontext`, or
+`swapcontext`. That runtime/scheduler boundary belongs to Process 1 and was not
+changed. The synthetic two-sampler readback does not establish retail draw
+#27 output or retail parity; captured draw #28 still lacks mip-chain payload
+bytes. The game window and existing process were left untouched. See
+[`process2_retail_multi_sampler_vulkan_20261024.json`](../evidence/process2_retail_multi_sampler_vulkan_20261024.json)
+for log and build hashes.

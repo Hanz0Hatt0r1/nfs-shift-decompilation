@@ -536,10 +536,15 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
     shift::xbox::CapturedShaderConstants constants{};
     std::array<uint32_t, 2> vertex_descriptor{};
-    std::array<uint32_t, 6> texture_descriptor{};
     shift::xbox::CapturedVertexFetch vertex_fetch{};
     shift::xbox::CapturedTextureFetch texture_fetch{};
     shift::xbox::CapturedTextureSampling texture_sampling{};
+    struct ResolvedTexture {
+      std::array<uint32_t, 6> descriptor{};
+      shift::xbox::CapturedTextureFetch fetch{};
+      shift::xbox::CapturedTextureSampling sampling{};
+    };
+    std::vector<ResolvedTexture> resolved_textures;
     if (vertex_program.empty() || pixel_program.empty() ||
         !shader_state.snapshot_constants(&constants, error)) {
       return false;
@@ -614,34 +619,40 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     }
 
     if (pixel_translation.uses_texture) {
-      if (!shader_state.snapshot_texture_fetch_descriptor(
-              pixel_translation.texture_fetch_constant_index,
-              &texture_descriptor, error)) {
-        return false;
-      }
-      if (!shift::xbox::decode_captured_texture_fetch(
-              texture_descriptor.data(), &texture_fetch, error) ||
-          !shift::xbox::decode_captured_texture_sampling(
-              texture_fetch, &texture_sampling, error)) {
-        if (error) {
-          std::ostringstream detail;
-          detail << *error << " fetch_constant="
-                 << pixel_translation.texture_fetch_constant_index
-                 << " descriptor_words=[";
-          for (size_t word = 0; word < texture_descriptor.size(); ++word) {
-            if (word) detail << ',';
-            detail << "0x" << std::hex << texture_descriptor[word] << std::dec;
+      const std::vector<uint32_t> expected_texture_indices =
+          pixel_translation.texture_fetch_constant_indices;
+      for (uint32_t fetch_index : pixel_translation.texture_fetch_constant_indices) {
+        ResolvedTexture resolved{};
+        if (!shader_state.snapshot_texture_fetch_descriptor(
+                fetch_index, &resolved.descriptor, error) ||
+            !shift::xbox::decode_captured_texture_fetch(
+                resolved.descriptor.data(), &resolved.fetch, error) ||
+            !shift::xbox::decode_captured_texture_sampling(
+                resolved.fetch, &resolved.sampling, error)) {
+          if (error) {
+            std::ostringstream detail;
+            detail << *error << " fetch_constant=" << fetch_index
+                   << " descriptor_words=[";
+            for (size_t word = 0; word < resolved.descriptor.size(); ++word) {
+              if (word) detail << ',';
+              detail << "0x" << std::hex << resolved.descriptor[word] << std::dec;
+            }
+            detail << ']';
+            *error = detail.str();
           }
-          detail << ']';
-          *error = detail.str();
+          return false;
         }
-        return false;
+        for (size_t i = 0; i < options.textures[fetch_index].swizzle.size(); ++i) {
+          options.textures[fetch_index].swizzle[i] =
+              static_cast<uint32_t>(resolved.sampling.swizzle[i]);
+        }
+        options.textures[fetch_index].signs = resolved.sampling.signs;
+        if (resolved_textures.empty()) {
+          texture_fetch = resolved.fetch;
+          texture_sampling = resolved.sampling;
+        }
+        resolved_textures.push_back(std::move(resolved));
       }
-      for (size_t i = 0; i < options.texture_swizzle.size(); ++i) {
-        options.texture_swizzle[i] =
-            static_cast<uint32_t>(texture_sampling.swizzle[i]);
-      }
-      options.texture_signs = texture_sampling.signs;
       if (!shift::xbox::translate_captured_shader_glsl(
               shift::xbox::CapturedShaderStage::Pixel, pixel_program.data(),
               pixel_program.size(), options, &pixel_translation, error)) {
@@ -649,8 +660,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         return false;
       }
       if (!pixel_translation.uses_texture ||
-          pixel_translation.texture_fetch_constant_index >= 32) {
-        if (error) *error = "captured pixel texture fetch index changed during translation";
+          pixel_translation.texture_fetch_constant_indices !=
+              expected_texture_indices ||
+          pixel_translation.texture_fetch_constant_indices.size() != resolved_textures.size()) {
+        if (error) *error = "captured pixel texture fetch set changed during translation";
         return false;
       }
     } else {
@@ -828,15 +841,39 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       }
     }
     if (pixel_translation.uses_texture) {
-      if (texture_fetch.byte_length > kMaxLiveTextureBytes ||
-          !ReadGuestMemory(this, texture_fetch.guest_address,
-                           texture_fetch.byte_length, &guest_bytes,
-                           &guest_byte_length) ||
-          guest_byte_length < texture_fetch.byte_length ||
-          !shift::xbox::untile_captured_texture_2d(
-              texture_fetch, guest_bytes, texture_fetch.byte_length,
-              &prepared.texture_rgba8, error)) {
-        return false;
+      size_t total_texture_bytes = 0;
+      prepared.textures.reserve(resolved_textures.size());
+      for (size_t i = 0; i < resolved_textures.size(); ++i) {
+        const ResolvedTexture& resolved = resolved_textures[i];
+        const auto& fetch = resolved.fetch;
+        if (fetch.byte_length > kMaxLiveTextureBytes - total_texture_bytes) {
+          if (error) *error = "captured pixel textures exceed the live read limit";
+          return false;
+        }
+        if (!ReadGuestMemory(this, fetch.guest_address, fetch.byte_length,
+                             &guest_bytes, &guest_byte_length) ||
+            guest_byte_length < fetch.byte_length) {
+          if (error) *error = "captured texture guest memory is unavailable";
+          return false;
+        }
+        shift::xbox::CapturedVulkanTexture texture{};
+        texture.fetch_constant_index =
+            pixel_translation.texture_fetch_constant_indices[i];
+        texture.sampling = resolved.sampling;
+        texture.width = fetch.width;
+        texture.height = fetch.height;
+        if (!shift::xbox::untile_captured_texture_2d(
+                fetch, guest_bytes, fetch.byte_length, &texture.rgba8, error)) {
+          return false;
+        }
+        total_texture_bytes += fetch.byte_length;
+        prepared.textures.push_back(std::move(texture));
+      }
+      if (!prepared.textures.empty()) {
+        prepared.texture_sampling = prepared.textures.front().sampling;
+        prepared.texture_width = prepared.textures.front().width;
+        prepared.texture_height = prepared.textures.front().height;
+        prepared.texture_rgba8 = prepared.textures.front().rgba8;
       }
     } else {
       prepared.texture_rgba8 = {255, 255, 255, 255};
@@ -977,20 +1014,24 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
              << Fnv1a64(prepared.vertices.data(), prepared.vertices.size())
              << std::dec << "\n";
         if (pixel_translation.uses_texture) {
-          dump << "  texture fetch="
-               << pixel_translation.texture_fetch_constant_index << " guest=0x"
-               << std::hex << texture_fetch.guest_address << " descriptor={";
-          for (size_t i = 0; i < texture_descriptor.size(); ++i) {
-            dump << (i ? "," : "") << "0x" << texture_descriptor[i];
+          for (size_t texture_index = 0; texture_index < resolved_textures.size();
+               ++texture_index) {
+            const auto& resolved = resolved_textures[texture_index];
+            const auto& texture = prepared.textures[texture_index];
+            dump << "  texture fetch="
+                 << texture.fetch_constant_index << " guest=0x"
+                 << std::hex << resolved.fetch.guest_address << " descriptor={";
+            for (size_t i = 0; i < resolved.descriptor.size(); ++i) {
+              dump << (i ? "," : "") << "0x" << resolved.descriptor[i];
+            }
+            dump << "} extent=" << std::dec << resolved.fetch.width << 'x'
+                 << resolved.fetch.height << " format=" << resolved.fetch.format
+                 << " byte_length=" << resolved.fetch.byte_length
+                 << " rgba8_bytes=" << texture.rgba8.size()
+                 << " rgba8_fnv1a=0x" << std::hex
+                 << Fnv1a64(texture.rgba8.data(), texture.rgba8.size())
+                 << std::dec << "\n";
           }
-          dump << "} extent=" << std::dec << texture_fetch.width << 'x'
-               << texture_fetch.height << " format=" << texture_fetch.format
-               << " byte_length=" << texture_fetch.byte_length
-               << " rgba8_bytes=" << prepared.texture_rgba8.size()
-               << " rgba8_fnv1a=0x" << std::hex
-               << Fnv1a64(prepared.texture_rgba8.data(),
-                          prepared.texture_rgba8.size())
-               << std::dec << "\n";
         } else {
           dump << "  texture: unused\n";
         }

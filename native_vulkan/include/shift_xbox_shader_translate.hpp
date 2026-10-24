@@ -14,15 +14,19 @@ enum class CapturedShaderStage : uint8_t {
     Pixel,
 };
 
+struct CapturedShaderTextureOptions {
+    // Resource descriptor selectors: X, Y, Z, W, zero, or one.
+    std::array<uint32_t, 4> swizzle = {2, 1, 0, 3};
+    std::array<TextureSign, 4> signs = {
+        TextureSign::Unsigned, TextureSign::Unsigned,
+        TextureSign::Unsigned, TextureSign::Unsigned};
+};
+
 struct CapturedShaderTranslationOptions {
     bool pixel_b128 = false;
     bool pixel_b129 = false;
     bool gamma_color_target = false;
-    // Resource descriptor selectors: X, Y, Z, W, zero, or one.
-    std::array<uint32_t, 4> texture_swizzle = {2, 1, 0, 3};
-    std::array<TextureSign, 4> texture_signs = {
-        TextureSign::Unsigned, TextureSign::Unsigned,
-        TextureSign::Unsigned, TextureSign::Unsigned};
+    std::array<CapturedShaderTextureOptions, 32> textures{};
 };
 
 struct CapturedVertexInputAttribute {
@@ -41,6 +45,7 @@ struct CapturedShaderTranslation {
     uint32_t vertex_fetch_constant_index = 0;
     bool uses_texture = false;
     uint32_t texture_fetch_constant_index = 0;
+    std::vector<uint32_t> texture_fetch_constant_indices;
     std::vector<uint32_t> float_constant_registers;
     bool uses_relative_float_constant_index = false;
 };

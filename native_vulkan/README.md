@@ -27,6 +27,24 @@ Redmi Note 8 Pro. Draw #28 still needs mip-chain handling; no updated retail
 frame has verified these draws yet. See
 [`process2_retail_dxt4_5_texture_decode_20261024.json`](../evidence/process2_retail_dxt4_5_texture_decode_20261024.json).
 
+## Captured multi-sampler support (2026-10-24)
+
+A live Linux retail capture previously rejected draw #27 because its pixel
+shader used multiple samplers. The translator now emits a Vulkan descriptor
+binding for each active texture fetch constant, the plugin snapshots each
+referenced descriptor and texture independently, and the renderer uploads and
+binds each image/sampler pair at that original binding. A synthetic translator
+regression and an offscreen draw with distinct textures at bindings 0 and 1
+pass. Linux native and plugin CTest suites pass 4/4 each; the renderer test
+reports zero Vulkan validation errors on a GTX 950. The Android ARM64 native
+build passes, and both the renderer regression and shader translation test
+pass on a Redmi Note 8 Pro / Mali-G76 MC4. This is implementation and device
+coverage, not proof that retail draw #27 now renders or that the frame matches
+the original. The complete ReXGlue Android plugin build remains blocked in its
+existing Bionic-incompatible POSIX fiber source. Details and limitations are
+recorded in
+[`process2_retail_multi_sampler_vulkan_20261024.json`](../evidence/process2_retail_multi_sampler_vulkan_20261024.json).
+
 ## Implemented stages
 
 - Vulkan instance/device/queue bootstrap;

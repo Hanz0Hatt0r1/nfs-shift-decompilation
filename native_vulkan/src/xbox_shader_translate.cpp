@@ -234,12 +234,14 @@ bool append_fetch(std::ostringstream& glsl,
         if (error) *error = message.str();
         return false;
     }
-    for (uint32_t selector : options.texture_swizzle) {
+    const CapturedShaderTextureOptions& texture_options =
+        options.textures[fetch.fetch_constant_index];
+    for (uint32_t selector : texture_options.swizzle) {
         if (selector > 5) {
             return fail("captured texture descriptor swizzle is unsupported", error);
         }
     }
-    for (TextureSign sign : options.texture_signs) {
+    for (TextureSign sign : texture_options.signs) {
         if (sign != TextureSign::Unsigned && sign != TextureSign::Gamma) {
             return fail("captured texture channel sign is outside the unsigned/gamma subset", error);
         }
@@ -252,7 +254,7 @@ bool append_fetch(std::ostringstream& glsl,
          << component_name(coord_x)
          << component_name(coord_y) << ");\n";
     for (uint32_t lane = 0; lane < 4; ++lane) {
-        if (options.texture_signs[lane] == TextureSign::Gamma) {
+        if (texture_options.signs[lane] == TextureSign::Gamma) {
             glsl << "  sampled_" << sampler << '.' << component_name(lane)
                  << "=shift_pwl_gamma_to_linear(sampled_" << sampler << '.'
                  << component_name(lane) << ");\n";
@@ -261,7 +263,7 @@ bool append_fetch(std::ostringstream& glsl,
     glsl << "  vec4 fetched_" << sampler << " = vec4(";
     for (uint32_t lane = 0; lane < 4; ++lane) {
         if (lane) glsl << ", ";
-        const uint32_t selector = options.texture_swizzle[lane];
+        const uint32_t selector = texture_options.swizzle[lane];
         if (selector < 4) glsl << "sampled_" << sampler << "." << component_name(selector);
         else glsl << (selector == 4 ? "0.0" : "1.0");
     }
@@ -497,6 +499,7 @@ bool translate_captured_shader_glsl(
     std::vector<CapturedShaderInstructionSchedule> executed;
     std::vector<CapturedShaderFetchInstruction> executed_fetches;
     std::vector<CapturedVertexInputAttribute> vertex_input_attributes;
+    std::vector<uint32_t> texture_fetch_constant_indices;
     bool has_texture = false;
     uint32_t sampler_register = 0;
     bool has_vertex_fetch_constant = false;
@@ -548,9 +551,12 @@ bool translate_captured_shader_glsl(
                         executed_fetches.push_back(effective_fetch);
                     } else {
                         if (fetch.kind == CapturedShaderFetchKind::Texture2D) {
-                            if (has_texture &&
-                                sampler_register != fetch.fetch_constant_index) {
-                                return fail("captured pixel shader uses multiple samplers", error);
+                            if (std::find(texture_fetch_constant_indices.begin(),
+                                          texture_fetch_constant_indices.end(),
+                                          fetch.fetch_constant_index) ==
+                                texture_fetch_constant_indices.end()) {
+                                texture_fetch_constant_indices.push_back(
+                                    fetch.fetch_constant_index);
                             }
                             has_texture = true;
                             sampler_register = fetch.fetch_constant_index;
@@ -600,14 +606,20 @@ bool translate_captured_shader_glsl(
         glsl << "layout(location=0) in vec4 shift_interpolator0;\n"
              << "layout(location=0) out vec4 shift_color0;\n"
              << "layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;\n";
-        if (has_texture) {
-            glsl << "layout(set=1,binding=0) uniform sampler2D shift_sampler_"
-                 << sampler_register << ";\n";
+        for (uint32_t texture_index : texture_fetch_constant_indices) {
+            glsl << "layout(set=1,binding=" << texture_index
+                 << ") uniform sampler2D shift_sampler_"
+                 << texture_index << ";\n";
         }
     }
-    if (stage == CapturedShaderStage::Pixel && has_texture &&
-        std::find(options.texture_signs.begin(), options.texture_signs.end(),
-                  TextureSign::Gamma) != options.texture_signs.end()) {
+    const bool uses_gamma_texture = std::any_of(
+        texture_fetch_constant_indices.begin(), texture_fetch_constant_indices.end(),
+        [&options](uint32_t index) {
+            const auto& signs = options.textures[index].signs;
+            return std::find(signs.begin(), signs.end(), TextureSign::Gamma) !=
+                   signs.end();
+        });
+    if (stage == CapturedShaderStage::Pixel && uses_gamma_texture) {
         glsl << "float shift_pwl_gamma_to_linear(float gamma) {\n"
              << "  gamma=clamp(gamma,0.0,1.0);\n"
              << "  float scale=gamma>=192.0/255.0 ? 8.0/1024.0 : "
@@ -743,7 +755,10 @@ bool translate_captured_shader_glsl(
     translated.has_vertex_fetch_constant = has_vertex_fetch_constant;
     translated.vertex_fetch_constant_index = vertex_fetch_constant_index;
     translated.uses_texture = has_texture;
-    translated.texture_fetch_constant_index = sampler_register;
+    translated.texture_fetch_constant_index = texture_fetch_constant_indices.empty()
+        ? 0u : texture_fetch_constant_indices.front();
+    translated.texture_fetch_constant_indices =
+        std::move(texture_fetch_constant_indices);
     std::sort(float_constant_registers.begin(), float_constant_registers.end());
     float_constant_registers.erase(
         std::unique(float_constant_registers.begin(),

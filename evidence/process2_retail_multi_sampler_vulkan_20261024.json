@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.Process2RetailMultiSamplerVulkan/1",
+  "observed_at": "2026-10-24T23:13:04+03:00",
+  "retail_evidence": {
+    "platform": "Xbox 360 retail game running through the Linux guest runtime",
+    "xbox_default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "capture_log": "/home/pes/work/process2-linux-readback-frame200-20261024/logs/retail-plugin-01f5e8-frame10.log",
+    "capture_log_sha256": "93fc2e796d36e5c2fac0f9e519f3a6aa0650879d43335283c81d455a45ebaf3f",
+    "observation": "At log line 7994, captured retail draw #27 (AutoIndex, topology 3, count 4) was rejected by the then-current plugin because its pixel shader used multiple samplers.",
+    "raw_log_in_repository": false
+  },
+  "implementation": {
+    "shader_translation": "Collects active pixel-shader texture fetch constants, emits one set-1 combined-image-sampler binding per fetch constant, and applies each descriptor's swizzle and channel signs independently.",
+    "plugin_capture": "Snapshots each referenced texture descriptor and sampler state, decodes each guest texture payload, and passes per-fetch textures to the renderer.",
+    "vulkan_renderer": "Creates an independent RGBA8 image, upload buffer, and sampler for each captured texture; descriptor bindings use the original fetch-constant indexes.",
+    "api": "Vulkan 1.1; renderer core remains independent of XCB, Wayland, and Android surface APIs.",
+    "rendering_emulator_dependency": false
+  },
+  "checks": {
+    "linux_native_ctest": "4/4 passed",
+    "linux_plugin_ctest": "4/4 passed",
+    "linux_vulkan_validation": {
+      "test": "xbox_live_vulkan_renderer_check",
+      "device": "NVIDIA GeForce GTX 950",
+      "layer": "VK_LAYER_KHRONOS_validation",
+      "validation_errors": 0,
+      "result": "The offscreen synthetic draw sampled distinct red and green textures at set 1 bindings 0 and 1; both channels were present in the readback."
+    },
+    "vulkan_1_1_spirv_validation": "The two-binding smoke fragment shader passed spirv-val --target-env vulkan1.1.",
+    "android_arm64_build": {
+      "ndk": "28.2.13676358",
+      "api": 26,
+      "abi": "arm64-v8a",
+      "targets": "Full native_vulkan/android CMake build passed, including the live renderer, shader translator, and renderer regression executable.",
+      "plugin_source_object": "The changed ReXGlue plugin translation unit compiled separately for arm64-v8a.",
+      "plugin_source_object_sha256": "bdd7bb71e1c263fa00d87410c41f33ee059a87e84e2a5b6236fbb70867b85562"
+    },
+    "redmi_note_8_pro": {
+      "serial": "192.168.1.32:33153",
+      "gpu": "ARM Mali-G76 MC4",
+      "vulkan_api": "1.1.131",
+      "renderer_check": "Synthetic two-texture Vulkan renderer regression passed.",
+      "shader_translate_check": "Passed, including the two-sampler translation regression.",
+      "validation_layer": "Unavailable; Android run was a device execution check without Vulkan validation."
+    },
+    "android_full_rexglue_plugin_build": {
+      "result": "Blocked in the existing ReXGlue POSIX fiber source before plugin link.",
+      "error": "Android NDK Bionic does not declare getcontext, makecontext, or swapcontext in rexglue-sdk/src/core/fiber_posix.cpp.",
+      "ownership": "Process 1 runtime/scheduler dependency; no Process 1 files were modified."
+    }
+  },
+  "limitations": [
+    "The two-sampler translator fixture and offscreen Vulkan draw are synthetic regressions; they do not establish retail draw #27 visual parity.",
+    "No fresh retail run was performed with this plugin build. The existing game process and window were left untouched.",
+    "Captured draw #28 still requests mip levels 0..9 without retained mip payload bytes and remains fail-closed.",
+    "Android renderer execution was verified on Redmi Note 8 Pro; the full ReXGlue Android game runtime remains blocked by the Bionic fiber dependency."
+  ]
+}

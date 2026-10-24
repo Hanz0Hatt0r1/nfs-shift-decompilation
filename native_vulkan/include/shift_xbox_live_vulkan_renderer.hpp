@@ -11,6 +11,14 @@
 
 namespace shift::xbox {
 
+struct CapturedVulkanTexture {
+    uint32_t fetch_constant_index = 0;
+    CapturedTextureSampling sampling{};
+    uint32_t width = 0;
+    uint32_t height = 0;
+    std::vector<uint8_t> rgba8;
+};
+
 struct CapturedVulkanDraw {
     CapturedRasterState raster;
     CapturedShaderConstants constants;
@@ -21,6 +29,7 @@ struct CapturedVulkanDraw {
     std::vector<uint8_t> vertices;
     std::vector<uint8_t> indices;
     std::vector<uint8_t> texture_rgba8;
+    std::vector<CapturedVulkanTexture> textures;
     std::vector<CapturedVertexInputAttribute> vertex_input_attributes;
     uint32_t vertex_stride_bytes = 12;
     PrimitiveTopology topology = PrimitiveTopology::TriangleList;

@@ -23,14 +23,21 @@ struct ImageResource {
     VkImageView view = VK_NULL_HANDLE;
 };
 
+struct DrawTextureResources {
+    uint32_t fetch_constant_index = 0;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    BufferResource upload;
+    ImageResource image;
+    VkSampler sampler = VK_NULL_HANDLE;
+};
+
 struct DrawResources {
     BufferResource vertices;
     BufferResource indices;
     BufferResource vertex_constants;
     BufferResource pixel_constants;
-    BufferResource texture_upload;
-    ImageResource texture;
-    VkSampler sampler = VK_NULL_HANDLE;
+    std::vector<DrawTextureResources> textures;
     VkShaderModule vertex_shader = VK_NULL_HANDLE;
     VkShaderModule geometry_shader = VK_NULL_HANDLE;
     VkShaderModule pixel_shader = VK_NULL_HANDLE;
@@ -78,9 +85,11 @@ struct FrameResources {
             if (draw.vertex_shader) vkDestroyShaderModule(device, draw.vertex_shader, nullptr);
             if (draw.geometry_shader) vkDestroyShaderModule(device, draw.geometry_shader, nullptr);
             if (draw.pixel_shader) vkDestroyShaderModule(device, draw.pixel_shader, nullptr);
-            if (draw.sampler) vkDestroySampler(device, draw.sampler, nullptr);
-            destroy_image(draw.texture);
-            destroy_buffer(draw.texture_upload);
+            for (DrawTextureResources& texture : draw.textures) {
+                if (texture.sampler) vkDestroySampler(device, texture.sampler, nullptr);
+                destroy_image(texture.image);
+                destroy_buffer(texture.upload);
+            }
             destroy_buffer(draw.pixel_constants);
             destroy_buffer(draw.vertex_constants);
             destroy_buffer(draw.indices);
@@ -406,8 +415,45 @@ bool create_draw_resources(
     const uint32_t vertex_constants_size = sizeof(source.constants.vertex_float_constants);
     const uint32_t pixel_constants_size = sizeof(source.constants.pixel_float_constants);
     const bool has_vertex_inputs = !source.vertex_input_attributes.empty();
-    const uint64_t texture_size = static_cast<uint64_t>(source.texture_width) *
-                                  source.texture_height * 4u;
+    struct TextureInput {
+        uint32_t fetch_constant_index;
+        const CapturedTextureSampling* sampling;
+        uint32_t width;
+        uint32_t height;
+        const std::vector<uint8_t>* rgba8;
+    };
+    std::vector<TextureInput> texture_inputs;
+    if (source.textures.empty()) {
+        texture_inputs.push_back({0, &source.texture_sampling, source.texture_width,
+                                  source.texture_height, &source.texture_rgba8});
+    } else {
+        texture_inputs.reserve(source.textures.size());
+        for (const CapturedVulkanTexture& texture : source.textures) {
+            texture_inputs.push_back({texture.fetch_constant_index, &texture.sampling,
+                                      texture.width, texture.height, &texture.rgba8});
+        }
+    }
+    uint64_t total_texture_size = 0;
+    for (size_t i = 0; i < texture_inputs.size(); ++i) {
+        const TextureInput& texture = texture_inputs[i];
+        const uint64_t pixel_count = static_cast<uint64_t>(texture.width) * texture.height;
+        if (texture.fetch_constant_index >= 32 || texture.width == 0 || texture.height == 0 ||
+            pixel_count > (uint64_t{1} << 24) ||
+            pixel_count * 4u != texture.rgba8->size() ||
+            total_texture_size > (uint64_t{1} << 26) - pixel_count * 4u) {
+            return fail("captured Vulkan texture resources are incomplete or oversized", error);
+        }
+        for (size_t j = 0; j < i; ++j) {
+            if (texture_inputs[j].fetch_constant_index == texture.fetch_constant_index) {
+                return fail("captured Vulkan textures use a duplicate fetch constant", error);
+            }
+        }
+        total_texture_size += pixel_count * 4u;
+    }
+    std::sort(texture_inputs.begin(), texture_inputs.end(),
+              [](const TextureInput& left, const TextureInput& right) {
+                  return left.fetch_constant_index < right.fetch_constant_index;
+              });
     if ((has_vertex_inputs && source.vertices.empty()) ||
         (!has_vertex_inputs && !source.vertices.empty()) ||
         source.index_count == 0 ||
@@ -418,9 +464,7 @@ bool create_draw_resources(
         (source.topology != PrimitiveTopology::RectangleList &&
          !source.geometry_shader_spirv.empty()) ||
         (!source.geometry_shader_spirv.empty() && !geometry_shader_enabled) ||
-        (has_vertex_inputs && source.vertex_stride_bytes == 0) ||
-        source.texture_width == 0 || source.texture_height == 0 ||
-        texture_size != source.texture_rgba8.size() || texture_size > (uint64_t{1} << 26)) {
+        (has_vertex_inputs && source.vertex_stride_bytes == 0) || texture_inputs.empty()) {
         return fail("captured Vulkan draw resources are incomplete or oversized", error);
     }
     if (source.raster.blend_control_0 != 0x07060706u &&
@@ -449,35 +493,45 @@ bool create_draw_resources(
         !create_buffer(memory_properties, device, pixel_constants_size,
                        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                        source.constants.pixel_float_constants.data(),
-                       &output->pixel_constants, error) ||
-        !create_buffer(memory_properties, device, texture_size,
-                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT, source.texture_rgba8.data(),
-                       &output->texture_upload, error) ||
-        !create_texture_image(memory_properties, device, source.texture_width,
-                              source.texture_height, &output->texture, error)) {
+                       &output->pixel_constants, error)) {
         return false;
     }
 
-    bool sampler_supported = true;
-    VkSamplerCreateInfo sampler_info{};
-    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    sampler_info.magFilter = sampler_filter(source.texture_sampling.mag_filter, &sampler_supported);
-    sampler_info.minFilter = sampler_filter(source.texture_sampling.min_filter, &sampler_supported);
-    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    sampler_info.addressModeU = sampler_address_mode(source.texture_sampling.clamps[0], &sampler_supported);
-    sampler_info.addressModeV = sampler_address_mode(source.texture_sampling.clamps[1], &sampler_supported);
-    sampler_info.addressModeW = sampler_address_mode(source.texture_sampling.clamps[2], &sampler_supported);
-    sampler_info.maxLod = 0.0f;
-    sampler_info.borderColor = source.texture_sampling.border_alpha_known
-                                   ? VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK
-                                   : VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-    if (!sampler_supported || source.texture_sampling.anisotropy != TextureAnisotropy::Disabled ||
-        source.texture_sampling.border_color != TextureBorderColor::AbgrBlack) {
-        return fail("captured sampler state is outside the Vulkan 1.1 live-draw subset", error);
+    for (const TextureInput& input : texture_inputs) {
+        DrawTextureResources& texture = output->textures.emplace_back();
+        texture.fetch_constant_index = input.fetch_constant_index;
+        texture.width = input.width;
+        texture.height = input.height;
+        if (!create_buffer(memory_properties, device, input.rgba8->size(),
+                           VK_BUFFER_USAGE_TRANSFER_SRC_BIT, input.rgba8->data(),
+                           &texture.upload, error) ||
+            !create_texture_image(memory_properties, device, input.width, input.height,
+                                  &texture.image, error)) {
+            return false;
+        }
+        bool sampler_supported = true;
+        VkSamplerCreateInfo sampler_info{};
+        sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        sampler_info.magFilter = sampler_filter(input.sampling->mag_filter, &sampler_supported);
+        sampler_info.minFilter = sampler_filter(input.sampling->min_filter, &sampler_supported);
+        sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        sampler_info.addressModeU = sampler_address_mode(input.sampling->clamps[0], &sampler_supported);
+        sampler_info.addressModeV = sampler_address_mode(input.sampling->clamps[1], &sampler_supported);
+        sampler_info.addressModeW = sampler_address_mode(input.sampling->clamps[2], &sampler_supported);
+        sampler_info.maxLod = 0.0f;
+        sampler_info.borderColor = input.sampling->border_alpha_known
+                                       ? VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK
+                                       : VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+        if (!sampler_supported || input.sampling->anisotropy != TextureAnisotropy::Disabled ||
+            input.sampling->border_color != TextureBorderColor::AbgrBlack) {
+            return fail("captured sampler state is outside the Vulkan 1.1 live-draw subset", error);
+        }
+        const VkResult sampler_result =
+            vkCreateSampler(device, &sampler_info, nullptr, &texture.sampler);
+        if (sampler_result != VK_SUCCESS) return vk_fail("vkCreateSampler", sampler_result, error);
     }
-    VkResult result = vkCreateSampler(device, &sampler_info, nullptr, &output->sampler);
-    if (result != VK_SUCCESS) return vk_fail("vkCreateSampler", result, error);
 
+    VkResult result = VK_SUCCESS;
     VkShaderModuleCreateInfo shader_info{};
     shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     shader_info.codeSize = source.vertex_shader_spirv.size() * sizeof(uint32_t);
@@ -511,20 +565,23 @@ bool create_draw_resources(
                                          &output->descriptor_layouts[0]);
     if (result != VK_SUCCESS) return vk_fail("vkCreateDescriptorSetLayout(constants)", result, error);
 
-    VkDescriptorSetLayoutBinding texture_binding{};
-    texture_binding.binding = 0;
-    texture_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    texture_binding.descriptorCount = 1;
-    texture_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    descriptor_layout_info.bindingCount = 1;
-    descriptor_layout_info.pBindings = &texture_binding;
+    std::vector<VkDescriptorSetLayoutBinding> texture_bindings;
+    texture_bindings.reserve(output->textures.size());
+    for (const DrawTextureResources& texture : output->textures) {
+        texture_bindings.push_back({texture.fetch_constant_index,
+                                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                    1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+    }
+    descriptor_layout_info.bindingCount = static_cast<uint32_t>(texture_bindings.size());
+    descriptor_layout_info.pBindings = texture_bindings.data();
     result = vkCreateDescriptorSetLayout(device, &descriptor_layout_info, nullptr,
                                          &output->descriptor_layouts[1]);
     if (result != VK_SUCCESS) return vk_fail("vkCreateDescriptorSetLayout(texture)", result, error);
 
     const VkDescriptorPoolSize pool_sizes[2] = {
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
-        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+         static_cast<uint32_t>(output->textures.size())},
     };
     VkDescriptorPoolCreateInfo pool_info{};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -545,9 +602,9 @@ bool create_draw_resources(
                                                 vertex_constants_size};
     VkDescriptorBufferInfo pixel_constant_info{output->pixel_constants.buffer, 0,
                                                pixel_constants_size};
-    VkDescriptorImageInfo texture_info{output->sampler, output->texture.view,
-                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-    VkWriteDescriptorSet writes[3]{};
+    std::vector<VkDescriptorImageInfo> texture_infos;
+    std::vector<VkWriteDescriptorSet> writes(2 + output->textures.size());
+    texture_infos.reserve(output->textures.size());
     writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     writes[0].dstSet = output->descriptor_sets[0];
     writes[0].dstBinding = 14;
@@ -560,13 +617,19 @@ bool create_draw_resources(
     writes[1].descriptorCount = 1;
     writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     writes[1].pBufferInfo = &pixel_constant_info;
-    writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writes[2].dstSet = output->descriptor_sets[1];
-    writes[2].dstBinding = 0;
-    writes[2].descriptorCount = 1;
-    writes[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    writes[2].pImageInfo = &texture_info;
-    vkUpdateDescriptorSets(device, 3, writes, 0, nullptr);
+    for (size_t i = 0; i < output->textures.size(); ++i) {
+        const DrawTextureResources& texture = output->textures[i];
+        texture_infos.push_back({texture.sampler, texture.image.view,
+                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+        VkWriteDescriptorSet& write = writes[2 + i];
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstSet = output->descriptor_sets[1];
+        write.dstBinding = texture.fetch_constant_index;
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        write.pImageInfo = &texture_infos.back();
+    }
+    vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
     const VkPipelineLayoutCreateInfo pipeline_layout_info{
         VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 2,
@@ -1338,7 +1401,7 @@ bool submit_mixed_sample_copy_frame(
                                &resources.copy_draw, error)) {
         return false;
     }
-    VkDescriptorImageInfo source_info{resources.copy_draw.sampler,
+    VkDescriptorImageInfo source_info{resources.copy_draw.textures[0].sampler,
                                       resources.mixed_color.view,
                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkWriteDescriptorSet source_write{};
@@ -1349,8 +1412,8 @@ bool submit_mixed_sample_copy_frame(
     source_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     source_write.pImageInfo = &source_info;
     vkUpdateDescriptorSets(device, 1, &source_write, 0, nullptr);
-    resources.destroy_image(resources.copy_draw.texture);
-    resources.destroy_buffer(resources.copy_draw.texture_upload);
+    resources.destroy_image(resources.copy_draw.textures[0].image);
+    resources.destroy_buffer(resources.copy_draw.textures[0].upload);
 
     VkDeviceSize readback_size = 0;
     if (output_readback) {
@@ -1387,17 +1450,17 @@ bool submit_mixed_sample_copy_frame(
     if (result != VK_SUCCESS) return vk_fail("vkBeginCommandBuffer(mixed frame)", result, error);
 
     std::vector<VkBufferMemoryBarrier> host_barriers;
-    host_barriers.reserve(draws.size() * 5);
+    host_barriers.reserve(draws.size() * 8);
     for (const DrawResources& draw : resources.draws) {
-        const std::array<std::pair<const BufferResource*, VkAccessFlags>, 5> buffers = {{
+        const std::array<std::pair<const BufferResource*, VkAccessFlags>, 4> buffers = {{
             {&draw.vertices, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT},
             {&draw.indices, VK_ACCESS_INDEX_READ_BIT},
             {&draw.vertex_constants, VK_ACCESS_UNIFORM_READ_BIT},
             {&draw.pixel_constants, VK_ACCESS_UNIFORM_READ_BIT},
-            {&draw.texture_upload, VK_ACCESS_TRANSFER_READ_BIT},
         }};
-        for (const auto& [buffer, access] : buffers) {
-            if (!buffer->buffer) continue;
+        const auto add_host_barrier = [&](const BufferResource* buffer,
+                                          VkAccessFlags access) {
+            if (!buffer->buffer) return;
             VkBufferMemoryBarrier barrier{};
             barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
             barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
@@ -1407,6 +1470,10 @@ bool submit_mixed_sample_copy_frame(
             barrier.buffer = buffer->buffer;
             barrier.size = VK_WHOLE_SIZE;
             host_barriers.push_back(barrier);
+        };
+        for (const auto& [buffer, access] : buffers) add_host_barrier(buffer, access);
+        for (const DrawTextureResources& texture : draw.textures) {
+            add_host_barrier(&texture.upload, VK_ACCESS_TRANSFER_READ_BIT);
         }
     }
     vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_HOST_BIT,
@@ -1418,34 +1485,36 @@ bool submit_mixed_sample_copy_frame(
                          host_barriers.data(), 0, nullptr);
     for (size_t i = 0; i < resources.draws.size(); ++i) {
         const DrawResources& draw = resources.draws[i];
-        VkImageMemoryBarrier to_upload{};
-        to_upload.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        to_upload.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        to_upload.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        to_upload.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        to_upload.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        to_upload.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        to_upload.image = draw.texture.image;
-        to_upload.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        to_upload.subresourceRange.levelCount = 1;
-        to_upload.subresourceRange.layerCount = 1;
-        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                             0, nullptr, 0, nullptr, 1, &to_upload);
-        VkBufferImageCopy upload{};
-        upload.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        upload.imageSubresource.layerCount = 1;
-        upload.imageExtent = {draws[i].texture_width, draws[i].texture_height, 1};
-        vkCmdCopyBufferToImage(command, draw.texture_upload.buffer, draw.texture.image,
-                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &upload);
-        VkImageMemoryBarrier to_sample = to_upload;
-        to_sample.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        to_sample.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                             0, nullptr, 0, nullptr, 1, &to_sample);
+        for (const DrawTextureResources& texture : draw.textures) {
+            VkImageMemoryBarrier to_upload{};
+            to_upload.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            to_upload.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            to_upload.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            to_upload.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            to_upload.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            to_upload.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            to_upload.image = texture.image.image;
+            to_upload.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            to_upload.subresourceRange.levelCount = 1;
+            to_upload.subresourceRange.layerCount = 1;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                 VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                                 0, nullptr, 0, nullptr, 1, &to_upload);
+            VkBufferImageCopy upload{};
+            upload.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            upload.imageSubresource.layerCount = 1;
+            upload.imageExtent = {texture.width, texture.height, 1};
+            vkCmdCopyBufferToImage(command, texture.upload.buffer, texture.image.image,
+                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &upload);
+            VkImageMemoryBarrier to_sample = to_upload;
+            to_sample.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            to_sample.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                                 0, nullptr, 0, nullptr, 1, &to_sample);
+        }
     }
 
     const auto scaled_edge = [](uint32_t edge, uint32_t source_extent,
@@ -2036,7 +2105,7 @@ bool submit_captured_vulkan_frame(
             return false;
         }
         VkDescriptorImageInfo copy_image_info{
-            resources.copy_draw.sampler, resources.multisample_color.view,
+            resources.copy_draw.textures[0].sampler, resources.multisample_color.view,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
         VkWriteDescriptorSet copy_image_write{};
         copy_image_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -2046,8 +2115,8 @@ bool submit_captured_vulkan_frame(
         copy_image_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         copy_image_write.pImageInfo = &copy_image_info;
         vkUpdateDescriptorSets(device, 1, &copy_image_write, 0, nullptr);
-        resources.destroy_image(resources.copy_draw.texture);
-        resources.destroy_buffer(resources.copy_draw.texture_upload);
+        resources.destroy_image(resources.copy_draw.textures[0].image);
+        resources.destroy_buffer(resources.copy_draw.textures[0].upload);
     }
 
     // Pipelines need the render pass compatibility key, so create them after
@@ -2082,17 +2151,17 @@ bool submit_captured_vulkan_frame(
     if (result != VK_SUCCESS) return vk_fail("vkBeginCommandBuffer", result, error);
 
     std::vector<VkBufferMemoryBarrier> host_barriers;
-    host_barriers.reserve(draws.size() * 5);
+    host_barriers.reserve(draws.size() * 8);
     for (const DrawResources& draw : resources.draws) {
-        const std::array<std::pair<const BufferResource*, VkAccessFlags>, 5> buffers = {{
+        const std::array<std::pair<const BufferResource*, VkAccessFlags>, 4> buffers = {{
             {&draw.vertices, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT},
             {&draw.indices, VK_ACCESS_INDEX_READ_BIT},
             {&draw.vertex_constants, VK_ACCESS_UNIFORM_READ_BIT},
             {&draw.pixel_constants, VK_ACCESS_UNIFORM_READ_BIT},
-            {&draw.texture_upload, VK_ACCESS_TRANSFER_READ_BIT},
         }};
-        for (const auto& [buffer, destination_access] : buffers) {
-            if (!buffer->buffer) continue;
+        const auto add_host_barrier = [&](const BufferResource* buffer,
+                                          VkAccessFlags destination_access) {
+            if (!buffer->buffer) return;
             VkBufferMemoryBarrier barrier{};
             barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
             barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
@@ -2102,6 +2171,10 @@ bool submit_captured_vulkan_frame(
             barrier.buffer = buffer->buffer;
             barrier.size = VK_WHOLE_SIZE;
             host_barriers.push_back(barrier);
+        };
+        for (const auto& [buffer, access] : buffers) add_host_barrier(buffer, access);
+        for (const DrawTextureResources& texture : draw.textures) {
+            add_host_barrier(&texture.upload, VK_ACCESS_TRANSFER_READ_BIT);
         }
     }
     vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_HOST_BIT,
@@ -2134,40 +2207,36 @@ bool submit_captured_vulkan_frame(
 
     for (size_t i = 0; i < resources.draws.size(); ++i) {
         const DrawResources& draw = resources.draws[i];
-        VkImageMemoryBarrier texture_barrier{};
-        texture_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        texture_barrier.srcAccessMask = 0;
-        texture_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        texture_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        texture_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        texture_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        texture_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        texture_barrier.image = draw.texture.image;
-        texture_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        texture_barrier.subresourceRange.levelCount = 1;
-        texture_barrier.subresourceRange.layerCount = 1;
-        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                             0, nullptr, 0, nullptr, 1, &texture_barrier);
-        VkBufferImageCopy copy{};
-        copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copy.imageSubresource.layerCount = 1;
-        copy.imageExtent = {draws[i].texture_width, draws[i].texture_height, 1};
-        vkCmdCopyBufferToImage(command, draw.texture_upload.buffer, draw.texture.image,
-                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
-        VkImageMemoryBarrier texture_to_sample{};
-        texture_to_sample.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        texture_to_sample.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        texture_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        texture_to_sample.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        texture_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        texture_to_sample.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        texture_to_sample.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        texture_to_sample.image = draw.texture.image;
-        texture_to_sample.subresourceRange = texture_barrier.subresourceRange;
-        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                             0, nullptr, 0, nullptr, 1, &texture_to_sample);
+        for (const DrawTextureResources& texture : draw.textures) {
+            VkImageMemoryBarrier texture_barrier{};
+            texture_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            texture_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            texture_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            texture_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            texture_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            texture_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            texture_barrier.image = texture.image.image;
+            texture_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            texture_barrier.subresourceRange.levelCount = 1;
+            texture_barrier.subresourceRange.layerCount = 1;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                 VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                                 0, nullptr, 0, nullptr, 1, &texture_barrier);
+            VkBufferImageCopy copy{};
+            copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            copy.imageSubresource.layerCount = 1;
+            copy.imageExtent = {texture.width, texture.height, 1};
+            vkCmdCopyBufferToImage(command, texture.upload.buffer, texture.image.image,
+                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+            VkImageMemoryBarrier texture_to_sample = texture_barrier;
+            texture_to_sample.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            texture_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            texture_to_sample.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            texture_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                                 0, nullptr, 0, nullptr, 1, &texture_to_sample);
+        }
     }
 
     VkClearValue clear{};
