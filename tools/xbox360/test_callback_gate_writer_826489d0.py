@@ -36,12 +36,24 @@ assert writer["stores_on_nonzero_guard"]["callback_global_flag"]["value"] == (
     "1 if r4==0, otherwise 0"
 )
 
+def cntlzw(value):
+    return 32 if value == 0 else 32 - value.bit_length()
+
+
 # cntlzw returns 32 only for a zero word. The following rotate/mask extracts
 # bit 5 of that count and moves it into output bit 0.
-for count in range(33):
+for value, expected_count in [
+    (0, 32),
+    (1, 31),
+    (0xFFFF, 16),
+    (0x10000, 15),
+    (0xFFFFFFFF, 0),
+]:
+    count = cntlzw(value)
+    assert count == expected_count
     rotated = ((count << 27) | (count >> 5)) & 0xFFFFFFFF
     flag = rotated & 1
-    assert flag == (1 if count == 32 else 0)
+    assert flag == (1 if value == 0 else 0)
 
 consumer = evidence["static_basis"]["consumer_fragment"]
 assert consumer["start"] == "0x8264A1A4"
