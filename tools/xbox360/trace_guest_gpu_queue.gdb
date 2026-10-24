@@ -69,8 +69,48 @@ commands
   continue
 end
 
+set $software_queue_hits = 0
+set $last_software_head = -1
+set $last_software_tail = -1
+set $last_software_global = -1
+set $last_software_flag = -1
+set $last_software_predicate = -1
+break sub_823B33A0
+commands
+  silent
+  set $software_queue_hits = $software_queue_hits + 1
+  set $ctx = (unsigned char*)$rdi
+  set $base = (unsigned char*)$rsi
+  set $object = *(unsigned int*)$ctx
+  set $head_ptr_raw = *(unsigned int*)($base+$object+0x2a90)
+  set $head_ptr = (($head_ptr_raw & 0xff)<<24) | (($head_ptr_raw & 0xff00)<<8) | (($head_ptr_raw & 0xff0000)>>8) | (($head_ptr_raw & 0xff000000)>>24)
+  set $head_raw = 0
+  set $head = 0
+  if $head_ptr != 0
+    set $head_raw = *(unsigned int*)($base+$head_ptr)
+    set $head = (($head_raw & 0xff)<<24) | (($head_raw & 0xff00)<<8) | (($head_raw & 0xff0000)>>8) | (($head_raw & 0xff000000)>>24)
+  end
+  set $tail_raw = *(unsigned int*)($base+$object+0x2a9c)
+  set $tail = (($tail_raw & 0xff)<<24) | (($tail_raw & 0xff00)<<8) | (($tail_raw & 0xff0000)>>8) | (($tail_raw & 0xff000000)>>24)
+  set $global_raw = *(unsigned int*)($base+0x831b3820)
+  set $global = (($global_raw & 0xff)<<24) | (($global_raw & 0xff00)<<8) | (($global_raw & 0xff0000)>>8) | (($global_raw & 0xff000000)>>24)
+  set $flag = *(unsigned char*)($base+$object+0x2abc)
+  set $predicate = *(unsigned char*)($base+$object+0x2abd)
+  if $software_queue_hits <= 12 || $head != $last_software_head || $tail != $last_software_tail || $global != $last_software_global || $flag != $last_software_flag || $predicate != $last_software_predicate || $software_queue_hits % 128 == 0
+    printf "software_queue_helper hit=%d object=%#x head_ptr=%#x head=%u tail=%u global_831b3820=%u guard_2abc=%#x predicate_2abd=%#x lr=%#llx\n", $software_queue_hits, $object, $head_ptr, $head, $tail, $global, $flag, $predicate, *(unsigned long long*)($ctx+256)
+    set $last_software_head = $head
+    set $last_software_tail = $tail
+    set $last_software_global = $global
+    set $last_software_flag = $flag
+    set $last_software_predicate = $predicate
+  end
+  continue
+end
+
 set $wait_hits = 0
-set $last_wait_state = -1
+set $last_wait_head = -1
+set $last_wait_tail = -1
+set $last_wait_predicate = -1
 break sub_823B34A0
 commands
   silent
@@ -78,11 +118,22 @@ commands
   set $ctx = (unsigned char*)$rdi
   set $base = (unsigned char*)$rsi
   set $object = *(unsigned int*)$ctx
+  set $head_ptr_raw = *(unsigned int*)($base+$object+0x2a90)
+  set $head_ptr = (($head_ptr_raw & 0xff)<<24) | (($head_ptr_raw & 0xff00)<<8) | (($head_ptr_raw & 0xff0000)>>8) | (($head_ptr_raw & 0xff000000)>>24)
+  set $head_raw = 0
+  set $head = 0
+  if $head_ptr != 0
+    set $head_raw = *(unsigned int*)($base+$head_ptr)
+    set $head = (($head_raw & 0xff)<<24) | (($head_raw & 0xff00)<<8) | (($head_raw & 0xff0000)>>8) | (($head_raw & 0xff000000)>>24)
+  end
+  set $tail_raw = *(unsigned int*)($base+$object+0x2a9c)
+  set $tail = (($tail_raw & 0xff)<<24) | (($tail_raw & 0xff00)<<8) | (($tail_raw & 0xff0000)>>8) | (($tail_raw & 0xff000000)>>24)
   set $predicate = *(unsigned char*)($base+$object+0x2abd)
-  set $wait_state = ((unsigned long long)$object << 8) | $predicate
-  if $wait_hits == 1 || $wait_state != $last_wait_state || $wait_hits % 128 == 0
-    printf "ring_wait hit=%d gdb_thread=%d object=%#x predicate=%#x arg4=%#llx arg5=%#llx arg6=%#llx lr=%#llx\n", $wait_hits, $_thread, $object, $predicate, *(unsigned long long*)($rdi+32), *(unsigned long long*)($rdi+40), *(unsigned long long*)($rdi+48), *(unsigned long long*)($rdi+256)
-    set $last_wait_state = $wait_state
+  if $wait_hits == 1 || $head != $last_wait_head || $tail != $last_wait_tail || $predicate != $last_wait_predicate || $wait_hits % 128 == 0
+    printf "ring_wait hit=%d gdb_thread=%d object=%#x head_ptr=%#x head=%u tail=%u predicate=%#x arg4=%#llx arg5=%#llx arg6=%#llx lr=%#llx\n", $wait_hits, $_thread, $object, $head_ptr, $head, $tail, $predicate, *(unsigned long long*)($rdi+32), *(unsigned long long*)($rdi+40), *(unsigned long long*)($rdi+48), *(unsigned long long*)($rdi+256)
+    set $last_wait_head = $head
+    set $last_wait_tail = $tail
+    set $last_wait_predicate = $predicate
   end
   continue
 end
