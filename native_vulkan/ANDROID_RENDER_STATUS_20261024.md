@@ -371,3 +371,30 @@ recorded in
 [`process2_redmi_note8pro_depth_resolve_20261024.json`](../evidence/process2_redmi_note8pro_depth_resolve_20261024.json)
 and
 [`process2_provider_resolve_integration_20261024.json`](../evidence/process2_provider_resolve_integration_20261024.json).
+
+## Captured DXT4/5 texture support (2026-10-24)
+
+The retail PM4 trace contains tiled format-20 DXT4/5 textures in draws #32 and
+#45, plus format-59 DXT5A in draw #44. Draw #32 is 256x32 with a 256-pixel
+pitch; draw #45 is 64x32 with a 128-pixel pitch; draw #44 is 512x32 with a
+512-pixel pitch. The native texture input path sizes their padded 32x32-block
+macro-tile allocations, untile-reads the guest bytes, and expands DXT4/5 color
+and alpha or DXT5A alpha blocks to RGBA8 on the CPU. DXT5A's captured channel
+swizzle reads W. This avoids requiring optional Vulkan BC-compression support
+and remains suitable for Vulkan 1.1 and ARM64. Draw #28 uses format 20 with a
+linear mip filter and mip range 0..9, so it remains fail-closed until mip-chain
+placement and sampling are implemented.
+
+The parser/decoder regression uses the exact retail descriptors with synthetic
+compressed blocks; it checks extent, pitch, guest range, byte swapping, tiled
+address bounds, both DXT alpha interpolation modes, and RGBA8 output. It passed
+under AddressSanitizer, in the Linux native suite 4/4, in the ReXGlue plugin
+suite 4/4, and on the Redmi Note 8 Pro (Android API 33). The Android
+`arm64-v8a` check target built with NDK 28.2.13676358 / API 29. Vulkan
+validation was enabled for the Linux native and plugin suites. This does not
+verify retail texture pixels or a visible menu/race frame. The existing Linux
+process was left running and still maps the older plugin SHA-256
+`0bcb918f41fd1f85d7e69f808bfc029635340f5b400ca2d18a43d495eb796e62`; the
+current rebuilt plugin hash is recorded in the evidence JSON below.
+Evidence and raw descriptors are in
+[`process2_retail_dxt4_5_texture_decode_20261024.json`](../evidence/process2_retail_dxt4_5_texture_decode_20261024.json).

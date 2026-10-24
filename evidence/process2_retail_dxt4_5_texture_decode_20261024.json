@@ -1,0 +1,89 @@
+{
+  "format": "SHIFT.Process2RetailDxt4_5TextureDecode/1",
+  "observed_at": "2026-10-24T22:47:22+03:00",
+  "input": {
+    "platform": "Xbox 360 retail PM4 capture, inspected on Linux AMD64",
+    "xbox_default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "capture_log": "/home/pes/work/process2-linux-readback-frame200-20261024/bin/logs/nfs_shift_014.7.log",
+    "live_process_plugin_sha256": "0bcb918f41fd1f85d7e69f808bfc029635340f5b400ca2d18a43d495eb796e62",
+    "rebuilt_plugin_sha256": "c16d04556d49607e979131b2f987215ca8ca6ab27f72eeca0ddb4a82b1c535a7"
+  },
+  "captured_draws": [
+    {
+      "draw": 32,
+      "descriptor_words": ["0x820048fe", "0x0a199054", "0x0003e0ff", "0x06a80d10", "0x00000c03", "0x00000a10"],
+      "guest_address": "0x0a199000",
+      "format": 20,
+      "format_name": "DXT4/5",
+      "extent": [256, 32],
+      "pitch_pixels": 256,
+      "mip_filter": "linear",
+      "mip_min": 0,
+      "mip_max": 0,
+      "source_storage_bytes": 32768,
+      "status": "decoded by the native texture input path"
+    },
+    {
+      "draw": 45,
+      "descriptor_words": ["0x810048fe", "0x0a1e9054", "0x0003e03f", "0x06a80d10", "0x00000c03", "0x00000a10"],
+      "guest_address": "0x0a1e9000",
+      "format": 20,
+      "format_name": "DXT4/5",
+      "extent": [64, 32],
+      "pitch_pixels": 128,
+      "mip_filter": "linear",
+      "mip_min": 0,
+      "mip_max": 0,
+      "source_storage_bytes": 16384,
+      "status": "decoded by the native texture input path"
+    },
+    {
+      "draw": 28,
+      "descriptor_words": ["0x840248fe", "0x0a24b054", "0x0000e1ff", "0x06a80d10", "0x00000e43", "0x0a24ba10"],
+      "guest_address": "0x0a24b000",
+      "format": 20,
+      "format_name": "DXT4/5",
+      "extent": [512, 8],
+      "pitch_pixels": 512,
+      "mip_filter": "linear",
+      "mip_min": 0,
+      "mip_max": 9,
+      "status": "remains rejected until mip-chain storage and sampling are implemented"
+    },
+    {
+      "draw": 44,
+      "descriptor_words": ["0x840048fe", "0x0a1ed07b", "0x0003e1ff", "0x06a80eda", "0x00000c03", "0x00000a10"],
+      "guest_address": "0x0a1ed000",
+      "format": 59,
+      "format_name": "DXT5A",
+      "extent": [512, 32],
+      "pitch_pixels": 512,
+      "source_storage_bytes": 32768,
+      "captured_swizzle": "One,One,One,W",
+      "status": "decoded by the native texture input path"
+    }
+  ],
+  "implementation": {
+    "texture_format_mapping": "Xenos format IDs were cross-checked against the format enum only; no emulator runtime or rendering code is linked.",
+    "format_20": "Decodes the captured 16-byte-per-4x4-block format into RGBA8 on the CPU, including both DXT alpha endpoint modes.",
+    "format_59": "Decodes the captured 8-byte DXT5A alpha block and places its values in W as required by the captured One,One,One,W swizzle.",
+    "tiled_storage": "Reads full 32x32 compressed-block macro-tile allocations using the captured pitch, while emitting only the active base-level texels.",
+    "device_requirements": "No Vulkan compressed-texture feature is required; the path uses Vulkan 1.1-compatible RGBA8 upload and is CPU/ARM64 portable."
+  },
+  "checks": {
+    "host_native_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation",
+    "host_rexglue_plugin_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation",
+    "address_sanitizer": "shift_xbox_draw_input_check passed with AddressSanitizer",
+    "android_arm64_build": "shift_xbox_draw_input_check built for arm64-v8a, NDK 28.2.13676358, API 29; SHA-256 4b11b474cdf43371afa87d5468e9adab4556bee82bc88af117c7e5dc82f0c707",
+    "redmi_note8_pro": "shift_xbox_draw_input_check ran on Redmi Note 8 Pro (begonia, Android API 33) and passed"
+  },
+  "limitations": [
+    "The regression uses synthetic compressed block bytes placed under actual captured retail descriptors. It validates parsing, padded allocation bounds, byte order, untile, and DXT alpha decoding; it does not prove the contents of the retail textures or visible parity.",
+    "No fresh retail run was performed with the rebuilt plugin. The existing process remains on the older plugin hash listed above and was left running.",
+    "Draw 28 needs real mip-chain addressing and sampling. A sustained menu or race frame is not established by this change."
+  ],
+  "format_reference": [
+    "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h#L3038-L3043",
+    "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h#L3116-L3118"
+  ]
+}

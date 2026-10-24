@@ -1309,6 +1309,170 @@ int main() {
     require_dxt2_3_pixel(1, 64, 0, 16);
     require_dxt2_3_pixel(127, 127, 31, 31);
 
+    struct LiveDxt4_5Capture {
+        uint32_t draw;
+        uint32_t descriptor[6];
+        uint32_t guest_address;
+        uint32_t width;
+        uint32_t height;
+        uint32_t pitch;
+        uint32_t storage_bytes;
+    };
+    const LiveDxt4_5Capture live_dxt4_5_captures[] = {
+        {32, {0x820048FEu, 0x0A199054u, 0x0003E0FFu, 0x06A80D10u,
+              0x00000C03u, 0x00000A10u}, 0x0A199000u, 256, 32, 256, 32768},
+        {45, {0x810048FEu, 0x0A1E9054u, 0x0003E03Fu, 0x06A80D10u,
+              0x00000C03u, 0x00000A10u}, 0x0A1E9000u, 64, 32, 128, 16384},
+    };
+    shift::xbox::CapturedTextureFetch live_dxt4_5_fetch{};
+    for (const auto& capture : live_dxt4_5_captures) {
+        const bool decoded = shift::xbox::decode_captured_texture_fetch(
+            capture.descriptor, &live_dxt4_5_fetch, &error);
+        if (!decoded) {
+            std::cerr << "captured retail DXT4/5 draw #" << capture.draw
+                      << " decode failed: " << error << '\n';
+        }
+        const bool matches = decoded &&
+            live_dxt4_5_fetch.guest_address == capture.guest_address &&
+            live_dxt4_5_fetch.format == 20 && live_dxt4_5_fetch.endian_mode == 1 &&
+            live_dxt4_5_fetch.tiled && live_dxt4_5_fetch.width == capture.width &&
+            live_dxt4_5_fetch.height == capture.height &&
+            live_dxt4_5_fetch.pitch == capture.pitch &&
+            live_dxt4_5_fetch.mip_filter == 1 &&
+            live_dxt4_5_fetch.byte_length == capture.storage_bytes;
+        if (!matches && decoded) {
+            std::cerr << "captured retail DXT4/5 draw #" << capture.draw
+                      << " decoded as addr=" << std::hex << live_dxt4_5_fetch.guest_address
+                      << " format=" << std::dec << live_dxt4_5_fetch.format
+                      << " size=" << live_dxt4_5_fetch.width << 'x'
+                      << live_dxt4_5_fetch.height << " pitch=" << live_dxt4_5_fetch.pitch
+                      << " mip=" << static_cast<uint32_t>(live_dxt4_5_fetch.mip_filter)
+                      << " bytes=" << live_dxt4_5_fetch.byte_length << '\n';
+        }
+        require(matches,
+                "captured retail DXT4/5 texture descriptor was rejected or misdecoded");
+    }
+    const uint32_t captured_dxt4_5_mip_chain_descriptor[] = {
+        0x840248FEu, 0x0A24B054u, 0x0000E1FFu, 0x06A80D10u,
+        0x00000E43u, 0x0A24BA10u,
+    };
+    require(!shift::xbox::decode_captured_texture_fetch(
+                captured_dxt4_5_mip_chain_descriptor, &live_dxt4_5_fetch, &error) &&
+                error == "unsupported captured texture-fetch descriptor",
+            "captured DXT4/5 texture with a linear mip chain was accepted without mip data");
+
+    require(shift::xbox::decode_captured_texture_fetch(
+                live_dxt4_5_captures[0].descriptor, &live_dxt4_5_fetch, &error),
+            "captured retail DXT4/5 texture could not be selected for untile regression");
+    std::vector<uint8_t> tiled_dxt4_5(live_dxt4_5_fetch.byte_length, 0);
+    for (uint32_t block_y = 0; block_y < live_dxt4_5_fetch.height / 4u; ++block_y) {
+        for (uint32_t block_x = 0; block_x < live_dxt4_5_fetch.width / 4u; ++block_x) {
+            std::array<uint8_t, 16> normalized_block{};
+            normalized_block[0] = block_x == 0 ? 10u : block_x == 1 ? 200u : 255u;
+            normalized_block[1] = block_x == 0 ? 20u : block_x == 1 ? 100u : 255u;
+            if (block_x == 0) normalized_block[2] = 0x3Eu;  // alpha indices 6, 7
+            if (block_x == 1) normalized_block[2] = 0x1Au;  // alpha indices 2, 3
+            normalized_block[9] = 0xF8u;  // RGB565 red endpoints
+            normalized_block[11] = 0xF8u;
+            const size_t destination = dxt2_3_tiled_offset(
+                block_x, block_y, live_dxt4_5_fetch.pitch / 4u);
+            require(destination + normalized_block.size() <= tiled_dxt4_5.size(),
+                    "captured DXT4/5 tiled address exceeded its padded allocation");
+            for (size_t byte = 0; byte < normalized_block.size(); ++byte) {
+                tiled_dxt4_5[destination + byte] = normalized_block[byte ^ 1u];
+            }
+        }
+    }
+    std::vector<uint8_t> decoded_dxt4_5;
+    require(shift::xbox::untile_captured_texture_2d(
+                live_dxt4_5_fetch, tiled_dxt4_5.data(), tiled_dxt4_5.size(),
+                &decoded_dxt4_5, &error) &&
+                decoded_dxt4_5.size() ==
+                    static_cast<size_t>(live_dxt4_5_fetch.width) *
+                    live_dxt4_5_fetch.height * 4u,
+            "captured tiled DXT4/5 texture did not decode to Vulkan RGBA8");
+    const auto require_dxt4_5_pixel = [&](uint32_t x, uint8_t alpha) {
+        const size_t pixel = (static_cast<size_t>(x) * 4u);
+        require(decoded_dxt4_5[pixel] == 255u && decoded_dxt4_5[pixel + 1u] == 0u &&
+                    decoded_dxt4_5[pixel + 2u] == 0u &&
+                    decoded_dxt4_5[pixel + 3u] == alpha,
+                "captured DXT4/5 alpha interpolation or color decode changed");
+    };
+    require_dxt4_5_pixel(0, 0);
+    require_dxt4_5_pixel(1, 255);
+    require_dxt4_5_pixel(4, 185);
+    require_dxt4_5_pixel(5, 171);
+
+    const uint32_t captured_dxt5a_descriptor[] = {
+        0x840048FEu, 0x0A1ED07Bu, 0x0003E1FFu, 0x06A80EDAu,
+        0x00000C03u, 0x00000A10u,
+    };
+    shift::xbox::CapturedTextureFetch dxt5a_fetch{};
+    require(shift::xbox::decode_captured_texture_fetch(
+                captured_dxt5a_descriptor, &dxt5a_fetch, &error) &&
+                dxt5a_fetch.guest_address == 0x0A1ED000u &&
+                dxt5a_fetch.format == 59 && dxt5a_fetch.endian_mode == 1 &&
+                dxt5a_fetch.tiled && dxt5a_fetch.width == 512 &&
+                dxt5a_fetch.height == 32 && dxt5a_fetch.pitch == 512 &&
+                dxt5a_fetch.byte_length == 32768 && dxt5a_fetch.swizzle == 0x76Du,
+            "captured retail DXT5A texture descriptor was rejected or misdecoded");
+    const auto dxt5a_tiled_offset = [](uint32_t x, uint32_t y,
+                                       uint32_t pitch_blocks) {
+        const uint64_t outer_blocks =
+            ((static_cast<uint64_t>(x >> 5) +
+              static_cast<uint64_t>(y >> 5) * (pitch_blocks >> 5)) << 6);
+        const uint64_t inner_blocks = (((y >> 1) & 0x7u) << 3) | (x & 0x7u);
+        const uint64_t outer_inner_bytes = (outer_blocks | inner_blocks) << 3;
+        const uint32_t bank = (y >> 4) & 1u;
+        const uint32_t pipe = ((x >> 3) & 3u) ^ (((y >> 3) & 1u) << 1);
+        return static_cast<size_t>(
+            (static_cast<uint64_t>(y & 1u) << 4) |
+            (static_cast<uint64_t>(pipe) << 6) |
+            (static_cast<uint64_t>(bank) << 11) |
+            (outer_inner_bytes & 0xFu) |
+            (((outer_inner_bytes >> 4) & 1u) << 5) |
+            (((outer_inner_bytes >> 5) & 7u) << 8) |
+            (outer_inner_bytes >> 8 << 12));
+    };
+    std::vector<uint8_t> tiled_dxt5a(dxt5a_fetch.byte_length, 0);
+    std::vector<bool> seen_dxt5a_blocks(dxt5a_fetch.byte_length / 8u, false);
+    for (uint32_t block_y = 0; block_y < dxt5a_fetch.height / 4u; ++block_y) {
+        for (uint32_t block_x = 0; block_x < dxt5a_fetch.width / 4u; ++block_x) {
+            std::array<uint8_t, 8> normalized_block{};
+            normalized_block[0] = block_x == 0 ? 10u : block_x == 1 ? 200u : 255u;
+            normalized_block[1] = block_x == 0 ? 20u : block_x == 1 ? 100u : 255u;
+            if (block_x == 0) normalized_block[2] = 0x3Eu;
+            if (block_x == 1) normalized_block[2] = 0x1Au;
+            const size_t destination = dxt5a_tiled_offset(
+                block_x, block_y, dxt5a_fetch.pitch / 4u);
+            require(destination + normalized_block.size() <= tiled_dxt5a.size() &&
+                        destination % 8u == 0 &&
+                        !seen_dxt5a_blocks[destination / 8u],
+                    "captured DXT5A tiled addresses overlapped or exceeded storage");
+            seen_dxt5a_blocks[destination / 8u] = true;
+            for (size_t byte = 0; byte < normalized_block.size(); ++byte) {
+                tiled_dxt5a[destination + byte] = normalized_block[byte ^ 1u];
+            }
+        }
+    }
+    std::vector<uint8_t> decoded_dxt5a;
+    require(shift::xbox::untile_captured_texture_2d(
+                dxt5a_fetch, tiled_dxt5a.data(), tiled_dxt5a.size(),
+                &decoded_dxt5a, &error) &&
+                decoded_dxt5a.size() == 512u * 32u * 4u,
+            "captured tiled DXT5A texture did not decode to Vulkan RGBA8");
+    const auto require_dxt5a_pixel = [&](uint32_t x, uint8_t alpha) {
+        const size_t pixel = static_cast<size_t>(x) * 4u;
+        require(decoded_dxt5a[pixel] == 255u && decoded_dxt5a[pixel + 1u] == 255u &&
+                    decoded_dxt5a[pixel + 2u] == 255u &&
+                    decoded_dxt5a[pixel + 3u] == alpha,
+                "captured DXT5A alpha values or W-channel mapping changed");
+    };
+    require_dxt5a_pixel(0, 0);
+    require_dxt5a_pixel(1, 255);
+    require_dxt5a_pixel(4, 185);
+    require_dxt5a_pixel(5, 171);
+
     std::vector<uint8_t> linear_dxt2_3(tiled_dxt2_3.size());
     for (uint32_t block_y = 0; block_y < 32; ++block_y) {
         for (uint32_t block_x = 0; block_x < 32; ++block_x) {

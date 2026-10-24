@@ -59,6 +59,65 @@ uint64_t tiled_2d_offset_16bpb(uint32_t x, uint32_t y, uint32_t pitch_blocks) {
            (offset & 0x3Fu);
 }
 
+uint64_t tiled_2d_offset_8bpb(uint32_t x, uint32_t y, uint32_t pitch_blocks) {
+    const uint64_t outer_blocks =
+        ((static_cast<uint64_t>(x >> 5) +
+          static_cast<uint64_t>(y >> 5) * (pitch_blocks >> 5)) << 6);
+    const uint64_t inner_blocks = (((y >> 1) & 0x7u) << 3) | (x & 0x7u);
+    const uint64_t outer_inner_bytes = (outer_blocks | inner_blocks) << 3;
+    const uint32_t bank = (y >> 4) & 1u;
+    const uint32_t pipe = ((x >> 3) & 3u) ^ (((y >> 3) & 1u) << 1);
+
+    return (static_cast<uint64_t>(y & 1u) << 4) |
+           (static_cast<uint64_t>(pipe) << 6) |
+           (static_cast<uint64_t>(bank) << 11) |
+           (outer_inner_bytes & 0xFu) |
+           (((outer_inner_bytes >> 4) & 1u) << 5) |
+           (((outer_inner_bytes >> 5) & 7u) << 8) |
+           (outer_inner_bytes >> 8 << 12);
+}
+
+uint64_t compressed_texture_storage_bytes(uint32_t pitch_pixels, uint32_t height,
+                                          uint32_t bytes_per_block, bool tiled) {
+    const uint64_t blocks_wide = pitch_pixels / 4u;
+    const uint64_t blocks_high = (height + 3u) / 4u;
+    if (!tiled) return blocks_wide * blocks_high * bytes_per_block;
+    // Xenos tiled compressed subresources allocate complete 32x32 block tiles.
+    const uint64_t tiles_wide = (blocks_wide + 31u) / 32u;
+    const uint64_t tiles_high = (blocks_high + 31u) / 32u;
+    return tiles_wide * tiles_high * 32u * 32u * bytes_per_block;
+}
+
+struct Dxt5AlphaBlock {
+    std::array<uint8_t, 8> values{};
+    uint64_t indices = 0;
+};
+
+Dxt5AlphaBlock decode_dxt5_alpha_block(const uint8_t* block) {
+    Dxt5AlphaBlock decoded{};
+    decoded.values[0] = block[0];
+    decoded.values[1] = block[1];
+    if (decoded.values[0] > decoded.values[1]) {
+        for (uint32_t i = 2; i < 8; ++i) {
+            decoded.values[i] = static_cast<uint8_t>(
+                ((8u - i) * decoded.values[0] +
+                 (i - 1u) * decoded.values[1]) / 7u);
+        }
+    } else {
+        for (uint32_t i = 2; i < 6; ++i) {
+            decoded.values[i] = static_cast<uint8_t>(
+                ((6u - i) * decoded.values[0] +
+                 (i - 1u) * decoded.values[1]) / 5u);
+        }
+        decoded.values[6] = 0;
+        decoded.values[7] = 255;
+    }
+    for (uint32_t i = 0; i < 6; ++i) {
+        decoded.indices |= static_cast<uint64_t>(block[2u + i]) << (i * 8u);
+    }
+    return decoded;
+}
+
 uint32_t read_be32(const uint8_t* bytes) {
     return (static_cast<uint32_t>(bytes[0]) << 24) |
            (static_cast<uint32_t>(bytes[1]) << 16) |
@@ -899,17 +958,25 @@ bool decode_captured_texture_fetch(
     const uint32_t mip_min = (descriptor_words[4] >> 2) & 0xFu;
     const uint32_t mip_max = (descriptor_words[4] >> 6) & 0xFu;
     const uint32_t dimension = (descriptor_words[5] >> 9) & 0x3u;
+    const uint32_t mip_filter = (descriptor_words[3] >> 23) & 0x3u;
+    const uint32_t pitch = ((descriptor_words[0] >> 22) & 0x1FFu) << 5;
 
     const bool rgba8 = format == 6 && endian_mode == 2;
-    const bool dxt2_3 = format == 19 && endian_mode == 1;
-    if (fetch_type != 2 || (!rgba8 && !dxt2_3) || (rgba8 && !tiled) || stacked ||
-        stack_depth != 0 || dimension != 1 || mip_min != 0 || mip_max != 0) {
+    const bool dxt = (format == 19 || format == 20) && endian_mode == 1;
+    const bool dxt5a = format == 59 && endian_mode == 1;
+    const bool compressed = dxt || dxt5a;
+    const bool valid_texture_layout = rgba8
+        ? tiled && pitch == width
+        : compressed && width % 4u == 0 && height % 4u == 0 && pitch >= width &&
+              pitch % 4u == 0 && (!tiled || pitch % 128u == 0);
+    if (fetch_type != 2 || !valid_texture_layout || stacked || stack_depth != 0 ||
+        dimension != 1 || mip_min != 0 || (mip_max != 0 && mip_filter != 2u)) {
         return fail("unsupported captured texture-fetch descriptor", error);
     }
 
-    const uint64_t byte_length = rgba8
-        ? static_cast<uint64_t>(width) * height * 4
-        : static_cast<uint64_t>((width + 3u) / 4u) * ((height + 3u) / 4u) * 16u;
+    const uint64_t byte_length = rgba8 ? static_cast<uint64_t>(width) * height * 4u
+        : compressed_texture_storage_bytes(pitch, height, dxt5a ? 8u : 16u,
+                                           tiled != 0);
     if (!width || !height || byte_length > std::numeric_limits<uint32_t>::max()) {
         return fail("captured texture dimensions are out of range", error);
     }
@@ -927,7 +994,7 @@ bool decode_captured_texture_fetch(
         (descriptor_words[0] >> 16) & 0x7u,
         width,
         height,
-        ((descriptor_words[0] >> 22) & 0x1FFu) << 5,
+        pitch,
         static_cast<uint32_t>(byte_length),
         dimension,
         (descriptor_words[3] >> 1) & 0xFFFu,
@@ -1502,58 +1569,98 @@ bool untile_captured_texture_2d(
     std::string* error) {
     const bool rgba8 = texture.format == 6 && texture.endian_mode == 2;
     const bool dxt2_3 = texture.format == 19 && texture.endian_mode == 1;
-    if (!guest_bytes || !vulkan_bytes || (!rgba8 && !dxt2_3) ||
-        texture.dimension != 1 || (rgba8 && !texture.tiled) || !texture.width ||
-        !texture.height || texture.pitch != texture.width ||
-        (rgba8 && ((texture.width & 31u) != 0 || (texture.height & 31u) != 0)) ||
-        (dxt2_3 && ((texture.width & 3u) != 0 ||
-                    (texture.height & 3u) != 0)) ||
-        (dxt2_3 && texture.tiled &&
-         ((texture.width & 127u) != 0 || (texture.height & 127u) != 0))) {
+    const bool dxt4_5 = texture.format == 20 && texture.endian_mode == 1;
+    const bool dxt = dxt2_3 || dxt4_5;
+    const bool dxt5a = texture.format == 59 && texture.endian_mode == 1;
+    const bool compressed = dxt || dxt5a;
+    const uint32_t bytes_per_block = dxt5a ? 8u : 16u;
+    const bool valid_texture_layout = rgba8
+        ? texture.tiled && texture.pitch == texture.width &&
+              (texture.width & 31u) == 0 && (texture.height & 31u) == 0
+        : compressed && texture.width % 4u == 0 && texture.height % 4u == 0 &&
+              texture.pitch >= texture.width && texture.pitch % 4u == 0 &&
+              (!texture.tiled || texture.pitch % 128u == 0);
+    if (!guest_bytes || !vulkan_bytes || (!rgba8 && !compressed) ||
+        texture.dimension != 1 || !texture.width || !texture.height ||
+        !valid_texture_layout) {
         return fail("unsupported captured texture layout", error);
     }
 
     const uint32_t blocks_wide = (texture.width + 3u) / 4u;
     const uint32_t blocks_high = (texture.height + 3u) / 4u;
-    const uint64_t expected_bytes = rgba8
-        ? static_cast<uint64_t>(texture.width) * texture.height * 4
-        : static_cast<uint64_t>(blocks_wide) * blocks_high * 16u;
-    if (expected_bytes > std::numeric_limits<uint32_t>::max() ||
-        texture.byte_length != expected_bytes || byte_length != expected_bytes) {
+    const uint64_t output_bytes = static_cast<uint64_t>(texture.width) *
+                                  texture.height * 4u;
+    const uint64_t linear_block_bytes =
+        static_cast<uint64_t>(blocks_wide) * blocks_high * bytes_per_block;
+    const uint64_t source_bytes = rgba8 ? output_bytes
+        : compressed_texture_storage_bytes(texture.pitch, texture.height,
+                                           bytes_per_block, texture.tiled);
+    if (output_bytes > std::numeric_limits<uint32_t>::max() ||
+        linear_block_bytes > std::numeric_limits<uint32_t>::max() ||
+        source_bytes > std::numeric_limits<uint32_t>::max() ||
+        texture.byte_length != source_bytes || byte_length != source_bytes) {
         return fail("captured texture byte range does not match its dimensions", error);
     }
 
-    if (dxt2_3) {
+    if (compressed) {
         const uint32_t pitch_blocks = texture.pitch / 4u;
-        if (texture.tiled && (texture.pitch & 127u) != 0) {
-            return fail("unsupported captured DXT2/3 texture pitch", error);
-        }
-        std::vector<uint8_t> linear_blocks(static_cast<size_t>(expected_bytes));
+        std::vector<uint8_t> linear_blocks(static_cast<size_t>(linear_block_bytes));
         for (uint32_t y = 0; y < blocks_high; ++y) {
             for (uint32_t x = 0; x < blocks_wide; ++x) {
                 const size_t source = texture.tiled
-                    ? static_cast<size_t>(tiled_2d_offset_16bpb(x, y, pitch_blocks))
-                    : (static_cast<size_t>(y) * blocks_wide + x) * 16u;
+                    ? static_cast<size_t>(dxt5a
+                          ? tiled_2d_offset_8bpb(x, y, pitch_blocks)
+                          : tiled_2d_offset_16bpb(x, y, pitch_blocks))
+                    : (static_cast<size_t>(y) * pitch_blocks + x) * bytes_per_block;
                 const size_t destination =
-                    (static_cast<size_t>(y) * blocks_wide + x) * 16u;
-                if (source + 16u > byte_length) {
-                    return fail("captured DXT2/3 address exceeds its byte range", error);
+                    (static_cast<size_t>(y) * blocks_wide + x) * bytes_per_block;
+                if (source + bytes_per_block > source_bytes) {
+                    return fail("captured DXT address exceeds its byte range", error);
                 }
-                std::copy_n(guest_bytes + source, 16u,
+                std::copy_n(guest_bytes + source, bytes_per_block,
                             linear_blocks.begin() + destination);
             }
         }
 
-        std::vector<uint8_t> rgba(static_cast<size_t>(texture.width) *
-                                  texture.height * 4u);
+        for (size_t offset = 0; offset < linear_blocks.size(); offset += 2u) {
+            std::swap(linear_blocks[offset], linear_blocks[offset + 1u]);
+        }
+
+        if (dxt5a) {
+            std::vector<uint8_t> rgba(static_cast<size_t>(output_bytes));
+            for (uint32_t block_y = 0; block_y < blocks_high; ++block_y) {
+                for (uint32_t block_x = 0; block_x < blocks_wide; ++block_x) {
+                    const size_t block_offset =
+                        (static_cast<size_t>(block_y) * blocks_wide + block_x) * 8u;
+                    const Dxt5AlphaBlock alpha =
+                        decode_dxt5_alpha_block(linear_blocks.data() + block_offset);
+                    for (uint32_t y = 0; y < 4u; ++y) {
+                        for (uint32_t x = 0; x < 4u; ++x) {
+                            const uint32_t pixel = y * 4u + x;
+                            const uint32_t alpha_index = static_cast<uint32_t>(
+                                (alpha.indices >> (pixel * 3u)) & 7u);
+                            const size_t destination =
+                                (static_cast<size_t>(block_y * 4u + y) * texture.width +
+                                 block_x * 4u + x) * 4u;
+                            rgba[destination] = 255u;
+                            rgba[destination + 1u] = 255u;
+                            rgba[destination + 2u] = 255u;
+                            rgba[destination + 3u] = alpha.values[alpha_index];
+                        }
+                    }
+                }
+            }
+            *vulkan_bytes = std::move(rgba);
+            if (error) error->clear();
+            return true;
+        }
+
+        std::vector<uint8_t> rgba(static_cast<size_t>(output_bytes));
         const auto expand_565 = [](uint16_t packed, uint8_t* color) {
             color[0] = static_cast<uint8_t>(((packed >> 11) & 0x1Fu) * 255u / 31u);
             color[1] = static_cast<uint8_t>(((packed >> 5) & 0x3Fu) * 255u / 63u);
             color[2] = static_cast<uint8_t>((packed & 0x1Fu) * 255u / 31u);
         };
-        for (size_t offset = 0; offset < linear_blocks.size(); offset += 2u) {
-            std::swap(linear_blocks[offset], linear_blocks[offset + 1u]);
-        }
         for (uint32_t block_y = 0; block_y < blocks_high; ++block_y) {
             for (uint32_t block_x = 0; block_x < blocks_wide; ++block_x) {
                 const size_t block_offset =
@@ -1563,6 +1670,9 @@ bool untile_captured_texture_2d(
                     return static_cast<uint16_t>(block[byte]) |
                            (static_cast<uint16_t>(block[byte + 1u]) << 8);
                 };
+                const Dxt5AlphaBlock alpha = dxt4_5
+                    ? decode_dxt5_alpha_block(block)
+                    : Dxt5AlphaBlock{};
                 const uint16_t color_0 = read_le16(8u);
                 const uint16_t color_1 = read_le16(10u);
                 std::array<std::array<uint8_t, 3>, 4> colors{};
@@ -1581,8 +1691,9 @@ bool untile_captured_texture_2d(
                 for (uint32_t y = 0; y < 4u; ++y) {
                     for (uint32_t x = 0; x < 4u; ++x) {
                         const uint32_t pixel = y * 4u + x;
-                        const uint32_t alpha_nibble =
-                            (block[pixel >> 1] >> ((pixel & 1u) * 4u)) & 0xFu;
+                        const uint32_t alpha_value = dxt4_5
+                            ? alpha.values[(alpha.indices >> (pixel * 3u)) & 7u]
+                            : (((block[pixel >> 1] >> ((pixel & 1u) * 4u)) & 0xFu) * 17u);
                         const uint32_t color_index = (indices >> (pixel * 2u)) & 3u;
                         const size_t destination =
                             (static_cast<size_t>(block_y * 4u + y) * texture.width +
@@ -1590,7 +1701,7 @@ bool untile_captured_texture_2d(
                         rgba[destination] = colors[color_index][0];
                         rgba[destination + 1u] = colors[color_index][1];
                         rgba[destination + 2u] = colors[color_index][2];
-                        rgba[destination + 3u] = static_cast<uint8_t>(alpha_nibble * 17u);
+                        rgba[destination + 3u] = static_cast<uint8_t>(alpha_value);
                     }
                 }
             }
@@ -1600,7 +1711,7 @@ bool untile_captured_texture_2d(
         return true;
     }
 
-    std::vector<uint8_t> linear(static_cast<size_t>(expected_bytes));
+    std::vector<uint8_t> linear(static_cast<size_t>(output_bytes));
     for (uint32_t y = 0; y < texture.height; ++y) {
         for (uint32_t x = 0; x < texture.width; ++x) {
             const size_t source = static_cast<size_t>(

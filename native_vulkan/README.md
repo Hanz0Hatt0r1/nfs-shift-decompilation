@@ -19,6 +19,14 @@ are in [`ANDROID_RENDER_STATUS_20261024.md`](ANDROID_RENDER_STATUS_20261024.md).
 The resolve mode still needs comparison against a subsequent retail frame.
 The latest full Android activity exits before producing that frame.
 
+Retail draws #32 and #45 supplied tiled Xenos format-20 DXT4/5 textures, and
+draw #44 supplied format-59 DXT5A. The native input path now untile-decodes
+these captured base-level layouts to RGBA8 without requiring a Vulkan
+BC-compression feature. Descriptor-shaped regressions passed on Linux and
+Redmi Note 8 Pro. Draw #28 still needs mip-chain handling; no updated retail
+frame has verified these draws yet. See
+[`process2_retail_dxt4_5_texture_decode_20261024.json`](../evidence/process2_retail_dxt4_5_texture_decode_20261024.json).
+
 ## Implemented stages
 
 - Vulkan instance/device/queue bootstrap;
