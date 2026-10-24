@@ -7,7 +7,7 @@
 # ReXGlue PPCFunc uses void(PPCContext&, uint8_t*). Under the Linux AMD64
 # System V ABI, rdi points to PPCContext and rsi is its virtual-memory base.
 # PPCContext's 64-bit GPR fields put guest r3/r4/r13/lr at byte offsets
-# 0/32/104/256. No guest memory is modified or read by this trace.
+# 0/32/104/256. The trace reads guest RAM through rsi and never writes it.
 
 set pagination off
 set confirm off
@@ -15,34 +15,75 @@ set print thread-events off
 set breakpoint pending off
 
 set $interrupt_hits = 0
+set $last_source0_state = -1
 break sub_823B37B8
 commands
   silent
   set $interrupt_hits = $interrupt_hits + 1
-  if $interrupt_hits == 1 || $interrupt_hits % 64 == 0
-    printf "source0_callback hit=%d gdb_thread=%d ctx=%p base=%p r3=%#llx r4=%#llx r13=%#llx lr=%#llx\n", $interrupt_hits, $_thread, (void*)$rdi, (void*)$rsi, *(unsigned long long*)($rdi), *(unsigned long long*)($rdi+32), *(unsigned long long*)($rdi+104), *(unsigned long long*)($rdi+256)
+  set $ctx = (unsigned char*)$rdi
+  set $base = (unsigned char*)$rsi
+  set $source = *(unsigned int*)$ctx
+  if $source == 0
+    # r4 is the callback object on the source-0 path. Guest words are PPC
+    # big-endian in this little-endian host mapping, so retain the raw and
+    # decoded gate/queue words in each state-change sample.
+    set $object = *(unsigned int*)($ctx+32)
+    set $gate_raw = *(unsigned int*)($base+0x7fc86544)
+    set $gate = (($gate_raw & 0xff)<<24) | (($gate_raw & 0xff00)<<8) | (($gate_raw & 0xff0000)>>8) | (($gate_raw & 0xff000000)>>24)
+    set $read_raw = *(unsigned int*)($base+$object+0x413c)
+    set $read_index = (($read_raw & 0xff)<<24) | (($read_raw & 0xff00)<<8) | (($read_raw & 0xff0000)>>8) | (($read_raw & 0xff000000)>>24)
+    set $write_raw = *(unsigned int*)($base+$object+0x4140)
+    set $write_index = (($write_raw & 0xff)<<24) | (($write_raw & 0xff00)<<8) | (($write_raw & 0xff0000)>>8) | (($write_raw & 0xff000000)>>24)
+    set $predicate = *(unsigned char*)($base+$object+0x2abd)
+    set $source0_state = ((unsigned long long)$gate << 32) | ((unsigned long long)$read_index << 16) | ((unsigned long long)$write_index << 8) | $predicate
+    if $interrupt_hits <= 8 || $source0_state != $last_source0_state
+      printf "source0_callback hit=%d gdb_thread=%d object=%#x gate_raw=%#x gate=%#x gate_bit0=%u queue_read=%u queue_write=%u predicate=%#x lr=%#llx\n", $interrupt_hits, $_thread, $object, $gate_raw, $gate, $gate & 1, $read_index, $write_index, $predicate, *(unsigned long long*)($ctx+256)
+      set $last_source0_state = $source0_state
+    end
+  else
+    if $interrupt_hits == 1 || $interrupt_hits % 64 == 0
+      printf "interrupt_callback hit=%d source=%u gdb_thread=%d ctx=%p base=%p r4=%#llx r13=%#llx lr=%#llx\n", $interrupt_hits, $source, $_thread, (void*)$rdi, (void*)$rsi, *(unsigned long long*)($rdi+32), *(unsigned long long*)($rdi+104), *(unsigned long long*)($rdi+256)
+    end
   end
   continue
 end
 
 set $consumer_hits = 0
+set $last_consumer_state = -1
 break sub_823A4640
 commands
   silent
   set $consumer_hits = $consumer_hits + 1
-  if $consumer_hits == 1 || $consumer_hits % 64 == 0
-    printf "deferred_consumer hit=%d gdb_thread=%d ctx=%p base=%p object=%#llx r4=%#llx lr=%#llx\n", $consumer_hits, $_thread, (void*)$rdi, (void*)$rsi, *(unsigned long long*)($rdi), *(unsigned long long*)($rdi+32), *(unsigned long long*)($rdi+256)
+  set $ctx = (unsigned char*)$rdi
+  set $base = (unsigned char*)$rsi
+  set $object = *(unsigned int*)$ctx
+  set $read_raw = *(unsigned int*)($base+$object+0x413c)
+  set $read_index = (($read_raw & 0xff)<<24) | (($read_raw & 0xff00)<<8) | (($read_raw & 0xff0000)>>8) | (($read_raw & 0xff000000)>>24)
+  set $write_raw = *(unsigned int*)($base+$object+0x4140)
+  set $write_index = (($write_raw & 0xff)<<24) | (($write_raw & 0xff00)<<8) | (($write_raw & 0xff0000)>>8) | (($write_raw & 0xff000000)>>24)
+  set $predicate = *(unsigned char*)($base+$object+0x2abd)
+  set $consumer_state = ((unsigned long long)$read_index << 32) | ((unsigned long long)$write_index << 8) | $predicate
+  if $consumer_hits <= 8 || $consumer_state != $last_consumer_state
+    printf "deferred_consumer hit=%d gdb_thread=%d object=%#x queue_read=%u queue_write=%u predicate=%#x lr=%#llx\n", $consumer_hits, $_thread, $object, $read_index, $write_index, $predicate, *(unsigned long long*)($ctx+256)
+    set $last_consumer_state = $consumer_state
   end
   continue
 end
 
 set $wait_hits = 0
+set $last_wait_state = -1
 break sub_823B34A0
 commands
   silent
   set $wait_hits = $wait_hits + 1
-  if $wait_hits == 1 || $wait_hits % 128 == 0
-    printf "ring_wait hit=%d gdb_thread=%d ctx=%p base=%p object=%#llx arg4=%#llx arg5=%#llx arg6=%#llx lr=%#llx\n", $wait_hits, $_thread, (void*)$rdi, (void*)$rsi, *(unsigned long long*)($rdi), *(unsigned long long*)($rdi+32), *(unsigned long long*)($rdi+40), *(unsigned long long*)($rdi+48), *(unsigned long long*)($rdi+256)
+  set $ctx = (unsigned char*)$rdi
+  set $base = (unsigned char*)$rsi
+  set $object = *(unsigned int*)$ctx
+  set $predicate = *(unsigned char*)($base+$object+0x2abd)
+  set $wait_state = ((unsigned long long)$object << 8) | $predicate
+  if $wait_hits == 1 || $wait_state != $last_wait_state || $wait_hits % 128 == 0
+    printf "ring_wait hit=%d gdb_thread=%d object=%#x predicate=%#x arg4=%#llx arg5=%#llx arg6=%#llx lr=%#llx\n", $wait_hits, $_thread, $object, $predicate, *(unsigned long long*)($rdi+32), *(unsigned long long*)($rdi+40), *(unsigned long long*)($rdi+48), *(unsigned long long*)($rdi+256)
+    set $last_wait_state = $wait_state
   end
   continue
 end
