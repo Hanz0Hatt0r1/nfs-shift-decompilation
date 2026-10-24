@@ -756,12 +756,15 @@ bool create_mixed_msaa_render_pass(
     VkRenderPass* render_pass,
     std::string* error) {
     if (resolve_depth_stencil) {
-        const auto create_render_pass_2 =
-            reinterpret_cast<PFN_vkCreateRenderPass2KHR>(
-                vkGetDeviceProcAddr(device, "vkCreateRenderPass2KHR"));
+        auto create_render_pass_2 = reinterpret_cast<PFN_vkCreateRenderPass2KHR>(
+            vkGetDeviceProcAddr(device, "vkCreateRenderPass2"));
         if (!create_render_pass_2) {
-            return fail("mixed 4x-to-1x depth/stencil preservation requires enabled "
-                        "VK_KHR_create_renderpass2 and VK_KHR_depth_stencil_resolve",
+            create_render_pass_2 = reinterpret_cast<PFN_vkCreateRenderPass2KHR>(
+                vkGetDeviceProcAddr(device, "vkCreateRenderPass2KHR"));
+        }
+        if (!create_render_pass_2) {
+            return fail("mixed 4x-to-1x depth/stencil preservation requires "
+                        "provider-enabled Vulkan 1.2 core or Vulkan 1.1 KHR resolve support",
                         error);
         }
 

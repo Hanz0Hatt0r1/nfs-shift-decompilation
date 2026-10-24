@@ -328,11 +328,11 @@ hashes are recorded in
 
 The live plugin obtains a `VkDevice` from ReXGlue's Vulkan provider, so it
 cannot enable device extensions after creation. Process 1 accepted the
-backward-compatible optional capability contract: request both resolve
-extensions atomically when supported (including Vulkan 1.2 core promotion),
-report whether the enabled device supports `SAMPLE_ZERO` for both depth and
-stencil to the plugin, and leave unrelated GPU-emulation feature requests
-disabled. Provider wiring is pending in Process 1. Until then
+backward-compatible optional capability contract: use Vulkan 1.2 core support
+when available, otherwise request both Vulkan 1.1 resolve extensions
+atomically, report whether the enabled device supports `SAMPLE_ZERO` for both
+depth and stencil to the plugin, and leave unrelated GPU-emulation feature
+requests disabled. Provider wiring is pending in Process 1. Until then
 the current plugin passes `false` explicitly and rejects a mixed 4x-to-1x
 depth/stencil frame before submission. A subsequent retail frame is still
 required to establish whether Xenos uses the same sample-zero rule and to

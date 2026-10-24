@@ -10,7 +10,7 @@ conversion, and Copy/Convert channel fixes is recorded in
 That frame is not evidence of a visible menu or race scene. A Vulkan 1.1
 4x-to-1x D24S8 `SAMPLE_ZERO` resolve/load path now has host and Redmi Note 8
 Pro hardware regression coverage. The ReXGlue provider still needs to enable
-`VK_KHR_create_renderpass2` and `VK_KHR_depth_stencil_resolve` for this path,
+the Vulkan 1.2 core commands or atomically enabled Vulkan 1.1 KHR extensions,
 and report whether SAMPLE_ZERO is available for both depth and stencil.
 Process 1 accepted this optional contract; its provider wiring is pending.
 Until that lands, the plugin rejects the mixed-sample path before submission.
