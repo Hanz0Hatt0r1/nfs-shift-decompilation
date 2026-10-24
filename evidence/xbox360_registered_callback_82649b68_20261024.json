@@ -66,8 +66,8 @@
       ]
     },
     "thresholds": {
-      "selector_zero": {"field": "0x83122BAC", "predicate_true_when_accumulated_u32_is_strictly_between": [67, 134], "accepted_values": [68, 133]},
-      "selector_nonzero": {"field": "0x83122BAC", "predicate_true_when_accumulated_u32_is_strictly_between": [80, 161], "accepted_values": [81, 160]}
+      "selector_zero": {"field": "0x83122BAC", "predicate_true_when_accumulated_u32_is_strictly_between": [67, 134], "accepted_range_inclusive": [68, 133]},
+      "selector_nonzero": {"field": "0x83122BAC", "predicate_true_when_accumulated_u32_is_strictly_between": [80, 161], "accepted_range_inclusive": [81, 160]}
     },
     "qualified_transitions": [
       {
