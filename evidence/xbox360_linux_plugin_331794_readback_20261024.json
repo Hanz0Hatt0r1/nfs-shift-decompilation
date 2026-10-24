@@ -1,0 +1,70 @@
+{
+  "schema": "shift.xbox360.linux-native-readback-smoke.v1",
+  "captured_on": "2026-10-24",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "host": "Linux AMD64",
+    "duration_limit_seconds": 30,
+    "timeout_exit_code": 124,
+    "input_sent": false,
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b",
+    "gpu_plugin_sha256": "331794ec66bb3738aa3fae2c862952aa86283267c4a2b372736e5e813d42b892",
+    "gpu_plugin_source": "/home/pes/work/process2-current-linux-plugin-output/librexgpu-shift-native.so",
+    "arguments": [
+      "--game_data_root=<external user-provided game data>",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "runtime_log": {
+      "path_outside_git": "/tmp/p1-p2-run060-20261024/logs/nfs_shift_001.log",
+      "bytes": 806235,
+      "sha256": "6f55a095f1fad55eeb60bc47fd9d179596d464d32bc676695113714363342458"
+    }
+  },
+  "draw_diagnostics": {
+    "draw_0": "unresolved: incomplete captured raster register state, valid_mask=0x17038",
+    "draw_25": "unresolved twice: unsupported target/raster Copy/Convert state; registers [0, 0x975e000, 0x2d00500, 0], valid=0xf",
+    "draw_27": "No unresolved diagnostic emitted; the prior viewport/scissor rejection remains absent in this run. No per-draw success receipt is emitted.",
+    "draw_28": "No unresolved diagnostic emitted; no per-draw success receipt is emitted.",
+    "draw_29": "unresolved: unsupported target/raster Copy/Convert state; surface=0xa020280, color=0, depth=0x2d0, mode=5, viewport=[0x44200000,0x44200000,0xc3b40000,0x43b40000], scissor=[0,0x20002000], color registers [0,0x975e000,0x2d00500,0], valid=0xf"
+  },
+  "submission_diagnostics": {
+    "presenter_submission_entries": 1349,
+    "submission_batch_histogram": {
+      "1_draw": 1175,
+      "2_draws": 110,
+      "5_draws": 64
+    },
+    "reported_draw_submissions_total": 1715,
+    "accepted_copy_convert_entries": 1349,
+    "guest_swap_counter_max": 1,
+    "readback_saved_at_submitted_frame": 1,
+    "refresh_failure_or_rejection_messages": 0
+  },
+  "readback": {
+    "path_outside_git": "/tmp/p2-run060-retail-output.a2b10g10r10",
+    "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "width": 1280,
+    "height": 720,
+    "bytes": 3686400,
+    "sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+    "fnv1a64": "B161DE6EEC272325",
+    "non_black_rgb_pixels": 0,
+    "distinct_rgb_values": 1,
+    "packed_pixel_counts": {
+      "0xC0000000": 403200,
+      "0x00000000": 518400
+    }
+  },
+  "interpretation": {
+    "supported": "This plugin run accepted 1,349 captured Copy/Convert entries, emitted no unresolved diagnostics for draws 27 or 28, and captured the first presenter output as a 1280x720 readback. That readback contains no non-black RGB pixels.",
+    "not_proven": "Submission acceptance is not evidence of correct pixels. The readback is a captured renderer output for this build/run only; it does not establish retail scene parity, visible output after later frames, menu progress, or offline-race playability."
+  }
+}
