@@ -13,6 +13,12 @@ bool fail(const char* message, std::string* error) {
     return false;
 }
 
+uint32_t read_guest_dword(const uint8_t* bytes) {
+    return (static_cast<uint32_t>(bytes[0]) << 24) |
+           (static_cast<uint32_t>(bytes[1]) << 16) |
+           (static_cast<uint32_t>(bytes[2]) << 8) | bytes[3];
+}
+
 class GuestIndirectBufferExpander {
 public:
     GuestIndirectBufferExpander(
@@ -208,6 +214,40 @@ bool expand_guest_indirect_buffers(
     std::string* error) {
     GuestIndirectBufferExpander expander(read_guest_memory, read_context);
     return expander.expand(root_batch.bytes.data(), root_batch.bytes.size(), output, error);
+}
+
+bool decode_guest_event_write_shd(
+    const uint8_t* packet_bytes,
+    size_t packet_byte_length,
+    DecodedEventWriteShd* output,
+    std::string* error) {
+    constexpr size_t kPacketBytes = 4u * sizeof(uint32_t);
+    if (!packet_bytes || !output || packet_byte_length != kPacketBytes) {
+        return fail("invalid EVENT_WRITE_SHD packet length", error);
+    }
+
+    const uint32_t header = read_guest_dword(packet_bytes);
+    const uint32_t count = ((header >> 16) & 0x3FFFu) + 1u;
+    if ((header >> 30) != 3u || ((header >> 8) & 0xFFu) != 0x58u ||
+        count != 3u) {
+        return fail("unsupported EVENT_WRITE_SHD packet header", error);
+    }
+
+    const uint32_t encoded_address = read_guest_dword(packet_bytes + 8u);
+    DecodedEventWriteShd decoded{};
+    decoded.initiator = read_guest_dword(packet_bytes + 4u);
+    decoded.guest_address = encoded_address & ~uint32_t{3};
+    decoded.endian_mode = encoded_address & 3u;
+    decoded.value = read_guest_dword(packet_bytes + 12u);
+    *output = decoded;
+    if (error) error->clear();
+    return true;
+}
+
+uint32_t event_write_shd_value(
+    const DecodedEventWriteShd& event,
+    uint32_t swap_counter) {
+    return event.initiator & 0x80000000u ? swap_counter : event.value;
 }
 
 }  // namespace shift::xbox

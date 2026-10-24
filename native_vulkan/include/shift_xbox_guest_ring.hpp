@@ -30,6 +30,13 @@ struct ExpandedGuestCommandStream {
     uint32_t indirect_buffer_count = 0;
 };
 
+struct DecodedEventWriteShd {
+    uint32_t initiator = 0;
+    uint32_t guest_address = 0;
+    uint32_t endian_mode = 0;
+    uint32_t value = 0;
+};
+
 // The returned pointer must remain readable for at least `byte_length` bytes
 // until the callback's caller finishes parsing it. `available_bytes` reports
 // the readable extent beginning at the returned pointer.
@@ -67,5 +74,16 @@ bool expand_guest_indirect_buffers(
     void* read_context,
     ExpandedGuestCommandStream* output,
     std::string* error);
+
+// EVENT_WRITE_SHD writes a guest-physical dword. The address low two bits
+// select Xenos endianness; the returned address is four-byte aligned.
+bool decode_guest_event_write_shd(
+    const uint8_t* packet_bytes,
+    size_t packet_byte_length,
+    DecodedEventWriteShd* output,
+    std::string* error);
+uint32_t event_write_shd_value(
+    const DecodedEventWriteShd& event,
+    uint32_t swap_counter);
 
 }  // namespace shift::xbox

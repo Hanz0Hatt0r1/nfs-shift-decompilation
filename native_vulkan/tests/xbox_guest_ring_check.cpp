@@ -29,6 +29,14 @@ constexpr std::array<uint8_t, 12> kCapturedIndirectBufferPacket = {
 constexpr std::array<uint8_t, 8> kCapturedInterruptPacket = {
     0xC0, 0x00, 0x54, 0x00, 0x00, 0x00, 0x00, 0x24,
 };
+constexpr std::array<uint8_t, 16> kCapturedEventWriteShdPacket = {
+    0xC0, 0x02, 0x58, 0x00, 0x00, 0x00, 0x00, 0x03,
+    0x17, 0xAF, 0x40, 0x06, 0xA9, 0x5D, 0x00, 0xE4,
+};
+constexpr std::array<uint8_t, 16> kCapturedEventWriteShdCounterPacket = {
+    0xC0, 0x02, 0x58, 0x00, 0x80, 0x00, 0x00, 0x03,
+    0x17, 0xAF, 0x40, 0x40, 0xDE, 0xAD, 0xBE, 0xEF,
+};
 
 struct GuestMemoryFixture {
     uint32_t guest_address = 0;
@@ -111,6 +119,30 @@ int main() {
                 kCapturedInterruptPacket.data(), kCapturedInterruptPacket.size() - 4u,
                 &interrupt_cpu_mask, &error),
             "truncated PM4_INTERRUPT packet was accepted");
+
+    shift::xbox::DecodedEventWriteShd event_write{};
+    require(shift::xbox::decode_guest_event_write_shd(
+                kCapturedEventWriteShdPacket.data(),
+                kCapturedEventWriteShdPacket.size(), &event_write, &error) &&
+                event_write.initiator == 3u &&
+                event_write.guest_address == 0x17AF4004u &&
+                event_write.endian_mode == 2u &&
+                event_write.value == 0xA95D00E4u &&
+                shift::xbox::event_write_shd_value(event_write, 9u) ==
+                    0xA95D00E4u,
+            "captured EVENT_WRITE_SHD guest address, endian mode, or value was decoded incorrectly");
+    require(shift::xbox::decode_guest_event_write_shd(
+                kCapturedEventWriteShdCounterPacket.data(),
+                kCapturedEventWriteShdCounterPacket.size(), &event_write, &error) &&
+                event_write.guest_address == 0x17AF4040u &&
+                event_write.endian_mode == 0u &&
+                event_write.value == 0xDEADBEEFu &&
+                shift::xbox::event_write_shd_value(event_write, 9u) == 9u,
+            "EVENT_WRITE_SHD counter initiator did not override the packet value");
+    require(!shift::xbox::decode_guest_event_write_shd(
+                kCapturedEventWriteShdPacket.data(),
+                kCapturedEventWriteShdPacket.size() - 4u, &event_write, &error),
+            "truncated EVENT_WRITE_SHD packet was accepted");
 
     shift::xbox::GuestRingBatch empty{};
     require(shift::xbox::snapshot_guest_ring_batch(

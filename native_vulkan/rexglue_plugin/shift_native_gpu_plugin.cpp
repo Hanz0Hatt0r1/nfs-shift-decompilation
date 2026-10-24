@@ -27,6 +27,8 @@
 #include <glslang/Public/ShaderLang.h>
 #include <rex/logging.h>
 #include <rex/chrono/clock.h>
+#include <rex/graphics/registers.h>
+#include <rex/graphics/xenos.h>
 #include <rex/kernel/xboxkrnl/video.h>
 #include <rex/memory.h>
 #include <rex/system/function_dispatcher.h>
@@ -52,6 +54,8 @@ constexpr uint32_t kGpuMmioSize = 0x0000FFFFu;
 constexpr uint32_t kRingWritePointerRegister = 0x01C5u;
 constexpr uint32_t kRingReadPointerRegister = 0x01C4u;
 constexpr uint32_t kVblankStatusRegister = 0x1951u;
+constexpr uint32_t kVgtEventInitiatorRegister =
+    rex::graphics::XE_GPU_REG_VGT_EVENT_INITIATOR;
 constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
 const std::string kDebugFragmentColorShader =
     "#version 450\n"
@@ -713,6 +717,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   uint32_t ReadRegister(uint32_t address) {
     const uint32_t index = (address & 0xFFFFu) / sizeof(uint32_t);
     if (index == kVblankStatusRegister) return 1u;
+    if (index == kVgtEventInitiatorRegister) {
+      return event_initiator_.load(std::memory_order_acquire);
+    }
     std::lock_guard<std::mutex> lock(ring_mutex_);
     if (index == kRingReadPointerRegister) return ring_read_pointer_;
     if (index == kRingWritePointerRegister) return ring_write_pointer_;
@@ -799,6 +806,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     shift::xbox::CapturedVulkanCopy frame_copy{};
     bool frame_copy_ready = false;
     uint64_t observed_ring_generation = 0;
+    uint32_t guest_swap_counter = 0;
     for (;;) {
       uint32_t read_pointer = 0;
       uint32_t write_pointer = 0;
@@ -1094,7 +1102,53 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               }
             }
 
-            if (packet.type == shift::xbox::PacketType::Type0 ||
+            if (packet.type == shift::xbox::PacketType::Type3 &&
+                packet.opcode == 0x58u) {
+              shift::xbox::DecodedEventWriteShd event{};
+              if (!shift::xbox::decode_guest_event_write_shd(
+                      packet_bytes, packet.byte_length, &event, &error) ||
+                  !physical_span_valid(event.guest_address,
+                                       sizeof(uint32_t))) {
+                ++unsupported_draws;
+                REXLOG_WARN("shift-native: rejected EVENT_WRITE_SHD packet: {}",
+                            error.empty() ? "guest address is outside physical memory"
+                                          : error);
+                continue;
+              }
+              auto* destination =
+                  memory_->TranslatePhysical<uint32_t*>(event.guest_address);
+              if (!destination) {
+                ++unsupported_draws;
+                REXLOG_WARN("shift-native: could not translate EVENT_WRITE_SHD guest "
+                            "address {:08X}",
+                            event.guest_address);
+                continue;
+              }
+              const uint32_t data_value = shift::xbox::event_write_shd_value(
+                  event, guest_swap_counter);
+              const uint32_t stored_value = rex::graphics::xenos::GpuSwap(
+                  data_value,
+                  static_cast<rex::graphics::xenos::Endian>(event.endian_mode));
+              const uint32_t previous_guest_value =
+                  rex::memory::load_and_swap<uint32_t>(destination);
+              rex::memory::store(destination, stored_value);
+              const uint32_t stored_guest_value =
+                  rex::memory::load_and_swap<uint32_t>(destination);
+              event_initiator_.store(event.initiator & 0x3Fu,
+                                     std::memory_order_release);
+              static std::atomic<uint32_t> event_write_log_count{0};
+              const uint32_t event_log_index = event_write_log_count.fetch_add(
+                  1, std::memory_order_relaxed);
+              if (event_log_index < 16u) {
+                REXLOG_INFO(
+                    "shift-native: EVENT_WRITE_SHD #{} initiator={:08X} "
+                    "guest={:08X} endian={} packet_value={:08X} "
+                    "swap_counter={} guest_value={:08X}->{:08X}",
+                    event_log_index, event.initiator, event.guest_address,
+                    event.endian_mode, event.value, guest_swap_counter,
+                    previous_guest_value, stored_guest_value);
+              }
+            } else if (packet.type == shift::xbox::PacketType::Type0 ||
                 packet.type == shift::xbox::PacketType::Type1) {
               std::vector<shift::xbox::GuestRegisterWrite> writes;
               if (shift::xbox::decode_guest_register_writes(
@@ -1404,6 +1458,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               frame_draws.clear();
               frame_copy = {};
               frame_copy_ready = false;
+              ++guest_swap_counter;
             } else if (packet.type == shift::xbox::PacketType::Type3 &&
                        packet.opcode == 0x54u) {
               uint32_t cpu_mask = 0;
@@ -1566,6 +1621,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   std::thread ring_worker_;
   rex::system::object_ref<rex::system::XHostThread> ring_host_worker_;
   std::atomic<bool> vblank_worker_running_{false};
+  std::atomic<uint32_t> event_initiator_{0};
   rex::system::object_ref<rex::system::XHostThread> vblank_host_worker_;
   std::mutex interrupt_mutex_;
   uint32_t interrupt_callback_ = 0;
