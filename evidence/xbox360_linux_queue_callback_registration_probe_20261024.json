@@ -32,7 +32,7 @@
   "retail_static_crosscheck": {
     "callback_setter": {
       "function": "0x823A5730",
-      "behavior": "stores argument r4 at object+0x40BC (decimal 16540)",
+      "behavior": "stores argument r4 at object+0x409C (decimal 16540); this callback slot is distinct from the deferred-record ring at object+0x40BC",
       "caller": "0x8264C858",
       "callsite": "0x8264D30C",
       "link_register": "0x8264D310",
