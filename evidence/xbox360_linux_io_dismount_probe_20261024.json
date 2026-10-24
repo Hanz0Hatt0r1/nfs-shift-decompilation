@@ -1,0 +1,73 @@
+{
+  "schema": "shift.xbox360.linux-io-dismount-probe.v1",
+  "captured_on": "2026-10-24",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b",
+    "gpu_plugin_sha256": "54348dd521b97b15be963d0b9f680172dbfb83c3ef5f2fbb979f618dc9c32aaa",
+    "gdb_log": {
+      "path": "/tmp/p1-virtual-input-20261024/gdb-dismount.log",
+      "sha256": "39e6dc93caa68c660b36d0f7bb5f19bb8708de29119e09c49e1bcd298b23333a"
+    },
+    "runtime_log": {
+      "path": "/tmp/p1-virtual-input-20261024/logs/nfs_shift_020.log",
+      "sha256": "86be244edc5d1ed6b0fe9c816d0fc1ec3db39dde2f1a6f8a3ef1c9f31b328ff5"
+    },
+    "monitor_limit_seconds": 30
+  },
+  "observed_calls": [
+    {
+      "count": 1,
+      "handle": "0xF800003C",
+      "guest_lr": "0x827065A8",
+      "guest_thread_id": 15,
+      "call_chain": [
+        "0x827061E0",
+        "0x826F90C8",
+        "0x826F97D0",
+        "0x826F9C60",
+        "0x822FC670",
+        "0x822F2740",
+        "0x822D5318"
+      ]
+    },
+    {
+      "count": 2,
+      "handle": "0xF800003C",
+      "guest_lr": "0x827065A8",
+      "guest_thread_id": 15,
+      "call_chain": [
+        "0x827061E0",
+        "0x826F90C8",
+        "0x826F97D0",
+        "0x826F9C60",
+        "0x822FC670",
+        "0x822F2740",
+        "0x822D5318"
+      ]
+    }
+  ],
+  "retail_call_site": {
+    "function": "0x827061E0",
+    "behavior": "Opens the requested object, issues volume-information IOCTLs, and then calls IoDismountVolumeByFileHandle before cleanup at 0x827062FC calls NtClose.",
+    "status_use": "The decompiled retail path branches to cleanup after IoDismountVolumeByFileHandle and does not test its returned status.",
+    "callers": [
+      "0x826F90C8 at link address 0x826F9168",
+      "0x826F90C8 at link address 0x826F9198"
+    ]
+  },
+  "runtime_result": {
+    "stub_warning_count": 2,
+    "later_progress": "The same bounded run continued through EVENT_WRITE_SHD PM4 writes and native Vulkan frame submissions after both calls.",
+    "immediate_failure_observed": false
+  },
+  "interpretation": {
+    "supported": "This is a boot-time volume-information/cleanup path that calls the current ReXGlue success stub twice with handle 0xF800003C. In the observed caller, the import's return value is ignored and execution continues to NtClose; this run then continued into guest PM4 and Vulkan submission.",
+    "not_proven": "This does not establish the correct general semantics of IoDismountVolumeByFileHandle, whether the no-op leaves a later-required volume mounted, or whether this API matters in other title states. It is not an observed blocker to reaching PM4 in this run."
+  }
+}
