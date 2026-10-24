@@ -275,7 +275,11 @@ int main(int argc, char** argv) {
     draw.texture_height = 1;
     draw.raster.width = 1280;
     draw.raster.height = 720;
+    draw.raster.surface_pitch = 1280;
     draw.raster.sample_count = 4;
+    draw.raster.color_base_tiles = 13;
+    draw.raster.depth_base_tiles = 29;
+    draw.raster.color_format = shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
     draw.raster.color_write_mask = 0xFu;
     draw.raster.depth_test_enabled = true;
     draw.raster.depth_write_enabled = true;
@@ -327,6 +331,7 @@ int main(int argc, char** argv) {
 
     auto mixed_sample_draws = draws;
     mixed_sample_draws[1].raster.sample_count = 2;
+    mixed_sample_draws[1].raster.color_base_tiles = 17;
     std::string mixed_sample_error;
     if (shift::xbox::submit_captured_vulkan_frame(
             physical_device, device, queue, queue_family, output_image, output_view,
@@ -334,6 +339,12 @@ int main(int argc, char** argv) {
             enabled_features.geometryShader) ||
         mixed_sample_error.find(
             "draw 1 sample count 2 differs from frame sample count 4") ==
+            std::string::npos ||
+        mixed_sample_error.find(
+            "draw 0 surface={color_base_tiles=13,depth_base_tiles=29,pitch=1280") ==
+            std::string::npos ||
+        mixed_sample_error.find(
+            "draw 1 surface={color_base_tiles=17,depth_base_tiles=29,pitch=1280") ==
             std::string::npos) {
         std::cerr << "mixed-sample draw rejection did not identify the incompatible draw: "
                   << mixed_sample_error << '\n';

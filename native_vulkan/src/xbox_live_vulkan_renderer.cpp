@@ -746,10 +746,22 @@ bool submit_captured_vulkan_frame(
         }
         const CapturedRasterState& raster = draw.raster;
         if (raster.sample_count != samples) {
+            const CapturedRasterState& frame_raster = draws.front().raster;
             std::ostringstream message;
             message << "captured Vulkan draw " << draw_index << " sample count "
                     << raster.sample_count << " differs from frame sample count "
-                    << samples;
+                    << samples << "; draw 0 surface={color_base_tiles="
+                    << frame_raster.color_base_tiles << ",depth_base_tiles="
+                    << frame_raster.depth_base_tiles << ",pitch="
+                    << frame_raster.surface_pitch << ",color_format="
+                    << static_cast<uint32_t>(frame_raster.color_format)
+                    << ",extent=" << frame_raster.width << 'x'
+                    << frame_raster.height << "}; draw " << draw_index
+                    << " surface={color_base_tiles=" << raster.color_base_tiles
+                    << ",depth_base_tiles=" << raster.depth_base_tiles
+                    << ",pitch=" << raster.surface_pitch << ",color_format="
+                    << static_cast<uint32_t>(raster.color_format)
+                    << ",extent=" << raster.width << 'x' << raster.height << '}';
             return fail(message.str(), error);
         }
         if (raster.width == 0 || raster.height == 0) {
