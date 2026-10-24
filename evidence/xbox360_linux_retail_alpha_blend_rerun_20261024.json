@@ -48,11 +48,39 @@
     "first_readback_log_line": "[2026-10-24 03:51:06.117] saved Vulkan guest output 1280x720; non-black pixels 0; FNV-1a B161DE6EEC272325"
   },
   "interpretation": {
-    "supported": "The retail readback with P2 commit 8541089b is byte-identical to the prior black readback. The new blend setting did not make retail pixels visible in this run, and three-draw refreshes continue to reject the captured target/scissor against PM4_XE_SWAP.",
+    "supported": "The retail readback with P2 commit 8541089b is byte-identical to the prior black readback. The new blend setting did not make retail pixels visible in this run, and three-draw refreshes continue to reject the captured target/scissor against PM4_XE_SWAP. The same executable/plugin pair produced the recorded magenta synthetic control with non-black pixels, isolating the retail black output to retail rendering state/path rather than a generally broken readback path.",
     "not_proven": [
       "This does not establish that the blend change has no effect in other draw classes or that the renderer change is incorrect.",
       "The run did not show a main menu, visible retail frame, or race.",
       "Single-draw submissions and warning counts are diagnostic observations, not gameplay progress."
     ]
+  },
+  "synthetic_control": {
+    "environment": "SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR=magenta",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "plugin_commit": "8541089b61fa16a623421adaf21a10375094929f",
+    "plugin_sha256": "56a1d88e4c4fb952bd79578e4247603eb953fac41a942b14a9d1cc6d4bc7f0af",
+    "timeout_seconds": 30,
+    "exit_code": 124,
+    "raw_readback": {
+      "path": "/home/pes/work/p1-event-write-linux-probe-20261024/p2-alpha-magenta-exact-20261024/magenta.a2b10g10r10",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "width": 1280,
+      "height": 720,
+      "bytes": 3686400,
+      "sha256": "21d2868e9e0b91638d96e30dfe446a4748ef217efaa09e10ed179697e95e35e8",
+      "fnv1a64": "DA74DA070BC0D725",
+      "pixel_words": {
+        "0xFFF003FF": 518400,
+        "0xC0000000": 403200
+      },
+      "rgb_nonblack_pixels": 518400
+    },
+    "runtime_log": {
+      "path": "/home/pes/work/p1-event-write-linux-probe-20261024/p2-alpha-magenta-exact-20261024/logs/nfs_shift_001.log",
+      "sha256": "c1ee5a8717ff6527c4a4ddf9b33991bb24375e65e28abe99481965bab0d9ebc3",
+      "three_draw_target_or_scissor_mismatch_warnings": 0
+    },
+    "interpretation": "This synthetic fragment-output control confirms draw, presenter, and readback coverage for this exact host executable/plugin pair. It does not represent retail game pixels or frontend progress."
   }
 }
