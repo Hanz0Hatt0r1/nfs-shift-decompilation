@@ -9,13 +9,16 @@ conversion, and Copy/Convert channel fixes is recorded in
 [`process2_linux_retail_loading_frame10_20261024.json`](../evidence/process2_linux_retail_loading_frame10_20261024.json).
 That frame is not evidence of a visible menu or race scene. A Vulkan 1.1
 4x-to-1x D24S8 `SAMPLE_ZERO` resolve/load path now has host and Redmi Note 8
-Pro hardware regression coverage. Process 2 has implemented the optional
-provider capability in [ReXGlue PR #2](https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/2):
+Pro hardware regression coverage. A separate, still-open
+[ReXGlue PR #2](https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/2) proposes
+the optional provider capability:
 it uses Vulkan 1.2 core support or atomically requests the Vulkan 1.1 KHR
 extension pair, and reports `SAMPLE_ZERO` only when supported for both depth
 and stencil. The plugin feature-detects this API and keeps older SDK builds
-fail-closed. The combined Linux validation and Android ARM64 compile results
-are in [`ANDROID_RENDER_STATUS_20261024.md`](ANDROID_RENDER_STATUS_20261024.md).
+fail-closed. The SDK used in the latest retail run does not expose it, so the
+run still stops at mixed-sample depth/stencil preservation. The current Xbox
+draw frontier and exact limits are recorded in
+[`PROCESS2_XBOX_DRAW27_STATUS_20261025.md`](PROCESS2_XBOX_DRAW27_STATUS_20261025.md).
 The resolve mode still needs comparison against a subsequent retail frame.
 The latest full Android activity exits before producing that frame.
 
@@ -23,9 +26,12 @@ Retail draws #32 and #45 supplied tiled Xenos format-20 DXT4/5 textures, and
 draw #44 supplied format-59 DXT5A. The native input path now untile-decodes
 these captured base-level layouts to RGBA8 without requiring a Vulkan
 BC-compression feature. Descriptor-shaped regressions passed on Linux and
-Redmi Note 8 Pro. Draw #28 still needs mip-chain handling; no updated retail
-frame has verified these draws yet. See
-[`process2_retail_dxt4_5_texture_decode_20261024.json`](../evidence/process2_retail_dxt4_5_texture_decode_20261024.json).
+Redmi Note 8 Pro. Retail draw #28's base and mip descriptors alias the same
+guest page; the plugin accepts this captured texture as base-level-only.
+Distinct mip pages still require captured mip payloads. The latest live draw
+and frame-refresh blockers are tracked in
+[`PROCESS2_XBOX_DRAW27_STATUS_20261025.md`](PROCESS2_XBOX_DRAW27_STATUS_20261025.md).
+See [`process2_retail_dxt4_5_texture_decode_20261024.json`](../evidence/process2_retail_dxt4_5_texture_decode_20261024.json).
 
 ## Captured multi-sampler support (2026-10-24)
 

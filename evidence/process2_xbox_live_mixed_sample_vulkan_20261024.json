@@ -1,5 +1,6 @@
 {
   "schema": "SHIFT.Process2XboxLiveMixedSampleVulkan/1",
+  "superseded_by": "process2_retail_draw27_scalar_and_resolve_20261025.json",
   "observed_at": "2026-10-24T23:52:00+03:00",
   "retail_game": {
     "platform": "Xbox 360 retail game running through the Linux guest runtime",

@@ -1,5 +1,6 @@
 {
   "schema": "SHIFT.Process2RetailDP3Translation/1",
+  "superseded_by": "process2_retail_draw27_scalar_and_resolve_20261025.json",
   "observed_at": "2026-10-25T00:20:53+03:00",
   "retail_observation": {
     "run": "process2-linux-draw29-retail-20261025",
@@ -33,6 +34,6 @@
   "limitations": [
     "The shader regression uses a synthetic encoded instruction, not a full retail shader byte-for-byte fixture.",
     "The captured retail log came from the previous plugin build. The currently open game process was left running and was not hot-reloaded, so draw 27 acceptance with the new plugin is not yet confirmed.",
-    "Draw 28 still fails closed on its captured DXT5 mip-chain descriptor. These checks do not establish retail image parity."
+    "At this observation time, draw 28 still failed closed on its captured DXT5 descriptor. The later base/mip alias handling and current draw/frame blockers are recorded in the superseding evidence file. These checks do not establish retail image parity."
   ]
 }

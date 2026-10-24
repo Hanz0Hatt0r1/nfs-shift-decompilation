@@ -397,6 +397,9 @@ bool emit_alu(std::ostringstream& glsl,
             case 12:
                 scalar = "trunc(" + scalar_source(instruction, stage) + ")";
                 break;
+            case 13:
+                scalar = "floor(" + scalar_source(instruction, stage) + ")";
+                break;
             case 42:
                 if (instruction.source_is_temporary[2]) {
                     return fail("captured MULSC0 constant operand is not a constant", error);
@@ -407,8 +410,12 @@ bool emit_alu(std::ostringstream& glsl,
                          " * r[" + std::to_string(instruction.scalar_temporary_register) +
                          "]." + component_name(instruction.scalar_temporary_component);
                 break;
-            default:
-                return fail("captured ALU scalar opcode writes an unsupported result", error);
+            default: {
+                std::ostringstream message;
+                message << "captured ALU scalar opcode " << instruction.scalar_opcode
+                        << " writes an unsupported result";
+                return fail_at_slot(message.str());
+            }
         }
         if (instruction.scalar_clamp) scalar = "clamp(" + scalar + ", 0.0, 1.0)";
         std::string target;

@@ -327,5 +327,30 @@ int main() {
                 translated.glsl.find("r[0].y = alu_7.y") !=
                     std::string::npos,
             "captured Xenos vector opcode 16 DP3 did not replicate XYZ dot output");
+
+    std::vector<uint8_t> retail_scalar_floor_shader = shader;
+    write_be32(retail_scalar_floor_shader.data() + 7 * 12,
+               (13u << 26) | (1u << 20));
+    write_be32(retail_scalar_floor_shader.data() + 7 * 12 + 4, 0);
+    write_be32(retail_scalar_floor_shader.data() + 7 * 12 + 8, 0);
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                retail_scalar_floor_shader.data(), retail_scalar_floor_shader.size(),
+                options, &translated, &error) &&
+                translated.glsl.find("r[0].x = floor(") != std::string::npos,
+            "captured Xenos scalar FLOOR opcode 13 was not translated");
+
+    std::vector<uint8_t> unsupported_scalar_shader = shader;
+    write_be32(unsupported_scalar_shader.data() + 7 * 12,
+               (63u << 26) | (1u << 20));
+    write_be32(unsupported_scalar_shader.data() + 7 * 12 + 4, 0);
+    write_be32(unsupported_scalar_shader.data() + 7 * 12 + 8, 0);
+    require(!shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                unsupported_scalar_shader.data(), unsupported_scalar_shader.size(),
+                options, &translated, &error) &&
+                error.find("scalar opcode 63") != std::string::npos &&
+                error.find("instruction 7") != std::string::npos,
+            "unsupported captured scalar opcode diagnostic omitted opcode/address");
     return 0;
 }
