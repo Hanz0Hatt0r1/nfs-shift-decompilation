@@ -1,0 +1,117 @@
+{
+  "schema": "shift.xbox360.linux-queue-callback-registration-probe.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "host": "Linux AMD64",
+    "rexglue_version": "0.10.0",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b",
+    "gpu_plugin_sha256": "54348dd521b97b15be963d0b9f680172dbfb83c3ef5f2fbb979f618dc9c32aaa",
+    "arguments": [
+      "--game_data_root=/tmp/nfs_shift_xbox_game_root_20261023",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "duration_limit_seconds": 45,
+    "gdb_exit_code": 124,
+    "input_events_sent": false,
+    "runtime_log": {
+      "path": "/tmp/p1-virtual-input-20261024/logs/nfs_shift_022.log",
+      "sha256": "0162f93a72896c691c2d13019fadffe5136346f5531ce8f5dc8b3cf64202914f",
+      "single_draw_submissions": 203,
+      "accepted_copy_convert_entries": 687,
+      "guest_vblank_callbacks_logged": 3
+    }
+  },
+  "retail_static_crosscheck": {
+    "callback_setter": {
+      "function": "0x823A5730",
+      "behavior": "stores argument r4 at object+0x40BC (decimal 16540)",
+      "caller": "0x8264C858",
+      "callsite": "0x8264D30C",
+      "link_register": "0x8264D310",
+      "registered_target": "0x82649B68"
+    },
+    "queue_consumer": {
+      "function": "0x823A4640",
+      "read_index_offset": "0x413C",
+      "write_index_offset": "0x4140"
+    },
+    "candidate_queue_producer": {
+      "function": "0x823A4758",
+      "writes_record_at": "object+0x40BC",
+      "advances_write_index": "object+0x4140"
+    }
+  },
+  "probe": {
+    "guest_memory_mutated_by_probe": false,
+    "gdb_script_path_outside_git": "/tmp/p1-queue-registration-20261024/trace-registration.gdb",
+    "gdb_script_sha256": "559b3a2c3e61312217d18e118bb46398e32aaa35713368a2dc048cf5ef3aaac3",
+    "gdb_log_path_outside_git": "/tmp/p1-queue-registration-20261024/gdb-registration.log",
+    "gdb_log_sha256": "42a7bd560a40130e6595ae59972f36f517708b0c4e40f19edf06368aabfb8377",
+    "timing_caveat": "GDB breakpoints pause guest execution; the 45-second timeout is a bounded observation window, not guest-time coverage."
+  },
+  "observations": {
+    "callback_registration": {
+      "hits": 1,
+      "object": "0xB7365F00",
+      "registered_callback": "0x82649B68",
+      "old_callback_before_store": "0x00000000",
+      "guest_thread_id": 15,
+      "stack": [
+        "0x823A5730",
+        "0x8264C858",
+        "0x82FC1550",
+        "0x82FBDF58",
+        "0x82D30380",
+        "xstart"
+      ]
+    },
+    "registered_callback_body": {
+      "function": "0x82649B68",
+      "hits": 0
+    },
+    "source0_deferred_consumer": {
+      "function": "0x823A4640",
+      "sampled_entries": 8,
+      "object": "0xB7365F00",
+      "read_index_values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "write_index_values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "guest_thread_id": 12,
+      "caller": "0x823B37B8 via SetupGuestGpu interrupt lambda #3"
+    },
+    "candidate_producer": {
+      "function": "0x823A4758",
+      "hits": 0
+    }
+  },
+  "interpretation": {
+    "supported": "The retail queue callback is registered during the xstart initialization chain, and the Linux ReXGlue source-0 interrupt path enters the guest consumer. The sampled queue remains empty; neither the registered callback body nor candidate producer executes in this bounded run.",
+    "not_proven": "This does not prove 0x823A4758 is the only producer, identify why no work is enqueued, establish a scheduler defect, or demonstrate menu/race progress. No raw Vulkan readback was captured in this run.",
+    "next_p1_frontier": "Find every retail path that can advance object+0x4140 or enqueue a record, then trace the first expected caller/registration that is absent during startup. Preserve the original queue and wait semantics."
+  }
+}
