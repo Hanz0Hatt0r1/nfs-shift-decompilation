@@ -1,0 +1,84 @@
+{
+  "schema": "shift.xbox360.linux.retail_splash_validation.v1",
+  "captured_at_utc": "2026-10-24T21:46:10Z",
+  "input": {
+    "default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4"
+  },
+  "build": {
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+    "gpu_plugin_sha256": "47aec72b0763f2c688721f23c931885856ef0be05a260e4d0e283c531d9e54a2",
+    "gpu_plugin_source_commit": "261ed976362d863286d3f065440cf67a5044d8a4",
+    "rexglue_sdk_source_commit": "ede359f8a93cd26cb95531a0b39ed8584aa93bb7"
+  },
+  "launch": {
+    "platform": "Linux AMD64",
+    "gpu_plugin": "shift-native",
+    "vulkan_validation": true,
+    "timeout_seconds": 45,
+    "game_data_root": "user-owned exact retail data outside Git",
+    "user_and_cache_roots": "external temporary paths"
+  },
+  "vulkan": {
+    "instance_extensions_enabled": [
+      "VK_KHR_get_surface_capabilities2",
+      "VK_EXT_surface_maintenance1",
+      "VK_KHR_surface_maintenance1"
+    ],
+    "device_extension_enabled": "VK_EXT_swapchain_maintenance1",
+    "feature_enabled": "swapchainMaintenance1",
+    "swapchain_extents_observed": [
+      [
+        1536,
+        864
+      ],
+      [
+        1055,
+        695
+      ],
+      [
+        1280,
+        720
+      ]
+    ],
+    "validation_vuid_count": 0,
+    "validation_error_count": 0,
+    "log_sha256": "404dc2ede3023f61d690f6f0752cff1c775baad9efc653ef8d42954d442bb575",
+    "log_size_bytes": 1336656,
+    "external_log_path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/retail-wsi-validation-fixed.log"
+  },
+  "retail_readback": {
+    "presenter_submission": 10,
+    "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "width": 1280,
+    "height": 720,
+    "bytes": 3686400,
+    "raw_sha256": "7b542506da938f4a2c3c1ee43b0356c6840ae7d4e50bedfe65baf5f6b8a0b9f8",
+    "fnv1a64": "26C9600EEF8AB16F",
+    "non_black_rgb_pixels": 59101,
+    "unique_packed_words": 1651,
+    "decoded_png_sha256": "513df3715b5d97638b4975e0c2c10a1f20708776abd9a6e36a492bffeb305893",
+    "external_raw_path": "/home/pes/work/xbox360-wsi-check-20261025/retail-frame10.a2b10g10r10",
+    "external_png_path": "/home/pes/work/xbox360-wsi-check-20261025/retail-frame10.png",
+    "visual_observation": "Original Need for Speed SHIFT logo, loading text, and progress bar are visible."
+  },
+  "targeted_checks": {
+    "passed": 4,
+    "total": 4,
+    "validation_layer": "VK_LAYER_KHRONOS_validation",
+    "checks": [
+      "rexgpu_shift_native_factory_check",
+      "rexgpu_shift_native_live_ring_check",
+      "rexgpu_shift_native_live_ring_readback_check",
+      "rexgpu_vulkan_resolve_capability_check"
+    ]
+  },
+  "conclusion": "The exact retail Xbox 360 XEX reaches an original loading splash and produces non-black Linux/Vulkan presenter readback with no Vulkan validation VUIDs in this run. This is not evidence of the main menu, sustained scene rendering, or an offline race.",
+  "limits": [
+    "The 45-second run was intentionally bounded; timeout cleanup reported a callback-delivery failure after termination.",
+    "Retail PNG, raw pixels, executable, runtime, plugin, and game assets remain outside Git.",
+    "This local device run does not establish compatibility with the Vulkan 1.1 feature floor or Android ARM64.",
+    "The main menu and offline race remain unverified."
+  ]
+}

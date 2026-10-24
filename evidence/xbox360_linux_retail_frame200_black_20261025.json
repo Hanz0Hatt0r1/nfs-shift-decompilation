@@ -1,0 +1,74 @@
+{
+  "schema": "shift.xbox360.linux.retail_frame_readback.v1",
+  "captured_at_utc": "2026-10-24T21:58:48Z",
+  "input": {
+    "default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4"
+  },
+  "build": {
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+    "gpu_plugin_source_commit": "d57598912d173ebbc46f718c52dd36ae27826b06",
+    "rexglue_sdk_source_commit": "ede359f8a93cd26cb95531a0b39ed8584aa93bb7"
+  },
+  "launch": {
+    "platform": "Linux AMD64",
+    "gpu_plugin": "shift-native",
+    "vulkan_validation": true,
+    "run_limit_seconds": 60,
+    "exit": "terminated by the planned timeout after capture",
+    "game_data_root": "user-owned exact retail data outside Git",
+    "user_and_cache_roots": "separate temporary paths"
+  },
+  "vulkan": {
+    "instance_extensions_enabled": [
+      "VK_KHR_get_surface_capabilities2",
+      "VK_EXT_surface_maintenance1",
+      "VK_KHR_surface_maintenance1"
+    ],
+    "device_extension_enabled": "VK_EXT_swapchain_maintenance1",
+    "feature_enabled": "swapchainMaintenance1",
+    "validation_vuid_count": 0,
+    "validation_error_count": 0,
+    "log_sha256": "53648a396a96f6344a9b02308251029c07d480d28b6a0f682f51c5d0d57258c5",
+    "log_size_bytes": 2821685,
+    "external_log_path": "/home/pes/work/xbox360-wsi-check-20261025/logs-current-frame200/retail-current-frame200-validation.log"
+  },
+  "retail_readback": {
+    "presenter_submission": 200,
+    "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "width": 1280,
+    "height": 720,
+    "bytes": 3686400,
+    "raw_sha256": "62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1",
+    "fnv1a64": "68D8B1C5D0E72325",
+    "non_black_rgb_pixels": 0,
+    "unique_packed_words": 1,
+    "single_packed_word": "0xC0000000",
+    "external_raw_path": "/home/pes/work/xbox360-wsi-check-20261025/retail-current-frame200.a2b10g10r10",
+    "external_png_path": "/home/pes/work/xbox360-wsi-check-20261025/retail-current-frame200.png"
+  },
+  "renderer_frontier": {
+    "captured_draw_packets": 53,
+    "translated_draws_in_sampled_batches": 5,
+    "guest_swaps_in_sampled_batch": 1,
+    "vulkan_frames_submitted_in_sampled_batch": 1,
+    "first_autoindex_error": "missing vertex shader control register 0x2307",
+    "later_error": "unsupported captured texture-fetch descriptor",
+    "interpretation": "These counters identify current renderer diagnostics only; they do not prove that the game displayed a rendered scene."
+  },
+  "asset_open_errors": [
+    "d:\\pakfiles\\dir\\audio.bff",
+    "d:\\characters\\drivers2.lod",
+    "d:\\tracks\\cameraconfig.xml"
+  ],
+  "conclusion": "The exact retail XEX produces an all-black opaque presenter readback at submission 200 with the current P2 renderer build. A separate submission-10 capture from an earlier renderer build showed the original loading splash. The difference does not prove a transition to black or identify the cause.",
+  "limits": [
+    "The frame-10 and frame-200 captures use different plugin binaries, so they cannot be treated as one continuous run.",
+    "The test was bounded at 60 seconds and terminated after capture.",
+    "The logged asset-open failures may be optional or served by archive paths; their fatality is unknown.",
+    "The main menu, sustained scene rendering, and offline race remain unverified.",
+    "Retail pixels and game files remain outside Git."
+  ]
+}
