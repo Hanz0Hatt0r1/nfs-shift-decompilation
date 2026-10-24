@@ -2,7 +2,7 @@
 
 **Primary direction (decision: 2026-10-22):** investigate the Xbox 360 retail version of Need for Speed: SHIFT as the source for an ahead-of-time PowerPC-to-C++ recompilation using [ReXGlue SDK](https://github.com/rexglue/rexglue-sdk). Bring up the resulting native runtime on **Linux**, then target **Android/ARM64**. Keep **Vulkan 1.1** as a required compatibility target until a measured technical decision changes it.
 
-**Status: migration scaffold only. Not playable.** No Xbox 360 `default.xex` has been identified/hash-locked in this repository, no SHIFT Xbox 360 recompilation is verified, and no Xbox guest frame, menu or race has been demonstrated. ReXGlue's general capabilities do not establish compatibility with this game or with Vulkan 1.1.
+**Status: one original loading splash capture; not playable.** The hash-locked Xbox 360 `default.xex` produced the original SHIFT logo/loading frame in one Linux/Vulkan run. A later submission-200 capture using a newer renderer build was opaque black; the binaries differ, so sustained output is unverified. The main menu, offline race, Vulkan 1.1-only compatibility, and ARM64/Android execution remain open. See the [splash](evidence/xbox360_linux_retail_splash_validation_20261025.json) and [frame-200](evidence/xbox360_linux_retail_frame200_black_20261025.json) evidence.
 
 ## Active workstreams
 

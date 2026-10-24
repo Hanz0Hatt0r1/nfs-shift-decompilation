@@ -2,7 +2,7 @@
 
 This directory is reserved for **Need for Speed: SHIFT Xbox 360 retail** work via [ReXGlue](https://github.com/rexglue/rexglue-sdk).
 
-**Currently this is a skeleton, not a working game build.** No title-specific XEX, ReXGlue config, PPC output, Vulkan gameplay or Android package is checked into the repo.
+**Current state: one retail loading-splash capture; the game is not playable yet.** The hash-locked XEX produced a non-black original logo/loading-bar readback in one Linux run. A newer renderer build produced an opaque-black submission-200 readback; the different binaries prevent treating the captures as a continuous transition. The main menu, offline race, Vulkan 1.1-only compatibility and Android execution remain open. Evidence: [splash](../evidence/xbox360_linux_retail_splash_validation_20261025.json), [frame 200](../evidence/xbox360_linux_retail_frame200_black_20261025.json). Game files and captured pixels stay outside Git.
 
 ## Work areas
 
@@ -18,6 +18,6 @@ The user-provided retail `default.xex` is kept outside Git. Its SHA-256, title I
 
 The PC `SHIFT.exe` supplied for the legacy workstream is **not** a substitute for `default.xex`.
 
-## First proof
+## Next proof
 
-Pin an upstream SDK commit and produce a reproducible analyzer/compiler report for this exact XEX, including recognized code/functions, import/API dependencies, errors and next blocker. The current `0.10.0` package run is preliminary because its source commit is not yet pinned. No project-specific build command is presented as working.
+Move the exact retail title from the captured loading splash into the real frontend, then verify an offline race. The current Linux AMD64 runtime/build is external to Git; the evidence records executable, runtime, plugin and XEX hashes. Vulkan 1.1-only and Android ARM64 compatibility still need separate exact-XEX runs.
