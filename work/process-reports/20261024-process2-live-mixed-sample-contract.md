@@ -206,6 +206,15 @@ the depth-only mode-5 decoder and selectable frame readback. The result is
 pending; the frame-060 black readback means no retail-visible output has yet
 been demonstrated.
 
+A separate P2-side attempt used the same host, runtime, and current plugin
+hashes from `/tmp/p2-run061-20261024`, with the same 30-second bound and
+frame-100 readback setting. It did not reach a Vulkan presenter: its 40-byte
+log (`c848530a35e0d41b82034e1221ea6ce931b239251fb36b13b8769e6ed8776aea`)
+contains only `SDL video driver: wayland`, no readback file was created, and
+the host required SIGKILL after the 30-second timeout plus 5-second grace
+period. This is a launch failure, not a renderer result. The Process 1 retail
+smoke request remains pending and the phone app was not touched.
+
 ## Validation and limits
 
 `VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir
