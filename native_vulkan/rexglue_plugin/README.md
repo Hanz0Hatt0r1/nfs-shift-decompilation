@@ -392,3 +392,15 @@ of, the post-splash black screen. This verifies the first original retail
 pixels through the project Vulkan path, not menu, race-scene, or full-game
 parity. The host regression suite passes 4/4, including the mixed-sample path
 under Vulkan validation.
+
+To correlate a specific Android startup draw batch with Vulkan output, set the
+plugin CMake cache variable `SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME` to its
+submitted-frame number (default `500`). A frame-4 ARM64 debug build read back
+53,098 non-black pixels (`915336228EB84E49`) from a batch containing the
+captured 1024x256 retail texture and original guest shader pair, without the
+synthetic fragment override. An on-device screenshot about six seconds after
+that readback shows the SHIFT logo; a later screenshot is black. This confirms
+the first retail textured output, not sustained menu or race rendering. See
+[`process2_redmi_note8pro_vulkan_frame4_readback_20261024.json`](../../evidence/process2_redmi_note8pro_vulkan_frame4_readback_20261024.json),
+its [device screenshot](../../evidence/process2_redmi_note8pro_vulkan_frame4_readback_20261024.png),
+and [full device log](../../evidence/process2_redmi_note8pro_vulkan_frame4_readback_20261024.log).

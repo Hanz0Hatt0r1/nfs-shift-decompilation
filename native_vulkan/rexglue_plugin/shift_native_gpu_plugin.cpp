@@ -22,6 +22,10 @@
 #include <utility>
 #include <vector>
 
+#ifndef SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME
+#define SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME 500
+#endif
+
 #include <SPIRV/GlslangToSpv.h>
 #include <StandAlone/ResourceLimits.h>
 #include <glslang/Public/ShaderLang.h>
@@ -1017,7 +1021,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     uint32_t guest_swap_counter = 0;
     uint32_t readback_frame_counter = 0;
 #if defined(__ANDROID__) && !defined(NDEBUG)
-    constexpr uint32_t kAndroidDebugReadbackFrame = 500u;
+    constexpr uint32_t kAndroidDebugReadbackFrame =
+        SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME;
 #else
     constexpr uint32_t kAndroidDebugReadbackFrame = 0u;
 #endif

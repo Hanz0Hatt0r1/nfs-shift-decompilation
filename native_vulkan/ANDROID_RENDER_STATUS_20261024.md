@@ -2,21 +2,22 @@
 
 ## Result
 
-The project-owned Vulkan plugin is **not ready** by the requested on-device
-image criterion. It showed the original NFS SHIFT logo once on the Redmi Note 8
-Pro, then the foreground game remained black. A captured retail frame with
-4x-MSAA followed by two 1x textured draws and Copy/Convert reaches the presenter
-without the former sample-count rejection. The logo is visible in the
-[on-device screenshot](../../evidence/process2_redmi_note8pro_vulkan_retail_logo_20261024.png).
+The first original retail pixels through the project-owned Vulkan path are now
+verified on the Redmi Note 8 Pro: a targeted readback of submitted frame 4
+contains 53,098 non-black pixels, and the device screenshot from the same run
+shows the NFS SHIFT logo. The image is transient; a later screenshot is black.
+The first-draw milestone is verified, but the Android game still does not reach
+a visible menu or race scene. The earlier logo screenshot is also available
+[here](../evidence/process2_redmi_note8pro_vulkan_retail_logo_20261024.png).
 
 The logo screenshot was captured at 11:55:12 MSK; a later screenshot at
 11:55:24 was black. At 12:04:28 MSK, `NfsShiftActivity` was still foreground
 and the screen capture matched the saved black screenshot byte-for-byte. The
 runtime reports missing guest assets including `menu_background.xml`. The
-earlier debug build only captured its first black startup swap; the follow-up
-below adds a late retail-output readback. A transient splash does not satisfy
-readiness: an original menu or gameplay image must remain visible through the
-Vulkan path. No synthetic image counts as retail parity.
+earlier debug build only captured its first black startup swap; later sections
+record targeted and late retail-output readbacks. The title splash does not
+prove menu, race-scene, or sustained output. No synthetic image counts as
+retail parity.
 
 
 ## Hardware and input
@@ -183,3 +184,24 @@ ARM64 build: `rexgpu-shift-native` compiled with NDK 28.2.13676358 for
 existing APK. That plugin was packaged under both Android loader names and
 loaded by the existing debug app. It displayed the retail splash logo on the
 Redmi Note 8 Pro. This does not verify later menu or race-scene output.
+
+## Retail frame-4 readback (2026-10-24)
+
+The Android debug readback frame is configurable with
+`SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME`; this run selected frame 4. The
+captured batch contains retail draw #4 using the 420-byte vertex shader and
+120-byte pixel shader, with the live 1024x256 format-6 texture at guest address
+`0x09D57000` (RGBA8 FNV-1a `1FB4AD3D482BE2BB`). No shader override or synthetic
+draw was enabled. The completed Vulkan readback reports 53,098 non-black
+pixels (FNV-1a `915336228EB84E49`).
+
+The [device screenshot](../evidence/process2_redmi_note8pro_vulkan_frame4_readback_20261024.png)
+captured about six seconds after the readback shows the original SHIFT logo. A
+follow-up screenshot about 46 seconds later is black while the same activity
+remains foregrounded. The readback proves original non-black retail output in
+the Vulkan guest image, but the screenshot is not a pixel-for-pixel dump of
+that same frame. This run does not prove menu, race-scene, or sustained output.
+Full draw, APK/plugin/XEX hashes and raw run log are in
+[`process2_redmi_note8pro_vulkan_frame4_readback_20261024.json`](../evidence/process2_redmi_note8pro_vulkan_frame4_readback_20261024.json)
+and
+[`process2_redmi_note8pro_vulkan_frame4_readback_20261024.log`](../evidence/process2_redmi_note8pro_vulkan_frame4_readback_20261024.log).

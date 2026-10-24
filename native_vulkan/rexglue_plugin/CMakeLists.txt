@@ -3,6 +3,11 @@ project(shift_rexglue_native_gpu LANGUAGES CXX)
 option(SHIFT_REXGLUE_NATIVE_BUILD_TESTS "Build the native GPU plugin smoke test" ON)
 set(SHIFT_REXGLUE_PLUGIN_OUTPUT_DIR "" CACHE PATH
     "Optional isolated output directory for the native GPU plugin")
+set(SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME "500" CACHE STRING
+    "Submitted frame selected for the Android debug Vulkan readback")
+if(NOT SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME MATCHES "^[1-9][0-9]*$")
+  message(FATAL_ERROR "SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME must be a positive integer")
+endif()
 
 set(SHIFT_REXGLUE_SDK_ROOT "" CACHE PATH "Path to the ReXGlue SDK checkout")
 if(NOT SHIFT_REXGLUE_SDK_ROOT AND DEFINED REXSDK_DIR)
@@ -63,6 +68,9 @@ target_compile_features(shift_xbox_live_vulkan_renderer PUBLIC cxx_std_17)
 target_link_libraries(shift_xbox_live_vulkan_renderer PUBLIC Vulkan::Vulkan)
 
 add_library(rexgpu-shift-native SHARED shift_native_gpu_plugin.cpp)
+target_compile_definitions(rexgpu-shift-native PRIVATE
+  SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME=${SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME}
+)
 target_sources(rexgpu-shift-native PRIVATE
   "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/glslang/StandAlone/ResourceLimits.cpp"
 )
