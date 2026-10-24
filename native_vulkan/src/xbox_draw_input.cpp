@@ -963,8 +963,11 @@ bool decode_captured_texture_fetch(
     const uint32_t mip_min = (descriptor_words[4] >> 2) & 0xFu;
     const uint32_t mip_max = (descriptor_words[4] >> 6) & 0xFu;
     const uint32_t dimension = (descriptor_words[5] >> 9) & 0x3u;
-    const uint32_t mip_filter = (descriptor_words[3] >> 23) & 0x3u;
     const uint32_t pitch = ((descriptor_words[0] >> 22) & 0x1FFu) << 5;
+    const uint32_t base_address =
+        ((descriptor_words[1] >> 12) & 0xFFFFFu) << 12;
+    const uint32_t mip_address =
+        ((descriptor_words[5] >> 12) & 0xFFFFFu) << 12;
 
     const bool rgba8 = format == 6 && endian_mode == 2;
     const bool dxt = (format == 19 || format == 20) && endian_mode == 1;
@@ -974,8 +977,13 @@ bool decode_captured_texture_fetch(
         ? tiled && pitch >= width && pitch % 32u == 0
         : compressed && width % 4u == 0 && height % 4u == 0 && pitch >= width &&
               pitch % 4u == 0 && (!tiled || pitch % 128u == 0);
+    // A mip range with the same nonzero base and mip page has no separate
+    // mip payload. Preserve the one captured base level; distinct mip pages
+    // and packed tails with separate storage need subresource upload support.
+    const bool mip_range_aliases_base = mip_max != 0 && mip_min == 0 &&
+        base_address != 0 && base_address == mip_address;
     if (fetch_type != 2 || !valid_texture_layout || stacked || stack_depth != 0 ||
-        dimension != 1 || mip_min != 0 || (mip_max != 0 && mip_filter != 2u)) {
+        dimension != 1 || mip_min != 0 || (mip_max != 0 && !mip_range_aliases_base)) {
         return fail("unsupported captured texture-fetch descriptor", error);
     }
 
@@ -987,7 +995,7 @@ bool decode_captured_texture_fetch(
     }
 
     *output = CapturedTextureFetch{
-        ((descriptor_words[1] >> 12) & 0xFFFFFu) << 12,
+        base_address,
         format,
         endian_mode,
         (descriptor_words[0] >> 2) & 0x3u,

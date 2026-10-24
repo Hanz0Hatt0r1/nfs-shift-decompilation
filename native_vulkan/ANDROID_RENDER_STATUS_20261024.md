@@ -383,21 +383,27 @@ and alpha or DXT5A alpha blocks to RGBA8 on the CPU. DXT5A's captured channel
 swizzle reads W. This avoids requiring optional Vulkan BC-compression support
 and remains suitable for Vulkan 1.1 and ARM64. Draw #28 uses format 20 with a
 linear mip filter and mip range 0..9. Its captured base and mip addresses both
-decode to `0x0A24B000`, and the retained PM4 artifact has no level 1–9 texture
-bytes. It remains fail-closed until retail mip storage can be captured and its
-placement and sampling are verified.
+decode to `0x0A24B000`. The follow-up accepts this exact nonzero page alias as
+a base-level-only resource: Xenia's texture layout code likewise keeps only
+the base level for a level-0 base/mip alias
+([`TextureInfo::SetupMemoryInfo`](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/texture_info.cc#L288-L310)).
+The native Vulkan path still creates a one-level image and clamps sampling at
+LOD 0; descriptors with distinct mip pages or packed mip tails stored at a
+separate address remain fail-closed until their subresource bytes and
+placement are captured.
 
 The parser/decoder regression uses the exact retail descriptors with synthetic
 compressed blocks; it checks extent, pitch, guest range, byte swapping, tiled
-address bounds, both DXT alpha interpolation modes, and RGBA8 output. It passed
-under AddressSanitizer, in the Linux native suite 4/4, in the ReXGlue plugin
-suite 4/4, and on the Redmi Note 8 Pro (Android API 33). The Android
-`arm64-v8a` check target built with NDK 28.2.13676358 / API 29. Vulkan
-validation was enabled for the Linux native and plugin suites. This does not
-verify retail texture pixels or a visible menu/race frame. The existing Linux
-process was left running and still maps the older plugin SHA-256
-`0bcb918f41fd1f85d7e69f808bfc029635340f5b400ca2d18a43d495eb796e62`; the
-current rebuilt plugin hash is recorded in the evidence JSON below.
+address bounds, both DXT alpha interpolation modes, and RGBA8 output. The
+aliased mip descriptor now decodes its base level while a descriptor with a
+distinct mip page is still rejected. It passed in the Linux native suite 4/4,
+in the ReXGlue plugin suite 3/3, and as a standalone test on the Redmi Note 8
+Pro (Android API 33). The Android `arm64-v8a` check target built with NDK
+28.2.13676358 / API 24. Vulkan renderer tests passed on Linux and Mali-G76
+MC4, but this decoder fixture uses synthetic texture bytes and does not prove
+retail texture pixels or a visible menu/race frame. The existing Linux process
+remains open and still maps the older plugin build; a fresh retail run is
+needed to verify this descriptor reaches Vulkan submission.
 Evidence and raw descriptors are in
 [`process2_retail_dxt4_5_texture_decode_20261024.json`](../evidence/process2_retail_dxt4_5_texture_decode_20261024.json).
 

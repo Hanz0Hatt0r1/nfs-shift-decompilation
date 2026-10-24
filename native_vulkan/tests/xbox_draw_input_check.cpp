@@ -1385,10 +1385,31 @@ int main() {
         0x840248FEu, 0x0A24B054u, 0x0000E1FFu, 0x06A80D10u,
         0x00000E43u, 0x0A24BA10u,
     };
-    require(!shift::xbox::decode_captured_texture_fetch(
+    require(shift::xbox::decode_captured_texture_fetch(
                 captured_dxt4_5_mip_chain_descriptor, &live_dxt4_5_fetch, &error) &&
-                error == "unsupported captured texture-fetch descriptor",
-            "captured DXT4/5 texture with a linear mip chain was accepted without mip data");
+                live_dxt4_5_fetch.guest_address == 0x0A24B000u &&
+                live_dxt4_5_fetch.format == 20 && live_dxt4_5_fetch.tiled &&
+                live_dxt4_5_fetch.width == 512 && live_dxt4_5_fetch.height == 8 &&
+                live_dxt4_5_fetch.pitch == 512 &&
+                live_dxt4_5_fetch.mip_filter == 1 &&
+                live_dxt4_5_fetch.byte_length == 65536u,
+            "captured DXT4/5 base/mip alias was not kept as its one available base level");
+    std::vector<uint8_t> aliased_dxt4_5(live_dxt4_5_fetch.byte_length, 0);
+    std::vector<uint8_t> aliased_dxt4_5_rgba;
+    require(shift::xbox::untile_captured_texture_2d(
+                live_dxt4_5_fetch, aliased_dxt4_5.data(), aliased_dxt4_5.size(),
+                &aliased_dxt4_5_rgba, &error) &&
+                aliased_dxt4_5_rgba.size() == 512u * 8u * 4u,
+            "captured DXT4/5 base/mip alias could not decode its base image");
+
+    uint32_t unaliased_mip_descriptor[6];
+    std::copy(std::begin(captured_dxt4_5_mip_chain_descriptor),
+              std::end(captured_dxt4_5_mip_chain_descriptor),
+              std::begin(unaliased_mip_descriptor));
+    unaliased_mip_descriptor[5] = 0x0A24CA10u;
+    require(!shift::xbox::decode_captured_texture_fetch(
+                unaliased_mip_descriptor, &live_dxt4_5_fetch, &error),
+            "captured DXT4/5 with distinct mip storage was accepted without mip data");
 
     require(shift::xbox::decode_captured_texture_fetch(
                 live_dxt4_5_captures[0].descriptor, &live_dxt4_5_fetch, &error),

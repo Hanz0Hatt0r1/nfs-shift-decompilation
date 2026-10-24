@@ -52,6 +52,6 @@
   "limitations": [
     "The fixture uses the exact retail descriptor with synthetic texture bytes; it verifies descriptor parsing, padded allocation sizing, byte bounds, and untile, not retail texture appearance.",
     "A fresh game run with this build has not yet confirmed draw 29 submission; the currently open retail process loaded the previous plugin build.",
-    "Draw 27's opcode 16 translation now has Linux and Android unit coverage, but has not yet been confirmed in a fresh retail run. Draw 28's mip-chain descriptor remains unresolved."
+    "Draw 27's opcode 16 translation now has Linux and Android unit coverage, but has not yet been confirmed in a fresh retail run. Draw 28's base/mip page-alias descriptor now has base-level-only parser coverage; fresh retail submission remains unverified, and distinct mip pages remain unsupported."
   ]
 }
