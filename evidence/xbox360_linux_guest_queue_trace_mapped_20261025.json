@@ -40,24 +40,41 @@
       "retail_function": "0x823A4640",
       "hit_counter_reached": 380,
       "reported_state_samples": 66,
-      "guest_lr_samples": ["0x823B3844"],
+      "guest_lr_samples": [
+        "0x823B3844"
+      ],
       "meaning": "The source-0 handler reaches the retail deferred consumer at its guest callsite."
     },
     "deferred_queue_indices": {
       "read_offset": "0x413C",
       "write_offset": "0x4140",
-      "sampled_pairs": [[0, 0]],
+      "sampled_pairs": [
+        [
+          0,
+          0
+        ]
+      ],
       "all_reported_pairs_empty": true
     },
     "software_queue": {
       "helper_function": "0x823B33A0",
       "hit_counter_reached": 65,
       "head_pointer": "0xB7AF4000",
-      "sampled_head_range": [1, 129],
-      "sampled_tail_range": [3, 131],
+      "sampled_head_range": [
+        1,
+        129
+      ],
+      "sampled_tail_range": [
+        3,
+        131
+      ],
       "global_0x831B3820": 0,
       "guard_offset_0x2ABC": "0x00",
-      "predicate_offset_0x2ABD": ["0x00", "0x04", "0x14"],
+      "predicate_offset_0x2ABD": [
+        "0x00",
+        "0x04",
+        "0x14"
+      ],
       "predicate_mask_0x02_set_in_samples": false
     },
     "ring_wait": {
@@ -91,5 +108,14 @@
     "No controller events were sent.",
     "The main menu and offline race remain unverified.",
     "Raw GDB/runtime logs and the retail XEX remain outside Git."
-  ]
+  ],
+  "host_scheduler_environment": {
+    "visible_logical_cpu_count": 4,
+    "allowed_host_cpu_ids": "0-3",
+    "guest_cpu_count": 6,
+    "runtime_behavior": "ReXGlue XThread::SetActiveCpu sets host affinity only when logical_processor_count() >= 6; this environment falls back without per-thread host affinity.",
+    "warning": "Too few processor cores - scheduling will be wonky",
+    "warning_count_in_run_log": 444,
+    "interpretation": "This is a host scheduling limitation. It may affect timing but is not proven to cause the black readback, empty deferred queue, or frontend stall."
+  }
 }

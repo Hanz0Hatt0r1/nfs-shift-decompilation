@@ -70,5 +70,14 @@
     "The logged asset-open failures may be optional or served by archive paths; their fatality is unknown.",
     "The main menu, sustained scene rendering, and offline race remain unverified.",
     "Retail pixels and game files remain outside Git."
-  ]
+  ],
+  "host_scheduler_environment": {
+    "visible_logical_cpu_count": 4,
+    "allowed_host_cpu_ids": "0-3",
+    "guest_cpu_count": 6,
+    "runtime_behavior": "ReXGlue XThread::SetActiveCpu sets host affinity only when logical_processor_count() >= 6; this environment falls back without per-thread host affinity.",
+    "warning": "Too few processor cores - scheduling will be wonky",
+    "warning_count_in_run_log": 3943,
+    "interpretation": "This is a host scheduling limitation. It may affect timing but is not proven to cause the black readback, empty deferred queue, or frontend stall."
+  }
 }
