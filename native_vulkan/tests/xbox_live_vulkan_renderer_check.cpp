@@ -374,7 +374,17 @@ int main(int argc, char** argv) {
 
     std::vector<shift::xbox::CapturedVulkanDraw> mixed_sample_draws{
         draws[0], draws[1]};
+    // The live Linux retail run changes this target from 4x MSAA/pitch 640 to
+    // 1x/pitch 1280 before XE_SWAP. Keep that captured sample/pitch transition
+    // in the renderer regression; the shaders and geometry here remain smoke
+    // inputs and do not claim retail image parity.
+    mixed_sample_draws[0].raster.color_base_tiles = 0;
+    mixed_sample_draws[0].raster.depth_base_tiles = 720;
+    mixed_sample_draws[0].raster.surface_pitch = 640;
     mixed_sample_draws[1].raster.sample_count = 1;
+    mixed_sample_draws[1].raster.color_base_tiles = 0;
+    mixed_sample_draws[1].raster.depth_base_tiles = 720;
+    mixed_sample_draws[1].raster.surface_pitch = 1280;
     mixed_sample_draws[1].raster.depth_test_enabled = false;
     mixed_sample_draws[1].raster.depth_write_enabled = false;
     mixed_sample_draws[1].raster.stencil_test_enabled = false;
