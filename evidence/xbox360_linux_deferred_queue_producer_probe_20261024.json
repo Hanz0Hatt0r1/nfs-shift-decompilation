@@ -18,6 +18,7 @@
   },
   "capture": {
     "monitor_limit_seconds": 50,
+    "timing_caveat": "GDB breakpoints pause guest execution; callback samples and absence of a producer hit are diagnostic observations, not timing measurements.",
     "gdb_log": {
       "path": "/tmp/p1-virtual-input-20261024/gdb-queue-functions.log",
       "sha256": "5ad69f791c3f012329c162f9cddf2b9da1da874697ea20c63cee73160b8d3bc3"
