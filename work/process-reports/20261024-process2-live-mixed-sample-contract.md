@@ -7,8 +7,9 @@ captured draws and a matching source-0/sample-0 `Copy/Convert` to the
 1280x720 frontbuffer. The refresh diagnostic reported draw 0 at 4x MSAA with
 surface pitch 640 and draw 1 at 1x with pitch 1280; both had color base 0,
 depth base 720, color format 1, and a 1280x720 raster extent. The same failure
-recurred in the subsequent 32-second run. This is runtime evidence for the
-draw-state transition, not evidence of a visible game frame.
+recurred in the subsequent 32-second run while it used a stale staged plugin.
+This is runtime evidence for the draw-state transition, not evidence of a
+visible game frame.
 
 ## Loaded plugin identity
 
@@ -32,6 +33,27 @@ Copy/Convert target is present. That path permits the observed surface-pitch
 change while retaining the same color/depth target identities. The renderer
 regression now fixes the reported 4x/pitch-640 to 1x/pitch-1280 transition.
 
+## Current plugin integration run
+
+Process 1 confirmed that run 050 loaded the current `ad5027c8…` P2 plugin
+against Debug runtime `680d98b9…`. Its 1,091,626-byte log has SHA-256
+`b8bef4263007b40cc4a729aabe944830c4f6f667eaf4dd6d89cf5cb89215f117`. It
+contains 1,980 successful Vulkan submit lines, 1,980 accepted
+source-0/sample-0 Copy/Convert lines, and no Vulkan frame-refresh failures.
+The earlier sample-count rejection is resolved when the current plugin is
+loaded.
+
+The same run reports four unique unresolved retail draws: the initial draw
+has incomplete raster registers; draw #27 fails viewport/surface decoding;
+draw #28 has an unsupported texture-fetch descriptor; draw #29 has an
+unsupported color Copy/Convert state. The bounded log contains no screenshot
+or Vulkan readback, and Process 1 did not confirm a menu transition. These
+submits therefore do not establish visible retail parity.
+
+The latest P2 plugin adds raw viewport, texture descriptor, and Copy/Convert
+register values to those fail-closed diagnostics. Linux and Android ARM64
+plugin builds succeeded; a new run is still needed to capture those fields.
+
 ## Validation and limits
 
 `VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir
@@ -39,8 +61,7 @@ regression now fixes the reported 4x/pitch-640 to 1x/pitch-1280 transition.
 The updated mixed-sample renderer check passed and produced a full readback.
 Its shaders and geometry are test inputs, not retail graphics.
 
-The current P2 plugin has not yet been run through the Linux retail smoke
-after replacing the stale loaded library. The observed failure therefore
-does not establish that the current mixed-sample implementation fails. It
-also does not prove that the updated plugin will produce a visible menu or
-race frame; those remain runtime and scene contracts to verify.
+The mixed-sample renderer test uses smoke shaders and geometry; it is not a
+retail image. The successful refresh count likewise does not prove that a
+visible menu or race frame was produced. Current unresolved draws and the
+missing visual capture remain open renderer/runtime contracts.

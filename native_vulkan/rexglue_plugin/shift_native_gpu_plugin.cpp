@@ -570,11 +570,25 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (pixel_translation.uses_texture) {
       if (!shader_state.snapshot_texture_fetch_descriptor(
               pixel_translation.texture_fetch_constant_index,
-              &texture_descriptor, error) ||
-          !shift::xbox::decode_captured_texture_fetch(
+              &texture_descriptor, error)) {
+        return false;
+      }
+      if (!shift::xbox::decode_captured_texture_fetch(
               texture_descriptor.data(), &texture_fetch, error) ||
           !shift::xbox::decode_captured_texture_sampling(
               texture_fetch, &texture_sampling, error)) {
+        if (error) {
+          std::ostringstream detail;
+          detail << *error << " fetch_constant="
+                 << pixel_translation.texture_fetch_constant_index
+                 << " descriptor_words=[";
+          for (size_t word = 0; word < texture_descriptor.size(); ++word) {
+            if (word) detail << ',';
+            detail << "0x" << std::hex << texture_descriptor[word] << std::dec;
+          }
+          detail << ']';
+          *error = detail.str();
+        }
         return false;
       }
       for (size_t i = 0; i < options.texture_swizzle.size(); ++i) {
@@ -1461,6 +1475,17 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 const bool raster_state_ready = raster_registers_ready &&
                     shift::xbox::decode_captured_raster_state(
                         raster_registers, &raster_state, &error);
+                if (!raster_state_ready && raster_registers_ready &&
+                    error == "unsupported captured viewport or surface pitch") {
+                  std::ostringstream detail;
+                  detail << error << " surface_info=0x" << std::hex
+                         << raster_registers.surface_info << " viewport=[0x"
+                         << raster_registers.viewport_x_scale << ",0x"
+                         << raster_registers.viewport_x_offset << ",0x"
+                         << raster_registers.viewport_y_scale << ",0x"
+                         << raster_registers.viewport_y_offset << ']';
+                  error = detail.str();
+                }
                 if (raster_state_ready) {
                   ++draws_with_raster_state;
                   if (shift::xbox::captured_draw_has_no_framebuffer_effects(
@@ -1491,6 +1516,16 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                                   "resolve shaders: {}", error);
                     }
                     continue;
+                  } else if (error ==
+                             "unsupported captured Xenos color Copy/Convert state") {
+                    std::ostringstream detail;
+                    detail << error << " registers=[0x" << std::hex
+                           << raster_registers.copy_control << ",0x"
+                           << raster_registers.copy_dest_base << ",0x"
+                           << raster_registers.copy_dest_pitch << ",0x"
+                           << raster_registers.copy_dest_info << "] valid=0x"
+                           << raster_registers.copy_valid_mask;
+                    error = detail.str();
                   }
                 }
                 if (!vertex_shader_program.empty() && !pixel_shader_program.empty()) {
