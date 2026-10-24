@@ -671,6 +671,40 @@ int main() {
                 raster_state.scissor_x1 == 1280 && raster_state.scissor_y1 == 720 &&
                 raster_state.scissor_has_area,
             "captured Xbox scissor bounds changed");
+    require(raster_state.cull_mode ==
+                    shift::xbox::CapturedRasterState::CullMode::None &&
+                raster_state.front_face_ccw && raster_state.setup_mode_control == 0,
+            "captured Xenos default cull/front-face state changed");
+    auto cull_raster = captured_raster_registers;
+    cull_raster.setup_mode_control = 1u;
+    require(shift::xbox::decode_captured_raster_state(
+                cull_raster, &raster_state, &error) &&
+                raster_state.cull_mode ==
+                    shift::xbox::CapturedRasterState::CullMode::Front &&
+                raster_state.front_face_ccw,
+            "captured Xenos front-face culling was not decoded");
+    cull_raster.setup_mode_control = 2u;
+    require(shift::xbox::decode_captured_raster_state(
+                cull_raster, &raster_state, &error) &&
+                raster_state.cull_mode ==
+                    shift::xbox::CapturedRasterState::CullMode::Back &&
+                raster_state.front_face_ccw,
+            "captured Xenos back-face culling was not decoded");
+    cull_raster.setup_mode_control = 4u;
+    require(shift::xbox::decode_captured_raster_state(
+                cull_raster, &raster_state, &error) &&
+                raster_state.cull_mode ==
+                    shift::xbox::CapturedRasterState::CullMode::None &&
+                !raster_state.front_face_ccw,
+            "captured Xenos clockwise front-face state was not decoded");
+    cull_raster.setup_mode_control = 3u;
+    require(!shift::xbox::decode_captured_raster_state(
+                cull_raster, &raster_state, &error) &&
+                error == "unsupported captured front-and-back culling",
+            "unsupported Xenos front-and-back culling was not rejected");
+    require(shift::xbox::decode_captured_raster_state(
+                captured_raster_registers, &raster_state, &error),
+            "captured Xenos raster state could not be restored after cull cases");
 
     const shift::xbox::CapturedRasterRegisters captured_noop_registers{
         0x14000500u, 0x00000000u, 0x000002D0u, 0x00000004u,
@@ -739,7 +773,7 @@ int main() {
     shift::xbox::CapturedRasterRegisters tracked_raster_registers{};
     require(!raster_register_state.snapshot(&tracked_raster_registers, &error),
             "incomplete raster register state was accepted");
-    const std::array<shift::xbox::GuestRegisterWrite, 20> raster_writes{{
+    const std::array<shift::xbox::GuestRegisterWrite, 21> raster_writes{{
         {0x2000, captured_raster_registers.surface_info},
         {0x2001, captured_raster_registers.color_info},
         {0x2002, captured_raster_registers.depth_info},
@@ -756,6 +790,7 @@ int main() {
         {0x2081, captured_raster_registers.window_scissor_tl},
         {0x2082, captured_raster_registers.window_scissor_br},
         {0x2201, captured_raster_registers.blend_control_0},
+        {0x2205, captured_raster_registers.setup_mode_control},
         {0x2318, 0x00100004u},
         {0x2319, 0x0975E000u},
         {0x231A, 0x02D00500u},
@@ -815,7 +850,11 @@ int main() {
                 tracked_raster_state.width == raster_state.width &&
                 tracked_raster_state.height == raster_state.height &&
                 tracked_raster_state.scissor_x1 == raster_state.scissor_x1 &&
-                tracked_raster_state.depth_format == raster_state.depth_format,
+                tracked_raster_state.depth_format == raster_state.depth_format &&
+                tracked_raster_state.cull_mode == raster_state.cull_mode &&
+                tracked_raster_state.front_face_ccw == raster_state.front_face_ccw &&
+                tracked_raster_state.setup_mode_control ==
+                    raster_state.setup_mode_control,
             "tracked PM4 raster state diverged from the captured draw contract");
     raster_register_state.reset();
     require(!raster_register_state.snapshot(&tracked_raster_registers, &error),

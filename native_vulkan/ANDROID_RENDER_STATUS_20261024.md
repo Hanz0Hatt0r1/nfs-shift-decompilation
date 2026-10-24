@@ -211,3 +211,44 @@ log are in
 [`process2_redmi_note8pro_vulkan_frame4_pixels_20261024.bin`](../evidence/process2_redmi_note8pro_vulkan_frame4_pixels_20261024.bin),
 and
 [`process2_redmi_note8pro_vulkan_frame4_pixels_20261024.log`](../evidence/process2_redmi_note8pro_vulkan_frame4_pixels_20261024.log).
+
+## Xenos cull/front-face state (2026-10-24)
+
+The captured raster contract now requires `PA_SU_SC_MODE_CNTL` (`0x2205`) and
+decodes front/back culling plus the `face` winding bit into the Vulkan pipeline.
+Cull-front-and-back is rejected. On the Redmi's startup logo batch, live draws
+#4/#5 captured `setup=0x218006`: back-face culling enabled and clockwise front
+face. Directly forwarding that winding into Vulkan preserves the retail output
+with the renderer's captured viewport state. An earlier Y-flip winding
+inversion experiment culled the whole retail batch (zero non-black pixels);
+the corrected direct mapping restores the prior frame-4 output exactly:
+53,098 non-black pixels, FNV-1a `915336228EB84E49`, and byte-for-byte equality
+with the existing 3,686,400-byte frame-4 image (`e45a6a3388a12cfcb047d9f94e3120263e219c815cbab59b6e99b0e0f70779e0`).
+
+The updated renderer regression exercises front/back culling and both winding
+values under its Y-flipped viewport. Host Vulkan CTest passed 4/4 with
+`VK_LAYER_KHRONOS_validation` forced; the ReXGlue plugin suite passed 3/3; and
+the isolated Android `arm64-v8a` plugin rebuilt successfully with NDK
+28.2.13676358 / API 29. The fixed APK was installed on the Redmi Note 8 Pro
+(Mali-G76 MC4, Vulkan 1.1.131), and the on-device frame-4 readback matches the
+previous retail logo evidence. The app remained foregrounded after the
+post-splash capture, whose black screenshot is byte-identical to the earlier
+post-splash screen.
+
+This validates culling on the startup retail draw and does not validate the
+menu or race scene. The restored Xbox root still lacks the guest-opened paths
+`d:\pakfiles\dir\audio.bff`, `d:\characters\drivers2.lod`,
+`d:\tracks\cameraconfig.xml`, and both `menu_background.xml` variants; the
+guest logs these failed opens while continuing to submit startup Vulkan draws.
+Process 1's read-only cross-check confirms the root is mounted as `D:` and the
+retail `default.xex` identity matches; the root contains `PakFiles/*.bff` and
+loose UI/audio assets, but not these exact loose paths. The ReXGlue VFS has no
+BFF mount/fallback in the inspected SDK, and the indexed
+`PakFiles/Menu_Background.bff` contains related `.sgx`/`.enx` resources but no
+`menu_background.xml` member. The correct Xbox asset path table/extraction
+route remains unresolved; the missing XML alone is not yet proven fatal.
+Runtime/VFS ownership remains Process 1. Android validation layers were
+unavailable in this app run; validation was exercised on the host. Full raw
+log, hashes, root and readback details are recorded in
+[`process2_redmi_note8pro_vulkan_cull_state_20261024.json`](../evidence/process2_redmi_note8pro_vulkan_cull_state_20261024.json)
+and its [compressed device log](../evidence/process2_redmi_note8pro_vulkan_cull_state_20261024.log.gz).

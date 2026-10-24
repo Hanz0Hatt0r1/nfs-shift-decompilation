@@ -614,8 +614,20 @@ bool create_draw_resources(
     VkPipelineRasterizationStateCreateInfo raster{};
     raster.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     raster.polygonMode = VK_POLYGON_MODE_FILL;
-    raster.cullMode = VK_CULL_MODE_NONE;
-    raster.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    switch (source.raster.cull_mode) {
+        case CapturedRasterState::CullMode::None:
+            raster.cullMode = VK_CULL_MODE_NONE;
+            break;
+        case CapturedRasterState::CullMode::Front:
+            raster.cullMode = VK_CULL_MODE_FRONT_BIT;
+            break;
+        case CapturedRasterState::CullMode::Back:
+            raster.cullMode = VK_CULL_MODE_BACK_BIT;
+            break;
+    }
+    raster.frontFace = source.raster.front_face_ccw
+                           ? VK_FRONT_FACE_COUNTER_CLOCKWISE
+                           : VK_FRONT_FACE_CLOCKWISE;
     raster.lineWidth = 1.0f;
     VkPipelineMultisampleStateCreateInfo multisample{};
     multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;

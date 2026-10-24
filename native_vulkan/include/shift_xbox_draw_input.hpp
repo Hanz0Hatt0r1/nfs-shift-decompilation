@@ -335,6 +335,7 @@ struct CapturedRasterRegisters {
     uint32_t copy_dest_pitch = 0;
     uint32_t copy_dest_info = 0;
     uint32_t copy_valid_mask = 0;
+    uint32_t setup_mode_control = 0;
 };
 
 // Retains only the raster registers used by the captured Xbox draw contract.
@@ -371,6 +372,13 @@ struct CapturedRasterState {
     uint32_t blend_control_0;
     uint32_t depth_control = 0;
     uint32_t stencil_refmask = 0;
+    enum class CullMode : uint8_t {
+        None,
+        Front,
+        Back,
+    } cull_mode = CullMode::None;
+    bool front_face_ccw = true;
+    uint32_t setup_mode_control = 0;
 };
 
 // Checks only framebuffer effects represented by the captured raster state.

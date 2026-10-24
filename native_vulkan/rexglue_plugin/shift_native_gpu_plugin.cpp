@@ -827,7 +827,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
              << ",stencil:" << raster_state.stencil_test_enabled
              << "} color_mask=0x" << std::hex
              << raster_state.color_write_mask << " blend=0x"
-             << raster_state.blend_control_0 << std::dec << "\n"
+             << raster_state.blend_control_0 << " setup=0x"
+             << raster_state.setup_mode_control << std::dec
+             << " cull=" << static_cast<uint32_t>(raster_state.cull_mode)
+             << " front_ccw=" << raster_state.front_face_ccw << "\n"
              << "  shaders: VS=" << vertex_program.size() << " bytes FNV-1a=0x"
              << std::hex
              << Fnv1a64(vertex_program.data(), vertex_program.size())
@@ -1272,13 +1275,16 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     REXLOG_DEBUG(
                         "shift-native: captured raster registers: "
                         "surface={:08x}, color={:08x}, depth={:08x}, mode={:08x}, "
+                        "setup={:08x}, "
                         "mask={:08x}, viewport=[{:08x},{:08x},{:08x},{:08x}], "
                         "screen-scissor=[{:08x},{:08x}], "
                         "window-scissor=[{:08x},{:08x}], window-offset={:08x}, "
                         "blend={:08x}, depth-control={:08x}",
                         raster_registers.surface_info,
                         raster_registers.color_info, raster_registers.depth_info,
-                        raster_registers.mode_control, raster_registers.color_mask,
+                        raster_registers.mode_control,
+                        raster_registers.setup_mode_control,
+                        raster_registers.color_mask,
                         raster_registers.viewport_x_scale,
                         raster_registers.viewport_x_offset,
                         raster_registers.viewport_y_scale,

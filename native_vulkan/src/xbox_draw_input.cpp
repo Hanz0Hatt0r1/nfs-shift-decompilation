@@ -1036,6 +1036,7 @@ void GuestRasterRegisterState::apply(const GuestRegisterWrite& write) noexcept {
         case 0x2081: bit = 1u << 13; destination = &registers_.window_scissor_tl; break;
         case 0x2082: bit = 1u << 14; destination = &registers_.window_scissor_br; break;
         case 0x2201: bit = 1u << 15; destination = &registers_.blend_control_0; break;
+        case 0x2205: bit = 1u << 16; destination = &registers_.setup_mode_control; break;
         default: return;
     }
     *destination = write.value;
@@ -1045,7 +1046,7 @@ void GuestRasterRegisterState::apply(const GuestRegisterWrite& write) noexcept {
 bool GuestRasterRegisterState::snapshot(
     CapturedRasterRegisters* output,
     std::string* error) const {
-    constexpr uint32_t kAllRasterRegistersValid = (1u << 16) - 1u;
+    constexpr uint32_t kAllRasterRegistersValid = (1u << 17) - 1u;
     if (!output || valid_mask_ != kAllRasterRegistersValid) {
         return fail("incomplete captured raster register state", error);
     }
@@ -1232,6 +1233,12 @@ bool decode_captured_raster_state(
         return fail("unsupported captured target or raster state", error);
     }
 
+    const bool cull_front = (registers.setup_mode_control & 1u) != 0;
+    const bool cull_back = (registers.setup_mode_control & 2u) != 0;
+    if (cull_front && cull_back) {
+        return fail("unsupported captured front-and-back culling", error);
+    }
+
     const float x_scale = register_float(registers.viewport_x_scale);
     const float x_offset = register_float(registers.viewport_x_offset);
     const float y_scale = register_float(registers.viewport_y_scale);
@@ -1292,6 +1299,11 @@ bool decode_captured_raster_state(
         registers.blend_control_0,
         registers.depth_control,
         registers.stencil_refmask,
+        cull_front ? CapturedRasterState::CullMode::Front
+                   : cull_back ? CapturedRasterState::CullMode::Back
+                               : CapturedRasterState::CullMode::None,
+        (registers.setup_mode_control & 4u) == 0,
+        registers.setup_mode_control,
     };
     if (error) {
         error->clear();

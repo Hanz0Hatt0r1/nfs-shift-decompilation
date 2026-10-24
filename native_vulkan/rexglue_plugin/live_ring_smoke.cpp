@@ -118,7 +118,7 @@ std::vector<uint8_t> make_captured_pixel_shader_slice() {
 std::vector<uint8_t> make_pm4_stream() {
   std::vector<uint8_t> stream;
   // Raster registers from the captured 1280x720 gamma RGBA8/D24S8 draw.
-  constexpr std::array<std::pair<uint32_t, uint32_t>, 16> raster_registers = {{
+  constexpr std::array<std::pair<uint32_t, uint32_t>, 17> raster_registers = {{
       {0x2000u, 0x14000500u},
       {0x2001u, 0x00010000u},
       {0x2002u, 0x000002D0u},
@@ -135,6 +135,7 @@ std::vector<uint8_t> make_pm4_stream() {
       {0x2081u, 0x00000000u},
       {0x2082u, 0x02D00500u},
       {0x2201u, 0x07010706u},
+      {0x2205u, 0x00000000u},
   }};
   for (const auto& [index, value] : raster_registers)
     append_type0(&stream, index, value);

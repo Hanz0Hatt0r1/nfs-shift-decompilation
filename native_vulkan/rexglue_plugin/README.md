@@ -26,8 +26,11 @@ current control-flow subset rejects loops, so loop-aware relative addressing
 remains unsupported. It translates the captured shader pair (including inline
 `IM_LOAD_IMMEDIATE`), validates required constants, and resolves supported
 vertex and texture resources. Other primitive, shader-interface, raster, and
-resource forms are rejected. The frame path clears the presenter image and renders the collected draws; it does not reconstruct Xenos
-EDRAM contents or read the guest frontbuffer as a finished image. The captured
+resource forms are rejected. The captured raster subset includes the Xenos
+`PA_SU_SC_MODE_CNTL` front/back cull and front-face bits. Cull-both is rejected
+until its retail behavior is captured. The frame path clears the presenter
+image and renders the collected draws; it does not reconstruct Xenos EDRAM
+contents or read the guest frontbuffer as a finished image. The captured
 black texture border has unknown alpha, so transparent-black is still
 provisional. Target gamma conversion and the complete retail scene are not
 yet verified.

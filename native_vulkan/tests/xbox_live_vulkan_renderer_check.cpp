@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <cstring>
@@ -330,6 +331,46 @@ int main(int argc, char** argv) {
         std::cerr << "captured Vulkan draw submission failed: " << error << '\n';
         return 1;
     }
+
+    auto triangle = draw;
+    triangle.topology = shift::xbox::PrimitiveTopology::TriangleList;
+    triangle.index_count = 3;
+    triangle.raster.cull_mode =
+        shift::xbox::CapturedRasterState::CullMode::Back;
+    // This test triangle is clockwise after the renderer's Y-flipped viewport;
+    // the captured Xenos face bit must select it as the front-facing primitive.
+    triangle.raster.front_face_ccw = false;
+    const auto render_triangle = [&](shift::xbox::CapturedVulkanDraw test_draw,
+                                    bool expected_visible) {
+        std::vector<uint32_t> pixels;
+        std::string triangle_error;
+        if (!shift::xbox::submit_captured_vulkan_frame(
+                physical_device, device, queue, queue_family, output_image,
+                output_view, false, 1280, 720, {test_draw}, &triangle_error,
+                &pixels, enabled_features.geometryShader, &copy)) {
+            std::cerr << "Xenos cull-state triangle draw failed: "
+                      << triangle_error << '\n';
+            return false;
+        }
+        const bool visible = std::any_of(
+            pixels.begin(), pixels.end(),
+            [](uint32_t pixel) { return (pixel & 0x3FFFFFFFu) != 0; });
+        if (visible != expected_visible) {
+            std::cerr << "Xenos cull-state triangle visibility changed: expected "
+                      << expected_visible << ", got " << visible << '\n';
+            return false;
+        }
+        return true;
+    };
+    if (!render_triangle(triangle, true)) return 1;
+    triangle.raster.cull_mode =
+        shift::xbox::CapturedRasterState::CullMode::Front;
+    if (!render_triangle(triangle, false)) return 1;
+    triangle.raster.front_face_ccw = true;
+    if (!render_triangle(triangle, true)) return 1;
+    triangle.raster.cull_mode =
+        shift::xbox::CapturedRasterState::CullMode::Back;
+    if (!render_triangle(triangle, false)) return 1;
 
     std::vector<shift::xbox::CapturedVulkanDraw> mixed_sample_draws{
         draws[0], draws[1]};
