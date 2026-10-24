@@ -52,8 +52,8 @@ assert instructions["global_flag_loads"] == [
 assert [item["value"] for item in instructions["global_flag_stores"]] == [0, 1]
 
 thresholds = static["thresholds"]
-assert thresholds["selector_zero"]["accepted_values"] == [68, 133]
-assert thresholds["selector_nonzero"]["accepted_values"] == [81, 160]
+assert thresholds["selector_zero"]["accepted_range_inclusive"] == [68, 133]
+assert thresholds["selector_nonzero"]["accepted_range_inclusive"] == [81, 160]
 
 transitions = static["qualified_transitions"]
 assert [item["predicate"] for item in transitions] == [1, 0]
