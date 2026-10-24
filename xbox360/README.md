@@ -2,7 +2,7 @@
 
 This directory is reserved for **Need for Speed: SHIFT Xbox 360 retail** work via [ReXGlue](https://github.com/rexglue/rexglue-sdk).
 
-**Current state: one retail loading-splash capture; the game is not playable yet.** The hash-locked XEX produced a non-black original logo/loading-bar readback in one Linux run. A newer renderer build produced an opaque-black submission-200 readback; the different binaries prevent treating the captures as a continuous transition. The main menu, offline race, Vulkan 1.1-only compatibility and Android execution remain open. Evidence: [splash](../evidence/xbox360_linux_retail_splash_validation_20261025.json), [frame 200](../evidence/xbox360_linux_retail_frame200_black_20261025.json). Game files and captured pixels stay outside Git.
+**Current state: the original loading splash reproduces at submission 10; the game is not playable yet.** The hash-locked XEX produces the logo/loading bar with the current renderer build. A separate run using the same host/runtime/plugin/XEX hashes read back opaque black at submission 200; the captures are not one continuous run. The main menu, offline race, Vulkan 1.1-only compatibility and Android execution remain open. Evidence: [current splash](../evidence/xbox360_linux_retail_frame10_current_plugin_20261025.json), [submission 200](../evidence/xbox360_linux_retail_frame200_black_20261025.json). Game files and captured pixels stay outside Git.
 
 ## Work areas
 

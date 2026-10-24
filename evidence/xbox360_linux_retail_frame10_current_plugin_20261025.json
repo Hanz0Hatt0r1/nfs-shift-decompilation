@@ -1,0 +1,54 @@
+{
+  "schema": "shift.xbox360.linux.retail_frame_readback.v1",
+  "captured_at_utc": "2026-10-24T22:06:52Z",
+  "input": {
+    "default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4"
+  },
+  "build": {
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+    "gpu_plugin_source_commit": "d57598912d173ebbc46f718c52dd36ae27826b06",
+    "rexglue_sdk_source_commit": "ede359f8a93cd26cb95531a0b39ed8584aa93bb7"
+  },
+  "launch": {
+    "platform": "Linux AMD64",
+    "gpu_plugin": "shift-native",
+    "validation_layer_requested": "VK_LAYER_KHRONOS_validation",
+    "run_limit_seconds": 30,
+    "exit": "terminated by the planned timeout after capture",
+    "game_data_root": "user-owned exact retail data outside Git",
+    "user_and_cache_roots": "separate temporary paths",
+    "selected_presenter_submission": 10
+  },
+  "validation": {
+    "vuid_count_in_log": 0,
+    "vulkan_error_count_in_log": 0,
+    "log_sha256": "82d49ae173e426f74c0b76674db5c48e9f509e6c9adeb93e3b6db068dfa8c240",
+    "log_size_bytes": 199220,
+    "external_log_path": "/home/pes/work/xbox360-wsi-check-20261025/logs-current-frame10/retail-current-frame10-validation.log"
+  },
+  "retail_readback": {
+    "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "width": 1280,
+    "height": 720,
+    "bytes": 3686400,
+    "raw_sha256": "7b542506da938f4a2c3c1ee43b0356c6840ae7d4e50bedfe65baf5f6b8a0b9f8",
+    "fnv1a64": "26C9600EEF8AB16F",
+    "non_black_rgb_pixels": 59101,
+    "unique_packed_words": 1651,
+    "decoded_png_sha256": "9e13a7a1ad3565cfe9c3828f69114700100b6b2af801b572611d86a10753e1a9",
+    "external_raw_path": "/home/pes/work/xbox360-wsi-check-20261025/retail-current-frame10.a2b10g10r10",
+    "external_png_path": "/home/pes/work/xbox360-wsi-check-20261025/retail-current-frame10.png",
+    "visual_observation": "Original Need for Speed SHIFT logo, Loading text, and progress bar are visible."
+  },
+  "same_binary_comparison": {
+    "other_capture": "evidence/xbox360_linux_retail_frame200_black_20261025.json",
+    "host_runtime_plugin_xex_hashes_match": true,
+    "other_selected_submission": 200,
+    "other_readback": "opaque black, 0 non-black RGB pixels",
+    "runs_are_separate": true
+  },
+  "conclusion": "The current P2 renderer build reproduces the original loading splash at submission 10. A separate run with the exact same host, runtime, plugin, and XEX hashes captured submission 200 as opaque black; this is not a continuous transition capture."
+}
