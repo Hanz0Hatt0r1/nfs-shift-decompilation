@@ -21,10 +21,11 @@
       "--gpu_plugin=shift-native",
       "--no-async_shader_compilation"
     ],
-    "bounded_gdb_timeout_seconds": 65,
+    "bounded_timeout_seconds": 15,
+    "gdb_attached": false,
     "exit_code": 124,
     "raw_readback": {
-      "path": "/tmp/nfs-shift-retail-linux-readback-20261024.a2b10g10r10",
+      "path": "/home/pes/work/p1-event-write-linux-probe-20261024/logs/p1-linux-retail-black-readback-20261024.a2b10g10r10",
       "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
       "width": 1280,
       "height": 720,
@@ -37,11 +38,7 @@
       },
       "rgb_nonblack_pixels": 0
     },
-    "log_artifacts_outside_repository": {
-      "runtime_log": {
-        "path": "/home/pes/work/p1-event-write-linux-probe-20261024/logs/runtime.log",
-        "sha256": "3e381404a887775979653bf38debc5285a18f0bdf52dd549a686786416c6bd9e"
-      },
+      "log_artifacts_outside_repository": {
       "late_watch_log": {
         "path": "/home/pes/work/p1-event-write-linux-probe-20261024/logs/gdb-event-write-watch.log",
         "sha256": "42f4a41e4c0ec0253271089eab49d540cf59c0b087ab76d05c360b76659fdba0"
@@ -51,6 +48,31 @@
         "sha256": "be5132f03882b6dfe410fd00a7c0feba510b619eeba7f03e85a2a8d33fa0e5b3"
       }
     }
+  },
+  "synthetic_renderer_control": {
+    "environment": "SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR=magenta",
+    "raw_readback": {
+      "path": "/home/pes/work/p1-event-write-linux-probe-20261024/logs/p2-magenta-home-readback-20261024.a2b10g10r10",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "width": 1280,
+      "height": 720,
+      "bytes": 3686400,
+      "sha256": "21d2868e9e0b91638d96e30dfe446a4748ef217efaa09e10ed179697e95e35e8",
+      "fnv1a64": "DA74DA070BC0D725",
+      "pixel_words": {
+        "0xFFF003FF": 518400,
+        "0xC0000000": 403200
+      },
+      "rgb_nonblack_pixels": 518400
+    },
+    "runtime_log_confirmation": "shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720; saved Vulkan guest output 1280x720; non-black pixels 518400; FNV-1a DA74DA070BC0D725",
+    "interpretation": "The diagnostic replaces the fragment shader output and confirms raster/presenter/readback coverage only. It is synthetic and is not retail pixel output."
+  },
+  "test_environment_cleanup": {
+    "before": "13 unused ReXGlue xenia_memory_* POSIX shared-memory objects occupied 4.7 GiB of the 5.9 GiB /dev/shm mount.",
+    "action": "Each object was confirmed unreferenced with fuser and owned by the current user before unlinking.",
+    "after": "A fresh retail black readback and magenta diagnostic both succeeded; /dev/shm had 5.8 GiB available.",
+    "interpretation": "The SIGBUS/readback-write failures observed before cleanup were caused during runs with stale shared-memory allocations and are not treated as retail guest semantics evidence."
   },
   "guest_runtime": {
     "first_source0_callback": {
@@ -83,8 +105,8 @@
     }
   },
   "runtime_output": {
-    "captured_indexed_draw_submit_log_entries": 161,
-    "accepted_source0_sample0_copy_convert_log_entries": 161,
+    "gdb_run_captured_indexed_draw_submit_log_entries": 161,
+    "gdb_run_accepted_source0_sample0_copy_convert_log_entries": 161,
     "interpretation": "These are execution and submission observations only. The readback has zero non-black RGB pixels and does not show visible retail content."
   },
   "filesystem_observation": {
