@@ -280,7 +280,14 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (presenter_) return X_STATUS_SUCCESS;
     if (!provider_) {
       // Native project renderer: do not enable ReXGlue's Xenos GPU features.
-#if defined(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
+#if defined(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER) &&          \
+    defined(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
+      provider_ =
+          rex::ui::vulkan::VulkanProvider::Create(false, true, true, true);
+#elif defined(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER)
+      provider_ =
+          rex::ui::vulkan::VulkanProvider::Create(false, true, false, true);
+#elif defined(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
       provider_ = rex::ui::vulkan::VulkanProvider::Create(false, true, true);
 #else
       provider_ = rex::ui::vulkan::VulkanProvider::Create(false, true);
@@ -323,7 +330,18 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (!memory_) return X_STATUS_UNSUCCESSFUL;
     if (!provider_) {
       // Headless Vulkan device for callers that deliberately skip presentation.
+#if defined(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER) &&          \
+    defined(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
+      provider_ =
+          rex::ui::vulkan::VulkanProvider::Create(false, false, true, true);
+#elif defined(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER)
+      provider_ =
+          rex::ui::vulkan::VulkanProvider::Create(false, false, false, true);
+#elif defined(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
+      provider_ = rex::ui::vulkan::VulkanProvider::Create(false, false, true);
+#else
       provider_ = rex::ui::vulkan::VulkanProvider::Create(false, false);
+#endif
     }
     if (!provider_) return X_STATUS_UNSUCCESSFUL;
 
@@ -1831,10 +1849,14 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                       }
                       const uint32_t family = device->queue_family_graphics_compute();
                       const auto queue = device->AcquireQueue(family, 0);
-                      // The provider has no optional-extension capability hook yet.
-                      // Keep cross-sample depth/stencil resolves fail-closed until
-                      // Process 1 integrates the agreed provider contract.
+                  // Older ReXGlue SDKs do not expose the optional resolve
+                  // capability.
+#if defined(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER)
+                      const bool depth_stencil_resolve_enabled =
+                          device->properties().depthStencilResolveSampleZero;
+#else
                       constexpr bool depth_stencil_resolve_enabled = false;
+#endif
                       return shift::xbox::submit_captured_vulkan_frame(
                           device->physical_device(), device->device(), queue.queue(), family,
                           context->image(), context->image_view(),

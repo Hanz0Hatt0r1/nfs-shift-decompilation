@@ -324,16 +324,50 @@ revealed that Android does not export `vkGetPhysicalDeviceProperties2` as a
 direct library symbol; the check now loads it with `vkGetInstanceProcAddr`, and
 the renderer consumes only the provider-confirmed capability. The result and
 hashes are recorded in
-[`process2_redmi_note8pro_depth_resolve_20261024.json`](../../evidence/process2_redmi_note8pro_depth_resolve_20261024.json).
+[`process2_redmi_note8pro_depth_resolve_20261024.json`](../evidence/process2_redmi_note8pro_depth_resolve_20261024.json).
 
 The live plugin obtains a `VkDevice` from ReXGlue's Vulkan provider, so it
-cannot enable device extensions after creation. Process 1 accepted the
-backward-compatible optional capability contract: use Vulkan 1.2 core support
-when available, otherwise request both Vulkan 1.1 resolve extensions
-atomically, report whether the enabled device supports `SAMPLE_ZERO` for both
-depth and stencil to the plugin, and leave unrelated GPU-emulation feature
-requests disabled. Provider wiring is pending in Process 1. Until then
-the current plugin passes `false` explicitly and rejects a mixed 4x-to-1x
-depth/stencil frame before submission. A subsequent retail frame is still
-required to establish whether Xenos uses the same sample-zero rule and to
-verify menu/gameplay output.
+cannot enable device extensions after creation. The accepted optional
+capability contract uses Vulkan 1.2 core support when available, otherwise
+requests both Vulkan 1.1 resolve extensions atomically, reports whether
+`SAMPLE_ZERO` is supported for both depth and stencil, and leaves unrelated
+GPU-emulation feature requests disabled. The original probe build passed
+`false` explicitly; the follow-up now wires this contract through a separate
+ReXGlue `rexui-vulkan` change and feature-detects it in the plugin. See the
+integration evidence below. A retail frame is still required to establish
+whether Xenos uses the same sample-zero rule and to verify menu/gameplay
+output.
+
+## Provider resolve capability integration follow-up (2026-10-24)
+
+The ReXGlue provider now has a backward-compatible overload for optional
+depth/stencil resolve. It requests the Vulkan 1.1 extension pair atomically
+(or uses the promoted Vulkan 1.2 core support), and reports `SAMPLE_ZERO` only
+when both aspects support it and a renderpass2 entry point is available. The
+NFS plugin consumes the capability when the SDK header provides the overload;
+older SDKs continue to fail closed. The option is independent of Xenos
+GPU-emulation feature requests.
+
+The combined Linux build passed for `rexui-vulkan`, `rexgpu-shift-native`, and
+the provider check. The check ran with `VK_LAYER_KHRONOS_validation` on an
+NVIDIA GeForce GTX 950 / Vulkan 1.4.312 and reported the resolve pair enabled,
+`SAMPLE_ZERO=1`, and GPU-emulation features disabled. The complete plugin
+CTest suite passed 4/4, including the new capability regression.
+
+The SDK's standalone `rexui-vulkan` target also built for Android `arm64-v8a`
+with NDK 28.2.13676358 / API 26; the plugin and capability-check translation
+units compiled for ARM64. The full Android integration link remains blocked
+by the existing ReXGlue POSIX fiber implementation calling `getcontext`,
+`makecontext`, and `swapcontext`, which Android bionic does not provide. This
+is outside the renderer change and was not patched here. The Redmi Note 8 Pro
+hardware probe already confirms Vulkan 1.1.131, both resolve extensions, and
+depth/stencil `SAMPLE_ZERO`; the newly wired provider test itself has not yet
+run on that phone.
+
+These checks establish provider capability plumbing and driver support only.
+They do not prove that Xbox Xenos uses `SAMPLE_ZERO`, do not demonstrate a
+new retail draw, and do not establish menu or gameplay parity. Evidence is
+recorded in
+[`process2_redmi_note8pro_depth_resolve_20261024.json`](../evidence/process2_redmi_note8pro_depth_resolve_20261024.json)
+and
+[`process2_provider_resolve_integration_20261024.json`](../evidence/process2_provider_resolve_integration_20261024.json).

@@ -46,6 +46,9 @@ file(READ "${SHIFT_REXGLUE_SDK_ROOT}/include/rex/ui/vulkan/provider.h"
 if(SHIFT_REXGLUE_VULKAN_PROVIDER_HEADER MATCHES "bool with_geometry_shader")
   set(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER ON)
 endif()
+if(SHIFT_REXGLUE_VULKAN_PROVIDER_HEADER MATCHES "bool with_depth_stencil_resolve")
+  set(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER ON)
+endif()
 find_package(Vulkan REQUIRED)
 get_target_property(SHIFT_REXGLUE_OUTPUT_DIRECTORY rexruntime LIBRARY_OUTPUT_DIRECTORY)
 if(SHIFT_REXGLUE_PLUGIN_OUTPUT_DIR)
@@ -106,6 +109,11 @@ if(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
     SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER=1
   )
 endif()
+if(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER)
+  target_compile_definitions(rexgpu-shift-native PRIVATE
+    SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER=1
+  )
+endif()
 set_target_properties(rexgpu-shift-native PROPERTIES
   OUTPUT_NAME "rexgpu-shift-native"
   DEBUG_POSTFIX "d"
@@ -153,4 +161,19 @@ if(SHIFT_REXGLUE_NATIVE_BUILD_TESTS)
     ENVIRONMENT
       "SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR=magenta;SHIFT_NATIVE_VULKAN_READBACK_PATH=${CMAKE_CURRENT_BINARY_DIR}/live-ring-diagnostic.a2b10g10r10;SHIFT_NATIVE_VULKAN_READBACK_FRAME=2"
   )
+  if(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER)
+    add_executable(rexgpu_vulkan_resolve_capability_check resolve_capability_check.cpp)
+    target_include_directories(rexgpu_vulkan_resolve_capability_check PRIVATE
+      "${SHIFT_REXGLUE_SDK_ROOT}/include"
+      "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/renderdoc"
+    )
+    target_compile_features(rexgpu_vulkan_resolve_capability_check PRIVATE cxx_std_23)
+    target_link_libraries(rexgpu_vulkan_resolve_capability_check PRIVATE
+      rexruntime
+      ${SHIFT_REXGLUE_VULKAN_PROVIDER_TARGET}
+    )
+    add_test(NAME rexgpu_vulkan_resolve_capability_check
+      COMMAND rexgpu_vulkan_resolve_capability_check
+    )
+  endif()
 endif()
