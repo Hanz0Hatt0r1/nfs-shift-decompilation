@@ -19,7 +19,13 @@ writer = evidence["static_basis"]["writer"]
 assert writer["start"] == "0x826489D0"
 assert writer["end_exclusive"] == "0x826489F8"
 assert writer["instruction_count"] == 10
-assert writer["instructions"][2] == ["0x826489D8", "4d9a0020", "bclr 12,26"]
+code = writer["instructions"]
+assert code[0] == ["0x826489D0", "816302e8", "lwz r11,0x2E8(r3)"]
+assert code[2] == ["0x826489D8", "4d9a0020", "bclr 12,26"]
+assert code[3][1] == "7c8b0034"
+assert code[6][1] == "556bdffe"
+assert code[7][1] == "908a2ba4"
+assert code[8][1] == "9169d0f0"
 assert writer["stores_on_nonzero_guard"]["callback_gate"]["address"] == (
     "0x83122BA4"
 )
@@ -41,6 +47,25 @@ consumer = evidence["static_basis"]["consumer_fragment"]
 assert consumer["start"] == "0x8264A1A4"
 assert consumer["end_exclusive"] == "0x8264A1DC"
 assert consumer["instruction_count"] == 14
+assert consumer["instructions"][2] == [
+    "0x8264A1AC",
+    "39600002",
+    "li r11,2",
+]
+assert consumer["instructions"][5] == [
+    "0x8264A1B8",
+    "3d608000",
+    "lis r11,0x8000",
+]
+assert consumer["instructions"][13] == [
+    "0x8264A1D8",
+    "4bd58771",
+    "bl 0x823A2948",
+]
+assert consumer["flag_mapping"] == {
+    "global_zero": "0x80000000",
+    "global_nonzero": "0x00000002",
+}
 assert consumer["derived_expectation"] == (
     "When global flag is nonzero, comparison target and fallback argument are 2; "
     "when it is zero, both are 0x80000000."
