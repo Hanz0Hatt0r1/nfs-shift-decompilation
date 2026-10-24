@@ -62,6 +62,10 @@
         ["0x8264A1D8", "4bd58771", "bl 0x823A2948"]
       ],
       "derived_expectation": "When global flag is nonzero, comparison target and fallback argument are 2; when it is zero, both are 0x80000000.",
+      "flag_mapping": {
+        "global_zero": "0x80000000",
+        "global_nonzero": "0x00000002"
+      },
       "scope": "This bounded fragment shows how the flag selects a comparison/fallback value; it does not name the state or prove the helper's runtime outcome."
     },
     "relation_to_registered_callback": {
