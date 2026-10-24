@@ -41,6 +41,8 @@
       "draw": 28,
       "descriptor_words": ["0x840248fe", "0x0a24b054", "0x0000e1ff", "0x06a80d10", "0x00000e43", "0x0a24ba10"],
       "guest_address": "0x0a24b000",
+      "mip_guest_address": "0x0a24b000",
+      "base_and_mip_addresses_equal": true,
       "format": 20,
       "format_name": "DXT4/5",
       "extent": [512, 8],
@@ -48,7 +50,8 @@
       "mip_filter": "linear",
       "mip_min": 0,
       "mip_max": 9,
-      "status": "remains rejected until mip-chain storage and sampling are implemented"
+      "mip_payload_capture": "not present in the retained PM4 descriptor artifact",
+      "status": "remains rejected; the descriptor requests linear levels 0..9 but aliases base/mip addresses and has no retained mip payload"
     },
     {
       "draw": 44,

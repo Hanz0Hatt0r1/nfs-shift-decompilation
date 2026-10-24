@@ -382,8 +382,10 @@ macro-tile allocations, untile-reads the guest bytes, and expands DXT4/5 color
 and alpha or DXT5A alpha blocks to RGBA8 on the CPU. DXT5A's captured channel
 swizzle reads W. This avoids requiring optional Vulkan BC-compression support
 and remains suitable for Vulkan 1.1 and ARM64. Draw #28 uses format 20 with a
-linear mip filter and mip range 0..9, so it remains fail-closed until mip-chain
-placement and sampling are implemented.
+linear mip filter and mip range 0..9. Its captured base and mip addresses both
+decode to `0x0A24B000`, and the retained PM4 artifact has no level 1–9 texture
+bytes. It remains fail-closed until retail mip storage can be captured and its
+placement and sampling are verified.
 
 The parser/decoder regression uses the exact retail descriptors with synthetic
 compressed blocks; it checks extent, pitch, guest range, byte swapping, tiled
