@@ -1,0 +1,84 @@
+{
+  "schema": "shift.xbox360.linux.retail_splash_readback.v1",
+  "observations": [
+    {
+      "captured_at_utc": "2026-10-24T16:55:37Z",
+      "presenter_submission": 10,
+      "selection": {
+        "environment": {
+          "SHIFT_NATIVE_VULKAN_READBACK_FRAME": "10",
+          "SHIFT_NATIVE_VULKAN_READBACK_PATH": "logs/retail-frame-10.a2b10g10r10"
+        },
+        "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+        "rexglue_runtime_sha256": "b38dce8b1e382227da1f1fe2f5817772ac3ef2a5a3b3d587867477eb833d3fd3",
+        "gpu_plugin_sha256": "517d81079b36539cb9a85cd376713bd297127f29da57506fd69b352e7401becc"
+      },
+      "readback": {
+        "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+        "width": 1280,
+        "height": 720,
+        "bytes": 3686400,
+        "sha256": "d6c09658bc16cd14056dc605fe2300becc540f0fca77a3d3e69dfae0d52f5824",
+        "non_black_rgb_pixels": 54748,
+        "unique_rgb_triplets": 1152,
+        "max_rgb_10bit": [
+          983,
+          983,
+          999
+        ],
+        "decoded_png_sha256": "8b0c046e88c8b0dd8448c8f1f8ee979826d826376e2579c545f2091df760e0ec",
+        "visual_observation": "Original Need for Speed SHIFT logo and loading bar are visible."
+      }
+    },
+    {
+      "captured_at_utc": "2026-10-24T16:58:53Z",
+      "presenter_submission": 200,
+      "selection": {
+        "environment": {
+          "SHIFT_NATIVE_VULKAN_READBACK_FRAME": "200",
+          "SHIFT_NATIVE_VULKAN_READBACK_PATH": "logs/retail-frame-200.a2b10g10r10"
+        },
+        "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+        "rexglue_runtime_sha256": "b38dce8b1e382227da1f1fe2f5817772ac3ef2a5a3b3d587867477eb833d3fd3",
+        "gpu_plugin_sha256": "55594a279971f94e211782efcfd644af063a49453563da586e419155ccb5bcd7"
+      },
+      "readback": {
+        "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+        "width": 1280,
+        "height": 720,
+        "bytes": 3686400,
+        "sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+        "non_black_rgb_pixels": 0,
+        "unique_rgb_triplets": 1,
+        "max_rgb_10bit": [
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "retail_input": {
+    "default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4"
+  },
+  "launch": {
+    "platform": "Linux AMD64",
+    "gpu_plugin": "shift-native",
+    "arguments": [
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "same_game_input_and_host_executable": true,
+    "same_runtime_binary": true,
+    "same_gpu_plugin_binary": false,
+    "user_and_cache_roots": "separate per run"
+  },
+  "conclusion": "A retail title/loading splash was captured from one exact-XEX Linux presenter submission. A separate later capture was all black. Because the two runs used different GPU plugin binaries, these observations do not establish a retail transition to black or sustained renderer behavior. The main menu, scene parity, and offline race are not demonstrated.",
+  "limits": [
+    "The readback pixel captures and decoded PNG remain outside Git; only identities, hashes, and pixel statistics are recorded here.",
+    "The frame number is the one-based Vulkan presenter submission selected by SHIFT_NATIVE_VULKAN_READBACK_FRAME, not a guest game-frame counter.",
+    "The first capture was visually inspected; the second was classified from the raw packed readback.",
+    "The renderer plugin working tree was uncommitted during these captures, so its binary SHA-256 is the available build identity."
+  ]
+}
