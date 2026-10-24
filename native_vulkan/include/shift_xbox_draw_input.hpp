@@ -344,6 +344,7 @@ struct GuestRasterRegisterState {
     void reset() noexcept;
     void apply(const GuestRegisterWrite& write) noexcept;
     bool snapshot(CapturedRasterRegisters* output, std::string* error) const;
+    uint32_t observed_register_mask() const noexcept;
 
 private:
     CapturedRasterRegisters registers_{};

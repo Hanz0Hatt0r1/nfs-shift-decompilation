@@ -164,6 +164,15 @@ exercise this conversion, including the captured channel swap. This is a
 narrow Vulkan path for the observed tuple; it does not model Xenos EDRAM
 accumulation or resolve every guest surface.
 
+A later Linux retail smoke (run 054) captured a separate tiled 1024x512
+texture descriptor with Xenos format 19 (DXT2/3) and endian mode 1. The P2
+input path now untile-decodes that base-level form and expands its blocks to
+RGBA8 on the CPU before Vulkan upload, so Android does not depend on optional
+BC texture-compression support. The regression covers the captured descriptor
+and tiling/endian/decode rules, and also ran on ARM64; it does not prove the
+real guest texture has produced a visible retail draw. The same run still
+leaves the partial viewport and Copy/Convert draw states unresolved.
+
 The latest Android debug APK
 (`ff5c30af24013b315280e161cd383c4cd50874a1e096f0d0383364f004a311c6`) was
 installed on the Redmi Note 8 Pro. The current runtime log `nfs_shift_031.log`
@@ -414,3 +423,7 @@ its [device screenshot](../../evidence/process2_redmi_note8pro_vulkan_frame4_pix
 the [decoded Vulkan image](../../evidence/process2_redmi_note8pro_vulkan_frame4_pixels_decoded_20261024.png),
 the [raw readback](../../evidence/process2_redmi_note8pro_vulkan_frame4_pixels_20261024.bin),
 and [full device log](../../evidence/process2_redmi_note8pro_vulkan_frame4_pixels_20261024.log).
+For targeted smoke tests, setting the runtime environment variable
+`SHIFT_NATIVE_VULKAN_READBACK_PATH` explicitly captures the first submitted
+Vulkan output frame; the configured Android debug fallback path still uses the
+selected frame number.

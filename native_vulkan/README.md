@@ -21,6 +21,8 @@ Current retail-device output and Android ARM64 build status are tracked in
   plus normalization for captured index/vertex byte orders. The captured
   1024x256, format-6, tiled 2D texture
   can also be converted to linear texel order with its 8-in-32 byte swap. The
+  run-054 1024x512, tiled format-19 DXT2/3 texture with 8-in-16 endian mode can
+  also be untiled and expanded to RGBA8 without optional Vulkan BC support. The
   descriptor decoder maps the captured channel selectors, signs, X/Y/Z clamp
   modes, border code, filters, and anisotropy to semantic values; they are not
   yet applied to a Vulkan view or sampler. The captured black border code has

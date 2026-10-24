@@ -614,6 +614,24 @@ int main() {
                 texture_fetch.border_color == 0 && !texture_fetch.border_size,
             "captured texture channel or clamp state changed");
 
+    const uint32_t captured_dxt2_3_descriptor[] = {
+        0x8800D8FEu, 0x09E57053u, 0x003FE3FFu,
+        0x01280D10u, 0x00000003u, 0x00000A10u,
+    };
+    shift::xbox::CapturedTextureFetch dxt2_3_fetch{};
+    require(shift::xbox::decode_captured_texture_fetch(
+                captured_dxt2_3_descriptor, &dxt2_3_fetch, &error) &&
+                dxt2_3_fetch.guest_address == 0x09E57000u &&
+                dxt2_3_fetch.format == 19 && dxt2_3_fetch.endian_mode == 1 &&
+                dxt2_3_fetch.width == 1024 && dxt2_3_fetch.height == 512 &&
+                dxt2_3_fetch.pitch == 1024 &&
+                dxt2_3_fetch.byte_length == 1024u * 512u,
+            "captured retail DXT2/3 fetch descriptor was rejected or misdecoded");
+    shift::xbox::CapturedTextureSampling dxt2_3_sampling{};
+    require(shift::xbox::decode_captured_texture_sampling(
+                dxt2_3_fetch, &dxt2_3_sampling, &error),
+            "captured retail DXT2/3 sampler state was rejected");
+
     shift::xbox::CapturedTextureSampling texture_sampling{};
     require(shift::xbox::decode_captured_texture_sampling(
                 texture_fetch, &texture_sampling, &error),
@@ -773,6 +791,12 @@ int main() {
     shift::xbox::CapturedRasterRegisters tracked_raster_registers{};
     require(!raster_register_state.snapshot(&tracked_raster_registers, &error),
             "incomplete raster register state was accepted");
+    require(raster_register_state.observed_register_mask() == 0,
+            "empty raster register state reported observed writes");
+    raster_register_state.apply({0x2000u, 0x12345678u});
+    require(raster_register_state.observed_register_mask() == 1u,
+            "partial raster register state lost its observed register mask");
+    raster_register_state.reset();
     const std::array<shift::xbox::GuestRegisterWrite, 21> raster_writes{{
         {0x2000, captured_raster_registers.surface_info},
         {0x2001, captured_raster_registers.color_info},
@@ -1061,6 +1085,71 @@ int main() {
     require_texture_source_pixel(32, 0, 1024);
     require_texture_source_pixel(0, 32, 32768);
     require_texture_source_pixel(1023, 255, 262111);
+
+    auto dxt2_3_test_fetch = dxt2_3_fetch;
+    dxt2_3_test_fetch.width = 128;
+    dxt2_3_test_fetch.height = 128;
+    dxt2_3_test_fetch.pitch = 128;
+    dxt2_3_test_fetch.byte_length = 128u * 128u;
+    const auto dxt2_3_tiled_offset = [](uint32_t x, uint32_t y,
+                                        uint32_t pitch_blocks) {
+        const uint64_t macro =
+            ((static_cast<uint64_t>(x >> 5) +
+              static_cast<uint64_t>(y >> 5) * (pitch_blocks >> 5)) << 11);
+        const uint64_t micro =
+            (static_cast<uint64_t>((x & 7u) + ((y & 0xEu) << 2)) << 4);
+        const uint64_t offset = macro + ((micro & ~uint64_t{0xFu}) << 1) +
+                                (micro & 0xFu) +
+                                (static_cast<uint64_t>(y & 1u) << 4);
+        return static_cast<size_t>(
+            ((offset & ~uint64_t{0x1FFu}) << 3) +
+            (static_cast<uint64_t>(y & 0x10u) << 7) +
+            ((offset & 0x1C0u) << 2) +
+            (((((y & 8u) >> 2) + (x >> 3)) & 3u) << 6) +
+            (offset & 0x3Fu));
+    };
+    std::vector<uint8_t> tiled_dxt2_3(dxt2_3_test_fetch.byte_length);
+    for (uint32_t block_y = 0; block_y < 32; ++block_y) {
+        for (uint32_t block_x = 0; block_x < 32; ++block_x) {
+            std::array<uint8_t, 16> normalized_block{};
+            std::fill_n(normalized_block.begin(), 8, 0xFFu);
+            const uint16_t packed_color = static_cast<uint16_t>(
+                ((block_x & 0x1Fu) << 11) | ((block_y & 0x3Fu) << 5) |
+                ((block_x + block_y) & 0x1Fu));
+            normalized_block[8] = static_cast<uint8_t>(packed_color);
+            normalized_block[9] = static_cast<uint8_t>(packed_color >> 8);
+            normalized_block[10] = normalized_block[8];
+            normalized_block[11] = normalized_block[9];
+            const size_t destination = dxt2_3_tiled_offset(
+                block_x, block_y, dxt2_3_test_fetch.pitch / 4u);
+            for (size_t byte = 0; byte < normalized_block.size(); ++byte) {
+                tiled_dxt2_3[destination + byte] = normalized_block[byte ^ 1u];
+            }
+        }
+    }
+    std::vector<uint8_t> decoded_dxt2_3;
+    require(shift::xbox::untile_captured_texture_2d(
+                dxt2_3_test_fetch, tiled_dxt2_3.data(), tiled_dxt2_3.size(),
+                &decoded_dxt2_3, &error) &&
+                decoded_dxt2_3.size() == 128u * 128u * 4u,
+            "captured tiled DXT2/3 texture did not decode to Vulkan RGBA8");
+    const auto require_dxt2_3_pixel = [&](uint32_t x, uint32_t y,
+                                          uint32_t block_x, uint32_t block_y) {
+        const uint16_t packed_color = static_cast<uint16_t>(
+            ((block_x & 0x1Fu) << 11) | ((block_y & 0x3Fu) << 5) |
+            ((block_x + block_y) & 0x1Fu));
+        const size_t pixel = (static_cast<size_t>(y) * 128u + x) * 4u;
+        require(decoded_dxt2_3[pixel] == ((packed_color >> 11 & 0x1Fu) * 255u / 31u) &&
+                    decoded_dxt2_3[pixel + 1u] ==
+                        ((packed_color >> 5 & 0x3Fu) * 255u / 63u) &&
+                    decoded_dxt2_3[pixel + 2u] == ((packed_color & 0x1Fu) * 255u / 31u) &&
+                    decoded_dxt2_3[pixel + 3u] == 255u,
+                "captured DXT2/3 block tiling, byte order, or decode changed");
+    };
+    require_dxt2_3_pixel(1, 1, 0, 0);
+    require_dxt2_3_pixel(32, 1, 8, 0);
+    require_dxt2_3_pixel(1, 64, 0, 16);
+    require_dxt2_3_pixel(127, 127, 31, 31);
 
     shift::xbox::CapturedTextureFetch unsupported_texture_layout = texture_fetch;
     unsupported_texture_layout.pitch -= 32;

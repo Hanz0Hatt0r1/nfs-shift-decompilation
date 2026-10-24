@@ -1472,6 +1472,13 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 shift::xbox::CapturedRasterState raster_state{};
                 const bool raster_registers_ready =
                     raster_register_state.snapshot(&raster_registers, &error);
+                if (!raster_registers_ready &&
+                    error == "incomplete captured raster register state") {
+                  std::ostringstream detail;
+                  detail << error << " valid_mask=0x" << std::hex
+                         << raster_register_state.observed_register_mask();
+                  error = detail.str();
+                }
                 const bool raster_state_ready = raster_registers_ready &&
                     shift::xbox::decode_captured_raster_state(
                         raster_registers, &raster_state, &error);
@@ -1483,9 +1490,15 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                          << raster_registers.viewport_x_scale << ",0x"
                          << raster_registers.viewport_x_offset << ",0x"
                          << raster_registers.viewport_y_scale << ",0x"
-                         << raster_registers.viewport_y_offset << ']';
+                         << raster_registers.viewport_y_offset << "] screen_scissor=[0x"
+                         << raster_registers.screen_scissor_tl << ",0x"
+                         << raster_registers.screen_scissor_br << "] window_offset=0x"
+                         << raster_registers.window_offset << " window_scissor=[0x"
+                         << raster_registers.window_scissor_tl << ",0x"
+                         << raster_registers.window_scissor_br << ']';
                   error = detail.str();
                 }
+                const std::string raster_state_error = error;
                 if (raster_state_ready) {
                   ++draws_with_raster_state;
                   if (shift::xbox::captured_draw_has_no_framebuffer_effects(
@@ -1519,13 +1532,16 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   } else if (error ==
                              "unsupported captured Xenos color Copy/Convert state") {
                     std::ostringstream detail;
-                    detail << error << " registers=[0x" << std::hex
+                    detail << raster_state_error << "; copy check: " << error
+                           << " registers=[0x" << std::hex
                            << raster_registers.copy_control << ",0x"
                            << raster_registers.copy_dest_base << ",0x"
                            << raster_registers.copy_dest_pitch << ",0x"
                            << raster_registers.copy_dest_info << "] valid=0x"
                            << raster_registers.copy_valid_mask;
                     error = detail.str();
+                  } else {
+                    error = raster_state_error + "; copy check: " + error;
                   }
                 }
                 if (!vertex_shader_program.empty() && !pixel_shader_program.empty()) {
@@ -1643,6 +1659,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   provider_->vulkan_device()) {
                 const uint32_t draw_count = static_cast<uint32_t>(frame_draws.size());
                 const char* readback_path = std::getenv("SHIFT_NATIVE_VULKAN_READBACK_PATH");
+                const bool explicit_readback_path = readback_path && *readback_path;
 #if defined(__ANDROID__) && !defined(NDEBUG)
                 constexpr bool kAndroidDebugReadback = true;
                 constexpr const char* kAndroidDebugReadbackPath =
@@ -1656,9 +1673,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   readback_path = kAndroidDebugReadbackPath;
                 }
                 const bool capture_output = !readback_saved_ &&
-                    ((kAndroidDebugReadback &&
-                      readback_frame_counter + 1u >= kAndroidDebugReadbackFrame) ||
-                     (!kAndroidDebugReadback && readback_path && *readback_path));
+                    (explicit_readback_path ||
+                     (kAndroidDebugReadback &&
+                      readback_frame_counter + 1u >= kAndroidDebugReadbackFrame));
                 std::vector<uint32_t> output_readback;
                 std::string render_error;
                 bool refresh_callback_called = false;
