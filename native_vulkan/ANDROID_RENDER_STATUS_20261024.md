@@ -2,18 +2,21 @@
 
 ## Result
 
-The project-owned Vulkan plugin now displays the original NFS SHIFT logo on the
-Redmi Note 8 Pro. A captured retail frame with 4x-MSAA followed by two 1x
-textured draws and Copy/Convert reaches the presenter without the former
-sample-count rejection. The logo is visible in the [on-device screenshot](../../evidence/process2_redmi_note8pro_vulkan_retail_logo_20261024.png).
+The project-owned Vulkan plugin is **not ready** by the requested on-device
+image criterion. It showed the original NFS SHIFT logo once on the Redmi Note 8
+Pro, then the foreground game remained black. A captured retail frame with
+4x-MSAA followed by two 1x textured draws and Copy/Convert reaches the presenter
+without the former sample-count rejection. The logo is visible in the
+[on-device screenshot](../../evidence/process2_redmi_note8pro_vulkan_retail_logo_20261024.png).
 
-The renderer is not ready for the full game: a later screenshot from the same
-run is black, and the runtime reports missing guest assets including
-`menu_background.xml`. The first Vulkan readback still records the earlier
-black startup swap, because debug readback is captured only once. The later
-screenshot and successful frame submissions establish the retail logo output;
-they do not establish menu, race-scene, or full-game parity. No synthetic image
-is counted as retail parity.
+The logo screenshot was captured at 11:55:12 MSK; a later screenshot at
+11:55:24 was black. At 12:04:28 MSK, `NfsShiftActivity` was still foreground
+and the screen capture matched the saved black screenshot byte-for-byte. The
+runtime reports missing guest assets including `menu_background.xml`. The
+first Vulkan readback still records the earlier black startup swap, because
+debug readback is captured only once. A transient splash does not satisfy
+readiness: an original menu or gameplay image must remain visible through the
+Vulkan path. No synthetic image counts as retail parity.
 
 
 ## Hardware and input
@@ -36,11 +39,12 @@ ARM64 plugin `2aa5194728eb916ac80ab109253ed671f74913191f8eac6e869e8da22176b2c9`.
 The first mixed retail frame contains sample counts `[4, 1, 1]`; the 1024x256
 texture at guest address `0x09D57000` normalizes to RGBA8 FNV-1a
 `1FB4AD3D482BE2BB`. The Android screenshot displayed the NFS SHIFT logo at
-11:55:12 MSK, then was black at 11:55:24 MSK. The log has repeated successful
-three-draw Vulkan submissions and no mixed-sample refresh failure. Later guest
-file opens for `audio.bff`, `drivers2.lod`, `cameraconfig.xml`, and
-`menu_background.xml` fail; this coincides with the post-splash black screen,
-but the log alone does not prove causation.
+11:55:12 MSK, then was black at 11:55:24 MSK and remained byte-identical black
+at 12:04:28 MSK. Captured draws and Copy/Convert reached Vulkan without the
+mixed-sample refresh failure. Later guest file opens for `audio.bff`,
+`drivers2.lod`, `cameraconfig.xml`, and `menu_background.xml` fail; this
+coincides with the post-splash black screen, but the log alone does not prove
+causation.
 
 Raw device log: `/tmp/process2-redmi-note8pro-event-write-20261024.log`,
 SHA-256 `650f49e356d39144633faa8638402c27aa0b969035b10d194972acd9b203a43b`.

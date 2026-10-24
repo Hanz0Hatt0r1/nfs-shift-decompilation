@@ -50,6 +50,13 @@
       "path": "process2_redmi_note8pro_vulkan_post_splash_black_20261024.png",
       "sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
       "observed": "A later screenshot from the same still-running app was black."
+    },
+    "black_screen_recheck": {
+      "observed_at": "2026-10-24T12:04:28+03:00",
+      "path": "process2_redmi_note8pro_vulkan_post_splash_black_20261024.png",
+      "sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+      "matches_saved_post_splash_screenshot": true,
+      "activity_foreground": true
     }
   },
   "checks": {
