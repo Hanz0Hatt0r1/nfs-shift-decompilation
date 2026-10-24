@@ -34,6 +34,7 @@ struct CapturedVulkanCopy {
     CapturedCopyState state{};
     std::vector<uint32_t> vertex_shader_spirv;
     std::vector<uint32_t> pixel_shader_spirv;
+    std::vector<uint32_t> single_sample_pixel_shader_spirv;
 };
 
 // Records and submits the captured game draws into the ReXGlue presenter image.

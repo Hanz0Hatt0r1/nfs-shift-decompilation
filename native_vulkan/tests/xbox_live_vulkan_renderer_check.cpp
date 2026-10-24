@@ -82,9 +82,10 @@ bool read_spirv(const char* path, std::vector<uint32_t>* output) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 6) {
+    if (argc != 7) {
         std::cerr << "usage: xbox_live_vulkan_renderer_check vertex.spv fragment.spv "
-                     "geometry.spv copy-vertex.spv copy-fragment.spv\n";
+                     "geometry.spv copy-vertex.spv copy-fragment.spv "
+                     "copy-single-fragment.spv\n";
         return 2;
     }
 
@@ -259,7 +260,8 @@ int main(int argc, char** argv) {
     copy.state = {0, 0, shift::xbox::CapturedCopyCommand::Convert,
                   0x0975E000u, 1280, 720, 6, true};
     if (!read_spirv(argv[4], &copy.vertex_shader_spirv) ||
-        !read_spirv(argv[5], &copy.pixel_shader_spirv)) {
+        !read_spirv(argv[5], &copy.pixel_shader_spirv) ||
+        !read_spirv(argv[6], &copy.single_sample_pixel_shader_spirv)) {
         std::cerr << "could not read valid Vulkan 1.1 sample-zero Copy/Convert shaders\n";
         return 1;
     }
@@ -329,25 +331,48 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    auto mixed_sample_draws = draws;
-    mixed_sample_draws[1].raster.sample_count = 2;
-    mixed_sample_draws[1].raster.color_base_tiles = 17;
+    std::vector<shift::xbox::CapturedVulkanDraw> mixed_sample_draws{
+        draws[0], draws[1]};
+    mixed_sample_draws[1].raster.sample_count = 1;
+    mixed_sample_draws[1].raster.depth_test_enabled = false;
+    mixed_sample_draws[1].raster.depth_write_enabled = false;
+    mixed_sample_draws[1].raster.stencil_test_enabled = false;
     std::string mixed_sample_error;
+    std::vector<uint32_t> mixed_sample_output;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, mixed_sample_draws, &mixed_sample_error,
+            &mixed_sample_output, enabled_features.geometryShader, &copy) ||
+        mixed_sample_output.size() != 1280u * 720u) {
+        std::cerr << "mixed 4x-MSAA/1x captured Copy/Convert failed: "
+                  << mixed_sample_error << '\n';
+        return 1;
+    }
+    bool mixed_has_color = false;
+    bool mixed_has_swapped_blue = false;
+    for (const uint32_t pixel : mixed_sample_output) {
+        mixed_has_color |= (pixel & 0x3FFFFFFFu) != 0;
+        mixed_has_swapped_blue |= (pixel & 0x3FF00000u) != 0;
+    }
+    if (!mixed_has_color || !mixed_has_swapped_blue) {
+        std::cerr << "mixed-sample Copy/Convert lost the retail draw color or R/B swap\n";
+        return 1;
+    }
+
+    std::vector<shift::xbox::CapturedVulkanDraw> reverse_sample_draws{
+        draws[0], draws[1]};
+    reverse_sample_draws[0].raster.sample_count = 1;
+    reverse_sample_draws[1].raster.sample_count = 4;
+    std::string reverse_sample_error;
     if (shift::xbox::submit_captured_vulkan_frame(
             physical_device, device, queue, queue_family, output_image, output_view,
-            false, 1280, 720, mixed_sample_draws, &mixed_sample_error, nullptr,
-            enabled_features.geometryShader) ||
-        mixed_sample_error.find(
-            "draw 1 sample count 2 differs from frame sample count 4") ==
-            std::string::npos ||
-        mixed_sample_error.find(
-            "draw 0 surface={color_base_tiles=13,depth_base_tiles=29,pitch=1280") ==
-            std::string::npos ||
-        mixed_sample_error.find(
-            "draw 1 surface={color_base_tiles=17,depth_base_tiles=29,pitch=1280") ==
+            false, 1280, 720, reverse_sample_draws, &reverse_sample_error, nullptr,
+            enabled_features.geometryShader, &copy) ||
+        reverse_sample_error.find(
+            "mixed captured frame requires 4x-MSAA followed by 1x") ==
             std::string::npos) {
-        std::cerr << "mixed-sample draw rejection did not identify the incompatible draw: "
-                  << mixed_sample_error << '\n';
+        std::cerr << "unsupported reverse sample transition was not rejected precisely: "
+                  << reverse_sample_error << '\n';
         return 1;
     }
 

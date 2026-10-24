@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 project(shift_rexglue_native_gpu LANGUAGES CXX)
 option(SHIFT_REXGLUE_NATIVE_BUILD_TESTS "Build the native GPU plugin smoke test" ON)
+set(SHIFT_REXGLUE_PLUGIN_OUTPUT_DIR "" CACHE PATH
+    "Optional isolated output directory for the native GPU plugin")
 
 set(SHIFT_REXGLUE_SDK_ROOT "" CACHE PATH "Path to the ReXGlue SDK checkout")
 if(NOT SHIFT_REXGLUE_SDK_ROOT AND DEFINED REXSDK_DIR)
@@ -39,6 +41,9 @@ if(SHIFT_REXGLUE_VULKAN_PROVIDER_HEADER MATCHES "bool with_geometry_shader")
 endif()
 find_package(Vulkan REQUIRED)
 get_target_property(SHIFT_REXGLUE_OUTPUT_DIRECTORY rexruntime LIBRARY_OUTPUT_DIRECTORY)
+if(SHIFT_REXGLUE_PLUGIN_OUTPUT_DIR)
+  set(SHIFT_REXGLUE_OUTPUT_DIRECTORY "${SHIFT_REXGLUE_PLUGIN_OUTPUT_DIR}")
+endif()
 
 add_library(shift_guest_ring STATIC
   ../src/xbox_draw_input.cpp

@@ -377,3 +377,18 @@ An exact-executable/plugin magenta control also produced 518,400 non-black
 pixels with zero refresh failures, but logged only two one-draw submissions.
 It confirms that diagnostic output reaches readback; it does not replay the
 retail multi-draw sequence and therefore cannot identify or validate its fix.
+
+On 2026-10-24, the Android ARM64 plugin added a Vulkan pass transition for the
+captured `[4x-MSAA, 1x, 1x]` retail frame and a single-sample source-0/sample-0
+Copy/Convert shader. The existing Android app then displayed the original NFS
+SHIFT logo on the Redmi Note 8 Pro; the screenshot and runtime/APK/plugin hashes
+are recorded in
+[`process2_redmi_note8pro_vulkan_retail_logo_20261024.json`](../../evidence/process2_redmi_note8pro_vulkan_retail_logo_20261024.json).
+The earlier first-swap debug readback remains black because it was taken before
+the textured draws. A later screenshot from the same run returned to black as
+the splash ended. The runtime also reports missing guest files such as
+`menu_background.xml`; this is consistent with, but does not prove the cause
+of, the post-splash black screen. This verifies the first original retail
+pixels through the project Vulkan path, not menu, race-scene, or full-game
+parity. The host regression suite passes 4/4, including the mixed-sample path
+under Vulkan validation.

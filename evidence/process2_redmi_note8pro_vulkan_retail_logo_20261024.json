@@ -1,0 +1,66 @@
+{
+  "format": "SHIFT.Process2RedmiNote8ProVulkanRetailLogo/1",
+  "observed_at": "2026-10-24T11:55:12+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:33153",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "activity": "org.libsdl.app.NfsShiftActivity"
+  },
+  "build": {
+    "renderer": "project-owned shift-native Vulkan plugin; emulator-free PM4 path",
+    "apk_sha256": "0da8ef30127bdc5269a91f2fdf3dd0ade8ffd1b135014df07d466dde428f815d",
+    "plugin_sha256": "2aa5194728eb916ac80ab109253ed671f74913191f8eac6e869e8da22176b2c9",
+    "plugin_entries": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "plugin_entries_identical": true
+  },
+  "retail_draw_evidence": {
+    "runtime_log": "files/nfs_shift/user/logs/nfs_shift_009.log",
+    "runtime_log_sha256": "7747ea0ce212048732c8cc58be49e9bcd91ded47c02b52773b119a48bc4198e2",
+    "mixed_frame_draw_count": 3,
+    "sample_counts": [4, 1, 1],
+    "transition": "4x MSAA target resolved to a single-sample target before the later retail draws and source-0/sample-0 Copy/Convert",
+    "textured_draw": {
+      "guest_texture_address": "0x09D57000",
+      "extent": "1024x256",
+      "format": 6,
+      "normalized_rgba8_fnv1a": "1FB4AD3D482BE2BB"
+    },
+    "vulkan_frame_refresh_failures": 0,
+    "first_output_readback": {
+      "non_black_pixels": 0,
+      "fnv1a": "B161DE6EEC272325",
+      "note": "This was the earlier black startup swap; debug readback is captured only once and does not correspond to the later logo screenshot."
+    }
+  },
+  "screenshots": {
+    "retail_logo": {
+      "path": "process2_redmi_note8pro_vulkan_retail_logo_20261024.png",
+      "sha256": "3799c1a0c29cc70dbdea0ee55e3d1abe7345d5413b66a038eb6083d1cb923b1e",
+      "observed": "The original NFS SHIFT logo appeared on the Android display."
+    },
+    "later_post_splash": {
+      "path": "process2_redmi_note8pro_vulkan_post_splash_black_20261024.png",
+      "sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+      "observed": "A later screenshot from the same still-running app was black."
+    }
+  },
+  "checks": {
+    "native_vulkan_ctest": "4/4 passed",
+    "host_vulkan_renderer_validation": "passed on NVIDIA GeForce GTX 950 with VK_LAYER_KHRONOS_validation and no validation errors",
+    "android_arm64_plugin_build": "passed with NDK 28.2.13676358 / Android API 29"
+  },
+  "limitations": [
+    "This verifies original retail splash/logo pixels through the project Vulkan path; it does not verify the menu background, race scene, or full retail parity.",
+    "The app later showed black. Its log reports missing guest paths for audio.bff, drivers2.lod, cameraconfig.xml, and menu_background.xml. These failures coincide with the post-splash black state; causation is not established here.",
+    "The first Vulkan readback was black because it captured the earlier startup swap; the visible logo is evidenced by the Android screenshot and successful subsequent Vulkan submissions.",
+    "Android Vulkan validation layers were not enabled in the device build; validation was run on the host renderer check."
+  ]
+}

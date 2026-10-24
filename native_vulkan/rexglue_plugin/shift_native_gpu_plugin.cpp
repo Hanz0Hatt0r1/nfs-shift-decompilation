@@ -106,6 +106,15 @@ const std::string kCopyResolvePixelShader =
     "  c = floor(clamp(c, 0.0, 1.0) * 255.0 + 0.5) / 255.0;\n"
     "  shift_color0 = c.bgra;\n"
     "}\n";
+const std::string kCopyResolveSingleSamplePixelShader =
+    "#version 450\n"
+    "layout(set=1,binding=0) uniform sampler2D source_image;\n"
+    "layout(location=0) out vec4 shift_color0;\n"
+    "void main() {\n"
+    "  vec4 c = texelFetch(source_image, ivec2(gl_FragCoord.xy), 0);\n"
+    "  c = floor(clamp(c, 0.0, 1.0) * 255.0 + 0.5) / 255.0;\n"
+    "  shift_color0 = c.bgra;\n"
+    "}\n";
 
 bool DebugFragmentColorEnabled() {
   static const bool enabled = [] {
@@ -113,6 +122,52 @@ bool DebugFragmentColorEnabled() {
     return value && std::string(value) == "magenta";
   }();
   return enabled;
+}
+
+bool CapturedDrawDumpEnabled() {
+#if defined(__ANDROID__) && !defined(NDEBUG)
+  return true;
+#else
+  static const bool enabled = [] {
+    const char *value = std::getenv("SHIFT_NATIVE_VULKAN_DUMP_FIRST_DRAW");
+    return value && std::string(value) == "1";
+  }();
+  return enabled;
+#endif
+}
+
+uint64_t Fnv1a64(const uint8_t *bytes, size_t byte_length) {
+  uint64_t hash = 14695981039346656037ull;
+  for (size_t i = 0; i < byte_length; ++i) {
+    hash ^= bytes[i];
+    hash *= 1099511628211ull;
+  }
+  return hash;
+}
+
+void AppendShaderConstantDump(
+    std::ostringstream *output,
+    const shift::xbox::CapturedShaderConstants &constants,
+    const std::vector<uint32_t> &registers, bool vertex_stage) {
+  if (!output)
+    return;
+  const auto &stage_constants = vertex_stage ? constants.vertex_float_constants
+                                             : constants.pixel_float_constants;
+  *output << (vertex_stage ? "vertex" : "pixel") << " constants:";
+  if (registers.empty()) {
+    *output << " none\n";
+    return;
+  }
+  *output << '\n';
+  for (const uint32_t reg : registers) {
+    *output << "  c[" << reg << "]=";
+    for (size_t lane = 0; lane < 4; ++lane) {
+      const uint32_t bits = stage_constants[reg][lane];
+      *output << (lane ? ", " : "") << std::hex << bits << std::dec << '('
+              << std::bit_cast<float>(bits) << ')';
+    }
+    *output << '\n';
+  }
 }
 
 uint32_t ReadGuestDword(const uint8_t* bytes) {
@@ -185,7 +240,10 @@ bool CompileCapturedCopyResolveShaders(
                              &copy->vertex_shader_spirv, error) &&
          CompileVulkanShader("copy-resolve-pixel", EShLangFragment,
                              kCopyResolvePixelShader,
-                             &copy->pixel_shader_spirv, error);
+                             &copy->pixel_shader_spirv, error) &&
+         CompileVulkanShader("copy-resolve-single-sample-pixel", EShLangFragment,
+                             kCopyResolveSingleSamplePixelShader,
+                             &copy->single_sample_pixel_shader_spirv, error);
 }
 
 class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
@@ -709,6 +767,132 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       }
     } else {
       prepared.texture_rgba8 = {255, 255, 255, 255};
+    }
+    if (CapturedDrawDumpEnabled()) {
+      static std::atomic<uint32_t> dumped_draw_count{0};
+      const uint32_t dump_index =
+          dumped_draw_count.fetch_add(1, std::memory_order_relaxed);
+      if (dump_index < 8) {
+        std::ostringstream dump;
+        dump << "shift-native: resolved captured retail draw #" << dump_index
+             << '\n'
+             << "  topology=" << static_cast<uint32_t>(draw.topology)
+             << " autoindex=" << draw.auto_index
+             << " index_count=" << draw.index_count << " index_guest=0x"
+             << std::hex << draw.index_guest_address << std::dec
+             << " index_type=" << draw.index_type_bits
+             << " index_endian=" << draw.index_endian_mode
+             << " raster=" << raster_state.width << 'x' << raster_state.height
+             << " pitch=" << raster_state.surface_pitch
+             << " samples=" << raster_state.sample_count
+             << " color_base_tiles=" << raster_state.color_base_tiles
+             << " depth_base_tiles=" << raster_state.depth_base_tiles
+             << " color_format="
+             << static_cast<uint32_t>(raster_state.color_format) << " scissor=["
+             << raster_state.scissor_x0 << ',' << raster_state.scissor_y0 << ','
+             << raster_state.scissor_x1 << ',' << raster_state.scissor_y1
+             << "] depth={test:" << raster_state.depth_test_enabled
+             << ",write:" << raster_state.depth_write_enabled
+             << ",stencil:" << raster_state.stencil_test_enabled
+             << "} color_mask=0x" << std::hex
+             << raster_state.color_write_mask << " blend=0x"
+             << raster_state.blend_control_0 << std::dec << "\n"
+             << "  shaders: VS=" << vertex_program.size() << " bytes FNV-1a=0x"
+             << std::hex
+             << Fnv1a64(vertex_program.data(), vertex_program.size())
+             << " PS=" << std::dec << pixel_program.size() << " bytes FNV-1a=0x"
+             << std::hex << Fnv1a64(pixel_program.data(), pixel_program.size())
+             << std::dec << "\n  vertex fetch: guest=0x" << std::hex
+             << vertex_fetch.guest_address << " descriptor={0x"
+             << vertex_descriptor[0] << ",0x" << vertex_descriptor[1] << '}'
+             << std::dec << " endian=" << vertex_fetch.endian_mode
+             << " stride=" << vertex_stride_bytes
+             << " payload_bytes=" << prepared.vertices.size() << " attributes="
+             << vertex_translation.vertex_input_attributes.size() << "\n";
+        const size_t vertex_count = std::min<size_t>(draw.index_count, 4u);
+        for (size_t vertex = 0; vertex < vertex_count; ++vertex) {
+          uint32_t vertex_index = static_cast<uint32_t>(vertex);
+          if (!draw.auto_index) {
+            const size_t index_offset = vertex * sizeof(uint16_t);
+            if (draw.index_type_bits != 16 ||
+                index_offset + sizeof(uint16_t) > prepared.indices.size()) {
+              dump << "  vertex[" << vertex << "]: index unavailable\n";
+              continue;
+            }
+            vertex_index =
+                static_cast<uint32_t>(prepared.indices[index_offset]) |
+                (static_cast<uint32_t>(prepared.indices[index_offset + 1])
+                 << 8);
+          }
+          for (const auto &attribute :
+               vertex_translation.vertex_input_attributes) {
+            const size_t byte_offset =
+                static_cast<size_t>(vertex_index) * vertex_stride_bytes +
+                static_cast<size_t>(attribute.offset_dwords) * sizeof(uint32_t);
+            const size_t component_count = attribute.vertex_format == 57   ? 3u
+                                           : attribute.vertex_format == 38 ? 4u
+                                                                           : 0u;
+            dump << "  vertex[" << vertex << "] index=" << vertex_index
+                 << " location=" << attribute.location << " destination=r"
+                 << attribute.destination_register
+                 << " format=" << attribute.vertex_format
+                 << " offset=" << (attribute.offset_dwords * 4) << " values={";
+            for (size_t component = 0; component < component_count;
+                 ++component) {
+              const size_t offset = byte_offset + component * sizeof(uint32_t);
+              if (offset + sizeof(uint32_t) > prepared.vertices.size()) {
+                dump << (component ? ", " : "") << "out-of-range";
+                break;
+              }
+              const uint32_t bits =
+                  static_cast<uint32_t>(prepared.vertices[offset]) |
+                  (static_cast<uint32_t>(prepared.vertices[offset + 1]) << 8) |
+                  (static_cast<uint32_t>(prepared.vertices[offset + 2]) << 16) |
+                  (static_cast<uint32_t>(prepared.vertices[offset + 3]) << 24);
+              dump << (component ? ", " : "") << std::hex << bits << std::dec
+                   << '(' << std::bit_cast<float>(bits) << ')';
+            }
+            if (attribute.vertex_format == 57)
+              dump << ", 1(1)";
+            dump << "}\n";
+          }
+        }
+        dump << "  normalized_vertex_payload_fnv1a=0x" << std::hex
+             << Fnv1a64(prepared.vertices.data(), prepared.vertices.size())
+             << std::dec << "\n";
+        if (pixel_translation.uses_texture) {
+          dump << "  texture fetch="
+               << pixel_translation.texture_fetch_constant_index << " guest=0x"
+               << std::hex << texture_fetch.guest_address << " descriptor={";
+          for (size_t i = 0; i < texture_descriptor.size(); ++i) {
+            dump << (i ? "," : "") << "0x" << texture_descriptor[i];
+          }
+          dump << "} extent=" << std::dec << texture_fetch.width << 'x'
+               << texture_fetch.height << " format=" << texture_fetch.format
+               << " byte_length=" << texture_fetch.byte_length
+               << " rgba8_bytes=" << prepared.texture_rgba8.size()
+               << " rgba8_fnv1a=0x" << std::hex
+               << Fnv1a64(prepared.texture_rgba8.data(),
+                          prepared.texture_rgba8.size())
+               << std::dec << "\n";
+        } else {
+          dump << "  texture: unused\n";
+        }
+        AppendShaderConstantDump(&dump, constants,
+                                 vertex_translation.float_constant_registers,
+                                 true);
+        AppendShaderConstantDump(&dump, constants,
+                                 pixel_translation.float_constant_registers,
+                                 false);
+        dump << "  pixel boolean constants valid="
+             << constants.pixel_boolean_constants_valid
+             << " b128=" << constants.pixel_b128
+             << " b129=" << constants.pixel_b129
+             << "\n  translated vertex GLSL:\n"
+             << vertex_translation.glsl << "  translated pixel GLSL:\n"
+             << pixel_translation.glsl;
+        REXLOG_INFO("{}", dump.str());
+      }
     }
     *prepared_draw = std::move(prepared);
     return true;

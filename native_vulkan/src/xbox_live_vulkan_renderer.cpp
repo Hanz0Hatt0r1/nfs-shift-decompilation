@@ -50,6 +50,16 @@ struct FrameResources {
     VkFramebuffer copy_framebuffer = VK_NULL_HANDLE;
     ImageResource multisample_color;
     ImageResource depth;
+    VkRenderPass mixed_msaa_render_pass = VK_NULL_HANDLE;
+    VkFramebuffer mixed_msaa_framebuffer = VK_NULL_HANDLE;
+    VkRenderPass mixed_single_render_pass = VK_NULL_HANDLE;
+    VkFramebuffer mixed_single_framebuffer = VK_NULL_HANDLE;
+    VkRenderPass mixed_copy_render_pass = VK_NULL_HANDLE;
+    VkFramebuffer mixed_copy_framebuffer = VK_NULL_HANDLE;
+    ImageResource mixed_color;
+    ImageResource mixed_msaa_color;
+    ImageResource mixed_msaa_depth;
+    ImageResource mixed_single_depth;
     BufferResource output_readback;
     VkCommandPool command_pool = VK_NULL_HANDLE;
     std::vector<DrawResources> draws;
@@ -82,9 +92,19 @@ struct FrameResources {
         if (framebuffer) vkDestroyFramebuffer(device, framebuffer, nullptr);
         destroy_image(multisample_color);
         destroy_image(depth);
+        if (mixed_msaa_framebuffer) vkDestroyFramebuffer(device, mixed_msaa_framebuffer, nullptr);
+        if (mixed_single_framebuffer) vkDestroyFramebuffer(device, mixed_single_framebuffer, nullptr);
+        if (mixed_copy_framebuffer) vkDestroyFramebuffer(device, mixed_copy_framebuffer, nullptr);
+        destroy_image(mixed_color);
+        destroy_image(mixed_msaa_color);
+        destroy_image(mixed_msaa_depth);
+        destroy_image(mixed_single_depth);
         destroy_buffer(output_readback);
         if (copy_render_pass) vkDestroyRenderPass(device, copy_render_pass, nullptr);
         if (render_pass) vkDestroyRenderPass(device, render_pass, nullptr);
+        if (mixed_msaa_render_pass) vkDestroyRenderPass(device, mixed_msaa_render_pass, nullptr);
+        if (mixed_single_render_pass) vkDestroyRenderPass(device, mixed_single_render_pass, nullptr);
+        if (mixed_copy_render_pass) vkDestroyRenderPass(device, mixed_copy_render_pass, nullptr);
         if (command_pool) vkDestroyCommandPool(device, command_pool, nullptr);
     }
 
@@ -681,6 +701,718 @@ bool create_draw_resources(
     return true;
 }
 
+bool submit_mixed_sample_copy_frame(
+    VkPhysicalDevice physical_device,
+    VkDevice device,
+    VkQueue queue,
+    uint32_t queue_family_index,
+    VkImage output_image,
+    VkImageView output_view,
+    bool output_written_before,
+    uint32_t output_width,
+    uint32_t output_height,
+    const std::vector<CapturedVulkanDraw>& draws,
+    std::string* error,
+    std::vector<uint32_t>* output_readback,
+    bool geometry_shader_enabled,
+    const CapturedVulkanCopy& copy) {
+    if (draws.empty() || draws.front().raster.sample_count != 4 ||
+        copy.single_sample_pixel_shader_spirv.empty()) {
+        return fail("mixed captured frame requires 4x-MSAA followed by 1x and a single-sample Copy/Convert shader",
+                    error);
+    }
+
+    bool reached_single_sample = false;
+    bool needs_msaa_depth = false;
+    bool needs_single_depth = false;
+    const CapturedRasterState& target = draws.front().raster;
+    for (size_t i = 0; i < draws.size(); ++i) {
+        const CapturedVulkanDraw& draw = draws[i];
+        const CapturedRasterState& raster = draw.raster;
+        if (raster.sample_count == 1) {
+            reached_single_sample = true;
+        } else if (raster.sample_count != 4 || reached_single_sample) {
+            return fail("mixed captured frame currently supports a single 4x-MSAA to 1x target transition",
+                        error);
+        }
+        if (raster.width != target.width || raster.height != target.height ||
+            raster.color_base_tiles != target.color_base_tiles ||
+            raster.depth_base_tiles != target.depth_base_tiles ||
+            raster.color_format != target.color_format ||
+            raster.depth_format != target.depth_format) {
+            std::ostringstream message;
+            message << "mixed captured draw " << i
+                    << " changes the guest render target within the frame";
+            return fail(message.str(), error);
+        }
+        if (draw.topology == PrimitiveTopology::RectangleList &&
+            !geometry_shader_enabled) {
+            return fail("captured rectangle-list draw requires an enabled Vulkan geometry shader",
+                        error);
+        }
+        if (raster.width == 0 || raster.height == 0 ||
+            raster.scissor_x1 > raster.width || raster.scissor_y1 > raster.height ||
+            raster.scissor_x0 > raster.scissor_x1 ||
+            raster.scissor_y0 > raster.scissor_y1) {
+            std::ostringstream message;
+            message << "mixed captured draw " << i
+                    << " has an invalid raster extent or scissor";
+            return fail(message.str(), error);
+        }
+        needs_msaa_depth |= raster.sample_count == 4 &&
+            (raster.depth_test_enabled || raster.depth_write_enabled ||
+             raster.stencil_test_enabled);
+        needs_single_depth |= raster.sample_count == 1 &&
+            (raster.depth_test_enabled || raster.depth_write_enabled ||
+             raster.stencil_test_enabled);
+    }
+    if (!reached_single_sample || target.width != output_width ||
+        target.height != output_height ||
+        (needs_msaa_depth && needs_single_depth) ||
+        copy.state.source_select != 0 || copy.state.sample_select != 0 ||
+        copy.state.command != CapturedCopyCommand::Convert ||
+        copy.state.destination_pitch != output_width ||
+        copy.state.destination_height != output_height ||
+        copy.state.destination_format != 6 ||
+        !copy.state.destination_swap_red_blue ||
+        copy.vertex_shader_spirv.empty()) {
+        return fail("mixed captured frame is outside the 4x-to-1x source-0/sample-0 Copy/Convert subset or requires unsupported depth preservation",
+                    error);
+    }
+
+    VkPhysicalDeviceMemoryProperties memory_properties{};
+    vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
+    FrameResources resources{};
+    resources.device = device;
+    resources.queue = queue;
+    resources.draws.resize(draws.size());
+    if (!create_render_attachment(
+            memory_properties, device, output_width, output_height,
+            VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_1_BIT,
+            &resources.mixed_color, error) ||
+        !create_render_attachment(
+            memory_properties, device, output_width, output_height,
+            VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_4_BIT,
+            &resources.mixed_msaa_color, error)) {
+        return false;
+    }
+    if (needs_msaa_depth &&
+        !create_render_attachment(
+            memory_properties, device, output_width, output_height,
+            VK_FORMAT_D24_UNORM_S8_UINT,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+            VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+            VK_SAMPLE_COUNT_4_BIT, &resources.mixed_msaa_depth, error)) {
+        return false;
+    }
+    if (needs_single_depth &&
+        !create_render_attachment(
+            memory_properties, device, output_width, output_height,
+            VK_FORMAT_D24_UNORM_S8_UINT,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+            VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+            VK_SAMPLE_COUNT_1_BIT, &resources.mixed_single_depth, error)) {
+        return false;
+    }
+
+    std::vector<VkAttachmentDescription> msaa_attachments(2);
+    msaa_attachments[0].format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    msaa_attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
+    msaa_attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    msaa_attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    msaa_attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    msaa_attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    msaa_attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    msaa_attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    msaa_attachments[1].format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    msaa_attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    msaa_attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    msaa_attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    msaa_attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    msaa_attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    msaa_attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    msaa_attachments[1].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference msaa_color_reference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentReference resolve_reference{1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentReference msaa_depth_reference{};
+    if (needs_msaa_depth) {
+        msaa_depth_reference.attachment =
+            static_cast<uint32_t>(msaa_attachments.size());
+        msaa_depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        VkAttachmentDescription depth_attachment{};
+        depth_attachment.format = VK_FORMAT_D24_UNORM_S8_UINT;
+        depth_attachment.samples = VK_SAMPLE_COUNT_4_BIT;
+        depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        msaa_attachments.push_back(depth_attachment);
+    }
+    VkSubpassDescription msaa_subpass{};
+    msaa_subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    msaa_subpass.colorAttachmentCount = 1;
+    msaa_subpass.pColorAttachments = &msaa_color_reference;
+    msaa_subpass.pResolveAttachments = &resolve_reference;
+    msaa_subpass.pDepthStencilAttachment =
+        needs_msaa_depth ? &msaa_depth_reference : nullptr;
+    VkSubpassDependency msaa_dependencies[2]{};
+    msaa_dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    msaa_dependencies[0].dstSubpass = 0;
+    msaa_dependencies[0].srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    msaa_dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    msaa_dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    msaa_dependencies[1].srcSubpass = 0;
+    msaa_dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    msaa_dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    msaa_dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    msaa_dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    msaa_dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                          VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    VkRenderPassCreateInfo msaa_pass_info{};
+    msaa_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    msaa_pass_info.attachmentCount =
+        static_cast<uint32_t>(msaa_attachments.size());
+    msaa_pass_info.pAttachments = msaa_attachments.data();
+    msaa_pass_info.subpassCount = 1;
+    msaa_pass_info.pSubpasses = &msaa_subpass;
+    msaa_pass_info.dependencyCount = 2;
+    msaa_pass_info.pDependencies = msaa_dependencies;
+    VkResult result = vkCreateRenderPass(
+        device, &msaa_pass_info, nullptr, &resources.mixed_msaa_render_pass);
+    if (result != VK_SUCCESS) return vk_fail("vkCreateRenderPass(mixed 4x)", result, error);
+
+    std::vector<VkImageView> msaa_views{resources.mixed_msaa_color.view,
+                                        resources.mixed_color.view};
+    if (needs_msaa_depth) msaa_views.push_back(resources.mixed_msaa_depth.view);
+    VkFramebufferCreateInfo msaa_framebuffer_info{};
+    msaa_framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    msaa_framebuffer_info.renderPass = resources.mixed_msaa_render_pass;
+    msaa_framebuffer_info.attachmentCount = static_cast<uint32_t>(msaa_views.size());
+    msaa_framebuffer_info.pAttachments = msaa_views.data();
+    msaa_framebuffer_info.width = output_width;
+    msaa_framebuffer_info.height = output_height;
+    msaa_framebuffer_info.layers = 1;
+    result = vkCreateFramebuffer(device, &msaa_framebuffer_info, nullptr,
+                                 &resources.mixed_msaa_framebuffer);
+    if (result != VK_SUCCESS) return vk_fail("vkCreateFramebuffer(mixed 4x)", result, error);
+
+    std::vector<VkAttachmentDescription> single_attachments(1);
+    single_attachments[0].format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    single_attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    single_attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    single_attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    single_attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    single_attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    single_attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    single_attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference single_color_reference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentReference single_depth_reference{};
+    if (needs_single_depth) {
+        single_depth_reference.attachment =
+            static_cast<uint32_t>(single_attachments.size());
+        single_depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        VkAttachmentDescription depth_attachment{};
+        depth_attachment.format = VK_FORMAT_D24_UNORM_S8_UINT;
+        depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        single_attachments.push_back(depth_attachment);
+    }
+    VkSubpassDescription single_subpass{};
+    single_subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    single_subpass.colorAttachmentCount = 1;
+    single_subpass.pColorAttachments = &single_color_reference;
+    single_subpass.pDepthStencilAttachment =
+        needs_single_depth ? &single_depth_reference : nullptr;
+    VkSubpassDependency single_dependencies[2]{};
+    single_dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    single_dependencies[0].dstSubpass = 0;
+    single_dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    single_dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    single_dependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    single_dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    single_dependencies[1].srcSubpass = 0;
+    single_dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    single_dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    single_dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    single_dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    single_dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                            VK_ACCESS_SHADER_READ_BIT;
+    VkRenderPassCreateInfo single_pass_info{};
+    single_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    single_pass_info.attachmentCount = static_cast<uint32_t>(single_attachments.size());
+    single_pass_info.pAttachments = single_attachments.data();
+    single_pass_info.subpassCount = 1;
+    single_pass_info.pSubpasses = &single_subpass;
+    single_pass_info.dependencyCount = 2;
+    single_pass_info.pDependencies = single_dependencies;
+    result = vkCreateRenderPass(
+        device, &single_pass_info, nullptr, &resources.mixed_single_render_pass);
+    if (result != VK_SUCCESS) return vk_fail("vkCreateRenderPass(mixed 1x)", result, error);
+
+    std::vector<VkImageView> single_views{resources.mixed_color.view};
+    if (needs_single_depth) single_views.push_back(resources.mixed_single_depth.view);
+    VkFramebufferCreateInfo single_framebuffer_info{};
+    single_framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    single_framebuffer_info.renderPass = resources.mixed_single_render_pass;
+    single_framebuffer_info.attachmentCount = static_cast<uint32_t>(single_views.size());
+    single_framebuffer_info.pAttachments = single_views.data();
+    single_framebuffer_info.width = output_width;
+    single_framebuffer_info.height = output_height;
+    single_framebuffer_info.layers = 1;
+    result = vkCreateFramebuffer(device, &single_framebuffer_info, nullptr,
+                                 &resources.mixed_single_framebuffer);
+    if (result != VK_SUCCESS) return vk_fail("vkCreateFramebuffer(mixed 1x)", result, error);
+
+    VkAttachmentDescription copy_attachment{};
+    copy_attachment.format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    copy_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    copy_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    copy_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    copy_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    copy_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    copy_attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    copy_attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference copy_color_reference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkSubpassDescription copy_subpass{};
+    copy_subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    copy_subpass.colorAttachmentCount = 1;
+    copy_subpass.pColorAttachments = &copy_color_reference;
+    VkSubpassDependency copy_dependencies[2]{};
+    copy_dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    copy_dependencies[0].dstSubpass = 0;
+    copy_dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    copy_dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    copy_dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    copy_dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    copy_dependencies[1].srcSubpass = 0;
+    copy_dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    copy_dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    copy_dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                        VK_PIPELINE_STAGE_TRANSFER_BIT;
+    copy_dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    copy_dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT |
+                                         VK_ACCESS_TRANSFER_READ_BIT;
+    VkRenderPassCreateInfo copy_pass_info{};
+    copy_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    copy_pass_info.attachmentCount = 1;
+    copy_pass_info.pAttachments = &copy_attachment;
+    copy_pass_info.subpassCount = 1;
+    copy_pass_info.pSubpasses = &copy_subpass;
+    copy_pass_info.dependencyCount = 2;
+    copy_pass_info.pDependencies = copy_dependencies;
+    result = vkCreateRenderPass(
+        device, &copy_pass_info, nullptr, &resources.mixed_copy_render_pass);
+    if (result != VK_SUCCESS) return vk_fail("vkCreateRenderPass(mixed Copy/Convert)", result, error);
+    VkFramebufferCreateInfo copy_framebuffer_info{};
+    copy_framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    copy_framebuffer_info.renderPass = resources.mixed_copy_render_pass;
+    copy_framebuffer_info.attachmentCount = 1;
+    copy_framebuffer_info.pAttachments = &output_view;
+    copy_framebuffer_info.width = output_width;
+    copy_framebuffer_info.height = output_height;
+    copy_framebuffer_info.layers = 1;
+    result = vkCreateFramebuffer(device, &copy_framebuffer_info, nullptr,
+                                 &resources.mixed_copy_framebuffer);
+    if (result != VK_SUCCESS) return vk_fail("vkCreateFramebuffer(mixed Copy/Convert)", result, error);
+
+    size_t first_single_sample_draw = 0;
+    while (first_single_sample_draw < draws.size() &&
+           draws[first_single_sample_draw].raster.sample_count == 4) {
+        ++first_single_sample_draw;
+    }
+    for (size_t i = 0; i < draws.size(); ++i) {
+        const VkRenderPass pass = i < first_single_sample_draw
+            ? resources.mixed_msaa_render_pass
+            : resources.mixed_single_render_pass;
+        if (!create_draw_resources(draws[i], memory_properties, device, pass,
+                                   geometry_shader_enabled, &resources.draws[i], error)) {
+            return false;
+        }
+    }
+    CapturedVulkanDraw copy_draw{};
+    copy_draw.vertex_shader_spirv = copy.vertex_shader_spirv;
+    copy_draw.pixel_shader_spirv = copy.single_sample_pixel_shader_spirv;
+    copy_draw.auto_index = true;
+    copy_draw.index_count = 3;
+    copy_draw.texture_width = 1;
+    copy_draw.texture_height = 1;
+    copy_draw.texture_rgba8 = {0, 0, 0, 255};
+    copy_draw.raster.width = output_width;
+    copy_draw.raster.height = output_height;
+    copy_draw.raster.sample_count = 1;
+    copy_draw.raster.color_write_mask = 0xFu;
+    copy_draw.raster.scissor_x1 = output_width;
+    copy_draw.raster.scissor_y1 = output_height;
+    copy_draw.raster.scissor_has_area = true;
+    copy_draw.raster.blend_control_0 = 0x00010001u;
+    copy_draw.texture_sampling.clamps = {TextureClamp::ClampToEdge,
+                                         TextureClamp::ClampToEdge,
+                                         TextureClamp::ClampToEdge};
+    copy_draw.texture_sampling.mag_filter = TextureFilter::Point;
+    copy_draw.texture_sampling.min_filter = TextureFilter::Point;
+    copy_draw.texture_sampling.mip_filter = TextureFilter::Point;
+    copy_draw.texture_sampling.anisotropy = TextureAnisotropy::Disabled;
+    copy_draw.texture_sampling.border_color = TextureBorderColor::AbgrBlack;
+    copy_draw.texture_sampling.border_alpha_known = true;
+    if (!create_draw_resources(copy_draw, memory_properties, device,
+                               resources.mixed_copy_render_pass, false,
+                               &resources.copy_draw, error)) {
+        return false;
+    }
+    VkDescriptorImageInfo source_info{resources.copy_draw.sampler,
+                                      resources.mixed_color.view,
+                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkWriteDescriptorSet source_write{};
+    source_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    source_write.dstSet = resources.copy_draw.descriptor_sets[1];
+    source_write.dstBinding = 0;
+    source_write.descriptorCount = 1;
+    source_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    source_write.pImageInfo = &source_info;
+    vkUpdateDescriptorSets(device, 1, &source_write, 0, nullptr);
+    resources.destroy_image(resources.copy_draw.texture);
+    resources.destroy_buffer(resources.copy_draw.texture_upload);
+
+    VkDeviceSize readback_size = 0;
+    if (output_readback) {
+        const uint64_t pixel_count = static_cast<uint64_t>(output_width) * output_height;
+        if (pixel_count > std::numeric_limits<size_t>::max() / sizeof(uint32_t) ||
+            pixel_count > std::numeric_limits<VkDeviceSize>::max() / sizeof(uint32_t)) {
+            return fail("captured output extent is too large for Vulkan readback", error);
+        }
+        readback_size = static_cast<VkDeviceSize>(pixel_count * sizeof(uint32_t));
+        if (!create_buffer(memory_properties, device, readback_size,
+                           VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr,
+                           &resources.output_readback, error)) {
+            return false;
+        }
+    }
+    VkCommandPoolCreateInfo pool_info{};
+    pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_info.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+    pool_info.queueFamilyIndex = queue_family_index;
+    result = vkCreateCommandPool(device, &pool_info, nullptr, &resources.command_pool);
+    if (result != VK_SUCCESS) return vk_fail("vkCreateCommandPool(mixed frame)", result, error);
+    VkCommandBufferAllocateInfo command_info{};
+    command_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    command_info.commandPool = resources.command_pool;
+    command_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    command_info.commandBufferCount = 1;
+    VkCommandBuffer command = VK_NULL_HANDLE;
+    result = vkAllocateCommandBuffers(device, &command_info, &command);
+    if (result != VK_SUCCESS) return vk_fail("vkAllocateCommandBuffers(mixed frame)", result, error);
+    VkCommandBufferBeginInfo begin_info{};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    result = vkBeginCommandBuffer(command, &begin_info);
+    if (result != VK_SUCCESS) return vk_fail("vkBeginCommandBuffer(mixed frame)", result, error);
+
+    std::vector<VkBufferMemoryBarrier> host_barriers;
+    host_barriers.reserve(draws.size() * 5);
+    for (const DrawResources& draw : resources.draws) {
+        const std::array<std::pair<const BufferResource*, VkAccessFlags>, 5> buffers = {{
+            {&draw.vertices, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT},
+            {&draw.indices, VK_ACCESS_INDEX_READ_BIT},
+            {&draw.vertex_constants, VK_ACCESS_UNIFORM_READ_BIT},
+            {&draw.pixel_constants, VK_ACCESS_UNIFORM_READ_BIT},
+            {&draw.texture_upload, VK_ACCESS_TRANSFER_READ_BIT},
+        }};
+        for (const auto& [buffer, access] : buffers) {
+            if (!buffer->buffer) continue;
+            VkBufferMemoryBarrier barrier{};
+            barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+            barrier.dstAccessMask = access;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.buffer = buffer->buffer;
+            barrier.size = VK_WHOLE_SIZE;
+            host_barriers.push_back(barrier);
+        }
+    }
+    vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_HOST_BIT,
+                         VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
+                             VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         0, 0, nullptr, static_cast<uint32_t>(host_barriers.size()),
+                         host_barriers.data(), 0, nullptr);
+    for (size_t i = 0; i < resources.draws.size(); ++i) {
+        const DrawResources& draw = resources.draws[i];
+        VkImageMemoryBarrier to_upload{};
+        to_upload.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        to_upload.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        to_upload.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        to_upload.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        to_upload.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        to_upload.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        to_upload.image = draw.texture.image;
+        to_upload.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        to_upload.subresourceRange.levelCount = 1;
+        to_upload.subresourceRange.layerCount = 1;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                             0, nullptr, 0, nullptr, 1, &to_upload);
+        VkBufferImageCopy upload{};
+        upload.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        upload.imageSubresource.layerCount = 1;
+        upload.imageExtent = {draws[i].texture_width, draws[i].texture_height, 1};
+        vkCmdCopyBufferToImage(command, draw.texture_upload.buffer, draw.texture.image,
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &upload);
+        VkImageMemoryBarrier to_sample = to_upload;
+        to_sample.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        to_sample.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                             0, nullptr, 0, nullptr, 1, &to_sample);
+    }
+
+    const auto scaled_edge = [](uint32_t edge, uint32_t source_extent,
+                                uint32_t output_extent, bool round_up) {
+        const uint64_t numerator = static_cast<uint64_t>(edge) * output_extent;
+        const uint64_t quotient = numerator / source_extent;
+        return static_cast<uint32_t>(quotient +
+            (round_up && numerator % source_extent != 0 ? 1u : 0u));
+    };
+    const auto record_draw = [&](size_t index) {
+        const CapturedVulkanDraw& source = draws[index];
+        const DrawResources& draw = resources.draws[index];
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = source.raster.viewport_y_flipped
+                         ? static_cast<float>(output_height) : 0.0f;
+        viewport.width = static_cast<float>(output_width);
+        viewport.height = source.raster.viewport_y_flipped
+                              ? -static_cast<float>(output_height)
+                              : static_cast<float>(output_height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        const uint32_t x0 = scaled_edge(source.raster.scissor_x0,
+                                        source.raster.width, output_width, false);
+        const uint32_t y0 = scaled_edge(source.raster.scissor_y0,
+                                        source.raster.height, output_height, false);
+        const uint32_t x1 = scaled_edge(source.raster.scissor_x1,
+                                        source.raster.width, output_width, true);
+        const uint32_t y1 = scaled_edge(source.raster.scissor_y1,
+                                        source.raster.height, output_height, true);
+        VkRect2D scissor{{static_cast<int32_t>(x0), static_cast<int32_t>(y0)},
+                         {x1 - x0, y1 - y0}};
+        const VkDeviceSize vertex_offset = 0;
+        vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS, draw.pipeline);
+        vkCmdSetViewport(command, 0, 1, &viewport);
+        vkCmdSetScissor(command, 0, 1, &scissor);
+        if (draw.vertices.buffer) {
+            vkCmdBindVertexBuffers(command, 0, 1, &draw.vertices.buffer, &vertex_offset);
+        }
+        vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                draw.pipeline_layout, 0, 2,
+                                draw.descriptor_sets, 0, nullptr);
+        if (source.auto_index) {
+            vkCmdDraw(command, source.index_count, 1, 0, 0);
+        } else {
+            vkCmdBindIndexBuffer(command, draw.indices.buffer, 0, VK_INDEX_TYPE_UINT16);
+            vkCmdDrawIndexed(command, source.index_count, 1, 0, 0, 0);
+        }
+    };
+
+    std::vector<VkClearValue> msaa_clears(msaa_attachments.size());
+    msaa_clears[0].color.float32[3] = 1.0f;
+    if (needs_msaa_depth) {
+        msaa_clears[msaa_depth_reference.attachment].depthStencil = {1.0f, 0};
+    }
+    VkRenderPassBeginInfo msaa_begin{};
+    msaa_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    msaa_begin.renderPass = resources.mixed_msaa_render_pass;
+    msaa_begin.framebuffer = resources.mixed_msaa_framebuffer;
+    msaa_begin.renderArea.extent = {output_width, output_height};
+    msaa_begin.clearValueCount = static_cast<uint32_t>(msaa_clears.size());
+    msaa_begin.pClearValues = msaa_clears.data();
+    vkCmdBeginRenderPass(command, &msaa_begin, VK_SUBPASS_CONTENTS_INLINE);
+    for (size_t i = 0; i < first_single_sample_draw; ++i) record_draw(i);
+    vkCmdEndRenderPass(command);
+
+    VkImageMemoryBarrier resolve_to_single{};
+    resolve_to_single.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    resolve_to_single.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    resolve_to_single.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    resolve_to_single.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    resolve_to_single.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    resolve_to_single.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    resolve_to_single.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    resolve_to_single.image = resources.mixed_color.image;
+    resolve_to_single.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    resolve_to_single.subresourceRange.levelCount = 1;
+    resolve_to_single.subresourceRange.layerCount = 1;
+    vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0,
+                         0, nullptr, 0, nullptr, 1, &resolve_to_single);
+
+    std::vector<VkClearValue> single_clears(single_attachments.size());
+    if (needs_single_depth) {
+        single_clears[single_depth_reference.attachment].depthStencil = {1.0f, 0};
+    }
+    VkRenderPassBeginInfo single_begin{};
+    single_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    single_begin.renderPass = resources.mixed_single_render_pass;
+    single_begin.framebuffer = resources.mixed_single_framebuffer;
+    single_begin.renderArea.extent = {output_width, output_height};
+    single_begin.clearValueCount = static_cast<uint32_t>(single_clears.size());
+    single_begin.pClearValues = single_clears.data();
+    vkCmdBeginRenderPass(command, &single_begin, VK_SUBPASS_CONTENTS_INLINE);
+    for (size_t i = first_single_sample_draw; i < draws.size(); ++i) record_draw(i);
+    vkCmdEndRenderPass(command);
+
+    VkImageMemoryBarrier source_to_sample{};
+    source_to_sample.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    source_to_sample.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    source_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    source_to_sample.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    source_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    source_to_sample.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    source_to_sample.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    source_to_sample.image = resources.mixed_color.image;
+    source_to_sample.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    source_to_sample.subresourceRange.levelCount = 1;
+    source_to_sample.subresourceRange.layerCount = 1;
+    vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                         0, nullptr, 0, nullptr, 1, &source_to_sample);
+
+    VkImageMemoryBarrier output_to_color{};
+    output_to_color.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    output_to_color.srcAccessMask = output_written_before ? VK_ACCESS_SHADER_READ_BIT : 0;
+    output_to_color.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    output_to_color.oldLayout = output_written_before
+        ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED;
+    output_to_color.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    output_to_color.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    output_to_color.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    output_to_color.image = output_image;
+    output_to_color.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    output_to_color.subresourceRange.levelCount = 1;
+    output_to_color.subresourceRange.layerCount = 1;
+    vkCmdPipelineBarrier(command,
+                         output_written_before ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                                               : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0,
+                         0, nullptr, 0, nullptr, 1, &output_to_color);
+
+    VkRenderPassBeginInfo copy_begin{};
+    copy_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    copy_begin.renderPass = resources.mixed_copy_render_pass;
+    copy_begin.framebuffer = resources.mixed_copy_framebuffer;
+    copy_begin.renderArea.extent = {output_width, output_height};
+    vkCmdBeginRenderPass(command, &copy_begin, VK_SUBPASS_CONTENTS_INLINE);
+    VkViewport copy_viewport{0.0f, 0.0f, static_cast<float>(output_width),
+                             static_cast<float>(output_height), 0.0f, 1.0f};
+    VkRect2D copy_scissor{{0, 0}, {output_width, output_height}};
+    vkCmdSetViewport(command, 0, 1, &copy_viewport);
+    vkCmdSetScissor(command, 0, 1, &copy_scissor);
+    vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                      resources.copy_draw.pipeline);
+    vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            resources.copy_draw.pipeline_layout, 0, 2,
+                            resources.copy_draw.descriptor_sets, 0, nullptr);
+    vkCmdDraw(command, 3, 1, 0, 0);
+    vkCmdEndRenderPass(command);
+
+    VkImageMemoryBarrier output_to_read{};
+    output_to_read.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    output_to_read.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    output_to_read.dstAccessMask = output_readback ? VK_ACCESS_TRANSFER_READ_BIT
+                                                  : VK_ACCESS_SHADER_READ_BIT;
+    output_to_read.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    output_to_read.newLayout = output_readback ? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+                                               : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    output_to_read.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    output_to_read.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    output_to_read.image = output_image;
+    output_to_read.subresourceRange = output_to_color.subresourceRange;
+    vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                         output_readback ? VK_PIPELINE_STAGE_TRANSFER_BIT
+                                         : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                         0, 0, nullptr, 0, nullptr, 1, &output_to_read);
+    if (output_readback) {
+        VkBufferImageCopy readback_copy{};
+        readback_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        readback_copy.imageSubresource.layerCount = 1;
+        readback_copy.imageExtent = {output_width, output_height, 1};
+        vkCmdCopyImageToBuffer(command, output_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                               resources.output_readback.buffer, 1, &readback_copy);
+        VkBufferMemoryBarrier readback_to_host{};
+        readback_to_host.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        readback_to_host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        readback_to_host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+        readback_to_host.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        readback_to_host.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        readback_to_host.buffer = resources.output_readback.buffer;
+        readback_to_host.size = readback_size;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_HOST_BIT, 0,
+                             0, nullptr, 1, &readback_to_host, 0, nullptr);
+        VkImageMemoryBarrier output_back_to_sample = output_to_read;
+        output_back_to_sample.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        output_back_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        output_back_to_sample.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        output_back_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                             0, nullptr, 0, nullptr, 1, &output_back_to_sample);
+    }
+    result = vkEndCommandBuffer(command);
+    if (result != VK_SUCCESS) return vk_fail("vkEndCommandBuffer(mixed frame)", result, error);
+    VkSubmitInfo submit{};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &command;
+    result = vkQueueSubmit(queue, 1, &submit, VK_NULL_HANDLE);
+    if (result != VK_SUCCESS) return vk_fail("vkQueueSubmit(mixed frame)", result, error);
+    resources.submitted = true;
+    result = vkQueueWaitIdle(queue);
+    if (result != VK_SUCCESS) return vk_fail("vkQueueWaitIdle(mixed frame)", result, error);
+    resources.submitted = false;
+    if (output_readback) {
+        void* mapped = nullptr;
+        result = vkMapMemory(device, resources.output_readback.memory, 0,
+                             VK_WHOLE_SIZE, 0, &mapped);
+        if (result != VK_SUCCESS) return vk_fail("vkMapMemory(mixed readback)", result, error);
+        if ((resources.output_readback.memory_flags &
+             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+            VkMappedMemoryRange range{};
+            range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+            range.memory = resources.output_readback.memory;
+            range.size = VK_WHOLE_SIZE;
+            result = vkInvalidateMappedMemoryRanges(device, 1, &range);
+            if (result != VK_SUCCESS) {
+                vkUnmapMemory(device, resources.output_readback.memory);
+                return vk_fail("vkInvalidateMappedMemoryRanges(mixed readback)", result, error);
+            }
+        }
+        output_readback->resize(static_cast<size_t>(output_width) * output_height);
+        std::memcpy(output_readback->data(), mapped, static_cast<size_t>(readback_size));
+        vkUnmapMemory(device, resources.output_readback.memory);
+    }
+    if (error) error->clear();
+    return true;
+}
+
 }  // namespace
 
 bool submit_captured_vulkan_frame(
@@ -718,8 +1450,12 @@ bool submit_captured_vulkan_frame(
     if (raster_samples == VkSampleCountFlagBits{}) {
         return fail("captured sample count is outside the Vulkan 1.1 subset", error);
     }
+    const bool mixed_sample_counts = std::any_of(
+        draws.begin() + 1, draws.end(), [samples](const CapturedVulkanDraw& draw) {
+            return draw.raster.sample_count != samples;
+        });
     if (copy &&
-        (samples != 4 || copy->state.source_select != 0 ||
+        ((!mixed_sample_counts && samples != 4) || copy->state.source_select != 0 ||
          copy->state.sample_select != 0 ||
          copy->state.command != CapturedCopyCommand::Convert ||
          copy->state.destination_pitch != output_width ||
@@ -729,6 +1465,16 @@ bool submit_captured_vulkan_frame(
          copy->vertex_shader_spirv.empty() || copy->pixel_shader_spirv.empty())) {
         return fail("captured Copy/Convert is outside the source-0 sample-0 RGBA8 subset",
                     error);
+    }
+    if (mixed_sample_counts) {
+        if (!copy) {
+            return fail("mixed captured sample counts require a captured Copy/Convert target",
+                        error);
+        }
+        return submit_mixed_sample_copy_frame(
+            physical_device, device, queue, queue_family_index, output_image,
+            output_view, output_written_before, output_width, output_height,
+            draws, error, output_readback, geometry_shader_enabled, *copy);
     }
     const bool needs_depth = std::any_of(
         draws.begin(), draws.end(), [](const CapturedVulkanDraw& draw) {
