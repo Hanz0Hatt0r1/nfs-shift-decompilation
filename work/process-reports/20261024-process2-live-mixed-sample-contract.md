@@ -168,7 +168,10 @@ Process 1 staged the diagnostic Linux plugin
 30-second retail smoke. It used host `nfs_shift`
 `6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b` and
 ReXGlue runtime `a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b`.
-Log `/tmp/p1-p2-run060-20261024/logs/nfs_shift_001.log` is 806,235 bytes,
+The guest XEX SHA-256 was
+`8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58` under
+game root `/tmp/nfs_shift_xbox_game_root_20261023`. Log
+`/tmp/p1-p2-run060-20261024/logs/nfs_shift_001.log` is 806,235 bytes,
 SHA-256 `6f55a095f1fad55eeb60bc47fd9d179596d464d32bc676695113714363342458`.
 
 The run recorded 1,349 presenter submissions (1,175 one-draw, 110 two-draw,
