@@ -101,9 +101,10 @@
         "evidence/xbox360_callback_queue_trace_20261024.json",
         "evidence/xbox360_android_vblank_callback_probe_20261024.json",
         "evidence/xbox360_linux_guest_event_black_readback_20261024.json",
-        "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/c7806352f1d04690319f7f907f634b27d664b3cc/evidence/process2_xbox_live_guest_ring_20261023.json"
+        "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/c7806352f1d04690319f7f907f634b27d664b3cc/evidence/process2_xbox_live_guest_ring_20261023.json",
+        "evidence/xbox360_linux_retail_alpha_blend_rerun_20261024.json"
       ],
-      "note": "Process 2 Linux evidence reports 1,828 retail PM4 packets, two guest swaps, 48 submitted retail point-list draws, and two Vulkan frame submissions. The exact-XEX Linux/GDB run recorded 161 draw submit entries and 161 accepted source-0/sample-0 Copy/Convert entries, but the retail 1280x720 A2B10G10R10 readback has zero non-black RGB pixels (FNV-1a B161DE6EEC272325). After clearing stale ReXGlue shared-memory objects, a fresh direct Linux run reproduced the same black retail readback. A separate magenta fragment-output diagnostic produced 518,400 non-black pixels (FNV-1a DA74DA070BC0D725), confirming the diagnostic raster/presenter/readback path; it is synthetic and not retail parity. Later 3-draw batches still fail the target/scissor match against PM4_XE_SWAP. Android readback is also black. Visible retail output and scene parity remain unverified."
+      "note": "Process 2 Linux evidence reports 1,828 retail PM4 packets, two guest swaps, 48 submitted retail point-list draws, and two Vulkan frame submissions. The exact-XEX Linux/GDB run recorded 161 draw submit entries and 161 accepted source-0/sample-0 Copy/Convert entries, but the retail 1280x720 A2B10G10R10 readback has zero non-black RGB pixels (FNV-1a B161DE6EEC272325). After clearing stale ReXGlue shared-memory objects, a fresh direct Linux run reproduced the same black retail readback. A separate magenta fragment-output diagnostic produced 518,400 non-black pixels (FNV-1a DA74DA070BC0D725), confirming the diagnostic raster/presenter/readback path; it is synthetic and not retail parity. Later 3-draw batches still fail the target/scissor match against PM4_XE_SWAP. Android readback is also black. Visible retail output and scene parity remain unverified. A fresh exact-XEX Linux rerun with Process 2 PR #2161 commit 8541089b and its capture-derived RB_BLENDCONTROL still produced byte-identical black readback (FNV-1a B161DE6EEC272325); repeated 3-draw batches still reject the target/scissor match."
     },
     "X4": {
       "key": "linux_frontend_offline_race",
@@ -111,9 +112,10 @@
       "evidence": [
         "evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence",
         "evidence/xbox360_runtime_queue_probe_20261023.json",
-        "evidence/xbox360_linux_guest_event_black_readback_20261024.json"
+        "evidence/xbox360_linux_guest_event_black_readback_20261024.json",
+        "evidence/xbox360_menu_background_pak_index_20261024.json"
       ],
-      "note": "The user confirmed that the original game's loading screen appeared during an earlier ReXGlue Xbox run, but its exact process/build hash was not recorded. In the current controlled Linux run, callbacks and retail Vulkan submissions occur but the readback is entirely black. The runtime also failed four loose-file probes for menu_background.xml; PakFiles/Menu_Background.bff exists, but its member table was not verified, so those misses may be fallback searches. The main menu, visible retail frame, and offline race remain unverified."
+      "note": "The user confirmed that the original game loading screen appeared during an earlier ReXGlue Xbox run, but its exact process/build hash was not recorded. In the current controlled Linux run, callbacks and retail Vulkan submissions occur but the readback is entirely black. Four loose-file probes for menu_background.xml failed. The big-endian index of PakFiles/Menu_Background.bff is verified: 57 bounded members include menu_background.sgx/.enx and textures, but no menu_background.xml. The misses do not prove a fatal VFS problem or show whether the game opens this archive. The main menu, visible retail frame, and offline race remain unverified."
     },
     "X5": {
       "key": "linux_arm64_android_arm64",
