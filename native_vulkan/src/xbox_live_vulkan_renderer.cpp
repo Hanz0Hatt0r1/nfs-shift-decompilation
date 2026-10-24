@@ -748,6 +748,230 @@ bool create_draw_resources(
     return true;
 }
 
+bool create_mixed_msaa_render_pass(
+    VkPhysicalDevice physical_device,
+    VkDevice device,
+    VkFormat color_format,
+    bool needs_msaa_depth,
+    bool resolve_depth_stencil,
+    VkRenderPass* render_pass,
+    std::string* error) {
+    if (resolve_depth_stencil) {
+        const auto create_render_pass_2 =
+            reinterpret_cast<PFN_vkCreateRenderPass2KHR>(
+                vkGetDeviceProcAddr(device, "vkCreateRenderPass2KHR"));
+        if (!create_render_pass_2) {
+            return fail("mixed 4x-to-1x depth/stencil preservation requires enabled "
+                        "VK_KHR_create_renderpass2 and VK_KHR_depth_stencil_resolve",
+                        error);
+        }
+
+        VkPhysicalDeviceDepthStencilResolveProperties resolve_properties{};
+        resolve_properties.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES;
+        VkPhysicalDeviceProperties2 properties{};
+        properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        properties.pNext = &resolve_properties;
+        vkGetPhysicalDeviceProperties2(physical_device, &properties);
+        const VkResolveModeFlags sample_zero = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+        if ((resolve_properties.supportedDepthResolveModes & sample_zero) == 0 ||
+            (resolve_properties.supportedStencilResolveModes & sample_zero) == 0) {
+            return fail("mixed 4x-to-1x depth/stencil preservation requires "
+                        "SAMPLE_ZERO resolve support for both depth and stencil",
+                        error);
+        }
+
+        std::vector<VkAttachmentDescription2> attachments(4);
+        for (auto& attachment : attachments) {
+            attachment.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
+        }
+        attachments[0].format = color_format;
+        attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
+        attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        attachments[1].format = color_format;
+        attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[1].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        attachments[2].format = VK_FORMAT_D24_UNORM_S8_UINT;
+        attachments[2].samples = VK_SAMPLE_COUNT_4_BIT;
+        attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[2].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[2].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        attachments[3].format = VK_FORMAT_D24_UNORM_S8_UINT;
+        attachments[3].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[3].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[3].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[3].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference2 color_reference{};
+        color_reference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
+        color_reference.attachment = 0;
+        color_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        color_reference.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        VkAttachmentReference2 color_resolve_reference{};
+        color_resolve_reference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
+        color_resolve_reference.attachment = 1;
+        color_resolve_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        color_resolve_reference.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        VkAttachmentReference2 depth_reference{};
+        depth_reference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
+        depth_reference.attachment = 2;
+        depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depth_reference.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT |
+                                     VK_IMAGE_ASPECT_STENCIL_BIT;
+        VkAttachmentReference2 depth_resolve_reference{};
+        depth_resolve_reference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
+        depth_resolve_reference.attachment = 3;
+        depth_resolve_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depth_resolve_reference.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT |
+                                            VK_IMAGE_ASPECT_STENCIL_BIT;
+        VkSubpassDescriptionDepthStencilResolve depth_stencil_resolve{};
+        depth_stencil_resolve.sType =
+            VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE;
+        depth_stencil_resolve.depthResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+        depth_stencil_resolve.stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+        depth_stencil_resolve.pDepthStencilResolveAttachment =
+            &depth_resolve_reference;
+        VkSubpassDescription2 subpass{};
+        subpass.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
+        subpass.pNext = &depth_stencil_resolve;
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &color_reference;
+        subpass.pResolveAttachments = &color_resolve_reference;
+        subpass.pDepthStencilAttachment = &depth_reference;
+
+        VkSubpassDependency2 dependencies[2]{};
+        for (auto& dependency : dependencies) {
+            dependency.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2;
+        }
+        dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[0].dstSubpass = 0;
+        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                                       VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependencies[1].srcSubpass = 0;
+        dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                                       VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                                       VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+        VkRenderPassCreateInfo2 create_info{};
+        create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
+        create_info.attachmentCount = static_cast<uint32_t>(attachments.size());
+        create_info.pAttachments = attachments.data();
+        create_info.subpassCount = 1;
+        create_info.pSubpasses = &subpass;
+        create_info.dependencyCount = 2;
+        create_info.pDependencies = dependencies;
+        const VkResult result = create_render_pass_2(
+            device, &create_info, nullptr, render_pass);
+        return result == VK_SUCCESS
+            ? true : vk_fail("vkCreateRenderPass2KHR(mixed 4x depth resolve)",
+                             result, error);
+    }
+
+    std::vector<VkAttachmentDescription> attachments(2);
+    attachments[0].format = color_format;
+    attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachments[1].format = color_format;
+    attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[1].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference color_reference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentReference resolve_reference{1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentReference depth_reference{};
+    if (needs_msaa_depth) {
+        depth_reference.attachment = static_cast<uint32_t>(attachments.size());
+        depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        VkAttachmentDescription depth_attachment{};
+        depth_attachment.format = VK_FORMAT_D24_UNORM_S8_UINT;
+        depth_attachment.samples = VK_SAMPLE_COUNT_4_BIT;
+        depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        attachments.push_back(depth_attachment);
+    }
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_reference;
+    subpass.pResolveAttachments = &resolve_reference;
+    subpass.pDepthStencilAttachment = needs_msaa_depth ? &depth_reference : nullptr;
+    VkSubpassDependency dependencies[2]{};
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass = 0;
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+        (needs_msaa_depth ? VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT : 0);
+    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        (needs_msaa_depth ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+                          : 0);
+    dependencies[1].srcSubpass = 0;
+    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+        (needs_msaa_depth ? VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT : 0);
+    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+        (needs_msaa_depth ? VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT : 0);
+    dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        (needs_msaa_depth ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT : 0);
+    dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        (needs_msaa_depth ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                               VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+                          : 0);
+    VkRenderPassCreateInfo create_info{};
+    create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    create_info.attachmentCount = static_cast<uint32_t>(attachments.size());
+    create_info.pAttachments = attachments.data();
+    create_info.subpassCount = 1;
+    create_info.pSubpasses = &subpass;
+    create_info.dependencyCount = 2;
+    create_info.pDependencies = dependencies;
+    const VkResult result = vkCreateRenderPass(device, &create_info, nullptr, render_pass);
+    return result == VK_SUCCESS ? true : vk_fail("vkCreateRenderPass(mixed 4x)",
+                                                result, error);
+}
+
 bool submit_mixed_sample_copy_frame(
     VkPhysicalDevice physical_device,
     VkDevice device,
@@ -762,7 +986,8 @@ bool submit_mixed_sample_copy_frame(
     std::string* error,
     std::vector<uint32_t>* output_readback,
     bool geometry_shader_enabled,
-    const CapturedVulkanCopy& copy) {
+    const CapturedVulkanCopy& copy,
+    bool depth_stencil_resolve_enabled) {
     if (draws.empty() || draws.front().raster.sample_count != 4 ||
         copy.single_sample_pixel_shader_spirv.empty()) {
         return fail("mixed captured frame requires 4x-MSAA followed by 1x and a single-sample Copy/Convert shader",
@@ -866,23 +1091,11 @@ bool submit_mixed_sample_copy_frame(
             (raster.depth_test_enabled || raster.depth_write_enabled ||
              raster.stencil_test_enabled);
     }
-    if (needs_msaa_depth && needs_single_depth) {
-        std::ostringstream message;
-        message << "mixed captured frame requires depth/stencil in both 4x and 1x "
-                   "passes; depth preservation across the sample transition is "
-                   "not implemented";
-        for (size_t i = 0; i < render_draw_count; ++i) {
-            const CapturedRasterState& raster = draws[i].raster;
-            if (!(raster.depth_test_enabled || raster.depth_write_enabled ||
-                  raster.stencil_test_enabled)) {
-                continue;
-            }
-            message << " draw" << i << "={samples=" << raster.sample_count
-                    << ",depth_test=" << raster.depth_test_enabled
-                    << ",depth_write=" << raster.depth_write_enabled
-                    << ",stencil=" << raster.stencil_test_enabled << '}';
-        }
-        return fail(message.str(), error);
+    if (needs_msaa_depth && needs_single_depth &&
+        !depth_stencil_resolve_enabled) {
+        return fail("mixed 4x-to-1x depth/stencil preservation requires a "
+                    "provider-confirmed enabled resolve capability",
+                    error);
     }
     if (target.width == 0 || target.height == 0 ||
         target.width > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()) ||
@@ -894,7 +1107,7 @@ bool submit_mixed_sample_copy_frame(
         copy.state.destination_format != 6 ||
         !copy.state.destination_swap_red_blue ||
         copy.vertex_shader_spirv.empty()) {
-        return fail("mixed captured frame is outside the 4x-to-1x source-0/sample-0 Copy/Convert subset or requires unsupported depth preservation",
+        return fail("mixed captured frame is outside the 4x-to-1x source-0/sample-0 Copy/Convert subset",
                     error);
     }
 
@@ -937,77 +1150,16 @@ bool submit_mixed_sample_copy_frame(
         return false;
     }
 
-    std::vector<VkAttachmentDescription> msaa_attachments(2);
-    msaa_attachments[0].format = target_format;
-    msaa_attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
-    msaa_attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    msaa_attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    msaa_attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    msaa_attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    msaa_attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    msaa_attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    msaa_attachments[1].format = target_format;
-    msaa_attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    msaa_attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    msaa_attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    msaa_attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    msaa_attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    msaa_attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    msaa_attachments[1].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    VkAttachmentReference msaa_color_reference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-    VkAttachmentReference resolve_reference{1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-    VkAttachmentReference msaa_depth_reference{};
-    if (needs_msaa_depth) {
-        msaa_depth_reference.attachment =
-            static_cast<uint32_t>(msaa_attachments.size());
-        msaa_depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        VkAttachmentDescription depth_attachment{};
-        depth_attachment.format = VK_FORMAT_D24_UNORM_S8_UINT;
-        depth_attachment.samples = VK_SAMPLE_COUNT_4_BIT;
-        depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        msaa_attachments.push_back(depth_attachment);
+    const bool resolve_depth_stencil = needs_msaa_depth && needs_single_depth;
+    if (!create_mixed_msaa_render_pass(
+            physical_device, device, target_format, needs_msaa_depth,
+            resolve_depth_stencil, &resources.mixed_msaa_render_pass, error)) {
+        return false;
     }
-    VkSubpassDescription msaa_subpass{};
-    msaa_subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    msaa_subpass.colorAttachmentCount = 1;
-    msaa_subpass.pColorAttachments = &msaa_color_reference;
-    msaa_subpass.pResolveAttachments = &resolve_reference;
-    msaa_subpass.pDepthStencilAttachment =
-        needs_msaa_depth ? &msaa_depth_reference : nullptr;
-    VkSubpassDependency msaa_dependencies[2]{};
-    msaa_dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-    msaa_dependencies[0].dstSubpass = 0;
-    msaa_dependencies[0].srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    msaa_dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    msaa_dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    msaa_dependencies[1].srcSubpass = 0;
-    msaa_dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-    msaa_dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    msaa_dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    msaa_dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    msaa_dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                          VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    VkRenderPassCreateInfo msaa_pass_info{};
-    msaa_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    msaa_pass_info.attachmentCount =
-        static_cast<uint32_t>(msaa_attachments.size());
-    msaa_pass_info.pAttachments = msaa_attachments.data();
-    msaa_pass_info.subpassCount = 1;
-    msaa_pass_info.pSubpasses = &msaa_subpass;
-    msaa_pass_info.dependencyCount = 2;
-    msaa_pass_info.pDependencies = msaa_dependencies;
-    VkResult result = vkCreateRenderPass(
-        device, &msaa_pass_info, nullptr, &resources.mixed_msaa_render_pass);
-    if (result != VK_SUCCESS) return vk_fail("vkCreateRenderPass(mixed 4x)", result, error);
-
     std::vector<VkImageView> msaa_views{resources.mixed_msaa_color.view,
                                         resources.mixed_color.view};
     if (needs_msaa_depth) msaa_views.push_back(resources.mixed_msaa_depth.view);
+    if (resolve_depth_stencil) msaa_views.push_back(resources.mixed_single_depth.view);
     VkFramebufferCreateInfo msaa_framebuffer_info{};
     msaa_framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     msaa_framebuffer_info.renderPass = resources.mixed_msaa_render_pass;
@@ -1016,8 +1168,8 @@ bool submit_mixed_sample_copy_frame(
     msaa_framebuffer_info.width = target.width;
     msaa_framebuffer_info.height = target.height;
     msaa_framebuffer_info.layers = 1;
-    result = vkCreateFramebuffer(device, &msaa_framebuffer_info, nullptr,
-                                 &resources.mixed_msaa_framebuffer);
+    VkResult result = vkCreateFramebuffer(device, &msaa_framebuffer_info, nullptr,
+                                          &resources.mixed_msaa_framebuffer);
     if (result != VK_SUCCESS) return vk_fail("vkCreateFramebuffer(mixed 4x)", result, error);
 
     std::vector<VkAttachmentDescription> single_attachments(1);
@@ -1038,11 +1190,15 @@ bool submit_mixed_sample_copy_frame(
         VkAttachmentDescription depth_attachment{};
         depth_attachment.format = VK_FORMAT_D24_UNORM_S8_UINT;
         depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.loadOp = resolve_depth_stencil
+            ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;
         depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.stencilLoadOp = resolve_depth_stencil
+            ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;
         depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depth_attachment.initialLayout = resolve_depth_stencil
+            ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+            : VK_IMAGE_LAYOUT_UNDEFINED;
         depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         single_attachments.push_back(depth_attachment);
     }
@@ -1055,11 +1211,17 @@ bool submit_mixed_sample_copy_frame(
     VkSubpassDependency single_dependencies[2]{};
     single_dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     single_dependencies[0].dstSubpass = 0;
-    single_dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    single_dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    single_dependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    single_dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+        (resolve_depth_stencil ? VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT : 0);
+    single_dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+        (needs_single_depth ? VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT : 0);
+    single_dependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        (resolve_depth_stencil ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT : 0);
     single_dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        (needs_single_depth ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+                           : 0);
     single_dependencies[1].srcSubpass = 0;
     single_dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
     single_dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -1360,10 +1522,12 @@ bool submit_mixed_sample_copy_frame(
         }
     };
 
-    std::vector<VkClearValue> msaa_clears(msaa_attachments.size());
+    const uint32_t msaa_attachment_count = 2u +
+        (needs_msaa_depth ? 1u : 0u) + (resolve_depth_stencil ? 1u : 0u);
+    std::vector<VkClearValue> msaa_clears(msaa_attachment_count);
     msaa_clears[0].color.float32[3] = 1.0f;
     if (needs_msaa_depth) {
-        msaa_clears[msaa_depth_reference.attachment].depthStencil = {1.0f, 0};
+        msaa_clears[2].depthStencil = {1.0f, 0};
     }
     VkRenderPassBeginInfo msaa_begin{};
     msaa_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -1560,7 +1724,8 @@ bool submit_captured_vulkan_frame(
     std::string* error,
     std::vector<uint32_t>* output_readback,
     bool geometry_shader_enabled,
-    const CapturedVulkanCopy* copy) {
+    const CapturedVulkanCopy* copy,
+    bool depth_stencil_resolve_enabled) {
     if (output_readback) output_readback->clear();
     if (!physical_device || !device || !queue || !output_image || !output_view ||
         !output_width || !output_height || draws.empty() || queue_family_index == UINT32_MAX) {
@@ -1605,7 +1770,8 @@ bool submit_captured_vulkan_frame(
         return submit_mixed_sample_copy_frame(
             physical_device, device, queue, queue_family_index, output_image,
             output_view, output_written_before, output_width, output_height,
-            draws, error, output_readback, geometry_shader_enabled, *copy);
+            draws, error, output_readback, geometry_shader_enabled, *copy,
+            depth_stencil_resolve_enabled);
     }
     const CapturedRasterState& frame_target = draws.front().raster;
     const uint32_t source_width = copy && copy->source_width

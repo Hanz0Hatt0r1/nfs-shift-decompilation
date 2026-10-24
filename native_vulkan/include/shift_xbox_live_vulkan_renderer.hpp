@@ -41,7 +41,9 @@ struct CapturedVulkanCopy {
 
 // Records and submits the captured game draws into the ReXGlue presenter image.
 // The caller must externally synchronize the supplied graphics queue. The
-// renderer uses only Vulkan 1.1 and has no window-system dependency.
+// renderer uses only Vulkan 1.1 and has no window-system dependency. Set
+// depth_stencil_resolve_enabled only from an affirmative provider capability,
+// not from physical-device extension enumeration alone.
 bool submit_captured_vulkan_frame(
     VkPhysicalDevice physical_device,
     VkDevice device,
@@ -56,6 +58,7 @@ bool submit_captured_vulkan_frame(
     std::string* error,
     std::vector<uint32_t>* output_readback = nullptr,
     bool geometry_shader_enabled = false,
-    const CapturedVulkanCopy* copy = nullptr);
+    const CapturedVulkanCopy* copy = nullptr,
+    bool depth_stencil_resolve_enabled = false);
 
 }  // namespace shift::xbox

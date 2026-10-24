@@ -80,12 +80,15 @@
   "checks": {
     "native_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation",
     "linux_plugin_ctest": "3/3 passed with VK_LAYER_KHRONOS_validation",
-    "android_arm64_plugin_build": "passed: rexgpu-shift-native target built for arm64-v8a with Android NDK 28.2.13676358 / API 29"
+    "android_arm64_plugin_build": "passed: rexgpu-shift-native target built for arm64-v8a with Android NDK 28.2.13676358 / API 29; current plugin SHA-256 130e75816a9d91d5e4b54185a8fc5b4ab24870ae49a945ca526f934ae8a6e52b",
+    "depth_stencil_sample_zero_renderer_regression": "passed: host renderer test exercised 4x-to-1x depth rejection and stencil preservation; host Vulkan validation clean",
+    "redmi_note8pro_offscreen_renderer_regression": "passed: current Android renderer test binary ran on Mali-G76 MC4; synthetic offscreen test only, no retail parity claim"
   },
   "limitations": [
     "The shown frame is a genuine retail loading frame, not a synthetic parity claim.",
-    "A later retail frame still fails on depth and stencil preservation across the 4x-to-1x sample-count transition; a visible menu or race is not verified.",
-    "The latest corrected ARM64 plugin builds and is installed, but the current Android SDL entry returns immediately, so this update has no on-device visual verification. Earlier Android logo/readback evidence pertains to earlier APK/plugin builds."
+    "A later retail frame previously stopped at a mixed 4x-to-1x depth/stencil requirement. A Vulkan 1.1 SAMPLE_ZERO preservation path now passes host and Mali-G76 synthetic regressions, but the plugin is fail-closed until Process 1 wires the accepted VulkanProvider capability contract; the path has not yet been exercised on a subsequent retail frame, and a visible menu or race is not verified.",
+    "The latest corrected ARM64 plugin builds, but the current Android SDL entry returns immediately, so this update has no on-device retail visual verification. Earlier Android logo/readback evidence pertains to earlier APK/plugin builds.",
+    "The Xenos depth/stencil sample selection rule has not yet been established from a retail capture. SAMPLE_ZERO is currently the tested Vulkan implementation candidate and requires a retail-frame comparison."
   ],
   "android_device_install": {
     "device": "Redmi Note 8 Pro (begonia), Android API 33, Mali-G76 MC4, Vulkan 1.1.131",

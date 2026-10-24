@@ -301,3 +301,33 @@ on-device visual verification. Earlier Android logo and diagnostic evidence
 in this file records earlier APK/plugin builds and remains valid only for
 those builds. The current package launch symptom is recorded separately from
 the Linux retail frame result.
+
+
+## Vulkan 1.1 depth/stencil resolve capability (2026-10-24)
+
+A small NDK probe requested Vulkan 1.1 and queried the Redmi Note 8 Pro
+(Mali-G76 MC4, API 1.1.131). The physical device advertises both
+`VK_KHR_create_renderpass2` and `VK_KHR_depth_stencil_resolve`; its supported
+depth and stencil resolve masks are each `0x1`, which is
+`VK_RESOLVE_MODE_SAMPLE_ZERO_BIT`. Creating a logical device with both
+extensions, retrieving `vkCreateRenderPass2KHR`, and creating the D24S8 4x to
+1x sample-zero resolve render pass all returned `VK_SUCCESS`.
+
+The current ARM64 renderer regression binary then ran offscreen on that phone
+and passed the 4x-to-1x depth/stencil preservation checks. That regression
+uses synthetic smoke draws and establishes Vulkan driver behavior only, not
+retail parity. On the host, the full renderer suite passed 4/4 and the ReXGlue
+plugin suite passed 3/3 with `VK_LAYER_KHRONOS_validation`; Android validation
+was not active. The result and hashes are recorded in
+[`process2_redmi_note8pro_depth_resolve_20261024.json`](../../evidence/process2_redmi_note8pro_depth_resolve_20261024.json).
+
+The live plugin obtains a `VkDevice` from ReXGlue's Vulkan provider, so it
+cannot enable device extensions after creation. Process 1 accepted the
+backward-compatible optional capability contract: request both resolve
+extensions atomically when supported (including Vulkan 1.2 core promotion),
+report the enabled capability to the plugin, and leave unrelated GPU-emulation
+feature requests disabled. Provider wiring is pending in Process 1. Until then
+the current plugin passes `false` explicitly and rejects a mixed 4x-to-1x
+depth/stencil frame before submission. A subsequent retail frame is still
+required to establish whether Xenos uses the same sample-zero rule and to
+verify menu/gameplay output.

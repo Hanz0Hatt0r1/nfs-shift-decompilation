@@ -1831,13 +1831,18 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                       }
                       const uint32_t family = device->queue_family_graphics_compute();
                       const auto queue = device->AcquireQueue(family, 0);
+                      // The provider has no optional-extension capability hook yet.
+                      // Keep cross-sample depth/stencil resolves fail-closed until
+                      // Process 1 integrates the agreed provider contract.
+                      constexpr bool depth_stencil_resolve_enabled = false;
                       return shift::xbox::submit_captured_vulkan_frame(
                           device->physical_device(), device->device(), queue.queue(), family,
                           context->image(), context->image_view(),
                           context->image_ever_written_previously(),
                           width, height, frame_draws, &render_error,
                           capture_output ? &output_readback : nullptr,
-                          device->properties().geometryShader, copy_for_swap);
+                          device->properties().geometryShader, copy_for_swap,
+                          depth_stencil_resolve_enabled);
                     });
                 if (refreshed) {
                   ++submitted_frames;

@@ -53,6 +53,22 @@ bool has_extension(const char* name) {
     return false;
 }
 
+bool has_device_extension(VkPhysicalDevice physical_device, const char* name) {
+    uint32_t count = 0;
+    if (vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &count, nullptr) !=
+        VK_SUCCESS) {
+        return false;
+    }
+    std::vector<VkExtensionProperties> extensions(count);
+    if (vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &count,
+                                              extensions.data()) != VK_SUCCESS) {
+        return false;
+    }
+    return std::any_of(extensions.begin(), extensions.end(), [name](const auto& extension) {
+        return std::string(extension.extensionName) == name;
+    });
+}
+
 uint32_t find_memory_type(
     VkPhysicalDeviceMemoryProperties const& properties,
     uint32_t type_bits,
@@ -180,10 +196,23 @@ int main(int argc, char** argv) {
     vkGetPhysicalDeviceFeatures(physical_device, &supported_features);
     VkPhysicalDeviceFeatures enabled_features{};
     enabled_features.geometryShader = supported_features.geometryShader;
+    std::vector<const char*> depth_resolve_extensions;
+    const bool depth_resolve_extensions_supported =
+        has_device_extension(physical_device, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME) &&
+        has_device_extension(physical_device, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
+    if (depth_resolve_extensions_supported) {
+        depth_resolve_extensions = {
+            VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
+            VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
+        };
+    }
     VkDeviceCreateInfo device_info{};
     device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     device_info.queueCreateInfoCount = 1;
     device_info.pQueueCreateInfos = &queue_info;
+    device_info.enabledExtensionCount =
+        static_cast<uint32_t>(depth_resolve_extensions.size());
+    device_info.ppEnabledExtensionNames = depth_resolve_extensions.data();
     device_info.pEnabledFeatures = &enabled_features;
     VkDevice device = VK_NULL_HANDLE;
     result = vkCreateDevice(physical_device, &device_info, nullptr, &device);
@@ -564,6 +593,125 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    VkPhysicalDeviceDepthStencilResolveProperties resolve_properties{};
+    resolve_properties.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES;
+    VkPhysicalDeviceProperties2 properties2{};
+    properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    properties2.pNext = &resolve_properties;
+    vkGetPhysicalDeviceProperties2(physical_device, &properties2);
+    const VkResolveModeFlags sample_zero = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+    const bool can_resolve_sample_zero = depth_resolve_extensions_supported &&
+        (resolve_properties.supportedDepthResolveModes & sample_zero) != 0 &&
+        (resolve_properties.supportedStencilResolveModes & sample_zero) != 0;
+
+    auto depth_preserve_draws = mixed_sample_draws;
+    for (auto& depth_draw : depth_preserve_draws) {
+        depth_draw.topology = shift::xbox::PrimitiveTopology::TriangleList;
+        depth_draw.index_count = 3;
+        depth_draw.auto_index = true;
+        depth_draw.raster.blend_control_0 = 0x00010001u;
+    }
+    depth_preserve_draws[0].raster.depth_test_enabled = true;
+    depth_preserve_draws[0].raster.depth_write_enabled = true;
+    depth_preserve_draws[0].raster.stencil_test_enabled = false;
+    depth_preserve_draws[0].raster.depth_control = 7u << 4;
+    depth_preserve_draws[1].raster.depth_test_enabled = true;
+    depth_preserve_draws[1].raster.depth_write_enabled = false;
+    depth_preserve_draws[1].raster.stencil_test_enabled = false;
+    depth_preserve_draws[1].raster.depth_control = 1u << 4;
+    depth_preserve_draws[1].texture_rgba8 = {0, 255, 0, 255};
+    std::string depth_preserve_error;
+    std::vector<uint32_t> depth_preserve_output;
+    const bool depth_preserve_submitted =
+        shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, depth_preserve_draws, &depth_preserve_error,
+            &depth_preserve_output, enabled_features.geometryShader, &copy,
+            can_resolve_sample_zero);
+    if (can_resolve_sample_zero) {
+        const uint32_t center = depth_preserve_output.size() == 1280u * 720u
+            ? depth_preserve_output[360u * 1280u + 640u] : 0u;
+        const uint32_t center_red = center & 0x3FFu;
+        const uint32_t center_green = (center >> 10) & 0x3FFu;
+        if (!depth_preserve_submitted || center_red <= center_green) {
+            std::cerr << "4x-to-1x sample-zero depth resolve did not preserve the "
+                         "depth test result at the triangle interior (red="
+                      << center_red << ", green=" << center_green << "): "
+                      << depth_preserve_error << '\n';
+            return 1;
+        }
+    } else if (depth_preserve_submitted ||
+               (depth_preserve_error.find("requires enabled") == std::string::npos &&
+                depth_preserve_error.find("provider-confirmed") == std::string::npos &&
+                depth_preserve_error.find("SAMPLE_ZERO") == std::string::npos)) {
+        std::cerr << "unsupported depth/stencil resolve was not rejected precisely: "
+                  << depth_preserve_error << '\n';
+        return 1;
+    }
+    if (can_resolve_sample_zero) {
+        std::string unconfirmed_capability_error;
+        if (shift::xbox::submit_captured_vulkan_frame(
+                physical_device, device, queue, queue_family, output_image,
+                output_view, false, 1280, 720, depth_preserve_draws,
+                &unconfirmed_capability_error, nullptr,
+                enabled_features.geometryShader, &copy, false) ||
+            unconfirmed_capability_error.find("provider-confirmed") ==
+                std::string::npos) {
+            std::cerr << "depth/stencil resolve did not fail closed when the provider "
+                         "capability was unconfirmed: "
+                      << unconfirmed_capability_error << '\n';
+            return 1;
+        }
+    }
+
+    auto stencil_preserve_draws = mixed_sample_draws;
+    for (auto& stencil_draw : stencil_preserve_draws) {
+        stencil_draw.topology = shift::xbox::PrimitiveTopology::TriangleList;
+        stencil_draw.index_count = 3;
+        stencil_draw.auto_index = true;
+        stencil_draw.raster.blend_control_0 = 0x00010001u;
+    }
+    stencil_preserve_draws[0].raster.depth_test_enabled = false;
+    stencil_preserve_draws[0].raster.depth_write_enabled = false;
+    stencil_preserve_draws[0].raster.stencil_test_enabled = true;
+    stencil_preserve_draws[0].raster.depth_control = (7u << 8) | (2u << 14);
+    stencil_preserve_draws[0].raster.stencil_refmask = 0x00FFFF55u;
+    stencil_preserve_draws[1].raster.depth_test_enabled = false;
+    stencil_preserve_draws[1].raster.depth_write_enabled = false;
+    stencil_preserve_draws[1].raster.stencil_test_enabled = true;
+    stencil_preserve_draws[1].raster.depth_control = 2u << 8;
+    stencil_preserve_draws[1].raster.stencil_refmask = 0x0000FF55u;
+    stencil_preserve_draws[1].texture_rgba8 = {0, 255, 0, 255};
+    std::string stencil_preserve_error;
+    std::vector<uint32_t> stencil_preserve_output;
+    const bool stencil_preserve_submitted =
+        shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, stencil_preserve_draws, &stencil_preserve_error,
+            &stencil_preserve_output, enabled_features.geometryShader, &copy,
+            can_resolve_sample_zero);
+    if (can_resolve_sample_zero) {
+        const uint32_t center = stencil_preserve_output.size() == 1280u * 720u
+            ? stencil_preserve_output[360u * 1280u + 640u] : 0u;
+        const uint32_t center_red = center & 0x3FFu;
+        const uint32_t center_green = (center >> 10) & 0x3FFu;
+        if (!stencil_preserve_submitted || center_green <= center_red) {
+            std::cerr << "4x-to-1x sample-zero stencil resolve did not preserve the "
+                         "stencil test result at the triangle interior (red="
+                      << center_red << ", green=" << center_green << "): "
+                      << stencil_preserve_error << '\n';
+            return 1;
+        }
+    } else if (stencil_preserve_submitted ||
+               (stencil_preserve_error.find("requires enabled") == std::string::npos &&
+                stencil_preserve_error.find("provider-confirmed") == std::string::npos &&
+                stencil_preserve_error.find("SAMPLE_ZERO") == std::string::npos)) {
+        std::cerr << "unsupported depth/stencil resolve was not rejected precisely: "
+                  << stencil_preserve_error << '\n';
+        return 1;
+    }
+
     auto trailing_stencil_draw = mixed_sample_draws[0];
     trailing_stencil_draw.raster.sample_count = 4;
     trailing_stencil_draw.raster.surface_pitch = 640;
@@ -678,7 +826,11 @@ int main(int argc, char** argv) {
     }
     std::cout << "synthetic offscreen Vulkan 1.1 AutoIndex point"
               << (enabled_features.geometryShader ? " and rectangle-list" : "")
-              << " draw plus captured sample-zero Copy/Convert passed on "
+              << " draw"
+              << (can_resolve_sample_zero
+                      ? " plus 4x-to-1x depth/stencil SAMPLE_ZERO preservation"
+                      : " with depth/stencil resolve fail-closed")
+              << " and captured sample-zero Copy/Convert passed on "
               << device_properties.deviceName
               << (use_validation ? " with validation enabled\n" : "\n");
     return 0;
