@@ -88,6 +88,11 @@ uint64_t compressed_texture_storage_bytes(uint32_t pitch_pixels, uint32_t height
     return tiles_wide * tiles_high * 32u * 32u * bytes_per_block;
 }
 
+uint64_t tiled_rgba8_storage_bytes(uint32_t pitch_pixels, uint32_t height) {
+    const uint64_t tile_rows = (static_cast<uint64_t>(height) + 31u) / 32u;
+    return static_cast<uint64_t>(pitch_pixels) * tile_rows * 32u * 4u;
+}
+
 struct Dxt5AlphaBlock {
     std::array<uint8_t, 8> values{};
     uint64_t indices = 0;
@@ -966,7 +971,7 @@ bool decode_captured_texture_fetch(
     const bool dxt5a = format == 59 && endian_mode == 1;
     const bool compressed = dxt || dxt5a;
     const bool valid_texture_layout = rgba8
-        ? tiled && pitch == width
+        ? tiled && pitch >= width && pitch % 32u == 0
         : compressed && width % 4u == 0 && height % 4u == 0 && pitch >= width &&
               pitch % 4u == 0 && (!tiled || pitch % 128u == 0);
     if (fetch_type != 2 || !valid_texture_layout || stacked || stack_depth != 0 ||
@@ -974,7 +979,7 @@ bool decode_captured_texture_fetch(
         return fail("unsupported captured texture-fetch descriptor", error);
     }
 
-    const uint64_t byte_length = rgba8 ? static_cast<uint64_t>(width) * height * 4u
+    const uint64_t byte_length = rgba8 ? tiled_rgba8_storage_bytes(pitch, height)
         : compressed_texture_storage_bytes(pitch, height, dxt5a ? 8u : 16u,
                                            tiled != 0);
     if (!width || !height || byte_length > std::numeric_limits<uint32_t>::max()) {
@@ -1575,8 +1580,8 @@ bool untile_captured_texture_2d(
     const bool compressed = dxt || dxt5a;
     const uint32_t bytes_per_block = dxt5a ? 8u : 16u;
     const bool valid_texture_layout = rgba8
-        ? texture.tiled && texture.pitch == texture.width &&
-              (texture.width & 31u) == 0 && (texture.height & 31u) == 0
+        ? texture.tiled && texture.pitch >= texture.width &&
+              texture.pitch % 32u == 0
         : compressed && texture.width % 4u == 0 && texture.height % 4u == 0 &&
               texture.pitch >= texture.width && texture.pitch % 4u == 0 &&
               (!texture.tiled || texture.pitch % 128u == 0);
@@ -1592,7 +1597,8 @@ bool untile_captured_texture_2d(
                                   texture.height * 4u;
     const uint64_t linear_block_bytes =
         static_cast<uint64_t>(blocks_wide) * blocks_high * bytes_per_block;
-    const uint64_t source_bytes = rgba8 ? output_bytes
+    const uint64_t source_bytes = rgba8
+        ? tiled_rgba8_storage_bytes(texture.pitch, texture.height)
         : compressed_texture_storage_bytes(texture.pitch, texture.height,
                                            bytes_per_block, texture.tiled);
     if (output_bytes > std::numeric_limits<uint32_t>::max() ||

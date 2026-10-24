@@ -665,6 +665,35 @@ int main() {
                 texture_fetch.border_color == 0 && !texture_fetch.border_size,
             "captured texture channel or clamp state changed");
 
+    const uint32_t retail_narrow_rgba8_descriptor[] = {
+        0x804048FEu, 0x0A079086u, 0x0007E003u,
+        0x06A80C14u, 0x00000C03u, 0x00000A10u,
+    };
+    shift::xbox::CapturedTextureFetch retail_narrow_rgba8{};
+    require(shift::xbox::decode_captured_texture_fetch(
+                retail_narrow_rgba8_descriptor, &retail_narrow_rgba8, &error) &&
+                retail_narrow_rgba8.guest_address == 0x0A079000u &&
+                retail_narrow_rgba8.format == 6 &&
+                retail_narrow_rgba8.width == 4 && retail_narrow_rgba8.height == 64 &&
+                retail_narrow_rgba8.pitch == 32 &&
+                retail_narrow_rgba8.byte_length == 32u * 64u * 4u,
+            "captured retail draw-29 padded RGBA8 descriptor was rejected or mis-sized");
+    std::vector<uint8_t> retail_narrow_tiled(retail_narrow_rgba8.byte_length);
+    retail_narrow_tiled[0] = 0x11;
+    retail_narrow_tiled[1] = 0x22;
+    retail_narrow_tiled[2] = 0x33;
+    retail_narrow_tiled[3] = 0x44;
+    std::vector<uint8_t> retail_narrow_linear;
+    require(shift::xbox::untile_captured_texture_2d(
+                retail_narrow_rgba8, retail_narrow_tiled.data(),
+                retail_narrow_tiled.size(), &retail_narrow_linear, &error) &&
+                retail_narrow_linear.size() == 4u * 64u * 4u &&
+                retail_narrow_linear[0] == 0x44 &&
+                retail_narrow_linear[1] == 0x33 &&
+                retail_narrow_linear[2] == 0x22 &&
+                retail_narrow_linear[3] == 0x11,
+            "captured retail draw-29 padded RGBA8 texels did not untile");
+
     const uint32_t captured_dxt2_3_descriptor[] = {
         0x8800D8FEu, 0x09E57053u, 0x003FE3FFu,
         0x01280D10u, 0x00000003u, 0x00000A10u,

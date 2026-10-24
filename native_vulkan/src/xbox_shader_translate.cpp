@@ -360,6 +360,7 @@ bool emit_alu(std::ostringstream& glsl,
             case 11: operation = "fma(" + a + ", " + b + ", " + c + ")"; break;
             case 12: operation = "mix(" + c + ", " + b + ", equal(" + a + ", vec4(0.0)))"; break;
             case 15: operation = "vec4(dot(" + a + ", " + b + "))"; break;
+            case 16: operation = "vec4(dot(" + a + ".xyz, " + b + ".xyz))"; break;
             case 17: operation = "vec4(dot(" + a + ".xy, " + b + ".xy) + " + c + ".x)"; break;
             default: {
                 std::ostringstream message;

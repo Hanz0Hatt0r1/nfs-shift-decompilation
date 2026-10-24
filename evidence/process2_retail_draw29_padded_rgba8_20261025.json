@@ -1,0 +1,57 @@
+{
+  "schema": "SHIFT.Process2RetailPaddedRGBA8/1",
+  "observed_at": "2026-10-25T00:20:53+03:00",
+  "retail_capture": {
+    "game_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "source_log": "process2_xbox_live_mixed_sample_retail_20261024.log.gz",
+    "source_log_sha256": "cd8cd07b3c03c081406c2cda28d11afca656956a99f73aba90819c42947a40b8",
+    "draw": 29,
+    "previous_result": "Rejected as unsupported captured texture-fetch descriptor before input capture or translation.",
+    "descriptor_words": [
+      "0x804048fe",
+      "0x0a079086",
+      "0x0007e003",
+      "0x06a80c14",
+      "0x00000c03",
+      "0x00000a10"
+    ],
+    "decoded_contract": {
+      "guest_address": "0x0a079000",
+      "format": 6,
+      "endian_mode": 2,
+      "extent": [4, 64],
+      "tiled_pitch_pixels": 32,
+      "guest_storage_bytes": 8192,
+      "decoded_rgba8_bytes": 1024
+    }
+  },
+  "change": "Accept format-6 tiled RGBA8 textures whose captured pitch is wider than the visible extent. Size the guest span from complete 32x32 pixel tiles, while emitting only visible width by height texels.",
+  "checks": {
+    "linux_native_ctest": "4/4 passed; includes the captured draw-29 descriptor and tiled payload regression.",
+    "linux_plugin_ctest": "3/3 passed after rebuilding the current ReXGlue plugin; stale unowned ReXGlue guest-memory backing files had been cleared from /dev/shm.",
+    "android_arm64_build": {
+      "abi": "arm64-v8a",
+      "ndk": "28.2.13676358",
+      "api": 24,
+      "targets": [
+        "shift_xbox_draw_input_check",
+        "shift_xbox_guest_ring_check",
+        "shift_xbox_shader_translate_check",
+        "xbox_live_vulkan_renderer_check",
+        "shift_vulkan_android_native_activity",
+        "shift_vulkan_bundle_execute"
+      ],
+      "draw_input_binary_sha256": "3145ef4ee78878a3dc5bec1baa1bbb880a1c12b90e5f6649463e53235d0dfbcd"
+    },
+    "redmi_note_8_pro": {
+      "adb_serial": "192.168.1.32:33153",
+      "execution": "The arm64 draw-input regression ran as a standalone shell test and passed. Guest-ring and shader-translation checks, including the new DP3 case, exited 0. The offscreen Vulkan 1.1 renderer check passed sample-zero Copy/Convert and mixed 4x-to-1x depth/stencil on Mali-G76 MC4.",
+      "draw_input_binary_sha256": "3145ef4ee78878a3dc5bec1baa1bbb880a1c12b90e5f6649463e53235d0dfbcd"
+    }
+  },
+  "limitations": [
+    "The fixture uses the exact retail descriptor with synthetic texture bytes; it verifies descriptor parsing, padded allocation sizing, byte bounds, and untile, not retail texture appearance.",
+    "A fresh game run with this build has not yet confirmed draw 29 submission; the currently open retail process loaded the previous plugin build.",
+    "Draw 27's opcode 16 translation now has Linux and Android unit coverage, but has not yet been confirmed in a fresh retail run. Draw 28's mip-chain descriptor remains unresolved."
+  ]
+}

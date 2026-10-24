@@ -306,5 +306,26 @@ int main() {
                     "shift_pixel_constants.c[68 + a0].xyzw") !=
                     std::string::npos,
             "captured third ALU constant lost its address-register offset");
+
+    std::vector<uint8_t> retail_dp3_shader = shader;
+    write_be32(retail_dp3_shader.data() + 7 * 12,
+               (50u << 26) | (0xFu << 16));
+    write_be32(retail_dp3_shader.data() + 7 * 12 + 4,
+               (1u << 31) | (1u << 29));
+    write_be32(retail_dp3_shader.data() + 7 * 12 + 8,
+               (16u << 24) | (1u << 31) | (1u << 30) |
+                   (1u << 16) | (2u << 8) | 68u);
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                retail_dp3_shader.data(), retail_dp3_shader.size(), options,
+                &translated, &error) &&
+                translated.glsl.find(
+                    "vec4(dot(r[1].xyzw.xyz, r[2].xyzw.xyz))") !=
+                    std::string::npos &&
+                translated.glsl.find("r[0].x = alu_7.x") !=
+                    std::string::npos &&
+                translated.glsl.find("r[0].y = alu_7.y") !=
+                    std::string::npos,
+            "captured Xenos vector opcode 16 DP3 did not replicate XYZ dot output");
     return 0;
 }

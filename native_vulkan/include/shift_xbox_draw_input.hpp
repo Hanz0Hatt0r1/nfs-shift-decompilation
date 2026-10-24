@@ -571,7 +571,8 @@ bool decode_captured_vertex_fetch(
     CapturedVertexFetch* output,
     std::string* error);
 
-// Decodes captured format-6 tiled RGBA8 and format-19 DXT2/3 2D descriptors.
+// Decodes captured format-6 tiled RGBA8 (including padded tiled pitch) and
+// compressed DXT 2D descriptors.
 bool decode_captured_texture_fetch(
     const uint32_t descriptor_words[6],
     CapturedTextureFetch* output,
