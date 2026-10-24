@@ -5,6 +5,8 @@ set(SHIFT_REXGLUE_PLUGIN_OUTPUT_DIR "" CACHE PATH
     "Optional isolated output directory for the native GPU plugin")
 set(SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME "500" CACHE STRING
     "Submitted frame selected for the Android debug Vulkan readback")
+set(SHIFT_NATIVE_VULKAN_DEBUG_READBACK_PATH "" CACHE FILEPATH
+    "Optional file path for the Android debug Vulkan readback")
 if(NOT SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME MATCHES "^[1-9][0-9]*$")
   message(FATAL_ERROR "SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME must be a positive integer")
 endif()
@@ -71,6 +73,11 @@ add_library(rexgpu-shift-native SHARED shift_native_gpu_plugin.cpp)
 target_compile_definitions(rexgpu-shift-native PRIVATE
   SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME=${SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME}
 )
+if(SHIFT_NATIVE_VULKAN_DEBUG_READBACK_PATH)
+  target_compile_definitions(rexgpu-shift-native PRIVATE
+    SHIFT_NATIVE_VULKAN_DEBUG_READBACK_PATH="${SHIFT_NATIVE_VULKAN_DEBUG_READBACK_PATH}"
+  )
+endif()
 target_sources(rexgpu-shift-native PRIVATE
   "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/glslang/StandAlone/ResourceLimits.cpp"
 )

@@ -4,8 +4,9 @@
 
 The first original retail pixels through the project-owned Vulkan path are now
 verified on the Redmi Note 8 Pro: a targeted readback of submitted frame 4
-contains 53,098 non-black pixels, and the device screenshot from the same run
-shows the NFS SHIFT logo. The image is transient; a later screenshot is black.
+contains 53,098 non-black pixels; the saved and decoded Vulkan image visibly
+shows the NFS SHIFT logo, and the device screenshot from the same run shows it
+as well. The image is transient; a later screenshot is black.
 The first-draw milestone is verified, but the Android game still does not reach
 a visible menu or race scene. The earlier logo screenshot is also available
 [here](../evidence/process2_redmi_note8pro_vulkan_retail_logo_20261024.png).
@@ -195,13 +196,18 @@ captured batch contains retail draw #4 using the 420-byte vertex shader and
 draw was enabled. The completed Vulkan readback reports 53,098 non-black
 pixels (FNV-1a `915336228EB84E49`).
 
-The [device screenshot](../evidence/process2_redmi_note8pro_vulkan_frame4_readback_20261024.png)
-captured about six seconds after the readback shows the original SHIFT logo. A
-follow-up screenshot about 46 seconds later is black while the same activity
-remains foregrounded. The readback proves original non-black retail output in
-the Vulkan guest image, but the screenshot is not a pixel-for-pixel dump of
-that same frame. This run does not prove menu, race-scene, or sustained output.
-Full draw, APK/plugin/XEX hashes and raw run log are in
-[`process2_redmi_note8pro_vulkan_frame4_readback_20261024.json`](../evidence/process2_redmi_note8pro_vulkan_frame4_readback_20261024.json)
+A follow-up build set `SHIFT_NATIVE_VULKAN_DEBUG_READBACK_PATH` to save the
+actual 3,686,400-byte frame-4 Vulkan readback. Decoding its
+`VK_FORMAT_A2B10G10R10_UNORM_PACK32` words yields the
+[1280x720 image](../evidence/process2_redmi_note8pro_vulkan_frame4_pixels_decoded_20261024.png)
+with the NFS SHIFT title logo; its 53,098 non-black pixels match the runtime
+log. The [device screenshot](../evidence/process2_redmi_note8pro_vulkan_frame4_pixels_20261024.png)
+seven seconds later shows the same logo. A screenshot 55 seconds later is
+black while the activity remains foregrounded. This proves the first original
+retail output through Vulkan, but does not prove menu, race-scene, or sustained
+output. Full draw, raw image, APK/plugin/XEX hashes, decoder details, and run
+log are in
+[`process2_redmi_note8pro_vulkan_frame4_pixels_20261024.json`](../evidence/process2_redmi_note8pro_vulkan_frame4_pixels_20261024.json),
+[`process2_redmi_note8pro_vulkan_frame4_pixels_20261024.bin`](../evidence/process2_redmi_note8pro_vulkan_frame4_pixels_20261024.bin),
 and
-[`process2_redmi_note8pro_vulkan_frame4_readback_20261024.log`](../evidence/process2_redmi_note8pro_vulkan_frame4_readback_20261024.log).
+[`process2_redmi_note8pro_vulkan_frame4_pixels_20261024.log`](../evidence/process2_redmi_note8pro_vulkan_frame4_pixels_20261024.log).

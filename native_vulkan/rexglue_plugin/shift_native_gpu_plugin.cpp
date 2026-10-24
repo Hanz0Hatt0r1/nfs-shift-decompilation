@@ -25,6 +25,9 @@
 #ifndef SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME
 #define SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME 500
 #endif
+#ifndef SHIFT_NATIVE_VULKAN_DEBUG_READBACK_PATH
+#define SHIFT_NATIVE_VULKAN_DEBUG_READBACK_PATH ""
+#endif
 
 #include <SPIRV/GlslangToSpv.h>
 #include <StandAlone/ResourceLimits.h>
@@ -1588,9 +1591,16 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 const char* readback_path = std::getenv("SHIFT_NATIVE_VULKAN_READBACK_PATH");
 #if defined(__ANDROID__) && !defined(NDEBUG)
                 constexpr bool kAndroidDebugReadback = true;
+                constexpr const char* kAndroidDebugReadbackPath =
+                    SHIFT_NATIVE_VULKAN_DEBUG_READBACK_PATH;
 #else
                 constexpr bool kAndroidDebugReadback = false;
+                constexpr const char* kAndroidDebugReadbackPath = "";
 #endif
+                if ((!readback_path || !*readback_path) &&
+                    kAndroidDebugReadbackPath[0] != '\0') {
+                  readback_path = kAndroidDebugReadbackPath;
+                }
                 const bool capture_output = !readback_saved_ &&
                     ((kAndroidDebugReadback &&
                       readback_frame_counter + 1u >= kAndroidDebugReadbackFrame) ||
