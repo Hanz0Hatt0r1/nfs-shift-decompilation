@@ -772,9 +772,27 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       static std::atomic<uint32_t> dumped_draw_count{0};
       const uint32_t dump_index =
           dumped_draw_count.fetch_add(1, std::memory_order_relaxed);
-      if (dump_index < 8) {
+      static const auto diagnostic_start = std::chrono::steady_clock::now();
+      static std::atomic<uint32_t> late_dump_count{0};
+      const bool initial_sample = dump_index < 8;
+      const auto elapsed = std::chrono::steady_clock::now() - diagnostic_start;
+      const bool late_sample_window =
+          !initial_sample && elapsed >= std::chrono::seconds(30);
+      const uint32_t late_dump_index =
+          late_sample_window
+              ? late_dump_count.fetch_add(1, std::memory_order_relaxed)
+              : 0;
+      if (initial_sample || (late_sample_window && late_dump_index < 8)) {
         std::ostringstream dump;
-        dump << "shift-native: resolved captured retail draw #" << dump_index
+        dump << "shift-native: resolved captured retail draw #" << dump_index;
+        if (initial_sample) {
+          dump << " (startup sample)";
+        } else {
+          dump << " (late sample #" << late_dump_index << ')';
+        }
+        dump << " elapsed_ms="
+             << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
+                    .count()
              << '\n'
              << "  topology=" << static_cast<uint32_t>(draw.topology)
              << " autoindex=" << draw.auto_index

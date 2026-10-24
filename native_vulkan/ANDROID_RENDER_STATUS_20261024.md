@@ -71,6 +71,33 @@ applies writes through ReXGlue's guest-memory helpers, matching the SDK's
 `GpuSwap` behavior. This advances guest synchronization; it does not make the
 rendered frame correct.
 
+## Late black-frame diagnostic (2026-10-24)
+
+After a failed incremental APK install removed the test app's external game
+directory, the diagnostic APK was installed with a full ADB push and the
+3.9-GiB retail game root was restored. The on-device `default.xex` SHA-256
+matches the expected retail executable. The fresh run no longer reports a
+missing `game_data_root`, but it still shows black output.
+
+The fresh log records 512 Vulkan draw frames, 741 captured draw packets, and
+512 Copy/Convert submissions from 12:24:21 to 12:25:55 MSK. At 12:25:55 it
+records four failed guest opens for the two `menu_background.xml` paths; no
+later draw submission is present in the log. The activity was still foreground
+and the screen remained byte-identical black at 12:27:47. The log and condensed
+run evidence are in
+[`process2_redmi_note8pro_vulkan_late_draw_diagnostic_20261024.json`](../evidence/process2_redmi_note8pro_vulkan_late_draw_diagnostic_20261024.json)
+and the compressed raw log
+[`process2_redmi_note8pro_vulkan_late_draw_20261024.log.gz`](../evidence/process2_redmi_note8pro_vulkan_late_draw_20261024.log.gz).
+
+The delayed debug sample at 30 seconds captured draws 147–154. All eight use
+the same untextured 4x-MSAA three-vertex shader pair and vertex payload. Their
+pixel shader writes a zero interpolator. These samples explain black output
+for those draws, but they do not establish that every later draw has that
+state or prove why the menu scene is absent. Process 1's indexed
+[`Menu_Background.bff` archive evidence](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/5b913e2875f095b92a02e13fd393f73148889801/evidence/xbox360_menu_background_pak_index_20261024.json)
+finds SGX/ENX and texture members but no `menu_background.xml` member; whether
+the loose-file miss is fatal remains unproven.
+
 ## Checks
 
 - Native Vulkan/PM4 suite: 4/4 tests pass (`ctest` in the native Vulkan build).

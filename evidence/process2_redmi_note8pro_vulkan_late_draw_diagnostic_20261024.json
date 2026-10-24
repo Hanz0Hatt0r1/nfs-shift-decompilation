@@ -1,0 +1,88 @@
+{
+  "schema": "SHIFT.Process2RedmiNote8ProVulkanLateDrawDiagnostic/1",
+  "observed_at": "2026-10-24T12:27:47+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:33153",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "activity_foreground": true
+  },
+  "build": {
+    "apk_sha256": "5dc8de466a1d875c47e0a0e1124597a9cf91dedfc585a3b55ac1dc201e8ca894",
+    "plugin_sha256": "ce369dede1761ae94c7018d81f28aca230dc303ff13faa560c78a6ca0b43093c",
+    "installation": "adb install --no-streaming -r succeeded; stored arm64 native libraries; Android package signature verified"
+  },
+  "game_data": {
+    "root": "/sdcard/Android/data/com.hanz0hatt0r.nfsshift/files/game",
+    "restored_bytes": 4130818991,
+    "default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "matches_expected_retail_xex": true,
+    "game_data_root_missing_error": false
+  },
+  "runtime_log": {
+    "path": "files/nfs_shift/user/logs/nfs_shift_003.log",
+    "sha256": "d3d5d4e05f574733e125897929c309d856f939457e6f343dbcb662892dd4569e",
+    "draw_frames": 512,
+    "captured_draw_packets": 741,
+    "copy_convert_submissions": 512,
+    "first_draw": "2026-10-24 12:24:21.090",
+    "last_draw_submission": "2026-10-24 12:25:55.054",
+    "last_copy_convert": "2026-10-24 12:25:54.970",
+    "guest_file_open_failures": [
+      {
+        "time": "2026-10-24 12:24:30.263",
+        "path": "d:\\pakfiles\\dir\\audio.bff"
+      },
+      {
+        "time": "2026-10-24 12:24:31.257",
+        "path": "d:\\characters\\drivers2.lod"
+      },
+      {
+        "time": "2026-10-24 12:24:32.896",
+        "path": "d:\\tracks\\cameraconfig.xml"
+      },
+      {
+        "time": "2026-10-24 12:25:55.359-12:25:55.364",
+        "path": "d:\\tracks\\_data\\instances\\scenes\\menu_background.xml and d:\\tracks\\_data\\static\\scenes\\menu_background.xml"
+      }
+    ],
+    "menu_scene_open_retries": 4
+  },
+  "late_draw_samples": {
+    "window_elapsed_ms": [
+      30053,
+      30690
+    ],
+    "draw_indices": [
+      147,
+      154
+    ],
+    "common_state": {
+      "topology": 2,
+      "autoindex": true,
+      "index_count": 3,
+      "samples": 4,
+      "raster": "1280x720",
+      "texture": "unused",
+      "vertex_shader_bytes": 108,
+      "vertex_shader_fnv1a": "539EA9E08AA83F0C",
+      "pixel_shader_bytes": 36,
+      "pixel_shader_fnv1a": "438C2AF84C78A133",
+      "vertex_payload_fnv1a": "C6201A9B785F89C7"
+    },
+    "captured_vertex_input": "Position vertices span (-0.5,-0.5,1) to (639.5,359.5,1); the other four-component input is zero for the sampled vertices.",
+    "translated_pixel_output": "The pixel shader writes max(interpolator, interpolator); the sampled interpolator comes from the all-zero vertex input.",
+    "interpretation": "All eight late samples are the same untextured 4x-MSAA shader/payload contract. This is consistent with black raster output; it does not establish that every later draw is untextured or prove why the menu scene is absent."
+  },
+  "screen": {
+    "sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+    "matches_saved_post_splash_black_screenshot": true,
+    "captured_at": "2026-10-24T12:27:47+03:00",
+    "observed": "NfsShiftActivity remained foreground; display was byte-identical black."
+  },
+  "conclusion": "Not ready. The renderer continuously accepts captured retail draws and Copy/Convert, but the post-splash phone image remains black. The missing menu XML coincides with the end of logged submissions; causation is not proven."
+}
