@@ -50,5 +50,14 @@
     "other_readback": "opaque black, 0 non-black RGB pixels",
     "runs_are_separate": true
   },
-  "conclusion": "The current P2 renderer build reproduces the original loading splash at submission 10. A separate run with the exact same host, runtime, plugin, and XEX hashes captured submission 200 as opaque black; this is not a continuous transition capture."
+  "conclusion": "The current P2 renderer build reproduces the original loading splash at submission 10. A separate run with the exact same host, runtime, plugin, and XEX hashes captured submission 200 as opaque black; this is not a continuous transition capture.",
+  "host_scheduler_environment": {
+    "visible_logical_cpu_count": 4,
+    "allowed_host_cpu_ids": "0-3",
+    "guest_cpu_count": 6,
+    "runtime_behavior": "ReXGlue XThread::SetActiveCpu sets host affinity only when logical_processor_count() >= 6; this environment falls back without per-thread host affinity.",
+    "warning": "Too few processor cores - scheduling will be wonky",
+    "warning_count_in_run_log": 1897,
+    "interpretation": "This is a host scheduling limitation. It may affect timing but is not proven to cause the black readback, empty deferred queue, or frontend stall."
+  }
 }
