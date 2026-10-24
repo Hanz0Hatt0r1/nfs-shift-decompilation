@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Guard retail callback routing and keep its two completion masks distinct."""
 import json
+import hashlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -57,4 +58,37 @@ assert gate["runtime_crosscheck"]["candidate_producer_hits"] == 0
 assert gate["runtime_crosscheck"]["deferred_queue_read_indices"] == [0] * 8
 assert gate["runtime_crosscheck"]["deferred_queue_write_indices"] == [0] * 8
 
-print("retail source-0 callback, empty deferred queue, and separate completion mask match")
+producer = json.loads(
+    (ROOT / "evidence/xbox360_linux_deferred_queue_producer_probe_20261024.json").read_text()
+)
+static = producer["static_disassembly"]
+assert static["elf_sha256"] == (
+    "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c"
+)
+block = static["instructions"]
+assert static["range"] == {
+    "start": "0x823A4758",
+    "end_exclusive": "0x823A4904",
+    "instruction_count": 107,
+}
+assert [int(item["address"], 16) for item in block] == list(
+    range(0x823A4758, 0x823A4904, 4)
+)
+assert static["instruction_bytes_sha256"] == hashlib.sha256(
+    bytes.fromhex("".join(item["bytes_big_endian"] for item in block))
+).hexdigest()
+by_address = {item["address"]: item for item in block}
+assert by_address["0x823A4830"]["bytes_big_endian"] == "813f409c"
+assert by_address["0x823A4858"]["bytes_big_endian"] == "7d2903a6"
+assert by_address["0x823A4868"]["bytes_big_endian"] == "4e800421"
+assert by_address["0x823A489C"]["bytes_big_endian"] == "916a40c0"
+assert by_address["0x823A48A0"]["bytes_big_endian"] == "93ca40bc"
+assert by_address["0x823A48AC"]["bytes_big_endian"] == "917f4140"
+assert static["direct_write_inventory"]["full_elf_matching_stw_sites"] == [
+    {"address": "0x823A48AC", "source_register": "r11", "base_register": "r31"}
+]
+assert producer["retail_functions"]["candidate_deferred_queue_producer"][
+    "dynamic_hits_during_capture"
+] == 0
+
+print("retail callback frontier, queue producer body, and runtime boundary match")
