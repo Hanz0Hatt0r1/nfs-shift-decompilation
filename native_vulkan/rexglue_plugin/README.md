@@ -33,7 +33,9 @@ image and renders the collected draws; it does not reconstruct Xenos EDRAM
 contents or read the guest frontbuffer as a finished image. The captured
 black texture border has unknown alpha, so transparent-black is still
 provisional. Target gamma conversion and the complete retail scene are not
-yet verified.
+yet verified. To retain useful release-build evidence, the plugin logs the
+first 16 distinct decoded-draw rejection reasons and the first 16 distinct
+PM4 draw-decode failures at INFO level; rejected draws still fail closed.
 
 ## Build and checks
 

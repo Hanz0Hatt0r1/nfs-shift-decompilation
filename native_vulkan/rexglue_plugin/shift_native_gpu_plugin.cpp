@@ -1026,6 +1026,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     uint64_t observed_ring_generation = 0;
     uint32_t guest_swap_counter = 0;
     uint32_t readback_frame_counter = 0;
+    std::vector<std::string> logged_unresolved_draw_reasons;
+    std::vector<std::string> logged_draw_decode_reasons;
 #if defined(__ANDROID__) && !defined(NDEBUG)
     constexpr uint32_t kAndroidDebugReadbackFrame =
         SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME;
@@ -1099,7 +1101,6 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         std::array<uint32_t, 256> draw_source_primitive_counts{};
         std::map<uint32_t, uint32_t> draw_index_count_counts;
         std::array<bool, 2> type3_packet_sample_logged{};
-        bool logged_draw_decode_failure = false;
         bool logged_autoindex_state = false;
         uint32_t rectangle_raster_diagnostics = 0;
         if (expanded_ok) {
@@ -1524,12 +1525,21 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   }
                 }
                 if (!resources_resolved) {
-                  REXLOG_DEBUG(
-                      "shift-native: skipped draw topology={} autoindex={} "
-                      "count={} inputs={} translated={}: {}",
-                      static_cast<uint32_t>(draw.topology), draw.auto_index,
-                      draw.index_count, shader_inputs_ready, shaders_translated,
-                      error.empty() ? "unsupported shader or resource form" : error);
+                  const std::string reason =
+                      error.empty() ? "unsupported shader or resource form" : error;
+                  if (logged_unresolved_draw_reasons.size() < 16u &&
+                      std::find(logged_unresolved_draw_reasons.begin(),
+                                logged_unresolved_draw_reasons.end(), reason) ==
+                          logged_unresolved_draw_reasons.end()) {
+                    logged_unresolved_draw_reasons.push_back(reason);
+                    REXLOG_INFO(
+                        "shift-native: unresolved captured draw #{} topology={} "
+                        "autoindex={} count={} raster={} inputs={} translated={}: {}",
+                        decoded_draws - 1u,
+                        static_cast<uint32_t>(draw.topology), draw.auto_index,
+                        draw.index_count, raster_state_ready, shader_inputs_ready,
+                        shaders_translated, reason);
+                  }
                   if (draw.topology == shift::xbox::PrimitiveTopology::RectangleList &&
                       rectangle_raster_diagnostics < 8) {
                     ++rectangle_raster_diagnostics;
@@ -1556,13 +1566,16 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 }
               } else {
                 ++unsupported_draws;
-                if (!logged_draw_decode_failure) {
-                  REXLOG_DEBUG("shift-native: rejected draw packet opcode {} "
-                               "({} bytes): {}",
-                               packet.opcode, packet.byte_length,
-                               error.empty() ? "unsupported draw packet form"
-                                             : error);
-                  logged_draw_decode_failure = true;
+                const std::string reason =
+                    error.empty() ? "unsupported draw packet form" : error;
+                if (logged_draw_decode_reasons.size() < 16u &&
+                    std::find(logged_draw_decode_reasons.begin(),
+                              logged_draw_decode_reasons.end(), reason) ==
+                        logged_draw_decode_reasons.end()) {
+                  logged_draw_decode_reasons.push_back(reason);
+                  REXLOG_INFO("shift-native: rejected captured PM4 draw opcode {} "
+                              "({} bytes): {}",
+                              packet.opcode, packet.byte_length, reason);
                 }
               }
             } else if (packet.type == shift::xbox::PacketType::Type3 &&
