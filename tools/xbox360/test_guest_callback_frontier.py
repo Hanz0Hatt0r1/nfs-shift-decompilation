@@ -35,4 +35,26 @@ assert values == [0x00, 0x14, 0x14, 0x14, 0x14, 0x14]
 assert all(value & 0x02 == 0 for value in values)
 assert software["samples_with_completion_mask_set"] == 0
 
+packet = json.loads(
+    (ROOT / "evidence/xbox360_linux_callback_packet_static_20261024.json").read_text()
+)["static_observation"]
+assert packet["caller"]["register_values_at_call"]["r6"] == "0x823A4758"
+assert packet["callee"]["parameter_copy"]["instruction"] == "mr r28,r6"
+assert packet["callee"]["word_stream_write"]["instruction"] == "stwu r28,4(r29)"
+
+gate = json.loads(
+    (ROOT / "evidence/xbox360_source0_mmio_gate_refs_20261024.json").read_text()
+)
+gate_scan = gate["static_scan"]
+assert gate_scan["gate_reader"]["function"] == "0x823B37B8"
+assert gate_scan["direct_guest_writes_to_0x7fc86544"] == []
+assert [
+    site["address"]
+    for site in gate_scan["high_page_0x7fc8_sites"]
+    if site["resolved_address"] == "0x7FC86544"
+] == ["0x823B382C"]
+assert gate["runtime_crosscheck"]["candidate_producer_hits"] == 0
+assert gate["runtime_crosscheck"]["deferred_queue_read_indices"] == [0] * 8
+assert gate["runtime_crosscheck"]["deferred_queue_write_indices"] == [0] * 8
+
 print("retail source-0 callback, empty deferred queue, and separate completion mask match")
