@@ -60,3 +60,17 @@ rendered frame correct.
 Next critical work is to capture the retail guest-memory transition under the
 Linux Process 1 runtime, then resolve the actual draw's render-target/scissor,
 shader, and resource state from captured PM4 rather than inventing a frame.
+
+## Android ARM64 build boundary (2026-10-24)
+
+The `shift_xbox_live_vulkan_renderer` static target compiles with NDK
+28.2.13676358 for `arm64-v8a` / Android API 29. The resulting archive is
+`/home/pes/work/process2-p2161-plugin-android-build/libshift_xbox_live_vulkan_renderer.a`
+(SHA-256 `60495be0e7887ca31b19dbd4796d951ba14059acc8601d0ae12e0e895a8011bd`).
+
+The full `rexgpu-shift-native` target still fails while compiling the external
+ReXGlue SDK's `src/core/fiber_posix.cpp`: Android NDK Clang does not declare
+`getcontext`, `makecontext`, or `swapcontext`. P2 did not modify SDK/runtime
+files. This verifies ARM64 compilation of the renderer library, not a packaged
+Android plugin or APK integration; the on-device black-output evidence above
+remains the only retail-device result.

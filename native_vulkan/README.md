@@ -2,6 +2,9 @@
 
 The native Vulkan backend consumes the neutral render contracts used by the desktop reference path.
 
+Current retail-device output and Android ARM64 build status are tracked in
+[`ANDROID_RENDER_STATUS_20261024.md`](ANDROID_RENDER_STATUS_20261024.md).
+
 ## Implemented stages
 
 - Vulkan instance/device/queue bootstrap;
