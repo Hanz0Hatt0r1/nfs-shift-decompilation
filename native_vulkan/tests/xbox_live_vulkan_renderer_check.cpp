@@ -599,9 +599,15 @@ int main(int argc, char** argv) {
     VkPhysicalDeviceProperties2 properties2{};
     properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     properties2.pNext = &resolve_properties;
-    vkGetPhysicalDeviceProperties2(physical_device, &properties2);
+    const auto get_physical_device_properties_2 =
+        reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
+            vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2"));
+    if (get_physical_device_properties_2) {
+        get_physical_device_properties_2(physical_device, &properties2);
+    }
     const VkResolveModeFlags sample_zero = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
     const bool can_resolve_sample_zero = depth_resolve_extensions_supported &&
+        get_physical_device_properties_2 &&
         (resolve_properties.supportedDepthResolveModes & sample_zero) != 0 &&
         (resolve_properties.supportedStencilResolveModes & sample_zero) != 0;
 

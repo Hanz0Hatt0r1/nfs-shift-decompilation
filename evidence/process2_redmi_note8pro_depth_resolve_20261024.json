@@ -1,6 +1,6 @@
 {
   "format": "SHIFT.Process2AndroidVulkanDepthResolve/1",
-  "observed_at": "2026-10-24T21:29:40+03:00",
+  "observed_at": "2026-10-24T21:36:40+03:00",
   "device": {
     "model": "Redmi Note 8 Pro",
     "codename": "begonia",
@@ -24,16 +24,19 @@
   },
   "renderer_regression": {
     "source": "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
-    "android_test_binary_sha256": "7ac2aa3dd91942d5653f932f59c219ba57272d36d148b94edbf2cd854ff595b9",
-    "android_renderer_library_sha256": "dd3fd74aa33ea24dbba41584b2d2d4bcf629c567f877f664b6b8edfb40d3ac88",
-    "android_plugin_sha256": "130e75816a9d91d5e4b54185a8fc5b4ab24870ae49a945ca526f934ae8a6e52b",
+    "android_test_binary_sha256": "ea890d26176ec5d0208a7ed16189f536d33080aa570d1df1e33975097ec34ff4",
+    "android_renderer_library_sha256": "499306b3dddd8cb876bbee6289eada684694ad7e980e003f017a6d19838eae02",
+    "android_plugin_sha256": "ecaef2cb403890b9865de87be29ad2224da009e085e88a56536d7b314d656f26",
+    "android_ndk_ci_renderer_check_sha256": "7b31f39281fe84d8878356c3be9fb334fe46656f6f8a99239f3207fd793ce4f9",
+    "android_ndk_ci_native_activity_sha256": "6ac8a7c1893f04a0acd37771f72ee547939d7a68ddfce09aa5f331edea34cd96",
     "result": "synthetic offscreen Vulkan 1.1 AutoIndex point and rectangle-list draw plus 4x-to-1x depth/stencil SAMPLE_ZERO preservation and captured sample-zero Copy/Convert passed on Mali-G76 MC4",
+    "android_ndk_ci_equivalent_build": "passed: arm64-v8a, Android API 26, NDK 28.2.13676358; NativeActivity and renderer check linked",
     "android_validation_layer": "not active in this run",
     "host_validation": "native renderer CTest 4/4 and ReXGlue plugin CTest 3/3 passed with VK_LAYER_KHRONOS_validation"
   },
   "integration_boundary": {
     "provider_current_behavior": "shift-native receives a VkDevice from VulkanProvider; the provider does not currently request either resolve extension when GPU emulation features are disabled",
-    "required_contract": "backward-compatible optional atomic request for both extensions at provider device creation, honoring Vulkan 1.2 promotion, plus a capability indication to the plugin; keep unrelated GPU-emulation feature requests disabled",
+    "required_contract": "backward-compatible optional atomic request for both extensions at provider device creation, honoring Vulkan 1.2 promotion, plus a capability indication that SAMPLE_ZERO is supported for depth and stencil; keep unrelated GPU-emulation feature requests disabled",
     "status": "Process 1 accepted the contract; provider integration is pending",
     "current_plugin_capability_passed": false,
     "current_plugin_behavior": "passes false explicitly to the renderer; mixed 4x-to-1x depth/stencil submission fails closed until provider capability is wired"

@@ -749,7 +749,6 @@ bool create_draw_resources(
 }
 
 bool create_mixed_msaa_render_pass(
-    VkPhysicalDevice physical_device,
     VkDevice device,
     VkFormat color_format,
     bool needs_msaa_depth,
@@ -763,21 +762,6 @@ bool create_mixed_msaa_render_pass(
         if (!create_render_pass_2) {
             return fail("mixed 4x-to-1x depth/stencil preservation requires enabled "
                         "VK_KHR_create_renderpass2 and VK_KHR_depth_stencil_resolve",
-                        error);
-        }
-
-        VkPhysicalDeviceDepthStencilResolveProperties resolve_properties{};
-        resolve_properties.sType =
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES;
-        VkPhysicalDeviceProperties2 properties{};
-        properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-        properties.pNext = &resolve_properties;
-        vkGetPhysicalDeviceProperties2(physical_device, &properties);
-        const VkResolveModeFlags sample_zero = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
-        if ((resolve_properties.supportedDepthResolveModes & sample_zero) == 0 ||
-            (resolve_properties.supportedStencilResolveModes & sample_zero) == 0) {
-            return fail("mixed 4x-to-1x depth/stencil preservation requires "
-                        "SAMPLE_ZERO resolve support for both depth and stencil",
                         error);
         }
 
@@ -1152,7 +1136,7 @@ bool submit_mixed_sample_copy_frame(
 
     const bool resolve_depth_stencil = needs_msaa_depth && needs_single_depth;
     if (!create_mixed_msaa_render_pass(
-            physical_device, device, target_format, needs_msaa_depth,
+            device, target_format, needs_msaa_depth,
             resolve_depth_stencil, &resources.mixed_msaa_render_pass, error)) {
         return false;
     }

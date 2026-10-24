@@ -11,9 +11,10 @@ That frame is not evidence of a visible menu or race scene. A Vulkan 1.1
 4x-to-1x D24S8 `SAMPLE_ZERO` resolve/load path now has host and Redmi Note 8
 Pro hardware regression coverage. The ReXGlue provider still needs to enable
 `VK_KHR_create_renderpass2` and `VK_KHR_depth_stencil_resolve` for this path,
-and report that capability to the plugin. Process 1 accepted this optional
-contract; its provider wiring is pending. Until that lands, the plugin rejects
-the mixed-sample path before submission. The resolve mode also needs comparison
+and report whether SAMPLE_ZERO is available for both depth and stencil.
+Process 1 accepted this optional contract; its provider wiring is pending.
+Until that lands, the plugin rejects the mixed-sample path before submission.
+The resolve mode also needs comparison
 against a subsequent retail frame. The latest full Android activity exits
 before producing that frame.
 

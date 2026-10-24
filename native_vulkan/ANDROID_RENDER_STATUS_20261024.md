@@ -318,15 +318,21 @@ and passed the 4x-to-1x depth/stencil preservation checks. That regression
 uses synthetic smoke draws and establishes Vulkan driver behavior only, not
 retail parity. On the host, the full renderer suite passed 4/4 and the ReXGlue
 plugin suite passed 3/3 with `VK_LAYER_KHRONOS_validation`; Android validation
-was not active. The result and hashes are recorded in
+was not active. The Android NDK CI-equivalent `arm64-v8a` build of the
+NativeActivity and renderer check also passed at API 26. A CI link failure
+revealed that Android does not export `vkGetPhysicalDeviceProperties2` as a
+direct library symbol; the check now loads it with `vkGetInstanceProcAddr`, and
+the renderer consumes only the provider-confirmed capability. The result and
+hashes are recorded in
 [`process2_redmi_note8pro_depth_resolve_20261024.json`](../../evidence/process2_redmi_note8pro_depth_resolve_20261024.json).
 
 The live plugin obtains a `VkDevice` from ReXGlue's Vulkan provider, so it
 cannot enable device extensions after creation. Process 1 accepted the
 backward-compatible optional capability contract: request both resolve
 extensions atomically when supported (including Vulkan 1.2 core promotion),
-report the enabled capability to the plugin, and leave unrelated GPU-emulation
-feature requests disabled. Provider wiring is pending in Process 1. Until then
+report whether the enabled device supports `SAMPLE_ZERO` for both depth and
+stencil to the plugin, and leave unrelated GPU-emulation feature requests
+disabled. Provider wiring is pending in Process 1. Until then
 the current plugin passes `false` explicitly and rejects a mixed 4x-to-1x
 depth/stencil frame before submission. A subsequent retail frame is still
 required to establish whether Xenos uses the same sample-zero rule and to
