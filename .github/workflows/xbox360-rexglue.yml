@@ -39,3 +39,4 @@ jobs:
           python3 tools/xbox360/test_queue_completion_conditions.py
           python3 tools/xbox360/test_timebase_helper_823a0248.py
           python3 tools/xbox360/test_callback_setter_823a5730.py
+          python3 tools/xbox360/test_registered_callback_82649b68.py

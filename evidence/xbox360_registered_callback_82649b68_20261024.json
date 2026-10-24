@@ -1,0 +1,107 @@
+{
+  "schema": "shift.xbox360.registered-callback-analysis.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "live_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c"
+  },
+  "source_report": {
+    "path": "reports/PROCESS_1A_XBOX360_REGISTERED_CALLBACK_82649B68_20261024.md",
+    "commit": "5fcf8ca0"
+  },
+  "static_basis": {
+    "function": {
+      "start": "0x82649B68",
+      "end_exclusive": "0x82649C94",
+      "instruction_count": 75,
+      "architecture": "Xbox 360 PPC big-endian",
+      "input_r3": "not read before being overwritten at 0x82649B78",
+      "first_r3_write": {
+        "address": "0x82649B78",
+        "bytes_big_endian": "386b2bb0",
+        "operation": "addi r3,r11,11184",
+        "value": "0x83122BB0"
+      },
+      "helper_call": "0x82649B7C -> 0x821A7BA8"
+    },
+    "state": {
+      "base": "0x83122B90",
+      "global_flag": "0x8308D0F0",
+      "fields": {
+        "-0x04": "counter incremented when predicate is 1; reset when predicate is 0 and gate permits the branch",
+        "+0x00": "counter incremented when predicate is 0; reset when predicate is 1 and gate permits the branch",
+        "+0x04": "stored low 32 bits of the newly computed delta",
+        "+0x08": "previous +0x04 value copied before updating +0x04",
+        "+0x0C": "helper return value saved as the next sample",
+        "+0x10": "stores state 1 or 2 only on the qualified global-flag transition",
+        "+0x14": "nonzero value suppresses both counter/state branches",
+        "+0x18": "boolean predicate computed from the accumulated unsigned-word value",
+        "+0x1C": "selector choosing one of the two threshold intervals"
+      }
+    },
+    "critical_instructions": {
+      "delta_subtract": {
+        "address": "0x82649B94",
+        "bytes_big_endian": "7d291850",
+        "canonical_decode": "subf r9,r9,r3",
+        "result": "r9 = helper_return_r3 - previous_sample"
+      },
+      "delta_accumulate": {
+        "address": "0x82649BA4",
+        "bytes_big_endian": "7d495214",
+        "result": "r10 = new_delta + previous_delta"
+      },
+      "predicate_store": {
+        "address": "0x82649BDC",
+        "bytes_big_endian": "914b0018",
+        "destination": "0x83122BA8"
+      },
+      "global_flag_loads": [
+        {"address": "0x82649C0C", "bytes_big_endian": "8148d0f0", "effective_address": "0x8308D0F0"},
+        {"address": "0x82649C60", "bytes_big_endian": "8148d0f0", "effective_address": "0x8308D0F0"}
+      ],
+      "global_flag_stores": [
+        {"address": "0x82649C24", "bytes_big_endian": "9128d0f0", "effective_address": "0x8308D0F0", "value": 0},
+        {"address": "0x82649C78", "bytes_big_endian": "9128d0f0", "effective_address": "0x8308D0F0", "value": 1}
+      ]
+    },
+    "thresholds": {
+      "selector_zero": {"field": "0x83122BAC", "predicate_true_when_accumulated_u32_is_strictly_between": [67, 134], "accepted_values": [68, 133]},
+      "selector_nonzero": {"field": "0x83122BAC", "predicate_true_when_accumulated_u32_is_strictly_between": [80, 161], "accepted_values": [81, 160]}
+    },
+    "qualified_transitions": [
+      {
+        "predicate": 1,
+        "gate_field": "0x83122BA4",
+        "counter_field": "0x83122B8C",
+        "counter_condition": "greater than 3",
+        "global_flag_condition": "nonzero",
+        "state_write": {"address": "0x83122BA0", "value": 1},
+        "global_flag_write": {"address": "0x8308D0F0", "value": 0}
+      },
+      {
+        "predicate": 0,
+        "gate_field": "0x83122BA4",
+        "counter_field": "0x83122B90",
+        "counter_condition": "greater than 3",
+        "global_flag_condition": "zero",
+        "state_write": {"address": "0x83122BA0", "value": 2},
+        "global_flag_write": {"address": "0x8308D0F0", "value": 1}
+      }
+    ]
+  },
+  "separately_supplied_runtime_context": {
+    "run_scope": "one 45-second exact-XEX Linux/GDB run",
+    "setter_observation": {"object": "0xB7365F00", "callback": "0x82649B68"},
+    "consumer_observation": {"function": "0x823A4640", "sampled_deferred_indexes": [0, 0]},
+    "breakpoint_observation": {"producer_0x823A4758_hits": 0, "callback_0x82649B68_hits": 0},
+    "limitation": "bounded breakpoint sampling; does not prove permanent unreachability or same-object producer invocation"
+  },
+  "scope": {
+    "registration_slot_static_match": "setter 0x823A5730 and producer 0x823A4758 both use object+0x409C",
+    "invocation_proven": false,
+    "frontend_progress_proven": false,
+    "offline_race_proven": false,
+    "next_target": "A same-run read-only trace at 0x82649B68 recording LR, r3, thread id, caller object and *(object+0x409C)."
+  }
+}
