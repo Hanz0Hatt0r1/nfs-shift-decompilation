@@ -351,3 +351,16 @@ The callback ABI review also confirms that the plugin forwards the registered
 guest `user_data` unchanged. See
 [`process2_ring_worker_three_batch_regression_20261024.json`](../../evidence/process2_ring_worker_three_batch_regression_20261024.json)
 and its validation log for hashes and details.
+
+A Linux retail run on 2026-10-24 also produced a complete 1280x720 Vulkan
+readback: all 921,600 RGB pixels were black (packed-word histogram
+`0x00000000`: 518,400; `0xC0000000`: 403,200; FNV-1a64
+`B161DE6EEC272325`). The log records 232 one-draw submissions and 341 frame
+refresh failures in the bounded run. Submission counts do not establish visible
+output. A separate diagnostic replaced only the pixel shader with magenta while
+retaining the captured retail vertex shader, inputs, raster state, and draw. It
+produced 518,400 magenta pixels in a complete 1280x720 readback, confirming
+coverage and presenter readback for this draw; it does not verify the retail
+pixel shader. A prior attempt with another output path failed to save and is
+excluded. See
+[`process2_linux_retail_black_output_20261024.json`](../../evidence/process2_linux_retail_black_output_20261024.json).

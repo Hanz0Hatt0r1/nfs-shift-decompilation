@@ -303,6 +303,9 @@ int main(int argc, char** argv) {
 
     std::vector<shift::xbox::CapturedVulkanDraw> draws;
     draws.push_back(draw);
+    auto captured_alpha_blend = draw;
+    captured_alpha_blend.raster.blend_control_0 = 0x07060706u;
+    draws.push_back(std::move(captured_alpha_blend));
     if (!rectangle_geometry_spirv.empty()) {
         auto rectangle = draw;
         rectangle.topology = shift::xbox::PrimitiveTopology::RectangleList;

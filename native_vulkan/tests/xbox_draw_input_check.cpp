@@ -672,6 +672,27 @@ int main() {
                 raster_state.scissor_has_area,
             "captured Xbox scissor bounds changed");
 
+    const shift::xbox::CapturedRasterRegisters captured_noop_registers{
+        0x14000500u, 0x00000000u, 0x000002D0u, 0x00000004u,
+        0x00000000u, 0x00000000u, 0x44200000u, 0x44200000u,
+        0xC3B40000u, 0x43B40000u, 0x00000000u, 0x20002000u,
+        0x00000000u, 0x00000000u, 0x00100010u, 0x07060706u,
+    };
+    shift::xbox::CapturedRasterState captured_noop_state{};
+    require(shift::xbox::decode_captured_raster_state(
+                captured_noop_registers, &captured_noop_state, &error) &&
+                captured_noop_state.color_format ==
+                    shift::xbox::CapturedColorTargetFormat::Rgba8Linear &&
+                captured_noop_state.blend_control_0 == 0x07060706u &&
+                !captured_noop_state.depth_test_enabled &&
+                !captured_noop_state.depth_write_enabled &&
+                !captured_noop_state.stencil_test_enabled &&
+                captured_noop_state.scissor_x1 == 16 &&
+                captured_noop_state.scissor_y1 == 16 &&
+                shift::xbox::captured_draw_has_no_framebuffer_effects(
+                    captured_noop_state),
+            "captured zero-mask 0x07060706 Xenos raster state was not decoded as a no-op");
+
     shift::xbox::CapturedRasterRegisters live_raster_registers{
         0x0A020280u, 0x00010000u, 0x000002D0u, 0x00000004u,
         0x00008777u, 0x0000FFFFu, 0x44200000u, 0x44200000u,

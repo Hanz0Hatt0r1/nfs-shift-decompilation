@@ -369,7 +369,8 @@ bool create_draw_resources(
         texture_size != source.texture_rgba8.size() || texture_size > (uint64_t{1} << 26)) {
         return fail("captured Vulkan draw resources are incomplete or oversized", error);
     }
-    if (source.raster.blend_control_0 != 0x07010706u &&
+    if (source.raster.blend_control_0 != 0x07060706u &&
+        source.raster.blend_control_0 != 0x07010706u &&
         source.raster.blend_control_0 != 0x00010001u) {
         return fail("captured blend control is outside the supported retail draw", error);
     }
@@ -621,9 +622,13 @@ bool create_draw_resources(
     depth.front = front_stencil;
     depth.back = back_stencil;
     VkPipelineColorBlendAttachmentState blend_attachment{};
-    blend_attachment.blendEnable =
-        source.raster.blend_control_0 == 0x07010706u ? VK_TRUE : VK_FALSE;
-    if (source.raster.blend_control_0 == 0x07010706u) {
+    blend_attachment.blendEnable = source.raster.blend_control_0 != 0x00010001u;
+    if (source.raster.blend_control_0 == 0x07060706u) {
+        blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    } else if (source.raster.blend_control_0 == 0x07010706u) {
         blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
         blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
         blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
