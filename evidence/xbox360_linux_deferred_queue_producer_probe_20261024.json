@@ -1,0 +1,63 @@
+{
+  "schema": "shift.xbox360.linux-deferred-queue-producer-probe.v1",
+  "captured_on": "2026-10-24",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b",
+    "gpu_plugin_sha256": "54348dd521b97b15be963d0b9f680172dbfb83c3ef5f2fbb979f618dc9c32aaa",
+    "linux_host": "AMD64",
+    "game_data_root": "/tmp/nfs_shift_xbox_game_root_20261023",
+    "input": "A filtered SDL/uinput Xbox 360 pad sent Start and A while the exact retail XEX ran; this GDB session did not trace XamInputGetState."
+  },
+  "capture": {
+    "monitor_limit_seconds": 50,
+    "gdb_log": {
+      "path": "/tmp/p1-virtual-input-20261024/gdb-queue-functions.log",
+      "sha256": "5ad69f791c3f012329c162f9cddf2b9da1da874697ea20c63cee73160b8d3bc3"
+    },
+    "runtime_log": {
+      "path": "/tmp/p1-virtual-input-20261024/logs/nfs_shift_019.log",
+      "sha256": "3eefade7091c99fdeef3e0038422099c9857e9f203fc9472b4aa7b812312fcbd"
+    },
+    "uinput_log": {
+      "path": "/tmp/p1-virtual-input-20261024/uinput-queue-functions.log",
+      "sha256": "841b20487aa77fc6ee94c0238f6591e38fcaae8a37da01ab5ca62d05c9061501"
+    }
+  },
+  "retail_functions": {
+    "interrupt_callback": {
+      "address": "0x823B37B8",
+      "dynamic_observation": "Twelve sampled source-0 callback entries ran on one guest interrupt thread. Each sampled callback entered 0x823A4640 with object 0xB7365F00."
+    },
+    "deferred_queue_consumer": {
+      "address": "0x823A4640",
+      "guest_object": "0xB7365F00",
+      "read_index_offset": "0x413C",
+      "write_index_offset": "0x4140",
+      "sampled_read_index": 0,
+      "sampled_write_index": 0,
+      "consumer_entries_sampled": 12
+    },
+    "candidate_deferred_queue_producer": {
+      "address": "0x823A4758",
+      "static_behavior": "The ReXGlue-generated retail function selects a per-process object, acquires object+0x4148, and under its enqueue condition writes an 8-byte record then advances object+0x4140. Its alternate path increments a dropped-record counter.",
+      "dynamic_hits_during_capture": 0
+    }
+  },
+  "host_call_chain": {
+    "callback_entry": "0x823B37B8 was dispatched through FunctionDispatcher::ExecuteInterrupt from ShiftNativeGraphicsSystem::SetupGuestGpu callback lambda #3.",
+    "consumer_entry": "0x823A4640 was called directly by 0x823B37B8 on the sampled source-0 path."
+  },
+  "interpretation": {
+    "supported": "The source-0 GPU callback and retail deferred-queue consumer both execute on Linux, but the sampled queue remains empty. The candidate retail enqueue function 0x823A4758 was not entered during the monitored run. This separates callback delivery from deferred-record production.",
+    "not_proven": "A bounded run with no breakpoint hit does not prove 0x823A4758 is the only possible producer or that it is never called in other game states. It does not identify why the enqueue callback is absent, set the software predicate bit 0x02, prove a visible frame, or demonstrate menu/race progress."
+  },
+  "next_probe": "Trace initialization and registration of the deferred callback at object+0x4140's producer path, including the process-specific global object selected by KeGetCurrentProcessType. Preserve the XEX queue and predicate behavior; do not fabricate completion or bypass the guest wait."
+}
