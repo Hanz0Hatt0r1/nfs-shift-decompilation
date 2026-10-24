@@ -9,14 +9,15 @@ conversion, and Copy/Convert channel fixes is recorded in
 [`process2_linux_retail_loading_frame10_20261024.json`](../evidence/process2_linux_retail_loading_frame10_20261024.json).
 That frame is not evidence of a visible menu or race scene. A Vulkan 1.1
 4x-to-1x D24S8 `SAMPLE_ZERO` resolve/load path now has host and Redmi Note 8
-Pro hardware regression coverage. The ReXGlue provider still needs to enable
-the Vulkan 1.2 core commands or atomically enabled Vulkan 1.1 KHR extensions,
-and report whether SAMPLE_ZERO is available for both depth and stencil.
-Process 1 accepted this optional contract; its provider wiring is pending.
-Until that lands, the plugin rejects the mixed-sample path before submission.
-The resolve mode also needs comparison
-against a subsequent retail frame. The latest full Android activity exits
-before producing that frame.
+Pro hardware regression coverage. Process 2 has implemented the optional
+provider capability in [ReXGlue PR #2](https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/2):
+it uses Vulkan 1.2 core support or atomically requests the Vulkan 1.1 KHR
+extension pair, and reports `SAMPLE_ZERO` only when supported for both depth
+and stencil. The plugin feature-detects this API and keeps older SDK builds
+fail-closed. The combined Linux validation and Android ARM64 compile results
+are in [`ANDROID_RENDER_STATUS_20261024.md`](ANDROID_RENDER_STATUS_20261024.md).
+The resolve mode still needs comparison against a subsequent retail frame.
+The latest full Android activity exits before producing that frame.
 
 ## Implemented stages
 
