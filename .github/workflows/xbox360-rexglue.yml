@@ -37,3 +37,4 @@ jobs:
         run: |
           python3 tools/xbox360/test_guest_callback_frontier.py
           python3 tools/xbox360/test_queue_completion_conditions.py
+          python3 tools/xbox360/test_callback_packet_static.py
