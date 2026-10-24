@@ -1,0 +1,77 @@
+{
+  "schema": "shift.xbox360.linux-queue-helper-callers.v1",
+  "captured_on": "2026-10-24",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "live_memory_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "static_callsite": {
+    "function": "0x823A4E48",
+    "callsite": "0x823A5578",
+    "callee": "0x823B34A0",
+    "source": "/home/pes/ghidra_projects/research_inputs/nfs_shift_xbox360_live_20261024.elf",
+    "source_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c",
+    "verified_instructions": [
+      "823a5540: 38 a0 00 00   li 5, 0",
+      "823a5544: 38 80 00 00   li 4, 0",
+      "823a5548: 7f e3 fb 78   mr 3, 31",
+      "823a554c: 48 01 cc 3d   bl 0x823c2188",
+      "823a5550: 81 7f 3a 40   lwz 11, 14912(31)",
+      "823a5554: 7f e3 fb 78   mr 3, 31",
+      "823a5558: 55 64 f0 be   srwi 4, 11, 2",
+      "823a555c: 48 00 d2 1d   bl 0x823b2778",
+      "823a5560: 80 9f 3a 5c   lwz 4, 14940(31)",
+      "823a5564: 2b 04 00 00   cmplwi 6, 4, 0",
+      "823a5568: 41 9a 00 14   bt 26, 0x823a557c",
+      "823a556c: 38 c0 00 00   li 6, 0",
+      "823a5570: 38 a0 00 03   li 5, 3",
+      "823a5574: 7f e3 fb 78   mr 3, 31",
+      "823a5578: 48 00 df 29   bl 0x823b34a0"
+    ],
+    "proven_call_arguments": {
+      "r3": "object originally held in r31",
+      "r4": "value loaded from object+14940; call occurs only if nonzero",
+      "r5": 3,
+      "r6": 0
+    }
+  },
+  "runtime": {
+    "host": "Linux AMD64",
+    "guest_input": "none",
+    "arguments": [
+      "--game_data_root=/tmp/nfs_shift_xbox_game_root_20261023",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b",
+    "gpu_plugin_sha256": "331794ec66bb3738aa3fae2c862952aa86283267c4a2b372736e5e813d42b892",
+    "gdb_log": {
+      "path": "/tmp/p1-p2-run060-20261024/gdb-predicate-wait.log",
+      "sha256": "389c13bb4cc1f8b1344c5d16da50efc864f6d37cef53049a5ce23c66c4a03043"
+    },
+    "observation": {
+      "predicate_wait_entries": 4243,
+      "submit_gate_entries": 309,
+      "repeated_sample_stack": [
+        "0x823A0310",
+        "0x823B34A0",
+        "0x823A4E48",
+        "0x823A5610",
+        "0x8264F868",
+        "0x8301DB18"
+      ],
+      "interpretation": "In this separate run, 0x823B34A0 executed as an ancestor of the repeated 0x823A0310 calls from the 0x823A4E48 path."
+    }
+  },
+  "limitations": [
+    "The GDB script read PPCContext registers using incorrect host offsets and endianness. Its printed guest object and predicate values are invalid and intentionally excluded; only the call stack and aggregate breakpoint counts are used.",
+    "This run is distinct from the 60-second queue-tail sample where 0x823B34A0 was not observed.",
+    "The observation does not prove queue completion, queue consumption, frontend progress, visible retail output, or race entry.",
+    "The separate deferred queue at object+0x413C/+0x4140 must not be conflated with the software queue fields used by 0x823B34A0."
+  ]
+}
