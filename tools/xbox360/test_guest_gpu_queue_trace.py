@@ -11,6 +11,9 @@ trace = (ROOT / "tools/xbox360/trace_guest_gpu_queue.gdb").read_text()
 required = (
     "break sub_823B37B8",
     "set $source = *(unsigned int*)$ctx",
+    "mapped_gpu_plugin pid=%d path=%s sha256=%s segments=%d",
+    "open(\"/proc/%d/maps\" % pid",
+    "hashlib.sha256(plugin_file.read()).hexdigest()",
     "set $object = *(unsigned int*)($ctx+32)",
     "set $read_raw = *(unsigned int*)($base+$object+0x413c)",
     "set $write_raw = *(unsigned int*)($base+$object+0x4140)",
