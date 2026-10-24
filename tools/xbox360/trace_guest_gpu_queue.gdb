@@ -23,6 +23,36 @@ commands
   set $ctx = (unsigned char*)$rdi
   set $base = (unsigned char*)$rsi
   set $source = *(unsigned int*)$ctx
+  if $interrupt_hits == 1
+    # Bind runtime observations to the plugin actually mapped in this inferior,
+    # rather than assuming the artifact copied into the run directory was loaded.
+    python
+import gdb, hashlib
+pid = gdb.selected_inferior().pid
+mapped = {}
+try:
+    with open("/proc/%d/maps" % pid, encoding="utf-8") as maps:
+        for line in maps:
+            if "librexgpu-shift-native.so" not in line:
+                continue
+            fields = line.rstrip().split(None, 5)
+            if len(fields) == 6:
+                path = fields[5]
+                mapped[path] = mapped.get(path, 0) + 1
+    if not mapped:
+        print("mapped_gpu_plugin pid=%d status=not-found" % pid)
+    for path, segment_count in sorted(mapped.items()):
+        hash_path = path.removesuffix(" (deleted)")
+        try:
+            with open(hash_path, "rb") as plugin_file:
+                digest = hashlib.sha256(plugin_file.read()).hexdigest()
+        except OSError as error:
+            digest = "unavailable:%s" % error
+        print("mapped_gpu_plugin pid=%d path=%s sha256=%s segments=%d" % (pid, path, digest, segment_count))
+except OSError as error:
+    print("mapped_gpu_plugin pid=%d status=maps-unavailable error=%s" % (pid, error))
+    end
+  end
   if $source == 0
     # r4 is the callback object on the source-0 path. The retail MMIO read at
     # 0x7FC86544 uses REX_MM_LOAD_U32, so base+guest-address is not its value.
