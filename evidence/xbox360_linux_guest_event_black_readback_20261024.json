@@ -1,0 +1,111 @@
+{
+  "schema": "shift.xbox360.linux-retail-run.v1",
+  "date": "2026-10-24",
+  "input": {
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "external_game_root": "/tmp/nfs_shift_xbox_game_root_20261023"
+  },
+  "build": {
+    "p1_source_commit": "91d26091",
+    "recompiled_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_sha256": "b38dce8b1e382227da1f1fe2f5817772ac3ef2a5a3b3d587867477eb833d3fd3",
+    "renderer_plugin_commit": "55e82ba7d514b7e42db86bad96cda2c49396e641",
+    "renderer_plugin_sha256": "c425619827add26839f3f111cc069c63141434eb89feb5e3abc97a0a36e9182a",
+    "rexglue_sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca"
+  },
+  "linux_run": {
+    "target": "Linux AMD64, ReXGlue runtime with shift-native Vulkan plugin",
+    "arguments": [
+      "--game_data_root=/tmp/nfs_shift_xbox_game_root_20261023",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "bounded_gdb_timeout_seconds": 65,
+    "exit_code": 124,
+    "raw_readback": {
+      "path": "/tmp/nfs-shift-retail-linux-readback-20261024.a2b10g10r10",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "width": 1280,
+      "height": 720,
+      "bytes": 3686400,
+      "sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+      "fnv1a64": "B161DE6EEC272325",
+      "pixel_words": {
+        "0x00000000": 518400,
+        "0xC0000000": 403200
+      },
+      "rgb_nonblack_pixels": 0
+    },
+    "log_artifacts_outside_repository": {
+      "runtime_log": {
+        "path": "/home/pes/work/p1-event-write-linux-probe-20261024/logs/runtime.log",
+        "sha256": "3e381404a887775979653bf38debc5285a18f0bdf52dd549a686786416c6bd9e"
+      },
+      "late_watch_log": {
+        "path": "/home/pes/work/p1-event-write-linux-probe-20261024/logs/gdb-event-write-watch.log",
+        "sha256": "42f4a41e4c0ec0253271089eab49d540cf59c0b087ab76d05c360b76659fdba0"
+      },
+      "early_watch_log": {
+        "path": "/home/pes/work/p1-event-write-linux-probe-20261024/logs/gdb-early-event-write.log",
+        "sha256": "be5132f03882b6dfe410fd00a7c0feba510b619eeba7f03e85a2a8d33fa0e5b3"
+      }
+    }
+  },
+  "guest_runtime": {
+    "first_source0_callback": {
+      "retail_function": "0x823B37B8",
+      "object": "0xB7365F00",
+      "descriptor": "0xB7AF4000",
+      "descriptor_head": 1,
+      "object_predicate_byte": "0x00"
+    },
+    "observed_wait_predicate_writes": {
+      "address": "0xB73689BD",
+      "values": {
+        "0x04": 1616,
+        "0x14": 1615
+      },
+      "retail_callers": [
+        "0x823A4E48",
+        "0x823A4908"
+      ]
+    },
+    "descriptor_head_watch": {
+      "late_install_run": "The worker breakpoint saw descriptor head 3 after the first source-0 callback had already seen head 1; no later descriptor+0 watch hit was recorded.",
+      "early_install_run": "The watch was installed at the first source-0 callback with head 1; no subsequent descriptor+0 changes were recorded during the 65-second bounded run.",
+      "limitation": "The watched descriptor word is not established as the EVENT_WRITE_SHD destination. These observations do not prove that EVENT_WRITE_SHD did or did not update a different guest address."
+    },
+    "event_write_log": {
+      "runtime_log_lines": 0,
+      "summary_opcode_0x58_seen": true,
+      "limitation": "The retained Linux runtime log has no per-packet destination/value line; exact Linux guest write target remains unverified."
+    }
+  },
+  "runtime_output": {
+    "captured_indexed_draw_submit_log_entries": 161,
+    "accepted_source0_sample0_copy_convert_log_entries": 161,
+    "interpretation": "These are execution and submission observations only. The readback has zero non-black RGB pixels and does not show visible retail content."
+  },
+  "filesystem_observation": {
+    "failed_loose_paths": [
+      "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+      "D:\\tracks\\_data\\static\\scenes\\menu_background.xml"
+    ],
+    "failed_ntcreatefile_records": 4,
+    "matching_loose_files_found": false,
+    "candidate_archive_present": "PakFiles/Menu_Background.bff",
+    "archive_member_verified": false,
+    "interpretation": "A packed archive with a related name exists, but its member table was not verified here. The failed loose-file probes may be fallback searches and are not yet established as a fatal VFS defect."
+  },
+  "gate_result": {
+    "X2_linux_x86_64_guest_boot": "in_progress",
+    "X3_xenos_vulkan_retail_frame": "in_progress",
+    "X4_frontend_offline_race": "in_progress",
+    "blockers": [
+      "Linux Vulkan readback is black.",
+      "The main menu and offline race have not been verified.",
+      "The exact EVENT_WRITE_SHD guest destination/value is not present in the retained Linux runtime log."
+    ]
+  }
+}
