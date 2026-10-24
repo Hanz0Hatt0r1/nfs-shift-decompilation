@@ -358,6 +358,7 @@ struct CapturedRasterState {
     uint32_t sample_count = 1;
     uint32_t color_base_tiles;
     CapturedColorTargetFormat color_format;
+    bool depth_only = false;
     uint32_t depth_base_tiles;
     CapturedDepthTargetFormat depth_format;
     uint32_t color_write_mask;
@@ -380,6 +381,10 @@ struct CapturedRasterState {
     } cull_mode = CullMode::None;
     bool front_face_ccw = true;
     uint32_t setup_mode_control = 0;
+    float viewport_x = 0.0f;
+    float viewport_y = 0.0f;
+    float viewport_width = 0.0f;
+    float viewport_height = 0.0f;
 };
 
 // Checks only framebuffer effects represented by the captured raster state.
@@ -578,11 +583,14 @@ bool decode_captured_texture_sampling(
 
 // Decodes only the captured color/depth target, viewport, and scissor form.
 // This maps observed registers to neutral render state; it does not emulate
-// register writes or Xenos rasterization.
+// register writes or Xenos rasterization. Partial viewports require the known
+// output target extent because the captured surface has no height register.
 bool decode_captured_raster_state(
     const CapturedRasterRegisters& registers,
     CapturedRasterState* output,
-    std::string* error);
+    std::string* error,
+    uint32_t target_width = 0,
+    uint32_t target_height = 0);
 
 // Decodes the live 1280x720 color Copy/Convert register form. This describes
 // the resolve request only; callers still need a Vulkan EDRAM source image.

@@ -93,17 +93,125 @@ unaligned tiling, and other compressed formats remain rejected.
 The target regression checks the exact run-054 descriptor and a tiled 128x128
 DXT2/3 conversion fixture, including block positions across tile/bank/pipe
 boundaries, mode-1 byte order, endpoint colors, and alpha. The fixture tests
-the decoder, not a retail image. The next retail smoke must confirm draw #28
-resolves from the real guest-memory bytes.
+the decoder, not a retail image. Run 058 below confirms that draw #28 now
+resolves from the real guest-memory bytes; its rendered pixel values remain
+unverified.
+
+## Retail confirmation run (058)
+
+Process 1 staged the exact Linux P2 plugin from the previous change:
+`61779bef3ff386705b5f513e5af89c816586f98efa35f5ced1a19b133abc4617`. The
+bounded 30-second smoke used host `nfs_shift`
+`6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b`, runtime
+`a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b`, and
+game root `/tmp/nfs_shift_xbox_game_root_20261023`. Log
+`/tmp/p1-virtual-input-20261024/logs/nfs_shift_058.log` is 379,226 bytes,
+SHA-256 `37d9bc618fb2916cfeb9b7b2b8e916fc056fe6838ff8f618d15a3105c8ba70e5`.
+
+The log has 367 presenter-submit entries: 284 one-draw, 51 two-draw, and 32
+four-draw frames, with zero Vulkan refresh failures. Its unresolved draw
+outcomes are:
+
+- #0 still lacks a complete raster snapshot; the captured register-valid mask
+  is `0x17038`.
+- #27 has viewport bounds x=392..888 and y=478..486 on a 1280-pixel surface
+  pitch. Its screen scissor is broad (`0..8192`); window scissor is exactly
+  `{392,478,888,486}`. The existing parser rejected any viewport smaller than
+  the target.
+- #28 has no unresolved diagnostic and the submitted batch grows from three
+  draws in the prior run to four. This confirms the descriptor and real guest
+  memory bytes passed the DXT2/3 resource path, not that the texture colors
+  were correct or visible.
+- #29 still fails captured target/raster-state decoding and its Copy/Convert
+  check (`control=0`, destination `0x0975e000`, pitch `0x02d00500`, info 0).
+
+The P2 source now decodes #27's viewport as 496x8 at `{392,478}`, retains the
+1280x720 target extent from the prior guest swap, and sends both viewport and
+scissor coordinates to Vulkan. The exact register tuple passes decoder and
+offscreen-renderer regressions on host and on the Mali-G76 phone GPU. The
+run 059 used Linux plugin
+`e05ea50726caea536e25f0e3f76d052e56740bdc455fb26d0884ecab8e8adfdd` and
+confirms #27 no longer appears as unresolved. Run 058 itself had no
+Vulkan readback or screenshot, so it remains a state/submit milestone rather
+than visible-scene parity.
+
+## Retail confirmation run (059)
+
+Process 1 staged the updated Linux plugin with partial-viewport support:
+`e05ea50726caea536e25f0e3f76d052e56740bdc455fb26d0884ecab8e8adfdd`. The
+30-second bounded smoke used host `nfs_shift`
+`6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b` and
+ReXGlue runtime `a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b`.
+Log `/tmp/p1-viewport-smoke-20261024/logs/nfs_shift_001.log` is 984,506 bytes,
+SHA-256 `5fe1420422d420cae253b2f7d605f5c83ac0b634cc56c72a27e4c9c426765559`.
+
+It contains 1,762 presenter submissions (1,436 one-draw, 257 two-draw, and
+69 five-draw batches), plus 1,762 accepted source-0/sample-0 Copy/Convert
+entries and zero Vulkan refresh failures. Only #0 and #29 remain in the
+unresolved-draw list: #27's partial viewport is no longer rejected, and #28
+remains non-rejected. The five-draw batch is consistent with #27 and #28
+joining the accepted draws, but the log has no per-index success receipt. No
+readback or screenshot was configured, so this run confirms state acceptance
+and Vulkan submissions, not visible pixels.
+
+Draw #29 still reports unsupported target/raster state and zero-control,
+format-0 Copy/Convert registers. Run 059 used the prior binary, whose INFO
+diagnostic did not include the complete raster tuple. The current working-tree
+build adds surface, color/depth, mode, depth, blend, stencil, setup, viewport,
+scissor, and window-offset values to that rejection; support remains fail
+closed pending those captured values.
+
+## Retail confirmation run (060)
+
+Process 1 staged the diagnostic Linux plugin
+`331794ec66bb3738aa3fae2c862952aa86283267c4a2b372736e5e813d42b892` for a
+30-second retail smoke. It used host `nfs_shift`
+`6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b` and
+ReXGlue runtime `a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b`.
+Log `/tmp/p1-p2-run060-20261024/logs/nfs_shift_001.log` is 806,235 bytes,
+SHA-256 `6f55a095f1fad55eeb60bc47fd9d179596d464d32bc676695113714363342458`.
+
+The run recorded 1,349 presenter submissions (1,175 one-draw, 110 two-draw,
+64 five-draw), 1,715 aggregate draw submissions, 1,349 accepted Copy/Convert
+entries, and no Vulkan refresh failures. Draw #27 and #28 remain resolved;
+#0 still lacks a complete raster snapshot (`valid_mask=0x17038`). Draws #25
+and #29 were rejected with Xenos mode 5 and the captured depth-only register
+tuple. This old diagnostic binary predates the mode-5 decoder now in the
+working tree.
+
+The first submitted frame readback was 1280x720 A2B10G10R10 (3,686,400 bytes),
+SHA-256 `cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5`,
+FNV-1a `B161DE6EEC272325`. All RGB pixels were black (one RGB value; only the
+alpha channel varied). Therefore this is direct negative evidence: Vulkan
+presenter submissions are happening, but the selected early retail frame has
+no visible game color.
+
+Xenia classifies Xenos EDRAM mode 5 as depth-only and suppresses color writes
+for that mode ([mode enum](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h),
+[raster-state normalization](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/draw_util.cc)).
+The current P2 decoder accepts that captured form, preserves depth/stencil
+state, and forces the Vulkan color-write mask to zero. Exact run-060 registers
+now have decoder and offscreen-renderer regressions.
+
+## Retail confirmation run (061, requested)
+
+Process 1 was asked to stage the current Linux plugin
+`0aa45b48882146e6bddc0a0747f0e83abc4be21be662d151a017b7687b3ed949` and run a
+bounded retail smoke with readback explicitly selected at submitted presenter
+frame 100 (`/tmp/p2-run061-retail-output.a2b10g10r10`). This binary includes
+the depth-only mode-5 decoder and selectable frame readback. The result is
+pending; the frame-060 black readback means no retail-visible output has yet
+been demonstrated.
 
 ## Validation and limits
 
 `VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir
 /home/pes/work/process2-vulkan-mixed-build --output-on-failure` passed 4/4.
 The updated mixed-sample renderer check passed and produced a full readback.
-The latest Linux ReXGlue plugin CTest passed 3/3. The latest Android ARM64
-plugin and native runtime built successfully, and its factory plus live-ring
-checks passed on the Redmi Note 8 Pro (Mali-G76, Vulkan 1.1.131).
+The current Linux ReXGlue plugin CTest passed 3/3 under forced Vulkan
+validation, including the live-ring presenter and synthetic readback checks.
+The current Android ARM64 Debug plugin also rebuilt successfully; its hash is
+recorded below. The installed retail APK was not replaced or restarted.
 
 The Android synthetic readback initially missed its capture because the Debug
 plugin was configured for submitted frame 4, while the live-ring fixture
@@ -121,16 +229,32 @@ graphics. The installed retail APK was not replaced or restarted, and
 `shift_xbox_draw_input_check` was also built from this branch and passed
 on-device, exercising the DXT2/3 decoder on the phone CPU.
 
+After the partial-viewport change, the Android ARM64
+`xbox_live_vulkan_renderer_check` also passed on the same Mali-G76 device. It
+executed the offscreen run-058 496x8 viewport/scissor case, sample-zero
+Copy/Convert, and rectangle-list path with synthetic shader/resource inputs.
+After adding the run-060 mode-5 case, both ARM64 standalone regressions were
+rebuilt from the current source and passed again on-device. The renderer check
+reported Vulkan 1.1 AutoIndex point and rectangle-list submission plus
+sample-zero Copy/Convert on Mali-G76 MC4; it also verifies that the synthetic
+depth-only draw produces no color writes. These are Vulkan/device regressions,
+not game screenshots; `NfsShiftActivity` stayed foreground and was not
+restarted.
+
 The latest Linux plugin build SHA-256 is
-`61779bef3ff386705b5f513e5af89c816586f98efa35f5ced1a19b133abc4617`; the
+`0aa45b48882146e6bddc0a0747f0e83abc4be21be662d151a017b7687b3ed949`; the
 latest Android Debug plugin build SHA-256 is
-`9b88077e3ec871d2693291db2c8d5188ec7cfd0abdf76186a13fefef88ca2d37`. Process
-1 has been sent the Linux plugin identity for a bounded retail run. This new
-DXT2/3 path still awaits confirmation against the real guest-memory payload.
+`7fcba9bc3587f46f0293535fcbbb9141c3dc49b51f068d5c3ecf4a490beef67a`. The
+Linux run 061 is pending. The previous Linux build `61779bef…` resolved
+DXT2/3 from real guest memory in run 058; the subsequent runs no longer report
+#27 or #28 as unresolved.
 
 The mixed-sample renderer and live-ring readback tests use smoke shaders,
 synthetic resource bytes, and synthetic geometry; neither is a retail image.
 The successful refresh count likewise does not prove that a visible menu or
 race frame was produced. DXT2/3 support is unit-validated but has not yet been
-confirmed against the real #28 guest-memory payload. Draw #0, #27, #29 and
-visible menu/race output remain open contracts.
+confirmed for visible color output, though run 058 confirms the real #28 guest
+bytes resolve. Run 059 no longer reports #27 as rejected, but its pixels were
+not read back. Run 060 readback was entirely black. Draw #0 remains incomplete;
+the current mode-5 implementation awaits retail confirmation in run 061.
+Visible menu/race output remains an open contract.

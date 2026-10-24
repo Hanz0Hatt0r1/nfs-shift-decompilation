@@ -1236,7 +1236,9 @@ bool CapturedXboxShaderRegisterState::snapshot_texture_fetch_descriptor(
 bool decode_captured_raster_state(
     const CapturedRasterRegisters& registers,
     CapturedRasterState* output,
-    std::string* error) {
+    std::string* error,
+    uint32_t target_width,
+    uint32_t target_height) {
     if (!output) {
         return fail("invalid captured raster-state output", error);
     }
@@ -1245,7 +1247,8 @@ bool decode_captured_raster_state(
     const uint32_t msaa_samples = (registers.surface_info >> 16) & 0x3u;
     const uint32_t color_format = (registers.color_info >> 16) & 0xFu;
     const uint32_t depth_format = (registers.depth_info >> 16) & 0x1u;
-    if (registers.mode_control != 4 || msaa_samples > 2 ||
+    const bool depth_only = registers.mode_control == 5u;
+    if ((registers.mode_control != 4u && !depth_only) || msaa_samples > 2 ||
         color_format > 1 || depth_format != 0 ||
         (registers.color_info & ~0x000F0FFFu) != 0 ||
         (registers.depth_info & ~0x00010FFFu) != 0 ||
@@ -1266,10 +1269,37 @@ bool decode_captured_raster_state(
     const float x_offset = register_float(registers.viewport_x_offset);
     const float y_scale = register_float(registers.viewport_y_scale);
     const float y_offset = register_float(registers.viewport_y_offset);
-    uint32_t width = 0;
-    uint32_t height = 0;
-    if (!viewport_dimension(x_scale, &width) || !viewport_dimension(-y_scale, &height) ||
-        x_offset != x_scale || y_offset != -y_scale) {
+    uint32_t viewport_width = 0;
+    uint32_t viewport_height = 0;
+    if (!std::isfinite(x_offset) || !std::isfinite(y_offset) ||
+        !viewport_dimension(x_scale, &viewport_width) ||
+        !viewport_dimension(-y_scale, &viewport_height)) {
+        return fail("unsupported captured viewport or surface pitch", error);
+    }
+    const bool target_extent_provided = target_width != 0 || target_height != 0;
+    if (target_extent_provided && (!target_width || !target_height)) {
+        return fail("incomplete captured render-target extent", error);
+    }
+    if (!target_extent_provided &&
+        (x_offset != x_scale || y_offset != -y_scale)) {
+        return fail("partial captured viewport requires a known target extent", error);
+    }
+    if (target_extent_provided &&
+        ((msaa_samples == 0 && target_width != surface_pitch) ||
+         (msaa_samples == 2 &&
+          (surface_pitch > std::numeric_limits<uint32_t>::max() / 2u ||
+           target_width != surface_pitch * 2u)))) {
+        return fail("unsupported captured viewport or surface pitch", error);
+    }
+    const uint32_t width = target_extent_provided ? target_width : viewport_width;
+    const uint32_t height = target_extent_provided ? target_height : viewport_height;
+    const float viewport_x = x_offset - x_scale;
+    const float viewport_y = y_offset - y_scale;
+    const float viewport_width_pixels = x_scale * 2.0f;
+    const float viewport_height_pixels = y_scale * 2.0f;
+    if (!std::isfinite(viewport_x) || !std::isfinite(viewport_y) ||
+        !std::isfinite(viewport_width_pixels) ||
+        !std::isfinite(viewport_height_pixels)) {
         return fail("unsupported captured viewport or surface pitch", error);
     }
 
@@ -1307,9 +1337,10 @@ bool decode_captured_raster_state(
         registers.color_info & 0xFFFu,
         color_format == 0 ? CapturedColorTargetFormat::Rgba8Linear
                           : CapturedColorTargetFormat::Rgba8Gamma,
+        depth_only,
         registers.depth_info & 0xFFFu,
         CapturedDepthTargetFormat::D24S8,
-        registers.color_mask & 0xFu,
+        depth_only ? 0u : registers.color_mask & 0xFu,
         y_scale < 0.0f,
         ((registers.depth_control >> 1) & 1u) != 0,
         ((registers.depth_control >> 2) & 1u) != 0,
@@ -1328,6 +1359,10 @@ bool decode_captured_raster_state(
         (registers.setup_mode_control & 4u) == 0,
         registers.setup_mode_control,
     };
+    output->viewport_x = viewport_x;
+    output->viewport_y = viewport_y;
+    output->viewport_width = viewport_width_pixels;
+    output->viewport_height = viewport_height_pixels;
     if (error) {
         error->clear();
     }

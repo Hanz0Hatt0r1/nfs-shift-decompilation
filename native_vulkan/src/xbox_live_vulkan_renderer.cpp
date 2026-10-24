@@ -1206,13 +1206,26 @@ bool submit_mixed_sample_copy_frame(
         const CapturedVulkanDraw& source = draws[index];
         const DrawResources& draw = resources.draws[index];
         VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = source.raster.viewport_y_flipped
-                         ? static_cast<float>(output_height) : 0.0f;
-        viewport.width = static_cast<float>(output_width);
-        viewport.height = source.raster.viewport_y_flipped
-                              ? -static_cast<float>(output_height)
-                              : static_cast<float>(output_height);
+        if (source.raster.viewport_width != 0.0f &&
+            source.raster.viewport_height != 0.0f && source.raster.width &&
+            source.raster.height) {
+            const float scale_x = static_cast<float>(output_width) /
+                                  source.raster.width;
+            const float scale_y = static_cast<float>(output_height) /
+                                  source.raster.height;
+            viewport.x = source.raster.viewport_x * scale_x;
+            viewport.y = source.raster.viewport_y * scale_y;
+            viewport.width = source.raster.viewport_width * scale_x;
+            viewport.height = source.raster.viewport_height * scale_y;
+        } else {
+            viewport.x = 0.0f;
+            viewport.y = source.raster.viewport_y_flipped
+                             ? static_cast<float>(output_height) : 0.0f;
+            viewport.width = static_cast<float>(output_width);
+            viewport.height = source.raster.viewport_y_flipped
+                                  ? -static_cast<float>(output_height)
+                                  : static_cast<float>(output_height);
+        }
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
         const uint32_t x0 = scaled_edge(source.raster.scissor_x0,
@@ -1879,14 +1892,27 @@ bool submit_captured_vulkan_frame(
         const CapturedVulkanDraw& source = draws[i];
         const DrawResources& draw = resources.draws[i];
         VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = source.raster.viewport_y_flipped
-                         ? static_cast<float>(output_height)
-                         : 0.0f;
-        viewport.width = static_cast<float>(output_width);
-        viewport.height = source.raster.viewport_y_flipped
-                              ? -static_cast<float>(output_height)
-                              : static_cast<float>(output_height);
+        if (source.raster.viewport_width != 0.0f &&
+            source.raster.viewport_height != 0.0f && source.raster.width &&
+            source.raster.height) {
+            const float scale_x = static_cast<float>(output_width) /
+                                  source.raster.width;
+            const float scale_y = static_cast<float>(output_height) /
+                                  source.raster.height;
+            viewport.x = source.raster.viewport_x * scale_x;
+            viewport.y = source.raster.viewport_y * scale_y;
+            viewport.width = source.raster.viewport_width * scale_x;
+            viewport.height = source.raster.viewport_height * scale_y;
+        } else {
+            viewport.x = 0.0f;
+            viewport.y = source.raster.viewport_y_flipped
+                             ? static_cast<float>(output_height)
+                             : 0.0f;
+            viewport.width = static_cast<float>(output_width);
+            viewport.height = source.raster.viewport_y_flipped
+                                  ? -static_cast<float>(output_height)
+                                  : static_cast<float>(output_height);
+        }
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
         const auto scaled_edge = [](uint32_t edge, uint32_t source_extent,

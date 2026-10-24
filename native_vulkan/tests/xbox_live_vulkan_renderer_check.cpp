@@ -372,6 +372,76 @@ int main(int argc, char** argv) {
         shift::xbox::CapturedRasterState::CullMode::Back;
     if (!render_triangle(triangle, false)) return 1;
 
+    auto partial_viewport_draw = draw;
+    partial_viewport_draw.topology = shift::xbox::PrimitiveTopology::PointList;
+    partial_viewport_draw.index_count = 1;
+    partial_viewport_draw.raster.sample_count = 1;
+    partial_viewport_draw.raster.depth_test_enabled = false;
+    partial_viewport_draw.raster.depth_write_enabled = false;
+    partial_viewport_draw.raster.stencil_test_enabled = false;
+    partial_viewport_draw.raster.viewport_x = 392.0f;
+    partial_viewport_draw.raster.viewport_y = 486.0f;
+    partial_viewport_draw.raster.viewport_width = 496.0f;
+    partial_viewport_draw.raster.viewport_height = -8.0f;
+    partial_viewport_draw.raster.scissor_x0 = 392;
+    partial_viewport_draw.raster.scissor_y0 = 478;
+    partial_viewport_draw.raster.scissor_x1 = 888;
+    partial_viewport_draw.raster.scissor_y1 = 486;
+    std::vector<uint32_t> partial_viewport_output;
+    std::string partial_viewport_error;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, {partial_viewport_draw},
+            &partial_viewport_error, &partial_viewport_output,
+            enabled_features.geometryShader) ||
+        partial_viewport_output.size() != 1280u * 720u) {
+        std::cerr << "run-058 partial viewport Vulkan draw failed: "
+                  << partial_viewport_error << '\n';
+        return 1;
+    }
+    size_t partial_viewport_pixels = 0;
+    for (uint32_t y = 0; y < 720; ++y) {
+        for (uint32_t x = 0; x < 1280; ++x) {
+            if ((partial_viewport_output[static_cast<size_t>(y) * 1280u + x] &
+                 0x3FFFFFFFu) == 0) {
+                continue;
+            }
+            ++partial_viewport_pixels;
+            if (x < 392 || x >= 888 || y < 478 || y >= 486) {
+                std::cerr << "run-058 viewport escaped its captured scissor at "
+                          << x << ',' << y << '\n';
+                return 1;
+            }
+        }
+    }
+    if (partial_viewport_pixels == 0) {
+        std::cerr << "run-058 partial viewport produced no visible test pixels\n";
+        return 1;
+    }
+
+    auto depth_only_draw = partial_viewport_draw;
+    depth_only_draw.raster.depth_only = true;
+    depth_only_draw.raster.color_write_mask = 0;
+    depth_only_draw.raster.depth_control = 0x00008701u;
+    depth_only_draw.raster.depth_test_enabled = false;
+    depth_only_draw.raster.depth_write_enabled = false;
+    depth_only_draw.raster.stencil_test_enabled = true;
+    depth_only_draw.raster.stencil_refmask = 0x00FF0000u;
+    std::vector<uint32_t> depth_only_output;
+    std::string depth_only_error;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, {depth_only_draw},
+            &depth_only_error, &depth_only_output,
+            enabled_features.geometryShader) ||
+        depth_only_output.size() != 1280u * 720u ||
+        std::any_of(depth_only_output.begin(), depth_only_output.end(),
+                    [](uint32_t pixel) { return (pixel & 0x3FFFFFFFu) != 0; })) {
+        std::cerr << "run-060 depth-only Vulkan draw wrote color or failed: "
+                  << depth_only_error << '\n';
+        return 1;
+    }
+
     std::vector<shift::xbox::CapturedVulkanDraw> mixed_sample_draws{
         draws[0], draws[1]};
     // The live Linux retail run changes this target from 4x MSAA/pitch 640 to

@@ -170,8 +170,18 @@ input path now untile-decodes that base-level form and expands its blocks to
 RGBA8 on the CPU before Vulkan upload, so Android does not depend on optional
 BC texture-compression support. The regression covers the captured descriptor
 and tiling/endian/decode rules, and also ran on ARM64; it does not prove the
-real guest texture has produced a visible retail draw. The same run still
-leaves the partial viewport and Copy/Convert draw states unresolved.
+real guest texture has produced a visible retail draw. A later bounded retail
+smoke (run 058) confirmed that the real #28 guest bytes pass this DXT2/3 path
+and enter the Vulkan draw batch; that run did not include an image readback.
+
+Run 058 also captured draw #27 with target pitch 1280, viewport `x=392..888,
+y=478..486`, and a matching window scissor. The renderer now retains the full
+1280x720 target extent from the preceding guest swap and passes the captured
+496x8 viewport and scissor through Vulkan. The exact register tuple is covered
+by host and ARM64 offscreen regressions, including a check that test pixels
+stay inside the captured scissor. Bounded retail run 059 no longer reports
+#27 as unresolved, although it did not include pixel readback. Draw #29's
+target/raster and Copy/Convert state remain unresolved.
 
 The latest Android debug APK
 (`ff5c30af24013b315280e161cd383c4cd50874a1e096f0d0383364f004a311c6`) was

@@ -6,6 +6,7 @@
 #include <array>
 #include <atomic>
 #include <bit>
+#include <charconv>
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
@@ -64,6 +65,17 @@ constexpr uint32_t kVblankStatusRegister = 0x1951u;
 constexpr uint32_t kVgtEventInitiatorRegister =
     rex::graphics::XE_GPU_REG_VGT_EVENT_INITIATOR;
 constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
+
+bool parse_positive_environment_frame(const char* text, uint32_t* frame) {
+  if (!text || !*text || !frame) return false;
+  const char* end = text + std::char_traits<char>::length(text);
+  uint32_t parsed = 0;
+  const auto result = std::from_chars(text, end, parsed, 10);
+  if (result.ec != std::errc{} || result.ptr != end || parsed == 0) return false;
+  *frame = parsed;
+  return true;
+}
+
 const std::string kDebugFragmentColorShader =
     "#version 450\n"
     "layout(location=0) out vec4 shift_color0;\n"
@@ -1039,6 +1051,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     bool frame_copy_ready = false;
     uint64_t observed_ring_generation = 0;
     uint32_t guest_swap_counter = 0;
+    uint32_t last_guest_swap_width = 0;
+    uint32_t last_guest_swap_height = 0;
     uint32_t readback_frame_counter = 0;
     std::vector<std::string> logged_unresolved_draw_reasons;
     std::vector<std::string> logged_draw_decode_reasons;
@@ -1075,6 +1089,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         frame_draws.clear();
         frame_copy = {};
         frame_copy_ready = false;
+        last_guest_swap_width = 0;
+        last_guest_swap_height = 0;
         observed_ring_generation = ring_generation;
       }
 
@@ -1186,7 +1202,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                       raster_register_state.snapshot(&raster_registers,
                                                      &raster_error) &&
                       shift::xbox::decode_captured_raster_state(
-                          raster_registers, &raster_state, &raster_error);
+                          raster_registers, &raster_state, &raster_error,
+                          last_guest_swap_width, last_guest_swap_height);
                   std::vector<shift::xbox::CapturedShaderControlFlow>
                       pixel_control_flow;
                   std::string pixel_control_flow_error;
@@ -1481,7 +1498,32 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 }
                 const bool raster_state_ready = raster_registers_ready &&
                     shift::xbox::decode_captured_raster_state(
-                        raster_registers, &raster_state, &error);
+                        raster_registers, &raster_state, &error,
+                        last_guest_swap_width, last_guest_swap_height);
+                if (!raster_state_ready && raster_registers_ready &&
+                    error == "unsupported captured target or raster state") {
+                  std::ostringstream detail;
+                  detail << error << " surface=0x" << std::hex
+                         << raster_registers.surface_info << " color=0x"
+                         << raster_registers.color_info << " depth=0x"
+                         << raster_registers.depth_info << " mode=0x"
+                         << raster_registers.mode_control << " depth_control=0x"
+                         << raster_registers.depth_control << " color_mask=0x"
+                         << raster_registers.color_mask << " blend=0x"
+                         << raster_registers.blend_control_0 << " stencil=0x"
+                         << raster_registers.stencil_refmask << " setup=0x"
+                         << raster_registers.setup_mode_control << " viewport=[0x"
+                         << raster_registers.viewport_x_scale << ",0x"
+                         << raster_registers.viewport_x_offset << ",0x"
+                         << raster_registers.viewport_y_scale << ",0x"
+                         << raster_registers.viewport_y_offset << "] screen_scissor=[0x"
+                         << raster_registers.screen_scissor_tl << ",0x"
+                         << raster_registers.screen_scissor_br << "] window_offset=0x"
+                         << raster_registers.window_offset << " window_scissor=[0x"
+                         << raster_registers.window_scissor_tl << ",0x"
+                         << raster_registers.window_scissor_br << ']';
+                  error = detail.str();
+                }
                 if (!raster_state_ready && raster_registers_ready &&
                     error == "unsupported captured viewport or surface pitch") {
                   std::ostringstream detail;
@@ -1641,6 +1683,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 continue;
               }
               ++decoded_swaps;
+              last_guest_swap_width = swap.width;
+              last_guest_swap_height = swap.height;
               const bool copy_matches_swap = frame_copy_ready &&
                   frame_copy.state.destination_base == swap.frontbuffer_guest_address &&
                   frame_copy.state.destination_pitch == swap.width &&
@@ -1658,6 +1702,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               if (!frame_draws.empty() && presenter_ && provider_ &&
                   provider_->vulkan_device()) {
                 const uint32_t draw_count = static_cast<uint32_t>(frame_draws.size());
+                const uint32_t upcoming_submitted_frame = readback_frame_counter + 1u;
                 const char* readback_path = std::getenv("SHIFT_NATIVE_VULKAN_READBACK_PATH");
                 const bool explicit_readback_path = readback_path && *readback_path;
 #if defined(__ANDROID__) && !defined(NDEBUG)
@@ -1672,10 +1717,30 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     kAndroidDebugReadbackPath[0] != '\0') {
                   readback_path = kAndroidDebugReadbackPath;
                 }
+                uint32_t selected_readback_frame = 0;
+                bool readback_frame_selection_valid = true;
+                if (const char* frame_text =
+                        std::getenv("SHIFT_NATIVE_VULKAN_READBACK_FRAME");
+                    frame_text && *frame_text) {
+                  readback_frame_selection_valid =
+                      parse_positive_environment_frame(frame_text,
+                                                       &selected_readback_frame);
+                  if (!readback_frame_selection_valid &&
+                      !readback_frame_warning_logged_) {
+                    readback_frame_warning_logged_ = true;
+                    REXLOG_WARN(
+                        "shift-native: ignoring invalid "
+                        "SHIFT_NATIVE_VULKAN_READBACK_FRAME value '{}'",
+                        frame_text);
+                  }
+                } else if (explicit_readback_path) {
+                  selected_readback_frame = 1u;
+                } else if (kAndroidDebugReadback) {
+                  selected_readback_frame = kAndroidDebugReadbackFrame;
+                }
                 const bool capture_output = !readback_saved_ &&
-                    (explicit_readback_path ||
-                     (kAndroidDebugReadback &&
-                      readback_frame_counter + 1u >= kAndroidDebugReadbackFrame));
+                    readback_frame_selection_valid && selected_readback_frame != 0 &&
+                    upcoming_submitted_frame == selected_readback_frame;
                 std::vector<uint32_t> output_readback;
                 std::string render_error;
                 bool refresh_callback_called = false;
@@ -1945,6 +2010,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   bool ring_initialized_ = false;
   bool ring_worker_shutdown_ = false;
   bool readback_saved_ = false;
+  bool readback_frame_warning_logged_ = false;
 };
 
 }  // namespace

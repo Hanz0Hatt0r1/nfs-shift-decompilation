@@ -689,6 +689,53 @@ int main() {
                 raster_state.scissor_x1 == 1280 && raster_state.scissor_y1 == 720 &&
                 raster_state.scissor_has_area,
             "captured Xbox scissor bounds changed");
+    auto depth_only_registers = captured_raster_registers;
+    depth_only_registers.surface_info = 0x0A020280u;
+    depth_only_registers.color_info = 0u;
+    depth_only_registers.depth_info = 0x000002D0u;
+    depth_only_registers.mode_control = 5u;
+    depth_only_registers.depth_control = 0x00008701u;
+    depth_only_registers.color_mask = 0x0000000Fu;
+    depth_only_registers.blend_control_0 = 0x07010706u;
+    depth_only_registers.stencil_refmask = 0x00FF0000u;
+    depth_only_registers.setup_mode_control = 0x00010000u;
+    require(shift::xbox::decode_captured_raster_state(
+                depth_only_registers, &raster_state, &error, 1280, 720) &&
+                raster_state.depth_only && raster_state.width == 1280 &&
+                raster_state.height == 720 && raster_state.surface_pitch == 640 &&
+                raster_state.sample_count == 4 && raster_state.color_base_tiles == 0 &&
+                raster_state.color_write_mask == 0 &&
+                raster_state.depth_base_tiles == 720 &&
+                !raster_state.depth_test_enabled && !raster_state.depth_write_enabled &&
+                raster_state.stencil_test_enabled &&
+                raster_state.stencil_refmask == 0x00FF0000u &&
+                raster_state.scissor_has_area,
+            "run-060 Xenos depth-only target was not normalized to no color writes");
+    auto partial_viewport_registers = captured_raster_registers;
+    partial_viewport_registers.viewport_x_scale = 0x43780000u;  // 248
+    partial_viewport_registers.viewport_x_offset = 0x44200000u; // 640
+    partial_viewport_registers.viewport_y_scale = 0xC0800000u;  // -4
+    partial_viewport_registers.viewport_y_offset = 0x43F10000u; // 482
+    partial_viewport_registers.screen_scissor_tl = 0x00000000u;
+    partial_viewport_registers.screen_scissor_br = 0x20002000u;
+    partial_viewport_registers.window_offset = 0x00000000u;
+    partial_viewport_registers.window_scissor_tl = 0x01DE0188u;
+    partial_viewport_registers.window_scissor_br = 0x01E60378u;
+    require(!shift::xbox::decode_captured_raster_state(
+                partial_viewport_registers, &raster_state, &error) &&
+                error == "partial captured viewport requires a known target extent",
+            "partial Xenos viewport was accepted without a target extent");
+    require(shift::xbox::decode_captured_raster_state(
+                partial_viewport_registers, &raster_state, &error, 1280, 720) &&
+                raster_state.width == 1280 && raster_state.height == 720 &&
+                raster_state.viewport_x == 392.0f &&
+                raster_state.viewport_y == 486.0f &&
+                raster_state.viewport_width == 496.0f &&
+                raster_state.viewport_height == -8.0f &&
+                raster_state.scissor_x0 == 392 && raster_state.scissor_y0 == 478 &&
+                raster_state.scissor_x1 == 888 && raster_state.scissor_y1 == 486 &&
+                raster_state.scissor_has_area,
+            "run-058 partial Xenos viewport or scissor was decoded incorrectly");
     require(raster_state.cull_mode ==
                     shift::xbox::CapturedRasterState::CullMode::None &&
                 raster_state.front_face_ccw && raster_state.setup_mode_control == 0,
