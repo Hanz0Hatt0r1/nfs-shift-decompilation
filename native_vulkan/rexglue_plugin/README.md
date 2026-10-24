@@ -434,6 +434,21 @@ the [decoded Vulkan image](../../evidence/process2_redmi_note8pro_vulkan_frame4_
 the [raw readback](../../evidence/process2_redmi_note8pro_vulkan_frame4_pixels_20261024.bin),
 and [full device log](../../evidence/process2_redmi_note8pro_vulkan_frame4_pixels_20261024.log).
 For targeted smoke tests, setting the runtime environment variable
-`SHIFT_NATIVE_VULKAN_READBACK_PATH` explicitly captures the first submitted
-Vulkan output frame; the configured Android debug fallback path still uses the
-selected frame number.
+`SHIFT_NATIVE_VULKAN_READBACK_PATH` captures a submitted Vulkan output frame.
+`SHIFT_NATIVE_VULKAN_READBACK_FRAME` optionally selects its one-based presenter
+frame number; when omitted with an explicit path, frame 1 is captured. The
+configured Android debug fallback path still uses its compile-time selected
+frame.
+
+The latest bounded Linux retail run (060) submitted 1,349 presenter frames and
+accepted 1,349 Copy/Convert operations with no Vulkan refresh failures. Its
+frame-1 readback is all black (1280x720 A2B10G10R10, SHA-256
+`cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5`). Draws
+#25 and #29 captured Xenos EDRAM mode 5. The current decoder now treats that
+observed mode as depth-only and disables Vulkan color writes, with the exact
+register tuple covered by host and Mali-G76 offscreen regressions. This is
+state support, not evidence that those draws produce visible color. Draw #0
+still arrives without surface, viewport, or blend registers (`valid_mask`
+`0x17038`), so it remains fail-closed. A bounded retail readback of submitted
+frame 100 with the current plugin is pending; sustained menu/race output
+remains unverified.
