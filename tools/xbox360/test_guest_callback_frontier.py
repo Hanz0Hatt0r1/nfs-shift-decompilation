@@ -87,8 +87,12 @@ assert by_address["0x823A48AC"]["bytes_big_endian"] == "917f4140"
 assert static["direct_write_inventory"]["full_elf_matching_stw_sites"] == [
     {"address": "0x823A48AC", "source_register": "r11", "base_register": "r31"}
 ]
-assert producer["retail_functions"]["candidate_deferred_queue_producer"][
-    "dynamic_hits_during_capture"
-] == 0
+candidate = producer["retail_functions"]["candidate_deferred_queue_producer"]
+assert candidate["dynamic_hits_during_capture"] == 0
+compiled = candidate["codegen_presence"]
+assert compiled["host_executable_sha256"] == producer["runtime"]["host_executable_sha256"]
+assert compiled["readelf_symbol"]["name"] == "sub_823A4758"
+assert compiled["readelf_symbol"]["size_bytes"] == 2404
+assert compiled["alias_symbol"]["name"] == "__imp__sub_823A4758"
 
 print("retail callback frontier, queue producer body, and runtime boundary match")
