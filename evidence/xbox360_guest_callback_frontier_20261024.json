@@ -1,0 +1,75 @@
+{
+  "schema": "shift.xbox360.guest-callback-frontier.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3",
+    "game_data_root": "/tmp/nfs_shift_xbox_game_root_20261023"
+  },
+  "build": {
+    "host_platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "b38dce8b1e382227da1f1fe2f5817772ac3ef2a5a3b3d587867477eb833d3fd3",
+    "rexglue_sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+    "renderer_plugin_sha256": "54348dd521b97b15be963d0b9f680172dbfb83c3ef5f2fbb979f618dc9c32aaa",
+    "renderer_plugin_source_commit": "not recorded"
+  },
+  "run": {
+    "duration_limit_seconds": 20,
+    "gdb_timeout_exit_code": 124,
+    "input_events_sent": false,
+    "arguments": [
+      "--game_data_root=/tmp/nfs_shift_xbox_game_root_20261023",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "gdb_script_sha256": "d20208e68e651b0be4ffd3dc791981940bd847c958bc046569acb93e0733e819",
+    "gdb_log_sha256": "943f338d0f324bb7fddb173369e59c3d38ee655b9a169da06e2833af1fedb4f1",
+    "gdb_log_path_outside_git": "/dev/shm/p1-guest-queue-state-20261024.gdb.log"
+  },
+  "runtime_observations": {
+    "source0_callback": {
+      "retail_function": "0x823B37B8",
+      "logged_entries": 3,
+      "object": "0xB7365F00",
+      "deferred_handler": "0x823A4640",
+      "logged_deferred_handler_entries": 4,
+      "deferred_handler_guest_return_address": "0x823B3844",
+      "gpu_descriptor": "0xB7AF4000",
+      "descriptor_head_samples_big_endian": [1, 1, 3],
+      "predicate_byte_at_callback_entries": "0x00",
+      "interpretation": "The retail source-0 callback reached the guest deferred-callback handler in this run. The callback's MMIO source gate was therefore open on these entries."
+    },
+    "deferred_queue_samples": {
+      "read_index_object_offset": "0x413C",
+      "write_index_object_offset": "0x4140",
+      "read_index_values_big_endian": [0, 0, 0, 0],
+      "write_index_values_big_endian": [0, 0, 0, 0],
+      "first_record_object_offset": "0x40BC",
+      "first_record_bytes_hex": "0000000000000000",
+      "interpretation": "The four logged source-0 handler entries found no queued deferred record at the sampled read/write indices."
+    },
+    "software_queue_helper": {
+      "retail_function": "0x823B33A0",
+      "logged_entries": 6,
+      "predicate_byte_samples": ["0x00", "0x14", "0x14", "0x14", "0x14", "0x14"],
+      "predicate_test_function": "0x823A0310",
+      "predicate_test_mask": "0x02",
+      "samples_with_completion_mask_set": 0
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "Source-0 delivery and entry into the original deferred-callback handler are observed in this exact Linux guest run.",
+      "The sampled deferred callback queue was empty (read index 0, write index 0, first record zero).",
+      "The predicate values sampled at software-queue helper entry did not contain the 0x02 completion mask tested by 0x823A0310."
+    ],
+    "not_proven": [
+      "This does not identify why the deferred callback queue is empty or identify the host-side producer for the software-queue completion bit.",
+      "The probe does not establish the guest program counter after the callback, main-menu progress, visible output, or offline-race progress.",
+      "The run did not capture a raw Vulkan readback. Related diagnostic runs with the same renderer-plugin hash are recorded separately in xbox360_linux_diagnostic_surfaces_20261024.json."
+    ]
+  }
+}

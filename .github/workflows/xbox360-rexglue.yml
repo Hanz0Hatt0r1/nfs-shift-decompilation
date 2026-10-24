@@ -33,3 +33,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate evidence-gated Xbox 360 status
         run: python3 tools/xbox360/validate_status.py
+      - name: Check retail queue completion evidence
+        run: |
+          python3 tools/xbox360/test_guest_callback_frontier.py
+          python3 tools/xbox360/test_queue_completion_conditions.py
+          python3 tools/xbox360/test_timebase_helper_823a0248.py
+          python3 tools/xbox360/test_callback_setter_823a5730.py

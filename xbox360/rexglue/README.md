@@ -7,10 +7,14 @@ ReXGlue is **not vendored or bundled** by this migration. The SDK is evolving an
 ## Preconditions
 
 1. Verify and hash-lock the Xbox 360 SHIFT `default.xex` (no proprietary bytes in Git).
-2. Select a specific upstream ReXGlue SDK revision and record its commit SHA, compiler version, platform and CLI/config syntax from that revision.
+2. The local diagnostic package is linked to official ReXGlue `v0.10.0` commit `f5337cdc947ff6d4c4196737e2c807a48f2a1fc2`; record the exact compiler/platform/CLI configuration in any future checked-in build integration.
 3. Produce a reproducible real-game XEX parsing and PPC→C++ lowering report. Keep generated game code and SDK build outputs outside Git.
 4. Enumerate unresolved functions, imports, relocations, indirect targets, vector/FPU semantics, memory/endianness and initialization dependencies.
 5. Only then define the first SHIFT-specific build target / configuration and host integration.
+
+## Current retail function override
+
+Eighteen missing retail entries are recorded in [the override snippet](nfs_shift_retail_function_overrides.toml). ReXGlue codegen and the Linux runtime build accept the complete 68-byte dispatcher at `0x82341198`; its exact branch paths and registered tail targets are preserved in [the capture evidence](../../evidence/xbox360_frontier_82341198.json). The rebuilt binary entered `xstart` but did not reach `0x82341198` during a 180-second controlled run, so execution of the override is unverified. An earlier binary executed the 60-byte conditional dispatcher at `0x823270D0` and then trapped at `0x82341198`. The `--no-async_shader_compilation` diagnostic removes the placeholder-skip warning and creates pipeline states synchronously, but no retail draw or present has been verified. Focused regressions cover captured instruction bytes and override entries; they do not prove frontend or race execution.
 
 ## Renderer note
 

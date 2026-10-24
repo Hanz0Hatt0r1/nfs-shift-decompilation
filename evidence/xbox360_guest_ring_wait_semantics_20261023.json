@@ -1,0 +1,112 @@
+{
+  "schema": "shift.xbox360.rexglue.guest-ring-wait-semantics.v1",
+  "captured_on": "2026-10-23",
+  "artifact": {
+    "path": "Need for Speed - Shift (Europe) xbox/default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "format": "Xbox 360 XEX",
+    "analysis_basis": "Read-only bytes from retained Xenia guest-memory backings; the exact XEX itself has no Ghidra load spec in the installed Ghidra 12.1.2."
+  },
+  "memory_provenance": {
+    "backing_directory": "/dev/shm",
+    "backing_count": 10,
+    "backings": [
+      "xenia_memory_210634085615768",
+      "xenia_memory_210714327402654",
+      "xenia_memory_210988781557961",
+      "xenia_memory_211033847113552",
+      "xenia_memory_211103114024319",
+      "xenia_memory_211284672485900",
+      "xenia_memory_211337225888527",
+      "xenia_memory_211467236078969",
+      "xenia_memory_211626715821872",
+      "xenia_memory_214181945832771"
+    ],
+    "address_to_file_offset": "Guest VA equals backing-file offset for these mapped code bytes; verified by matching the independent 68-byte exact-XEX capture at 0x82341198 in all 10 backings.",
+    "windows_equal_across_all_backings": true
+  },
+  "decoded_windows": [
+    {
+      "address": "0x823A0310",
+      "name": "guest wait predicate",
+      "length_bytes": 216,
+      "sha256": "a3ec8ded031eb4cfeaacaa4dd25c3e135136368fc5dbf093f5bcc120cd01b994"
+    },
+    {
+      "address": "0x823B34A0",
+      "name": "guest ring queue wait",
+      "length_bytes": 244,
+      "sha256": "fb5a1c5bf05b8c67e3919fa901ef24f8af3a6542164383c4cb9ab00cf10790cc"
+    },
+    {
+      "address": "0x823A5530",
+      "name": "call argument setup and queue wait call",
+      "length_bytes": 108,
+      "sha256": "a6a6e478760a34eb4fa7e3e1a6c18ed06109f42215648e00cebd0fdce3f7c370"
+    },
+    {
+      "address": "0x823A5578",
+      "name": "queue wait call and predicate loop",
+      "length_bytes": 128,
+      "sha256": "7ab2ceb6db6db6fc49941a250ec7cee229390059c5176d982c61bc6e13ba8752"
+    }
+  ],
+  "retail_control_flow": {
+    "callsite": {
+      "address": "0x823A5578",
+      "instruction": "bl 0x823B34A0",
+      "arguments_observed_at_runtime": {
+        "r4": 13,
+        "r5": 3,
+        "r6": 0
+      },
+      "static_argument_setup": [
+        "0x823A556C: li r6,0",
+        "0x823A5570: li r5,3",
+        "0x823A5574: mr r3,r31",
+        "0x823A5560: load r4 from [r31+0x3A5C]"
+      ]
+    },
+    "queue_wait": {
+      "entry": "0x823B34A0",
+      "ring_state_fields_read": [
+        "object+0x2A90",
+        "object+0x2A9C"
+      ],
+      "predicate_call": "0x823B355C -> 0x823A0310",
+      "predicate_zero": "branches to queue-wait completion path at 0x823B3584",
+      "predicate_nonzero": "rechecks cursor relation; may loop to 0x823B3558 and call the predicate again"
+    },
+    "predicate": {
+      "entry": "0x823A0310",
+      "completion_flag_byte": "object+0x2ABD",
+      "tested_mask": "0x02",
+      "flag_set_behavior": "branches to 0x823A03DC and returns 0",
+      "flag_clear_behavior": "continues reading queue cursor/timing state and calls 0x823BA9C8; returns 1 on the timeout/progress path or 0 when the callback reports completion"
+    }
+  },
+  "runtime_crosscheck": {
+    "evidence": "evidence/xbox360_runtime_queue_probe_20261023.json",
+    "gpu_plugin_configured": false,
+    "ignored_vd_calls": [
+      "VdSetGraphicsInterruptCallback",
+      "VdInitializeRingBuffer",
+      "VdEnableRingBufferRPtrWriteBack"
+    ],
+    "ring_head": 1,
+    "ring_tail": 21,
+    "predicate_flag_byte": "0x14",
+    "tested_mask": "0x02",
+    "tested_bit_set": false,
+    "main_guest_pc": "0x823A0310",
+    "interval_seconds": 45,
+    "predicate_flag_byte_offset_hex": "0x2ABD",
+    "predicate_flag_byte_offset_decimal": 10941,
+    "notation_correction": "The earlier runtime probe rendered the decimal GDB-script offset 10941 as 0x10941. The correct hexadecimal offset is 0x2ABD; the same GDB address and observed byte are unchanged."
+  },
+  "interpretation": {
+    "supported": "The observed guest thread is executing the original XEX ring/cursor polling loop, not blocked inside a guest KeWait call. The exact wait helper repeatedly calls the retail predicate; the controlled no-plugin run has the expected unchanged cursor values and clear completion bit while all three Vd ring/interrupt setup calls are logged as ignored. This makes an unserviced Xenos ring/completion path the leading explanation for this wait, rather than a P-code or host scheduler failure.",
+    "not_proven": "A plugin-enabled controlled rerun is still required to demonstrate cursor/flag progress, return from the guest wait, reach a later retail runtime frontier, or produce a guest-originated Vulkan draw/present.",
+    "next_owner": "Process 2 owns Xenos GPU plugin setup; Process 1 should rerun the guest queue probe after that setup before changing guest wait semantics."
+  }
+}

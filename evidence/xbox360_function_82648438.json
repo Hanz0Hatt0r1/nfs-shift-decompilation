@@ -1,0 +1,32 @@
+{
+  "schema": "shift.xbox360.rexglue.function-block.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x82648438",
+  "bytes_hex": "908303144e800020",
+  "decoded": [
+    "stw r4,788(r3)",
+    "blr"
+  ],
+  "semantics": "Store r4 to the 32-bit field at guest object offset +0x314 and return.",
+  "runtime_fatal": {
+    "function": "0x82E2C650",
+    "indirect_call_instruction": "0x82E2C6C4",
+    "indirect_call_return_address": "0x82E2C6C8",
+    "indirect_target": "0x82648438",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x82E2C650",
+      "0x8301DB18",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ]
+  },
+  "memory_capture": "GDB read 16 bytes at host address 0x182648438 through the live guest mapping while PPCContext.last_indirect_target was 0x82648438.",
+  "confidence": "observed",
+  "limitations": [
+    "The exact retail XEX has no Ghidra load specification; the instruction bytes are from its live ReXGlue guest mapping.",
+    "The 0x82648438 override has not yet been passed through ReXGlue codegen or a rebuilt runtime.",
+    "The user observed the game's loading screen during a run; the main menu, completed retail draw, and race remain unverified."
+  ]
+}

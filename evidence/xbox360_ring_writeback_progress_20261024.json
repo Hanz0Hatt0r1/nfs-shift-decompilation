@@ -1,0 +1,104 @@
+{
+  "schema": "shift.xbox360.rexglue.ring-writeback-progress.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "linux_run": {
+    "host": "linux-amd64",
+    "gpu": "NVIDIA GeForce GTX 950",
+    "display_backend": "Wayland",
+    "runtime_version": "ReXGlue 0.10.0",
+    "runtime_sha256": "ff31b096a4a0bbb212e4e145f029239e1093776145070a232267182ce2642b32",
+    "generated_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin": {
+      "name": "shift-native",
+      "sha256": "dbbacc40d993cac1a0b3519ab1ae7392b6fcb26457ebe5d8cb4faf3249dff05b"
+    },
+    "arguments": [
+      "--game_data_root=/tmp/nfs_shift_xbox_game_root_20261023",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "xex_to_executable_lineage": "GDB source locations resolved to the generated/default C++ tree associated with the locked manifest input. The run evidence does not contain a build invocation artifact independently binding this executable hash to the XEX hash."
+  },
+  "retail_guest_setup": {
+    "caller": "0x823B3A48",
+    "imports_observed": [
+      "VdSetGraphicsInterruptCallback",
+      "VdInitializeRingBuffer",
+      "VdEnableRingBufferRPtrWriteBack"
+    ],
+    "writeback_call": {
+      "ppc_r3_physical_guest_address": "0x17AF403C",
+      "ppc_r4_block_size_log2": 6,
+      "guest_object": "0xB7365F00",
+      "descriptor_guest_base": "0xB7AF4000",
+      "writeback_offset": "0x3C",
+      "physical_host_address": "0x217AF403C"
+    }
+  },
+  "writeback_observation": {
+    "watch_method": "GDB hardware watchpoints on the physical writeback target, descriptor base word, and predicate byte",
+    "gpu_worker": "SHIFT Native GPU / ShiftNativeGraphicsSystem::RingWorkerLoop",
+    "guest_big_endian_values_written": [
+      25,
+      49,
+      73
+    ],
+    "raw_host_words": [
+      "0x19000000",
+      "0x31000000",
+      "0x49000000"
+    ],
+    "descriptor_base_word": {
+      "guest_address": "0xB7AF4000",
+      "guest_value_after_initialization": 1,
+      "later_writes_observed": 0
+    },
+    "guest_wait_helper_crosscheck": {
+      "function": "0x823B2920",
+      "loads_gpu_read_pointer_from": "descriptor+0x3C",
+      "targets_observed": [
+        55,
+        58,
+        61,
+        64,
+        67,
+        70
+      ],
+      "first_gpu_read_pointer_sample": 25
+    }
+  },
+  "remaining_guest_frontier": {
+    "thread": "Core 2/1: Main",
+    "call_stack_at_final_interrupt": [
+      "0x823A0310",
+      "0x823B34A0",
+      "0x823A4E48",
+      "0x823A5610",
+      "xstart"
+    ],
+    "separate_software_queue": {
+      "helper": "0x823B34A0",
+      "loads_descriptor_word_at_offset": "0x00",
+      "descriptor_base_value": 1
+    },
+    "predicate_flag": {
+      "guest_address": "0xB73689BD",
+      "byte_at_final_sample": "0x14",
+      "tested_mask": "0x02",
+      "tested_bit_set": false
+    },
+    "observation": "The main guest thread was again polling the original software-queue predicate after the GPU readback advanced. The watched descriptor base word stayed at 1 while the distinct +0x3C GPU readback field advanced."
+  },
+  "interpretation": {
+    "supported": "The retail XEX calls VdEnableRingBufferRPtrWriteBack with physical address 0x17AF403C and block size log2 6. The ReXGlue GPU worker writes successive big-endian read-pointer values 25, 49, and 73 to that location. Exact-XEX helper 0x823B2920 reads the +0x3C field, confirming that this GPU writeback path is active and progressing. The earlier no-write observation on the descriptor base word at +0x00 does not describe the GPU readback field.",
+    "not_proven": "This does not establish why the separate software queue at descriptor+0x00 and predicate bit 0x02 remain unchanged, whether that wait prevents frontend progress, or whether a visible retail frame, menu, or race was reached. It does not independently bind the generated executable to the locked XEX build invocation.",
+    "next_p1_frontier": "Trace the original worker/callback path that advances the +0x00 software queue and exact-XEX predicate bit. Preserve the retail wait and scheduler semantics until the missing transition is identified."
+  },
+  "local_gdb_log": "/tmp/p1-vdwriteback-probe-20261024/logs/gdb-vd-writeback-target.log"
+}

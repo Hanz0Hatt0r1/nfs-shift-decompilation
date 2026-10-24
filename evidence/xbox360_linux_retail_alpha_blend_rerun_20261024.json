@@ -1,0 +1,96 @@
+{
+  "schema": "shift.xbox360.linux-retail-renderer-rerun.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "game_root": "/tmp/nfs_shift_xbox_game_root_20261023"
+  },
+  "renderer_change_under_test": {
+    "process2_pr": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+    "commit": "8541089b61fa16a623421adaf21a10375094929f",
+    "captured_register": "RB_BLENDCONTROL=0x07060706",
+    "plugin_sha256": "56a1d88e4c4fb952bd79578e4247603eb953fac41a942b14a9d1cc6d4bc7f0af"
+  },
+  "linux_run": {
+    "host": "Linux AMD64",
+    "rexglue_sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+    "rexruntime_sha256": "b38dce8b1e382227da1f1fe2f5817772ac3ef2a5a3b3d587867477eb833d3fd3",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "arguments": [
+      "--game_data_root=/tmp/nfs_shift_xbox_game_root_20261023",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "timeout_seconds": 30,
+    "exit_code": 124,
+    "launch": "Fresh isolated run with the exact host executable from the locked P1 retail evidence and the new P2 plugin; the P2 build output and Android artifact were not replaced."
+  },
+  "raw_readback": {
+    "path": "/home/pes/work/p1-event-write-linux-probe-20261024/p2-alpha-readback-exact-30s-20261024/retail.a2b10g10r10",
+    "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "width": 1280,
+    "height": 720,
+    "bytes": 3686400,
+    "sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+    "fnv1a64": "B161DE6EEC272325",
+    "pixel_words": {
+      "0x00000000": 518400,
+      "0xC0000000": 403200
+    },
+    "rgb_nonblack_pixels": 0
+  },
+  "runtime_log": {
+    "path": "/home/pes/work/p1-event-write-linux-probe-20261024/p2-alpha-readback-exact-30s-20261024/logs/nfs_shift_001.log",
+    "sha256": "4264e51660c2c91ad6be05cdffa6b7ca337cac4b783e2e6b9b6f2b204c6f1005",
+    "submitted_single_draw_packets": 26,
+    "three_draw_target_or_scissor_mismatch_warnings": 813,
+    "first_readback_log_line": "[2026-10-24 03:51:06.117] saved Vulkan guest output 1280x720; non-black pixels 0; FNV-1a B161DE6EEC272325",
+    "vfs_observations": {
+      "failed_ntcreatefile_path": "render\\shaders\\cache\\",
+      "failure_count": 2,
+      "status": "0xc000000f",
+      "vfs_error": "ResolvePath(render\\shaders) failed - device not found",
+      "first_black_readback_timestamp": "2026-10-24 03:51:06.117",
+      "cache_path_failure_timestamp": "2026-10-24 03:51:06.322",
+      "temporal_delta_ms": 205,
+      "interpretation": "These relative shader-cache path failures occur after the first black readback, so they do not explain the first black frame. Whether they affect later shader-cache behavior is untested."
+    }
+  },
+  "interpretation": {
+    "supported": "The retail readback with P2 commit 8541089b is byte-identical to the prior black readback. The new blend setting did not make retail pixels visible in this run, and three-draw refreshes continue to reject the captured target/scissor against PM4_XE_SWAP. The same executable/plugin pair produced the recorded magenta synthetic control with non-black pixels, isolating the retail black output to retail rendering state/path rather than a generally broken readback path.",
+    "not_proven": [
+      "This does not establish that the blend change has no effect in other draw classes or that the renderer change is incorrect.",
+      "The run did not show a main menu, visible retail frame, or race.",
+      "Single-draw submissions and warning counts are diagnostic observations, not gameplay progress."
+    ]
+  },
+  "synthetic_control": {
+    "environment": "SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR=magenta",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "plugin_commit": "8541089b61fa16a623421adaf21a10375094929f",
+    "plugin_sha256": "56a1d88e4c4fb952bd79578e4247603eb953fac41a942b14a9d1cc6d4bc7f0af",
+    "timeout_seconds": 30,
+    "exit_code": 124,
+    "raw_readback": {
+      "path": "/home/pes/work/p1-event-write-linux-probe-20261024/p2-alpha-magenta-exact-20261024/magenta.a2b10g10r10",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "width": 1280,
+      "height": 720,
+      "bytes": 3686400,
+      "sha256": "21d2868e9e0b91638d96e30dfe446a4748ef217efaa09e10ed179697e95e35e8",
+      "fnv1a64": "DA74DA070BC0D725",
+      "pixel_words": {
+        "0xFFF003FF": 518400,
+        "0xC0000000": 403200
+      },
+      "rgb_nonblack_pixels": 518400
+    },
+    "runtime_log": {
+      "path": "/home/pes/work/p1-event-write-linux-probe-20261024/p2-alpha-magenta-exact-20261024/logs/nfs_shift_001.log",
+      "sha256": "c1ee5a8717ff6527c4a4ddf9b33991bb24375e65e28abe99481965bab0d9ebc3",
+      "three_draw_target_or_scissor_mismatch_warnings": 0
+    },
+    "interpretation": "This synthetic fragment-output control confirms draw, presenter, and readback coverage for this exact host executable/plugin pair. It does not represent retail game pixels or frontend progress."
+  }
+}

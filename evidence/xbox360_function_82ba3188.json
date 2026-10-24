@@ -1,0 +1,75 @@
+{
+  "schema": "shift.xbox360.rexglue.function-entry.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x82BA3188",
+  "entry_bytes_hex": "81630048386b0040816b0040816b0014",
+  "decoded_captured_instructions": [
+    "lwz r11,0x48(r3)",
+    "addi r3,r11,0x40",
+    "lwz r11,0x40(r11)",
+    "lwz r11,0x14(r11)"
+  ],
+  "capture_length_bytes": 16,
+  "runtime_fatal": {
+    "function": "0x82B98528",
+    "indirect_call_instruction": "0x82B985EC",
+    "indirect_call_return_address": "0x82B985F0",
+    "indirect_target": "0x82BA3188",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x82B98528",
+      "0x82BA8E48",
+      "0x83067FB0",
+      "0x83068298",
+      "0x83067A50",
+      "0x83067118",
+      "0x82678FD0",
+      "0x82679C50",
+      "0x82E2CB50",
+      "0x82E2C5A8",
+      "0x82DDC6F0",
+      "0x8301DB18",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ]
+  },
+  "memory_capture": "GDB read the complete 24-byte function body from host address 0x182BA3188 while reaching the generated entry.",
+  "prior_frontier": "With --no-async_shader_compilation, the runtime passed the 0x82D365A0 virtual dispatch thunk and callback 0x8265BE68 before trapping here.",
+  "confidence": "observed_entry_bytes",
+  "limitations": [
+    "This entry still requires ReXGlue codegen, a rebuilt runtime, and execution verification.",
+    "The diagnostic run emitted no async-placeholder skip warning, but no vkCmdDraw* call or completed Vulkan present is recorded by that log.",
+    "No screenshot, main-menu state, or race has been verified."
+  ],
+  "renderer_diagnostic_run": {
+    "launch_flag": "--no-async_shader_compilation",
+    "runtime_log": "nfs_shift_070.log",
+    "runtime_log_sha256": "aeec710149d54a2d7b44fcc55509957377bdbc562ce51e5d4267e546c8974c4c",
+    "observations": [
+      "Multiple graphics pipeline states were created synchronously before the current guest trap.",
+      "The log contains no async-placeholder frame-skip warning."
+    ],
+    "limits": [
+      "The log does not record a vkCmdDraw* call or completed Vulkan present.",
+      "Pipeline creation and warning absence are not proof of a retail frame."
+    ]
+  },
+  "codegen_reconstruction": [
+    "lwz r11,0x48(r3)",
+    "addi r3,r11,0x40",
+    "lwz r11,0x40(r11)",
+    "lwz r11,0x14(r11)",
+    "mtctr r11",
+    "bctr"
+  ],
+  "function_length_bytes": 24,
+  "semantics": "Load a callback pointer from the guest object's nested vtable path and tail-dispatch through ctr.",
+  "codegen_validation": {
+    "result": "ReXGlue v0.10.0 generated and registered the complete 24-byte indirect-dispatch thunk.",
+    "build": "Linux AMD64 nfs_shift linked successfully.",
+    "runtime_execution": "GDB captured all 24 bytes and observed dispatch through ctr to 0x82B9DD08."
+  },
+  "full_function_bytes_hex": "81630048386b0040816b0040816b00147d6903a64e800420",
+  "dispatched_indirect_target": "0x82B9DD08"
+}
