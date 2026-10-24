@@ -1009,6 +1009,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     bool frame_copy_ready = false;
     uint64_t observed_ring_generation = 0;
     uint32_t guest_swap_counter = 0;
+    uint32_t readback_frame_counter = 0;
     for (;;) {
       uint32_t read_pointer = 0;
       uint32_t write_pointer = 0;
@@ -1564,11 +1565,15 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 const char* readback_path = std::getenv("SHIFT_NATIVE_VULKAN_READBACK_PATH");
 #if defined(__ANDROID__) && !defined(NDEBUG)
                 constexpr bool kAndroidDebugReadback = true;
+                constexpr uint32_t kAndroidDebugReadbackFrame = 500u;
 #else
                 constexpr bool kAndroidDebugReadback = false;
+                constexpr uint32_t kAndroidDebugReadbackFrame = 0u;
 #endif
                 const bool capture_output = !readback_saved_ &&
-                    (kAndroidDebugReadback || (readback_path && *readback_path));
+                    ((kAndroidDebugReadback &&
+                      readback_frame_counter + 1u >= kAndroidDebugReadbackFrame) ||
+                     (!kAndroidDebugReadback && readback_path && *readback_path));
                 std::vector<uint32_t> output_readback;
                 std::string render_error;
                 bool refresh_callback_called = false;
@@ -1602,6 +1607,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     });
                 if (refreshed) {
                   ++submitted_frames;
+                  ++readback_frame_counter;
                   REXLOG_INFO("shift-native: submitted {} captured indexed draw packets to "
                               "the Vulkan presenter at {}x{} (frontbuffer {:08X})",
                               draw_count, swap.width, swap.height,
@@ -1634,12 +1640,12 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                       readback_saved_ = true;
                       REXLOG_INFO("shift-native: {} Vulkan guest output {}x{} as "
                                   "VK_FORMAT_A2B10G10R10_UNORM_PACK32{}{}; "
-                                  "non-black pixels {}, FNV-1a {:016X}",
+                                  "non-black pixels {}, FNV-1a {:016X} at submitted frame {}",
                                   readback_path && *readback_path ? "saved" : "read back",
                                   swap.width, swap.height,
                                   readback_path && *readback_path ? " to file " : " (Android debug only)",
                                   readback_path && *readback_path ? readback_path : "",
-                                  non_black_pixels, checksum);
+                                  non_black_pixels, checksum, readback_frame_counter);
                     } else {
                       REXLOG_WARN("shift-native: could not read/write Vulkan guest output{}{}",
                                   readback_path && *readback_path ? " at " : "",

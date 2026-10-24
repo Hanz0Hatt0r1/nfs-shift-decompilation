@@ -13,8 +13,8 @@ The logo screenshot was captured at 11:55:12 MSK; a later screenshot at
 11:55:24 was black. At 12:04:28 MSK, `NfsShiftActivity` was still foreground
 and the screen capture matched the saved black screenshot byte-for-byte. The
 runtime reports missing guest assets including `menu_background.xml`. The
-first Vulkan readback still records the earlier black startup swap, because
-debug readback is captured only once. A transient splash does not satisfy
+earlier debug build only captured its first black startup swap; the follow-up
+below adds a late retail-output readback. A transient splash does not satisfy
 readiness: an original menu or gameplay image must remain visible through the
 Vulkan path. No synthetic image counts as retail parity.
 
@@ -98,13 +98,41 @@ state or prove why the menu scene is absent. Process 1's indexed
 finds SGX/ENX and texture members but no `menu_background.xml` member; whether
 the loose-file miss is fatal remains unproven.
 
+## Frame-500 Vulkan output readback (2026-10-24)
+
+The next Android diagnostic build moved its one-shot debug readback to
+submitted Vulkan frame 500. It was installed with the same Android signer and
+the same retail `default.xex`; the splash screenshot matches the previously
+recorded original SHIFT logo. The device run submitted 853 Vulkan frames with
+1,416 captured indexed draw packets and 853 accepted Copy/Convert operations.
+
+At 12:41:14.948 MSK, the actual 1280x720 Vulkan guest-output readback at frame
+500 contained zero non-black pixels (FNV-1a `68D8B1C5D0E72325`). The phone was
+still black on a fresh screenshot at 12:43:07, with the game activity in the
+foreground. The guest's four final `menu_background.xml` open failures occur
+at 12:42:15.764–.769, after the renderer had continued submitting frames; the
+log does not establish whether those failures caused the black scene. The
+frame readback, screenshot hashes, APK/plugin hashes, and raw log are recorded
+in
+[`process2_redmi_note8pro_vulkan_late_readback_20261024.json`](../evidence/process2_redmi_note8pro_vulkan_late_readback_20261024.json)
+and
+[`process2_redmi_note8pro_vulkan_late_readback_20261024.log.gz`](../evidence/process2_redmi_note8pro_vulkan_late_readback_20261024.log.gz).
+
+This confirms a black Vulkan output in a late retail frame. It narrows the
+failure below Android screenshot capture, but does not prove all retail frames
+black or identify whether the renderer's supported draw subset, guest scene
+resources, or scene progression is responsible. The renderer remains not
+ready.
+
 ## Checks
 
 - Native Vulkan/PM4 suite: 4/4 tests pass (`ctest` in the native Vulkan build).
 - Linux AMD64 ReXGlue plugin suite: 3/3 factory, live-ring, and Vulkan readback
   smoke tests pass.
-- Exact Linux AMD64 plugin built from this source: `/home/pes/work/rexglue-sdk-rexui-vulkan-20261023/out/linux-amd64/librexgpu-shift-native.so`, SHA-256
-  `c425619827add26839f3f111cc069c63141434eb89feb5e3abc97a0a36e9182a`.
+- Rebuilt the Linux AMD64 plugin from the current diagnostic source; the same
+  three CTest checks passed 3/3.
+- Exact Linux AMD64 diagnostic plugin built from this source: `/home/pes/work/rexglue-sdk-rexui-vulkan-20261023/out/linux-amd64/librexgpu-shift-native.so`, SHA-256
+  `e4115b0c58816d9f6225ef102583801fcc7253bf10f52d3e4356e76c8c36a5f0`.
 - Host Vulkan renderer regression: passes with
   `VK_LAYER_KHRONOS_validation` on NVIDIA GeForce GTX 950 with no validation
   errors; it covers synthetic test draws and mixed-sample Copy/Convert.
