@@ -49,7 +49,28 @@
     "candidate_deferred_queue_producer": {
       "address": "0x823A4758",
       "static_behavior": "The ReXGlue-generated retail function selects a per-process object, acquires object+0x4148, and under its enqueue condition writes an 8-byte record then advances object+0x4140. Its alternate path increments a dropped-record counter.",
-      "dynamic_hits_during_capture": 0
+      "dynamic_hits_during_capture": 0,
+      "codegen_presence": {
+        "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+        "host_executable_path": "/home/pes/work/process2-linux-readback-frame200-20261024/bin/nfs_shift",
+        "readelf_symbol": {
+          "name": "sub_823A4758",
+          "address": "0x00000000038DF0A0",
+          "size_bytes": 2404,
+          "type": "FUNC",
+          "binding": "WEAK",
+          "section_index": 11
+        },
+        "alias_symbol": {
+          "name": "__imp__sub_823A4758",
+          "address": "0x00000000038DF0A0",
+          "size_bytes": 2404,
+          "type": "FUNC",
+          "binding": "GLOBAL",
+          "section_index": 11
+        },
+        "observation": "The exact host executable recorded for the Linux probe contains the generated function symbol; this static symbol presence does not prove that the function executed."
+      }
     }
   },
   "host_call_chain": {
