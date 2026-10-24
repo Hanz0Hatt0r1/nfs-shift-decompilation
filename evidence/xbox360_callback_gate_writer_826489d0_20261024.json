@@ -1,0 +1,85 @@
+{
+  "schema": "shift.xbox360.callback-gate-writer-analysis.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "live_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c"
+  },
+  "static_basis": {
+    "writer": {
+      "start": "0x826489D0",
+      "end_exclusive": "0x826489F8",
+      "instruction_count": 10,
+      "instructions": [
+        ["0x826489D0", "816302e8", "lwz r11,0x2E8(r3)"],
+        ["0x826489D4", "2f0b0000", "cmpwi cr6,r11,0"],
+        ["0x826489D8", "4d9a0020", "bclr 12,26"],
+        ["0x826489DC", "7c8b0034", "cntlzw r11,r4"],
+        ["0x826489E0", "3d408312", "lis r10,0x8312"],
+        ["0x826489E4", "3d208309", "lis r9,0x8309"],
+        ["0x826489E8", "556bdffe", "rlwinm r11,r11,27,31,31"],
+        ["0x826489EC", "908a2ba4", "stw r4,0x2BA4(r10)"],
+        ["0x826489F0", "9169d0f0", "stw r11,-0x2F10(r9)"],
+        ["0x826489F4", "4e800020", "blr"]
+      ],
+      "guard": "If the u32 loaded from entry r3+0x2E8 is zero, CR6.EQ is set and the conditional link-register branch returns before either store.",
+      "stores_on_nonzero_guard": {
+        "callback_gate": {
+          "address": "0x83122BA4",
+          "width": "u32",
+          "value": "low32(r4)"
+        },
+        "callback_global_flag": {
+          "address": "0x8308D0F0",
+          "width": "u32",
+          "value": "1 if r4==0, otherwise 0"
+        }
+      },
+      "flag_derivation": {
+        "cntlzw_range": "0..31 for nonzero r4; 32 for r4==0",
+        "rlwinm": "ROTL32(count,27) masked to bit 31 in Power bit numbering (the least-significant output bit)",
+        "result": "Only count 32 has bit 5 set; ROTL32 by 27 moves that bit to output bit 0, so the stored flag is exactly 1 for r4==0 and 0 otherwise."
+      }
+    },
+    "consumer_fragment": {
+      "start": "0x8264A1A4",
+      "end_exclusive": "0x8264A1DC",
+      "instruction_count": 14,
+      "instructions": [
+        ["0x8264A1A4", "3d608309", "lis r11,0x8309"],
+        ["0x8264A1A8", "814bd0f0", "lwz r10,-0x2F10(r11)"],
+        ["0x8264A1AC", "39600002", "li r11,2"],
+        ["0x8264A1B0", "2f0a0000", "cmpwi cr6,r10,0"],
+        ["0x8264A1B4", "409a0008", "bf 26,0x8264A1BC"],
+        ["0x8264A1B8", "3d608000", "lis r11,0x8000"],
+        ["0x8264A1BC", "7f035840", "cmplw cr6,r3,r11"],
+        ["0x8264A1C0", "419a001c", "bt 26,0x8264A1DC"],
+        ["0x8264A1C4", "2f0a0000", "cmpwi cr6,r10,0"],
+        ["0x8264A1C8", "38800002", "li r4,2"],
+        ["0x8264A1CC", "409a0008", "bf 26,0x8264A1D4"],
+        ["0x8264A1D0", "3c808000", "lis r4,0x8000"],
+        ["0x8264A1D4", "807f0260", "lwz r3,0x260(r31)"],
+        ["0x8264A1D8", "4bd58771", "bl 0x823A2948"]
+      ],
+      "derived_expectation": "When global flag is nonzero, comparison target and fallback argument are 2; when it is zero, both are 0x80000000.",
+      "scope": "This bounded fragment shows how the flag selects a comparison/fallback value; it does not name the state or prove the helper's runtime outcome."
+    },
+    "relation_to_registered_callback": {
+      "callback_gate_address": "0x83122BA4",
+      "callback_global_flag_address": "0x8308D0F0",
+      "static_relation": "The writer stores its r4 argument at the exact gate field read by callback 0x82649B68, and stores its derived 0/1 value at that callback's global-flag address."
+    }
+  },
+  "runtime_context": {
+    "writer_hit_observed": false,
+    "writer_breakpoint_observation_supplied": false,
+    "separate_callback_run": "Registration of 0x82649B68 was observed through 0x823A5730 on object 0xB7365F00; callback body was not hit in the bounded 45-second sample.",
+    "limitation": "No same-run sample ties this writer, the registered object, or its stores to the callback invocation path."
+  },
+  "scope": {
+    "retail_code_changed": false,
+    "runtime_semantics_changed": false,
+    "frontend_progress_proven": false,
+    "offline_race_proven": false
+  }
+}
