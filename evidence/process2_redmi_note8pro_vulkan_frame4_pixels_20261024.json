@@ -1,0 +1,95 @@
+{
+  "format": "SHIFT.Process2RedmiNote8ProVulkanFrame4Pixels/1",
+  "observed_at": "2026-10-24T15:05:52+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:33153",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "activity": "org.libsdl.app.NfsShiftActivity"
+  },
+  "build": {
+    "renderer": "project-owned shift-native Vulkan plugin; emulator-free PM4 path",
+    "debug_readback_target_submitted_frame": 4,
+    "debug_readback_file_path": "/sdcard/Android/data/com.hanz0hatt0r.nfsshift/files/vulkan-frame4-readback.bin",
+    "apk_sha256": "b924b23e97f148802e4c2b701fb7aba1577206bb4329e31a729e5ad8a5bd0347",
+    "plugin_sha256": "1c63f916a1d898837445f59c8de040bea29b18616ce4bf861f66719f0639af20",
+    "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "plugin_entries": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "plugin_entries_identical": true
+  },
+  "retail_input": {
+    "default_xex_sha256_before_and_after_install": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "game_data_preserved": true
+  },
+  "retail_draw_evidence": {
+    "runtime_log": "process2_redmi_note8pro_vulkan_frame4_pixels_20261024.log",
+    "runtime_log_sha256": "0f8018fac9c41197c6058e39a710c303eea43778b6f1e6df804fc8dd50af6033",
+    "submitted_frame": 4,
+    "submitted_draw_count": 3,
+    "textured_draw": {
+      "resolved_draw": 4,
+      "samples": 1,
+      "texture_guest_address": "0x09D57000",
+      "texture_extent": "1024x256",
+      "texture_format": 6,
+      "normalized_rgba8_fnv1a": "1FB4AD3D482BE2BB",
+      "vertex_shader_bytes": 420,
+      "vertex_shader_fnv1a": "D8675FD6D20F2BD6",
+      "pixel_shader_bytes": 120,
+      "pixel_shader_fnv1a": "2925CC56719921EB"
+    },
+    "fragment_shader_override": false,
+    "copy_convert_accepted": true,
+    "vulkan_refresh_failures": 0,
+    "output_readback": {
+      "extent": "1280x720",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "file": "process2_redmi_note8pro_vulkan_frame4_pixels_20261024.bin",
+      "bytes": 3686400,
+      "sha256": "e45a6a3388a12cfcb047d9f94e3120263e219c815cbab59b6e99b0e0f70779e0",
+      "non_black_pixels": 53098,
+      "fnv1a": "915336228EB84E49"
+    }
+  },
+  "decoded_output_image": {
+    "file": "process2_redmi_note8pro_vulkan_frame4_pixels_decoded_20261024.png",
+    "sha256": "e53eab4da44b69672b136b56d98978598aa018a9e786aa5a8e72e351545e6683",
+    "extent": "1280x720",
+    "decoder": "Read little-endian uint32 pixels; R=bits 0-9, G=bits 10-19, B=bits 20-29, A=bits 30-31; scale UNORM channels to 8-bit RGBA.",
+    "validated_non_black_pixel_count": 53098,
+    "observed": "The decoded Vulkan readback image visibly contains the NFS SHIFT title logo."
+  },
+  "screenshots": {
+    "device_after_readback": {
+      "observed_at": "2026-10-24T15:05:59+03:00",
+      "file": "process2_redmi_note8pro_vulkan_frame4_pixels_20261024.png",
+      "sha256": "c2067f291847d30b0125c5115ff734a7f65081eea0d04191c9dcc53aedaf1465",
+      "extent": "1080x2340",
+      "observed": "The device display shows the same SHIFT title logo about seven seconds after the Vulkan readback."
+    },
+    "later_black": {
+      "observed_at": "2026-10-24T15:06:54+03:00",
+      "file": "process2_redmi_note8pro_vulkan_frame4_pixels_later_20261024.png",
+      "sha256": "ca2e7ef708be4e086e78c6921ab25cbd9b871744c1c983089c7de250f7104528",
+      "observed": "The screen is black while subsequent Vulkan submissions continue."
+    },
+    "activity_foreground_at": "2026-10-24T15:06:54+03:00"
+  },
+  "checks": {
+    "android_arm64_debug_plugin_build": "passed with NDK 28.2.13676358 / Android API 29",
+    "host_rexglue_plugin_ctest": "3/3 passed",
+    "host_vulkan_renderer_validation": "passed previously on NVIDIA GeForce GTX 950 with VK_LAYER_KHRONOS_validation"
+  },
+  "limitations": [
+    "This proves the original retail title-logo pixels are present in the actual Vulkan guest-output readback and visible on the device in the same run.",
+    "The title logo is transient. The later screen is black; menu, race-scene, and sustained gameplay output remain unverified.",
+    "This evidence does not claim full retail parity or support for every guest draw contract."
+  ]
+}

@@ -17,14 +17,32 @@ enum class CapturedShaderStage : uint8_t {
 struct CapturedShaderTranslationOptions {
     bool pixel_b128 = false;
     bool pixel_b129 = false;
-    uint32_t vertex_fetch_constant_index = 95;
+    bool gamma_color_target = false;
     // Resource descriptor selectors: X, Y, Z, W, zero, or one.
     std::array<uint32_t, 4> texture_swizzle = {2, 1, 0, 3};
+    std::array<TextureSign, 4> texture_signs = {
+        TextureSign::Unsigned, TextureSign::Unsigned,
+        TextureSign::Unsigned, TextureSign::Unsigned};
+};
+
+struct CapturedVertexInputAttribute {
+    uint32_t location;
+    uint32_t destination_register;
+    uint32_t vertex_format;
+    uint32_t stride_dwords;
+    int32_t offset_dwords;
 };
 
 struct CapturedShaderTranslation {
     std::string glsl;
     std::vector<uint32_t> executed_instruction_addresses;
+    std::vector<CapturedVertexInputAttribute> vertex_input_attributes;
+    bool has_vertex_fetch_constant = false;
+    uint32_t vertex_fetch_constant_index = 0;
+    bool uses_texture = false;
+    uint32_t texture_fetch_constant_index = 0;
+    std::vector<uint32_t> float_constant_registers;
+    bool uses_relative_float_constant_index = false;
 };
 
 // Emits project-owned Vulkan GLSL for the captured shader subset. It is a

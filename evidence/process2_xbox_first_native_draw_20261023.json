@@ -88,8 +88,10 @@
     "the original EDRAM contents before this draw were not captured; the isolated bundle starts from a black clear",
     "the captured black texture border alpha is unresolved; the test bundle uses transparent-black Vulkan border behavior provisionally",
     "this is one captured draw, not a complete scene or retail-frame parity result",
-    "the guest PM4 ring/resource ingestion and ReXGlue plugin integration are not implemented yet",
+    "the live PM4 ring plugin now has a Vulkan submission path at XE_SWAP, but this isolated bundle result did not run that plugin or a live SHIFT guest",
     "the Android run is an offscreen CLI execution on Redmi Note 8 Pro, not a full game runtime; the requested Redmi Note 14 Pro+ was unavailable to ADB",
-    "the Android driver did not run with VK_LAYER_KHRONOS_validation enabled"
-  ]
+    "the Android driver did not run with VK_LAYER_KHRONOS_validation enabled",
+    "the plugin presenter output uses A2B10G10R10_UNORM, so captured gamma-target parity remains unverified"
+  ],
+  "live_plugin_renderer_smoke": "evidence/process2_xbox_live_vulkan_renderer_smoke_20261023.json"
 }

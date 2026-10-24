@@ -10,6 +10,9 @@ namespace shift::xbox {
 
 enum class PrimitiveTopology : uint8_t {
     TriangleList,
+    PointList,
+    RectangleList,
+    TriangleStrip,
 };
 
 struct DecodedIndexedDraw {
@@ -19,6 +22,13 @@ struct DecodedIndexedDraw {
     uint32_t index_type_bits;
     uint32_t index_endian_mode;
     uint32_t index_byte_length;
+    bool auto_index = false;
+};
+
+struct DecodedGuestSwap {
+    uint32_t frontbuffer_guest_address;
+    uint32_t width;
+    uint32_t height;
 };
 
 enum class PacketType : uint8_t {
@@ -35,6 +45,53 @@ struct PacketSpan {
     size_t byte_length;
     // Valid only for type-3 packets. Other packet spans use 0.
     uint32_t opcode;
+};
+
+struct GuestRegisterWrite {
+    // PM4 register index (not a byte address) and decoded host-order value.
+    uint32_t register_index;
+    uint32_t value;
+};
+
+enum class GuestShaderStage : uint8_t {
+    Vertex,
+    Pixel,
+};
+
+struct CapturedShaderProgramLoad {
+    GuestShaderStage stage;
+    uint32_t guest_address;
+    uint32_t dword_count;
+    uint32_t byte_length;
+};
+
+struct CapturedImmediateShaderProgramLoad {
+    GuestShaderStage stage;
+    uint32_t dword_count;
+    uint32_t byte_length;
+    size_t code_offset;
+};
+
+enum class CapturedConstantBank : uint8_t {
+    Alu,
+    Fetch,
+    Boolean,
+    Loop,
+    Registers,
+};
+
+struct CapturedConstantLoad {
+    CapturedConstantBank bank;
+    uint32_t guest_address;
+    uint32_t start_index;
+    uint32_t dword_count;
+    uint32_t destination_register;
+    uint32_t byte_length;
+};
+
+struct CapturedIndirectBuffer {
+    uint32_t guest_address;
+    uint32_t dword_count;
 };
 
 enum class ShaderControlFlowOpcode : uint8_t {
@@ -75,11 +132,14 @@ struct CapturedShaderInstructionSchedule {
 
 enum class CapturedShaderFetchKind : uint8_t {
     VertexFull,
+    VertexMini,
     Texture2D,
 };
 
 struct CapturedShaderFetchInstruction {
     CapturedShaderFetchKind kind;
+    // For VertexMini, these are raw instruction bits rather than the effective
+    // values inherited from its preceding VertexFull instruction.
     uint32_t source_register;
     uint32_t destination_register;
     uint32_t source_swizzle;
@@ -230,7 +290,25 @@ struct CapturedTextureSampling {
 };
 
 enum class CapturedColorTargetFormat : uint8_t {
+    Rgba8Linear,
     Rgba8Gamma,
+    Rgb10A2Unorm,
+    Rgb10A2Float,
+};
+
+enum class CapturedCopyCommand : uint8_t {
+    Convert = 1,
+};
+
+struct CapturedCopyState {
+    uint32_t source_select;
+    uint32_t sample_select;
+    CapturedCopyCommand command;
+    uint32_t destination_base;
+    uint32_t destination_pitch;
+    uint32_t destination_height;
+    uint32_t destination_format;
+    bool destination_swap_red_blue;
 };
 
 enum class CapturedDepthTargetFormat : uint8_t {
@@ -253,14 +331,37 @@ struct CapturedRasterRegisters {
     uint32_t window_offset;
     uint32_t window_scissor_tl;
     uint32_t window_scissor_br;
+    uint32_t blend_control_0;
+    uint32_t stencil_refmask = 0;
+    uint32_t copy_control = 0;
+    uint32_t copy_dest_base = 0;
+    uint32_t copy_dest_pitch = 0;
+    uint32_t copy_dest_info = 0;
+    uint32_t copy_valid_mask = 0;
+    uint32_t setup_mode_control = 0;
+};
+
+// Retains only the raster registers used by the captured Xbox draw contract.
+// Call apply() for each decoded PM4 register write and snapshot() at a draw.
+struct GuestRasterRegisterState {
+    void reset() noexcept;
+    void apply(const GuestRegisterWrite& write) noexcept;
+    bool snapshot(CapturedRasterRegisters* output, std::string* error) const;
+    uint32_t observed_register_mask() const noexcept;
+
+private:
+    CapturedRasterRegisters registers_{};
+    uint32_t valid_mask_ = 0;
 };
 
 struct CapturedRasterState {
     uint32_t width;
     uint32_t height;
-    uint32_t sample_count;
+    uint32_t surface_pitch;
+    uint32_t sample_count = 1;
     uint32_t color_base_tiles;
     CapturedColorTargetFormat color_format;
+    bool depth_only = false;
     uint32_t depth_base_tiles;
     CapturedDepthTargetFormat depth_format;
     uint32_t color_write_mask;
@@ -273,13 +374,69 @@ struct CapturedRasterState {
     uint32_t scissor_x1;
     uint32_t scissor_y1;
     bool scissor_has_area;
+    uint32_t blend_control_0;
+    uint32_t depth_control = 0;
+    uint32_t stencil_refmask = 0;
+    enum class CullMode : uint8_t {
+        None,
+        Front,
+        Back,
+    } cull_mode = CullMode::None;
+    bool front_face_ccw = true;
+    uint32_t setup_mode_control = 0;
+    float viewport_x = 0.0f;
+    float viewport_y = 0.0f;
+    float viewport_width = 0.0f;
+    float viewport_height = 0.0f;
 };
+
+// Checks only framebuffer effects represented by the captured raster state.
+bool captured_draw_has_no_framebuffer_effects(
+    const CapturedRasterState& raster) noexcept;
 
 struct CapturedShaderConstants {
     std::array<std::array<uint32_t, 4>, 256> vertex_float_constants;
     std::array<std::array<uint32_t, 4>, 256> pixel_float_constants;
     bool pixel_b128;
     bool pixel_b129;
+    // False when the guest did not load the bank containing b128/b129. A
+    // caller may proceed only if the captured pixel shader does not read them.
+    bool pixel_boolean_constants_valid;
+};
+
+// Tracks only the constants and fetch descriptors referenced by the captured
+// VS/PS pair. This is a bounded draw-input snapshot, not a Xenos register file.
+struct CapturedXboxShaderRegisterState {
+    void reset() noexcept;
+    void apply(const GuestRegisterWrite& write) noexcept;
+    bool snapshot_constants(CapturedShaderConstants* constants,
+                           std::string* error) const;
+    bool validate_float_constants(
+        GuestShaderStage stage, const std::vector<uint32_t>& registers,
+        bool relative_indexing, std::string* error) const;
+    bool snapshot_vertex_fetch_descriptor(
+        uint32_t index, std::array<uint32_t, 2>* descriptor,
+        std::string* error) const;
+    bool snapshot_texture_fetch_descriptor(
+        uint32_t index, std::array<uint32_t, 6>* descriptor,
+        std::string* error) const;
+    bool snapshot(
+        CapturedShaderConstants* constants,
+        std::array<uint32_t, 2>* vertex_descriptor,
+        std::array<uint32_t, 6>* texture_descriptor,
+        std::string* error) const;
+
+private:
+    std::array<uint32_t, 2048> float_words_{};
+    std::array<bool, 2048> float_valid_{};
+    std::array<uint32_t, 256> fetch_words_{};
+    std::array<bool, 256> fetch_valid_{};
+    std::array<uint32_t, 8> bool_words_{};
+    std::array<bool, 8> bool_valid_{};
+    uint32_t vertex_control_ = 0;
+    uint32_t pixel_control_ = 0;
+    bool vertex_control_valid_ = false;
+    bool pixel_control_valid_ = false;
 };
 
 // Scans big-endian packet framing only. It does not interpret register writes
@@ -288,6 +445,52 @@ bool scan_captured_packet_stream(
     const uint8_t* stream_bytes,
     size_t byte_length,
     std::vector<PacketSpan>* output,
+    std::string* error);
+
+// Decodes one PM4 type-0 or type-1 packet into raw host-order register writes.
+// It does not update a GPU register file or apply state.
+bool decode_guest_register_writes(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    std::vector<GuestRegisterWrite>* output,
+    std::string* error);
+
+// Decodes the captured pointer-based PM4_IM_LOAD form. It identifies the
+// guest microcode span only; callers still provide and bound guest-memory IO.
+bool decode_captured_shader_program_load(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedShaderProgramLoad* output,
+    std::string* error);
+
+bool decode_captured_immediate_shader_program_load(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedImmediateShaderProgramLoad* output,
+    std::string* error);
+
+// Decodes the captured PM4_LOAD_ALU_CONSTANT memory-copy form and its bounded
+// target bank. Loading the returned span is a caller-owned guest-memory action.
+bool decode_captured_constant_load(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedConstantLoad* output,
+    std::string* error);
+
+// Converts a validated captured constant-load source span to host-order writes.
+bool decode_captured_constant_load_data(
+    const CapturedConstantLoad& load,
+    const uint8_t* source_bytes,
+    size_t byte_length,
+    std::vector<GuestRegisterWrite>* output,
+    std::string* error);
+
+// Decodes the captured three-dword PM4_INDIRECT_BUFFER form. It reports the
+// guest span only; it does not read or execute the indirect command buffer.
+bool decode_captured_indirect_buffer(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedIndirectBuffer* output,
     std::string* error);
 
 // Decodes the bounded control-flow prefix of the captured Xbox shader format.
@@ -299,11 +502,23 @@ bool decode_captured_shader_control_flow(
     std::vector<CapturedShaderControlFlow>* output,
     std::string* error);
 
-// Decodes only the captured vfetch_full and tfetch2D 96-bit instruction forms.
+// Decodes captured vfetch_full, vfetch_mini, and tfetch2D 96-bit forms. A mini
+// fetch's addressing fields are inherited from the preceding full fetch by the
+// shader translator; this parser reports only the fields encoded in the mini.
 // It reads instruction bytes but does not perform a fetch or translate them.
 bool decode_captured_shader_fetch_instruction(
     const uint8_t* instruction_bytes,
     size_t byte_length,
+    CapturedShaderFetchInstruction* output,
+    std::string* error);
+
+// Applies the vfetch_full address, source register/swizzle, fetch constant,
+// and stride to a following vfetch_mini. The mini's format and offset remain
+// its own. A full fetch resolves to itself; a mini without a preceding full
+// fetch is rejected.
+bool inherit_captured_vertex_fetch_fields(
+    const CapturedShaderFetchInstruction& instruction,
+    const CapturedShaderFetchInstruction* preceding_full_fetch,
     CapturedShaderFetchInstruction* output,
     std::string* error);
 
@@ -323,12 +538,30 @@ bool schedule_captured_shader_instructions(
     std::vector<CapturedShaderInstructionSchedule>* output,
     std::string* error);
 
-// Translates only the captured PM4_DRAW_INDX form. This decodes the guest
-// command into renderer inputs; it does not execute or emulate Xenos state.
+// Decodes the captured PM4_DRAW_INDX, DMA-source DRAW_INDX_2, and observed
+// AutoIndex DRAW_INDX_2 forms into renderer inputs; it does not execute or
+// emulate Xenos state.
 bool decode_captured_draw_indx(
     const uint8_t* packet_bytes,
     size_t byte_length,
     DecodedIndexedDraw* output,
+    std::string* error);
+
+// Decodes the captured PM4_INTERRUPT CPU-mask payload. This reports the
+// requested CPU bits only; the ReXGlue frontend owns callback dispatch.
+bool decode_captured_gpu_interrupt(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    uint32_t* cpu_mask,
+    std::string* error);
+
+// Decodes the four-payload-word ReXGlue PM4_XE_SWAP marker written by
+// VdSwap. This exposes the guest frontbuffer address and dimensions; it does
+// not read or emulate the Xenos frontbuffer.
+bool decode_guest_swap(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    DecodedGuestSwap* output,
     std::string* error);
 
 // Decodes the captured two-dword vertex-fetch descriptor. The dwords are
@@ -338,7 +571,7 @@ bool decode_captured_vertex_fetch(
     CapturedVertexFetch* output,
     std::string* error);
 
-// Decodes only the captured format-6 tiled 2D texture descriptor.
+// Decodes captured format-6 tiled RGBA8 and format-19 DXT2/3 2D descriptors.
 bool decode_captured_texture_fetch(
     const uint32_t descriptor_words[6],
     CapturedTextureFetch* output,
@@ -353,10 +586,20 @@ bool decode_captured_texture_sampling(
 
 // Decodes only the captured color/depth target, viewport, and scissor form.
 // This maps observed registers to neutral render state; it does not emulate
-// register writes or Xenos rasterization.
+// register writes or Xenos rasterization. Partial viewports require the known
+// output target extent because the captured surface has no height register.
 bool decode_captured_raster_state(
     const CapturedRasterRegisters& registers,
     CapturedRasterState* output,
+    std::string* error,
+    uint32_t target_width = 0,
+    uint32_t target_height = 0);
+
+// Decodes the live 1280x720 color Copy/Convert register form. This describes
+// the resolve request only; callers still need a Vulkan EDRAM source image.
+bool decode_captured_copy_state(
+    const CapturedRasterRegisters& registers,
+    CapturedCopyState* output,
     std::string* error);
 
 // Resolves the stage-relative 256-register VS/PS float windows and the packed
@@ -372,8 +615,8 @@ bool decode_captured_shader_constants(
     CapturedShaderConstants* output,
     std::string* error);
 
-// Untiles the captured 8_8_8_8, 8-in-32, tiled 2D texture into linear texel
-// order while applying the captured per-dword byte swap. Other layouts fail.
+// Converts captured 8_8_8_8 tiled and DXT2/3 tiled or linear textures into
+// linear RGBA8 texels, applying the captured endian mode. Other layouts fail.
 bool untile_captured_texture_2d(
     const CapturedTextureFetch& texture,
     const uint8_t* guest_bytes,
@@ -389,6 +632,25 @@ bool normalize_captured_buffer_bytes(
     const uint8_t* guest_bytes,
     size_t byte_length,
     std::vector<uint8_t>* vulkan_bytes,
+    std::string* error);
+
+// Reads the captured 8-in-16 index form into Vulkan-ready bytes and returns
+// the highest referenced vertex index.
+bool decode_captured_index_data(
+    const DecodedIndexedDraw& draw,
+    const uint8_t* guest_bytes,
+    size_t byte_length,
+    std::vector<uint8_t>* vulkan_bytes,
+    uint32_t* maximum_vertex_index,
+    std::string* error);
+
+// Computes the smallest guest vertex span covering one captured attribute.
+bool captured_vertex_required_bytes(
+    uint32_t maximum_vertex_index,
+    uint32_t stride_bytes,
+    uint32_t attribute_offset_bytes,
+    uint32_t attribute_size_bytes,
+    uint32_t* required_bytes,
     std::string* error);
 
 }  // namespace shift::xbox

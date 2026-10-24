@@ -9,6 +9,10 @@ enable_testing()
 add_library(shift_xbox_draw_input STATIC src/xbox_draw_input.cpp)
 target_include_directories(shift_xbox_draw_input PUBLIC include)
 
+add_library(shift_xbox_guest_ring STATIC src/xbox_guest_ring.cpp)
+target_include_directories(shift_xbox_guest_ring PUBLIC include)
+target_link_libraries(shift_xbox_guest_ring PUBLIC shift_xbox_draw_input)
+
 add_library(shift_xbox_shader_translate STATIC src/xbox_shader_translate.cpp)
 target_include_directories(shift_xbox_shader_translate PUBLIC include)
 target_link_libraries(shift_xbox_shader_translate PUBLIC shift_xbox_draw_input)
@@ -16,6 +20,10 @@ target_link_libraries(shift_xbox_shader_translate PUBLIC shift_xbox_draw_input)
 add_executable(shift_xbox_draw_input_check tests/xbox_draw_input_check.cpp)
 target_link_libraries(shift_xbox_draw_input_check PRIVATE shift_xbox_draw_input)
 add_test(NAME shift_xbox_draw_input_check COMMAND shift_xbox_draw_input_check)
+
+add_executable(shift_xbox_guest_ring_check tests/xbox_guest_ring_check.cpp)
+target_link_libraries(shift_xbox_guest_ring_check PRIVATE shift_xbox_guest_ring)
+add_test(NAME shift_xbox_guest_ring_check COMMAND shift_xbox_guest_ring_check)
 
 add_executable(shift_xbox_shader_translate_check tests/xbox_shader_translate_check.cpp)
 target_link_libraries(shift_xbox_shader_translate_check PRIVATE shift_xbox_shader_translate)
@@ -27,6 +35,10 @@ if(NOT Vulkan_FOUND)
   message(STATUS "Vulkan SDK not found; shift_vulkan_probe will not be built")
   return()
 endif()
+
+add_library(shift_xbox_live_vulkan_renderer STATIC src/xbox_live_vulkan_renderer.cpp)
+target_include_directories(shift_xbox_live_vulkan_renderer PUBLIC include)
+target_link_libraries(shift_xbox_live_vulkan_renderer PUBLIC Vulkan::Vulkan)
 
 add_executable(shift_vulkan_probe src/vulkan_probe.cpp)
 target_link_libraries(shift_vulkan_probe PRIVATE Vulkan::Vulkan)
@@ -44,6 +56,85 @@ find_program(GLSLANG_VALIDATOR NAMES glslangValidator)
 
 if(GLSLANG_VALIDATOR)
   set(SHIFT_VULKAN_SHADER_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders)
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.vert.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/live_draw_smoke.vert
+            -o ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.vert.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/live_draw_smoke.vert
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/live_draw_smoke.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/live_draw_smoke.frag
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/live_draw_rectlist.geom.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/live_draw_rectlist.geom
+            -o ${SHIFT_VULKAN_SHADER_DIR}/live_draw_rectlist.geom.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/live_draw_rectlist.geom
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.vert.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0.vert
+            -o ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.vert.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0.vert
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0.frag
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_single.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0_single.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_single.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0_single.frag
+    VERBATIM
+  )
+  add_executable(xbox_live_vulkan_renderer_check tests/xbox_live_vulkan_renderer_check.cpp)
+  add_dependencies(xbox_live_vulkan_renderer_check shift_xbox_live_vulkan_renderer)
+  target_link_libraries(xbox_live_vulkan_renderer_check PRIVATE shift_xbox_live_vulkan_renderer)
+  add_custom_target(shift_xbox_live_vulkan_renderer_smoke_shaders
+    DEPENDS
+      ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.vert.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/live_draw_rectlist.geom.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.vert.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_single.frag.spv
+  )
+  add_dependencies(xbox_live_vulkan_renderer_check shift_xbox_live_vulkan_renderer_smoke_shaders)
+  add_test(
+    NAME xbox_live_vulkan_renderer_check
+    COMMAND xbox_live_vulkan_renderer_check
+            ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.vert.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/live_draw_rectlist.geom.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.vert.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_single.frag.spv
+  )
+  set_tests_properties(xbox_live_vulkan_renderer_check PROPERTIES SKIP_RETURN_CODE 77)
+
   add_custom_command(
     OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/triangle.vert.spv
     COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}

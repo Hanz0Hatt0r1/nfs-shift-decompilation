@@ -1,0 +1,81 @@
+{
+  "schema": "SHIFT.Process2RedmiNote8ProVulkanLateReadback/1",
+  "observed_at": "2026-10-24T12:43:07+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:33153",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "activity_foreground": true
+  },
+  "build": {
+    "apk_sha256": "11fdb68e98500afb01f90610bcb083a2585abdb10eef6427cdc60bc87ec05fa3",
+    "plugin_sha256": "92505090ce1d3abf4e46b75959d657feef4de6900e95234403cc4a56e63c1932",
+    "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "android_target": "arm64-v8a, Android API 29, NDK 28.2.13676358",
+    "installation": "adb install --no-streaming -r succeeded with the existing signer"
+  },
+  "game_data": {
+    "root": "/sdcard/Android/data/com.hanz0hatt0r.nfsshift/files/game",
+    "default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "matches_expected_retail_xex": true
+  },
+  "screens": {
+    "startup_logo": {
+      "captured_at": "2026-10-24T12:39:44+03:00",
+      "evidence_path": "evidence/process2_redmi_note8pro_vulkan_retail_logo_20261024.png",
+      "sha256": "3799c1a0c29cc70dbdea0ee55e3d1abe7345d5413b66a038eb6083d1cb923b1e",
+      "matches_previously_recorded_original_logo": true
+    },
+    "black_recheck": {
+      "captured_at": "2026-10-24T12:43:07+03:00",
+      "evidence_path": "evidence/process2_redmi_note8pro_vulkan_post_splash_black_20261024.png",
+      "sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+      "matches_previously_recorded_black_screen": true
+    }
+  },
+  "runtime": {
+    "device_log_path": "files/nfs_shift/user/logs/nfs_shift_004.log",
+    "repository_evidence_log": "evidence/process2_redmi_note8pro_vulkan_late_readback_20261024.log.gz",
+    "raw_log_sha256": "40289d9e08097b9133ac6e506f0728220c6358d5f3b23d8fa1d43c6257a1d24c",
+    "first_vulkan_submission": "2026-10-24 12:39:40.734",
+    "last_vulkan_submission": "2026-10-24 12:42:15.398",
+    "last_copy_convert_accept": "2026-10-24 12:42:15.312",
+    "submitted_frames": 853,
+    "submitted_indexed_draw_packets": 1416,
+    "accepted_copy_convert_submissions": 853,
+    "late_readback": {
+      "submitted_frame": 500,
+      "captured_at": "2026-10-24 12:41:14.948",
+      "extent": "1280x720",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "non_black_pixels": 0,
+      "fnv1a64": "68D8B1C5D0E72325"
+    },
+    "guest_file_open_failures": [
+      {
+        "time": "2026-10-24 12:39:49.754",
+        "path": "d:\\pakfiles\\dir\\audio.bff"
+      },
+      {
+        "time": "2026-10-24 12:39:50.805",
+        "path": "d:\\characters\\drivers2.lod"
+      },
+      {
+        "time": "2026-10-24 12:39:52.567",
+        "path": "d:\\tracks\\cameraconfig.xml"
+      },
+      {
+        "time": "2026-10-24 12:42:15.764-12:42:15.769",
+        "path": "d:\\tracks\\_data\\instances\\scenes\\menu_background.xml and d:\\tracks\\_data\\static\\scenes\\menu_background.xml"
+      }
+    ]
+  },
+  "interpretation": {
+    "verified": "The current Vulkan plugin presented the original SHIFT logo on startup, then produced a fully black 1280x720 Vulkan guest-output readback at submitted frame 500. A subsequent device screenshot was byte-identical to the recorded post-splash black screen while the game activity remained foreground.",
+    "not_proven": "The frame-500 readback does not characterize every submitted frame or prove why the retail scene is black. Four missing menu_background.xml opens occur after hundreds more Vulkan submissions; their causal relation to the black output is unproven. The renderer is not ready under the sustained visible-game-image criterion."
+  }
+}

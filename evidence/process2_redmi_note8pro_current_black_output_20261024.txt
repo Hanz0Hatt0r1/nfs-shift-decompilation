@@ -1,0 +1,57 @@
+Process 2 Android retail-output check — 2026-10-24
+
+Device and app
+- Redmi Note 8 Pro (begonia), Android API 33, Mali-G76 MC4.
+- ADB device: 192.168.1.32:33153.
+- Foreground activity: com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity.
+- Package update time: 2026-10-23 23:57:39; running PID at check: 32421.
+
+Observed output
+- A fresh ADB screencap is fully black; SHA-256:
+  2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839.
+- Runtime log: files/nfs_shift/user/logs/nfs_shift_031.log.
+- Runtime-log SHA-256:
+  397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21.
+- The first logged batch contained 24 indexed draws with no supported raster
+  state and submitted no Vulkan frame.
+- The next batch contained 26 indexed draws: 25 had supported raster state,
+  24 were recognized as framebuffer no-ops, and one had complete captured
+  shader inputs, translated to project GLSL, and resolved resource bytes.
+- The plugin submitted that captured draw to the Vulkan presenter at 1280x720.
+  Its VK_FORMAT_A2B10G10R10_UNORM_PACK32 readback had zero non-black pixels
+  (FNV-1a B161DE6EEC272325). A later draw submission is also logged, without a
+  subsequent non-black retail readback.
+- The same log records one consumed PM4_INTERRUPT and one guest callback.
+- The mode-6 rectangle was accepted as a source-0/sample-0 Copy/Convert to
+  destination 0x0975E000 at 1280x720. Xenos EDRAM mode 6 is documented as
+  copy/resolve in the [Xenia Xenos register reference](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h).
+- A separate live Linux diagnostic of the same captured 108-byte vertex and
+  36-byte pixel shader pair recorded vertex input location 1 as `(0,0,0,0)`;
+  the vertex shader forwards it through location 0, and the pixel shader
+  forwards that interpolator to color. This is consistent with the black
+  output for this early captured draw, but does not prove later retail shaders
+  or frames.
+
+Follow-up input check
+- The foreground process remained PID 32421 after the input check.
+- A temporary Xbox 360 virtual controller created through `/dev/uinput` was
+  registered by Android InputReader as a `GAMEPAD | JOYSTICK` device using
+  `Vendor_045e_Product_028e.kl`.
+- `BTN_START` and, in a separate run, `BTN_SOUTH` (Android `BUTTON_A`) were
+  each held for two seconds, then released. InputReader registered each
+  temporary controller. Fresh screenshots after both presses remained fully
+  black with the same SHA-256 above, the runtime log kept the same SHA-256
+  above, and no later PM4 batch or guest swap appeared.
+- The controller was removed after the press; the NFS Shift process was left
+  running in the foreground.
+
+Conclusion
+The Android app loads the Process 2 plugin and submits at least one captured
+retail draw through Vulkan, but the retail shader/output path still produces
+black in this startup state. The mode-6 rectangle is handled as a copy/resolve,
+not as a color draw. The current captured color draw's zero interpolator is
+consistent with the black result; the Android run still lacks later guest draw
+batches with visible retail content. Therefore visible game output remains
+unverified.
+Synthetic magenta readback and renderer smoke tests remain diagnostic only and
+do not count as retail output.

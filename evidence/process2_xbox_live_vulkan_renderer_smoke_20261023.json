@@ -1,0 +1,180 @@
+{
+  "format": "SHIFT.XboxLiveVulkanRendererSmoke/1",
+  "status": "plugin_fixture_and_live_retail_point_draws_reached_vulkan_submit; visual_parity_unverified",
+  "project_path": {
+    "guest_packets": [
+      "PM4_DRAW_INDX",
+      "PM4_DRAW_INDX_2 (DMA form)",
+      "PM4_XE_SWAP"
+    ],
+    "shader_path": "captured microcode -> project GLSL translator -> glslang -> Vulkan 1.1 SPIR-V",
+    "resource_path": [
+      "guest indices normalized to uint16",
+      "captured FLOAT3 vertex bytes normalized",
+      "captured tiled texture untiled to RGBA8"
+    ],
+    "submission": "captured indexed draws are batched to XE_SWAP and rendered into the ReXGlue presenter output image",
+    "gpu_emulation_plugin_dependency": false,
+    "renderer_window_system_dependency": false
+  },
+  "smoke_test": {
+    "kind": "synthetic offscreen AutoIndex point draw with no vertex inputs; pipeline/resource smoke only",
+    "vulkan_api": "1.1",
+    "target_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "linux": {
+      "device": "NVIDIA GeForce GTX 950",
+      "validation_layer_enabled": true,
+      "validation_errors": 0,
+      "result": "passed"
+    },
+    "android_arm64": {
+      "device": "Redmi Note 8 Pro",
+      "gpu": "Mali-G76 MC4",
+      "validation_layer_enabled": false,
+      "result": "passed",
+      "latest_wifi_adb_run": {
+        "date": "2026-10-23",
+        "device_identity": "begonia, Android 13/API 33, arm64-v8a",
+        "checks_passed": [
+          "shift_xbox_draw_input_check",
+          "shift_xbox_guest_ring_check",
+          "shift_xbox_shader_translate_check",
+          "xbox_live_vulkan_renderer_check"
+        ],
+        "renderer_result": "Vulkan 1.1 offscreen AutoIndex point draw with no vertex buffer produced non-black pixels on Mali-G76 MC4",
+        "validation_layer_enabled": false,
+        "retail_frame_observed": false
+      }
+    }
+  },
+  "visual": {
+    "scope": "historical headless run before live retail draws were submitted; latest submission is recorded below",
+    "screenshot": "/tmp/shift_native_live_20261023.png",
+    "sha256": "c1161e09bb43363d2777bdb410b3e59e98b33eae3b374322b5e86079ab089a12",
+    "result": "black presenter output in that earlier run; it predates the two Vulkan submissions in latest_retail_headless_recheck"
+  },
+  "plugin_build": {
+    "target": "rexgpu-shift-native",
+    "factory_smoke": "passed",
+    "live_ring_abi_smoke": "passed on Linux: fixture PM4 stream published through ReXGlue guest memory and CP_RB_WPTR; two indexed draws were prepared, XE_SWAP refreshed the presenter image, Vulkan submission returned success, and read-pointer writeback was verified",
+    "presenter_submit_fixture": {
+      "kind": "synthetic plugin integration; not a live retail stream",
+      "vulkan_api": "1.1 renderer path",
+      "host_device": "NVIDIA GeForce GTX 950",
+      "draws_submitted": 2,
+      "draw_forms": [
+        "captured PM4_DRAW_INDX packet",
+        "fixture PM4_DRAW_INDX_2 DMA form"
+      ],
+      "captured_inputs": [
+        "exact 20-byte PM4_DRAW_INDX packet at captured ring offset 0x2C64",
+        "captured raster register words and fetch descriptor words",
+        "captured 108-byte pixel-shader instruction slice",
+        "captured normalized index values [0,1,2,2,1,3]"
+      ],
+      "synthetic_inputs": [
+        "vertex shader",
+        "constant values",
+        "white texture payload"
+      ],
+      "read_pointer_writeback": "passed",
+      "vulkan_validation_layer": "enabled with VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation; plugin/presenter smoke passed without validation diagnostics",
+      "retail_frame_parity": false
+    },
+    "links_rexgpu_xenos": false,
+    "sdk_requirement": "separate rexui-vulkan target"
+  },
+  "latest_retail_headless_recheck": {
+    "host_device": "NVIDIA GeForce GTX 950",
+    "surface": "Gamescope headless + Xwayland, 1280x720; no visible game window",
+    "plugin_loaded": true,
+    "presenter_created": true,
+    "guest_ring_initialized": true,
+    "guest_ring_address": "0x09752580",
+    "guest_ring_capacity_bytes": 32768,
+    "timeout_seconds": 10,
+    "kill_grace_seconds": 5,
+    "logging": "debug",
+    "game_executable_sha256": "38b1d3fd5ff21714deeda8044be7bc415cab922e7747af29db61faa5a9c9f38f",
+    "gpu_plugin_sha256": "81e44d3a43dec9dfa28434a173b8097d2a68a97caee2cc86e26d41e2efd7c3ba",
+    "private_log": "/tmp/process2-live-nfs/headless-20261023/retail-live-v6/shift-native-debug.log",
+    "guest_batches": [
+      {
+        "pm4_packets": 73,
+        "draw_indx_2_packets": 24,
+        "draws_with_supported_raster_state": 0,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 970,
+        "draw_indx_2_packets": 26,
+        "autoindex_point_draws_resolved": 24,
+        "other_draws_unresolved": 1,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 1,
+        "presenter_extent": "1280x720",
+        "frontbuffer_guest_address": "0x0975e000"
+      },
+      {
+        "pm4_packets": 785,
+        "draw_indx_2_packets": 50,
+        "autoindex_point_draws_resolved": 24,
+        "other_draws_unresolved": 1,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 1,
+        "presenter_extent": "1280x720",
+        "frontbuffer_guest_address": "0x0975e000"
+      }
+    ],
+    "totals": {
+      "pm4_packets": 1828,
+      "draw_indx_2_packets": 100,
+      "autoindex_point_draws_submitted": 48,
+      "guest_swaps": 2,
+      "vulkan_frames_submitted": 2
+    },
+    "window_capture": {
+      "path": "process2_xbox_live_retail_window_black_20261023.png",
+      "sha256": "73046986e81df0e77e0a33d0e41af61ae828d8d37656bed18b485d8a214f8426",
+      "extent": "1920x1080",
+      "pixel_histogram": {
+        "black": 2073574,
+        "white_cursor": 26
+      },
+      "result": "The captured game window remained black apart from the cursor after both Vulkan submissions; no visible retail content was present."
+    },
+    "draw_forms": {
+      "autoindex_point_list_count_1": 96,
+      "autoindex_rectangle_list_count_3": 4,
+      "dma_indexed_draws_observed": 0
+    },
+    "result": "Historical point-only run. The later current-plugin run submitted one captured rectangle-list draw alongside 24 points at each guest swap; see the linked latest evidence. Visible retail output remains unverified.",
+    "retail_vulkan_submission_confirmed": true,
+    "game_window_capture_confirmed": true,
+    "visible_retail_content_confirmed": false,
+    "retail_output_pixels_verified": false,
+    "superseded_by": "process2_xbox_live_guest_ring_20261023.json#latest_live_rectangle_submission"
+  },
+  "android_full_game_attempt": {
+    "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, arm64-v8a)",
+    "renderer_regressions": "rebuilt for Android API 33 and rerun on Redmi Note 8 Pro: draw input, guest ring, shader translation, and synthetic Vulkan 1.1 offscreen AutoIndex point draw with no vertex buffer passed",
+    "rexglue_plugin_ndk_build": "blocked before plugin link at Process 1-owned guest fiber backend",
+    "renderer_test_build_configuration": "Android NDK r28.2, arm64-v8a, API 33",
+    "plugin_build_configuration": "Android NDK r28.2, arm64-v8a, API 33",
+    "sdk_platform_detection": "android-arm64",
+    "sdk_android_compile_progress": "rexui-vulkan backend passed; Android SDL surface/window source objects passed; float parsing, chrono, and timer-thread compatibility sources compiled",
+    "plugin_source_object": "shift_native_gpu_plugin.cpp compiled for Android arm64; final shared-library link not reached",
+    "first_blocking_error": "src/core/fiber_posix.cpp cannot compile against Android Bionic because getcontext, makecontext, and swapcontext are unavailable; guest fiber/scheduler is Process 1 owned",
+    "game_project_android_entrypoint": "not present: current game CMake target is add_executable(nfs_shift ...) with no Android Activity, manifest, or APK packaging target",
+    "full_game_runtime": "not built or installed; Android renderer checks remain offscreen and do not exercise the game runtime",
+    "retail_frame_observed": false
+  },
+  "limits": [
+    "The captured game window remained black apart from the cursor; visible retail content remains unverified.",
+    "Of four observed rectangle-list draws, two reached Vulkan (one per swap); two variants were rejected because captured mode_control=0x00000006 and color_info=0 are outside the raster contract.",
+    "Each guest swap clears to black and composes only supported draws collected since that swap; Xenos EDRAM accumulation is not implemented.",
+    "The captured output uses a gamma target while the presenter image is A2B10G10R10_UNORM; target gamma parity remains unverified.",
+    "The captured black texture border alpha is unresolved; the live sampler uses transparent black provisionally.",
+    "The synthetic smoke draw does not establish retail frame parity."
+  ]
+}

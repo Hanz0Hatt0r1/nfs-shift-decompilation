@@ -11,12 +11,15 @@ boundary which translates the title's actual draw inputs into the existing
 neutral render contract. The production path must not load or depend on
 `rexgpu-xenos` or another Xenos GPU emulator.
 
-The evidence below now contains one correlated XEX-originated `PM4_DRAW_INDX`
-packet, its resources, shaders, and a register-file snapshot. The project-owned
-path now translates the captured VS/PS subset and submits that captured draw
-from an isolated bundle through Vulkan 1.1. It does not yet consume the live
-ReXGlue guest ring or render the complete title. The production path must remain
-emulator-free.
+The evidence contains one correlated XEX-originated `PM4_DRAW_INDX` packet,
+its resources, shaders, and a register-file snapshot. The project-owned path
+translates the captured VS/PS subset and submits that draw from an isolated
+bundle through the Vulkan 1.1 core. The ReXGlue plugin now consumes the live
+ring, applies the captured state/resource/shader subset, and submits supported
+draws at `PM4_XE_SWAP`. That plugin-to-live-game route has not yet been observed
+in a running title, so the bundle result does not prove game-level routing.
+The production path remains independent of `rexgpu-xenos` and other GPU
+emulators.
 
 ## Source and branch baseline
 
@@ -25,8 +28,10 @@ emulator-free.
   `53263b40`; its README already records the absence of an Xbox/Xenos frontend.
 - The local `/home/pes/nfs-shift-decompilation` checkout was 142 commits behind
   that remote tip and contained unrelated user files. It was not modified.
-- The external ReXGlue SDK checkout had user-owned, uncommitted Android Vulkan
-  and shader changes. It was inspected read-only; no SDK files were changed.
+- The ReXGlue SDK Vulkan-provider split is in the separate
+  `process2/rexui-vulkan` worktree. Follow-up Android portability changes are
+  in SDK commit `02f19ec` on that branch; they do not touch the Process 1 game
+  runtime checkout.
 
 ## What the Xbox input actually looks like
 
@@ -49,14 +54,102 @@ emulation that this project is explicitly excluding. A project-owned frontend
 can instead consume only the command subset proven by a real SHIFT capture and
 translate it into Vulkan draws; it should fail closed on unsupported packets.
 
+The minimal host/core seam is `GuestRingBatch` in
+`native_vulkan/include/shift_xbox_guest_ring.hpp`: the host owns ReXGlue
+callbacks, guest-memory access, and the read/write cursor; the platform-neutral
+core copies the committed bytes, returns framed packet spans, and reports the
+next dword read index. It has no ReXGlue, XCB, Wayland, or Android types. This
+contract is implemented and tested. The plugin now supplies the live guest
+memory reader and ring/MMIO callbacks. It requires no P-code or guest-scheduler
+change in Process 1.
+
+### ReXGlue plugin and presentation seam
+
+The current ReXGlue GPU plugin ABI already provides the needed guest-input
+boundary: a plugin implements `IGraphicsSystem`, receives
+`InitializeRingBuffer` and `EnableReadPointerWriteBack`, and sees the committed
+ring tail through the `CP_RB_WPTR` MMIO write in `SetupGuestGpu`. A replacement
+plugin can use this ABI without intercepting or changing recompiled title
+functions.
+
+The SDK's Vulkan provider/presenter has been split into a standalone
+`rexui-vulkan` target (SDK PR #528), separate from `rexgpu-xenos`. The
+project-owned `rexgpu-shift-native` plugin links that target and the existing
+`IGraphicsSystem` ABI; it does not link the runtime-loaded Xenos GPU renderer.
+The provider is created with GPU-emulation features disabled. Follow-up SDK
+work adds Android SDL `ANativeWindow` surface selection and keeps XCB/Wayland
+linkage on GNU/Linux only. Its Vulkan backend now cross-compiles for Android;
+the full plugin still depends on the ReXGlue runtime and is blocked by the
+Android guest-fiber backend described below.
+
+The project plugin implements that ABI and routes `CP_RB_WPTR` updates to a
+worker that snapshots the ring, expands indirect buffers, applies observed
+register and constant writes, and copies pointer-based `IM_LOAD` shader spans.
+At each supported `DRAW_INDX`, it translates the bounded VS/PS pair to project
+GLSL, compiles Vulkan 1.1 SPIR-V, resolves captured index/vertex/texture bytes,
+and queues a draw. At `PM4_XE_SWAP`, it submits the queued draws into the
+presenter's Vulkan output image. The supported form is narrow: the captured
+triangle-list/index form, FLOAT3 vertex layout, format-6 texture, shader pair,
+sampling state, raster state, and blend control. Unsupported states and
+resources fail closed. The renderer clears each output image; it does not
+reconstruct Xenos EDRAM accumulation or import a completed guest frontbuffer.
+
+The SDK target split is in SDK PR #528; the plugin and ring bridge are in NFS
+Process 2 PR #2161. On Redmi Note 8 Pro (Android 13/API 33), the Android Vulkan
+renderer smoke passes. The SDK's new Android build selection reports
+`android-arm64`; float parsing, clock conversion, timer-thread, Android surface,
+and Vulkan backend sources now compile with NDK r28.2. The full plugin build
+then stops in `src/core/fiber_posix.cpp`: Android Bionic exposes `ucontext_t`
+but not `getcontext`, `makecontext`, or `swapcontext`. That guest-fiber/scheduler
+code belongs to Process 1 and was not changed here.
+
+The game project itself currently declares only `add_executable(nfs_shift ...)`
+and has no Android Activity/manifest or APK packaging target. Therefore no
+Android game runtime or installable full-game build has been produced. The
+existing Linux `nfs_shift` process remains a Linux executable and was not
+replaced or pushed to the phone. The Android renderer evidence below is only
+offscreen coverage, not a full-game test.
+
+### Verification
+
+- The ReXGlue plugin built with Clang 22.1.8; its factory and live-ring ABI
+  CTests pass. The live-ring smoke now creates the Vulkan presenter, writes a
+  bounded fixture into ReXGlue guest memory, publishes `CP_RB_WPTR`, and checks
+  read-pointer writeback. It includes the exact captured `PM4_DRAW_INDX`
+  packet, captured raster/fetch words, a captured 108-byte PS instruction
+  slice, and captured index values; it uses a synthetic VS, constants, and
+  white texture. Both draw forms are prepared and submitted at fixture
+  `XE_SWAP` through the Vulkan presenter. This validates the plugin-to-renderer
+  wiring, not a live retail stream or retail output parity.
+- `ldd` on `librexgpu-shift-native.so` resolves `librexruntime.so` and the SDK's
+  X11/Wayland libraries, with no `librexgpu-xenos` dependency. The common SDK
+  runtime still compiles generic Xenos format helpers; it does not include the
+  runtime-loaded Xenos command processor plugin.
+- Native Vulkan CTest passed 4/4, including the live renderer core check. On
+  Redmi Note 8 Pro (Android API 33, Mali-G76 MC4), the draw-input, guest-ring,
+  shader-translation, and Vulkan 1.1 offscreen indexed-draw executables passed.
+  The synthetic offscreen draw is a renderer smoke, not a live game frame.
+- The separate captured XEX draw bundle also ran on the phone, within 2/255
+  maximum RGB delta of the GTX 950 output. It starts from a black clear and is
+  not a full scene or a live plugin run.
+- No retail draw has been observed through `rexgpu-shift-native`. Prior Linux
+  runs loaded the plugin and consumed live PM4 batches, but submitted zero
+  Vulkan frames. The `rexui-vulkan` backend and Android surface sources
+  cross-compile, but the complete ReXGlue runtime build is blocked by missing
+  Bionic ucontext switching primitives. The game project also has no Android
+  Activity/APK target.
+- A separate Gamescope headless run with the current plugin created a presenter
+  and initialized the guest ring, but logged no indexed-draw submission before
+  its 70-second timeout. It ran at info log level and did not retain per-batch
+  packet counts; live retail draw submission remains unverified.
+
 ## What the existing renderer and captures prove
 
-The current remote `main` and Process 2 branch contain a Vulkan 1.1 native core
-with a headless execution path, neutral geometry/resource packets, shader
-translation and interface validation, and separate Android and XCB surface
-backends. `native_vulkan/README.md` states that the core accepts D3D9 capture
-bundles and neutral SHIFT render packets, not PM4 ring data or Xenos shader
-microcode.
+The Process 2 branch contains a platform-independent Vulkan 1.1 core and a
+separate ReXGlue plugin frontend. The core owns buffers, shaders, textures,
+pipeline state, and Vulkan submission; ReXGlue owns the live ring, guest-memory
+access, Vulkan provider/presenter, and window surface. The Android smoke target
+exercises the core offscreen; it does not provide a ReXGlue game app.
 
 The raw D3D9 intake and renderer audits (`PHASE600_RAW_D3D9_CAPTURE_AUDIT`,
 `PHASE621_RENDERER_FRONTIER_AUDIT`, and
@@ -286,14 +379,57 @@ cross-checked against public Xenia
 for documentation only; no Xenia runtime code is used. Evidence is recorded in
 `evidence/process2_xbox_pm4_stream_20261023.json`.
 
-This is the first XEX-originated indexed draw submitted through the
-project-owned Vulkan path. Its fetch metadata indicates a textured resource,
-but the draw is not identified as a vehicle draw. The original packet, shader,
+The same private stream contains six `PM4_INDIRECT_BUFFER` packets. A bounded
+decoder extracts their observed 32-bit guest addresses and dword lengths
+(three distinct spans, two reused). `expand_guest_indirect_buffers` resolves
+and frames live spans through the plugin's guest-memory reader, retaining
+source address and nesting depth while rejecting short mappings, cycles,
+malformed packets, and over-limit streams. Its regression uses the captured
+first span (`0x0975b660`, 74 dwords) with a constructed 74-dword NOP payload;
+that payload tests span resolution only and is not represented as capture data.
+The private capture does not include bytes for the indirect spans. The live
+plugin uses supported shader, resource, and raster data for Vulkan submission;
+it does not implement general Xenos state or EDRAM semantics.
+
+The platform-independent `snapshot_guest_ring_batch` helper accepts a ring
+memory span and committed read/write dword indexes, copies the unread interval
+across wraparound, and frames the copied PM4 packets. Its test places the exact
+captured `DRAW_INDX` across the ring end and sends it through the bounded draw
+decoder. The plugin connects it to `InitializeRingBuffer` and `CP_RB_WPTR`,
+reads and expands live PM4 batches, applies the captured raster/shader input
+subset, resolves the observed draw resources, and submits supported draws at
+`XE_SWAP`. The Linux presenter smoke exercises that route with mixed captured
+and synthetic inputs. Running a retail guest through the plugin remains the
+live integration gate.
+
+The paired `guest_ring_byte_length_from_size_log2` helper implements the
+ReXGlue `1 << (size_log2 + 3)` capacity rule with the same 64 MiB ceiling and
+rejects overflow-sized inputs before any shift or allocation.
+
+As an offline cross-check, the same helper consumed the complete private 19,784
+byte diagnostic capture after its exact bytes were copied into a zero-filled
+32 KiB test ring. It framed all 247 packets and decoded the four captured
+`DRAW_INDX` commands with index counts 6, 6, 6, and 60. The ring capacity and
+head/tail values in that check are synthetic harness values, so this is not
+live ReXGlue ring evidence. The type-0 decoder also accepted all 162 observed
+type-0 packets and extracted 4,436 raw `(register, value)` pairs. In the live
+plugin, only the 15 captured raster registers are retained for a draw-state
+check; this is not general Xenos register emulation. The captured pointer-based
+`IM_LOAD` packets also identify the 105-dword VS at `0x09D568E0` and 30-dword
+PS at `0x09D50460`; the live plugin translates these bounded spans and uses
+the compiled modules for its supported draw form. Type-1 decoding is covered
+by a compact unit case. Details are in
+`evidence/process2_xbox_guest_ring_snapshot_20261023.json`.
+
+This is one XEX-originated indexed draw submitted through the project-owned
+Vulkan path from an isolated capture bundle. Its fetch metadata indicates a
+texture, but the draw is not identified as a vehicle draw. The packet, shader,
 resource, and state were observed during an Xenos diagnostic run; the native
-submission uses the captured inputs, project-owned shader translation, and
+bundle submission uses captured inputs, project-owned shader translation, and
 project-owned Vulkan code. Neither the diagnostic renderer nor its SPIR-V is
-linked, invoked, or reused by this path. The raw capture and shader-module
-hashes are recorded in
+linked, invoked, or reused. This is not yet a submission from the live ReXGlue
+plugin or proof of a complete game frame. Raw capture and shader-module hashes
+are recorded in
 [`process2_xbox_first_native_draw_20261023.json`](../evidence/process2_xbox_first_native_draw_20261023.json).
 
 On the host, `shift_vulkan_bundle_execute` submitted six indices to a
@@ -309,13 +445,22 @@ for the isolated draw, not Android game integration or retail-frame parity.
 - `shift_xbox_draw_input_check`: passed; covers the captured packet, mismatched
   binding, target format/viewport/scissor state, shader constant addressing and
   branch values, bounded shader control-flow, instruction schedule, fetch, and
-  raw ALU-field decode, unsupported opcode/layout/sampling values, non-zero
-  window offsets, and truncated input.
+  raw ALU-field decode, captured pointer-based `IM_LOAD` decoding, PM4
+  raster-register tracking, unsupported
+  opcode/layout/sampling values, non-zero window offsets, and truncated input.
 - `shift_xbox_shader_translate_check`: passed; selects the captured `b128` /
   `b129` path and confirms unsupported control flow is rejected. The VS/PS GLSL
   compiled with `glslangValidator -V --target-env vulkan1.1`, and both modules
   passed `spirv-val --target-env vulkan1.1`.
-- Linux CMake build and CTest passed. The captured bundle executed on a GTX 950
+- `shift_xbox_guest_ring_check`: passed on Linux and as an arm64-v8a binary on
+  Redmi Note 8 Pro. It covers ring wraparound, captured `DRAW_INDX` framing,
+  bounded indirect-buffer expansion/provenance, short-span and cycle rejection,
+  empty spans, truncation, invalid capacity, and out-of-range pointers.
+- `shift_xbox_draw_input_check`: passed on Linux and as an arm64-v8a binary on
+  Redmi Note 8 Pro; this includes the captured `PM4_INDIRECT_BUFFER` span
+  decoder regression. The device reports Android API 33 / `arm64-v8a`.
+- Linux native CMake/CTest checks: 4/4 passed; ReXGlue plugin CTest: 1/1
+  passed. The captured bundle executed on a GTX 950
   with Vulkan validation enabled and zero errors; the logo pixels come from the
   XEX-originated draw, not synthetic geometry.
 - The same captured bundle executed through the offscreen Android arm64-v8a
@@ -331,17 +476,13 @@ for the isolated draw, not Android game integration or retail-frame parity.
 
 ## Next native-renderer work
 
-Next, connect the ReXGlue guest graphics-service boundary to a project-owned
-ring consumer and add evidence-backed register/resource tracking for live ring
-updates. The current execution uses an isolated bundle built from captured
-inputs; it is not yet the running game's renderer. The frontend must load in
-ReXGlue without `rexgpu-xenos`, consume guest ring memory, and call the
-project-owned parser and Vulkan frontend directly. Extend the bounded shader,
-texture/sampler, and render-target coverage only for packet forms observed in
-the captured title. Unsupported packet forms, resources, state, and shader
-instructions must fail closed. Keep XCB/Wayland/Android surface integration
-outside the shared core. Vulkan validation proves API correctness; image and
-runtime comparisons must separately establish retail behavior.
+Next, coordinate with Process 1 on a host-neutral Android guest-fiber/runtime
+entrypoint and APK lifecycle contract. Once that runtime target exists, run the
+recompiled SHIFT guest with `--gpu_plugin=shift-native`, capture per-swap
+counters and output, and compare against a retail reference. Expand
+shader/resource/state coverage only when a real capture demonstrates the need.
+Keep unsupported packets fail-closed and keep XCB/Wayland/Android surfaces
+outside the renderer core.
 
 ## Portability and ownership
 
@@ -354,10 +495,11 @@ Ghidra, or guest-scheduler source was changed for this report.
 
 ## Limits
 
-This report records one XEX-originated indexed draw submitted through the
-project-owned Vulkan backend from an isolated captured bundle. It does not yet
-route the live game's complete guest graphics stream into Vulkan, so not all
-recompiled guest graphics calls are redirected. It makes no claim of a complete
-scene, phone game-runtime integration, or retail-image parity. The Xenos
-emulator remains excluded from the intended product path; the diagnostic run
-is only the source of captured inputs used to specify this bounded translation.
+This report records one XEX-originated indexed draw submitted through an
+isolated project-owned Vulkan bundle and a compiled plugin path that consumes
+live guest PM4 and submits the supported subset at `XE_SWAP`. It does not yet
+record a retail guest running through that plugin. It therefore makes no claim
+of live game routing, a complete scene, Android game-runtime integration, or
+retail-image parity. The Xenos emulator remains excluded from the intended
+product path; the diagnostic run is only the source of captured inputs used to
+specify this bounded translation.

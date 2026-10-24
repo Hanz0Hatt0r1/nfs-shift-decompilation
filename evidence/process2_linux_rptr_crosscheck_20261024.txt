@@ -1,0 +1,41 @@
+# Linux RPTR destination cross-check
+
+Date: 2026-10-24. This records read-only evidence from the Process 1 GDB run;
+no Process 1 runtime files were changed.
+
+Source log: `/tmp/p1-vdwriteback-probe-20261024/logs/gdb-vd-writeback-target.log`
+Captured at 2026-10-24 00:20:44 +03:00. SHA-256:
+`82bea36b0cd951f50da0c623331e7a58a98b9c70809fce88ddce23f3fe3513a9`.
+
+The call and watched addresses are distinct:
+
+```text
+VD_ENABLE ppc_r3=0x17af403c ppc_r4=6 object=0xb7365f00 ring_base=0xb7af4000 ring_word0=0x00000000 writeback_guest=0x17af403c physical_host=0x217af403c
+```
+
+`0xB7AF4000` is the guest ring base read from `object+0x2A90`. The actual
+`VdEnableRingBufferRPtrWriteBack` argument is `0x17AF403C`, matching the Android
+run; this translates to host address `0x217af403c`.
+
+GDB hardware watchpoint 2 was set on that translated writeback pointer and
+observed these host-word changes:
+
+```text
+Old value = 0
+New value = 419430400
+Old value = 419430400
+New value = 822083584
+Old value = 822083584
+New value = 1224736768
+```
+
+Those words are `0x00000000 -> 0x19000000 -> 0x31000000 -> 0x49000000` in the
+host's byte order, consistent with big-endian guest values `0x19`, `0x31`, and
+`0x49`. This verifies that the Linux plugin writes the guest RPTR destination.
+The final GDB snapshot included the guest stack frame `sub_823A0310`, identified
+in Process 1's trace as its queue-polling path. GDB later killed the inferior;
+the desktop's not-responding dialog during the capture is consistent with
+debugger suspension and does not prove that the game independently deadlocked.
+This probe does not prove later game progression or visible retail pixels. The
+existing Android run also stayed black after two startup swaps with no later
+PM4 batches in its 45-second foreground observation.

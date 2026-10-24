@@ -1,0 +1,100 @@
+{
+  "format": "SHIFT.Process2RedmiNote8ProVulkanCullState/1",
+  "observed_at": "2026-10-24T15:54:20+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:33153",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "activity_foreground_after_capture": true
+  },
+  "build": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "apk_sha256": "b9942387bbd09648b0c21482a685cde07457a7095a8f3e5d531afcdb6116b045",
+    "plugin_sha256": "13e89a3c2912d0df91b2730d398ea293769f4f632b2e4c5edc3873e12a39e75a",
+    "android_abi": "arm64-v8a",
+    "android_api_target": 29,
+    "ndk": "28.2.13676358",
+    "plugin_entries": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "plugin_entries_identical": true,
+    "installation": "signed APK; adb install --no-incremental -r"
+  },
+  "game_data": {
+    "source_root": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+    "device_root": "/sdcard/Android/data/com.hanz0hatt0r.nfsshift/files/game",
+    "files_pushed": 2098,
+    "bytes_pushed": 4130818991,
+    "default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "missing_guest_open_paths": [
+      "d:\\pakfiles\\dir\\audio.bff",
+      "d:\\characters\\drivers2.lod",
+      "d:\\tracks\\cameraconfig.xml",
+      "d:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+      "d:\\tracks\\_data\\static\\scenes\\menu_background.xml"
+    ]
+  },
+  "captured_xenos_raster": {
+    "register": "PA_SU_SC_MODE_CNTL",
+    "register_index": "0x2205",
+    "raw_value": "0x00218006",
+    "draws": [
+      4,
+      5
+    ],
+    "cull_mode": "back",
+    "front_face": "clockwise",
+    "vulkan_mapping": "captured cull mode and front-face winding forwarded directly"
+  },
+  "device_render_result": {
+    "retail_draw_submission": true,
+    "readback_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "readback_dimensions": "1280x720",
+    "readback_bytes": 3686400,
+    "readback_sha256": "e45a6a3388a12cfcb047d9f94e3120263e219c815cbab59b6e99b0e0f70779e0",
+    "readback_matches_previous_retail_frame4_byte_for_byte": true,
+    "non_black_pixels": 53098,
+    "fnv1a64": "915336228EB84E49",
+    "prior_inverted_winding_experiment": {
+      "non_black_pixels": 0,
+      "fnv1a64": "B161DE6EEC272325",
+      "log": "process2_redmi_note8pro_vulkan_cull_inverted_experiment_20261024.log.gz"
+    },
+    "later_screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+    "later_screenshot_matches_prior_post_splash_black": true,
+    "later_screenshot_path": "process2_redmi_note8pro_vulkan_post_splash_black_20261024.png"
+  },
+  "checks": {
+    "native_vulkan_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation forced via VK_INSTANCE_LAYERS",
+    "rexglue_plugin_ctest": "3/3 passed",
+    "android_arm64_plugin_build": "passed",
+    "host_validation_errors": 0,
+    "android_validation_layers": "not enabled"
+  },
+  "operational_note": "An earlier APK install attempt used Android incremental delivery, whose data loader failed and removed the package. The fixed APK was installed with --no-incremental; the 3.8-GiB game root was restored and its default.xex hash verified. Private app state removed by that failed install was not restored.",
+  "limitations": [
+    "This validates cull/front-face handling on the retail startup logo draw and does not verify the menu or race scene.",
+    "The exact loose asset paths logged by the guest are absent from the copied root; the root contains BFF archives and associated menu resources, but the correct BFF/path fallback remains unresolved at the Process 1 runtime boundary.",
+    "The later foreground screenshot remains black after the splash, matching previous behavior.",
+    "Vulkan validation was exercised on the host, not on Android."
+  ],
+  "runtime_log": {
+    "device_path": "files/nfs_shift/user/logs/nfs_shift_004.log",
+    "compressed_repo_path": "process2_redmi_note8pro_vulkan_cull_state_20261024.log.gz",
+    "sha256_uncompressed": "60b9be925a4f05ba92502ee55e6e8f9ac61ba93f20d3cb41bb694fb3275bd7ccf"
+  },
+  "process1_runtime_cross_check": {
+    "owner": "Process 1; read-only report, no runtime modifications by Process 2",
+    "drive_mapping": "current game_data_root is mounted as D: via Harddisk0 Partition1",
+    "root_contains": "PakFiles/*.bff plus loose GUI/Render/UI/Audio data",
+    "sdk_vfs_bff_mount_or_loose_fallback": "not present in the inspected ReXGlue SDK",
+    "menu_background_archive_index": "PakFiles/Menu_Background.bff contains related .sgx/.enx resources, but no exact menu_background.xml member",
+    "conclusion": "the correct Xbox asset path table/extraction route is unresolved; missing XML alone is not proven fatal",
+    "evidence": "evidence/xbox360_menu_background_pak_index_20261024.json"
+  }
+}

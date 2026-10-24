@@ -1,0 +1,49 @@
+{
+  "format": "SHIFT.Process2AndroidVulkanDepthResolve/1",
+  "observed_at": "2026-10-24T21:41:26+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "gpu": "Mali-G76 MC4",
+    "api_level": 33,
+    "vulkan_api": "1.1.131",
+    "adb_transport": "192.168.1.32:33153"
+  },
+  "vulkan_capabilities": {
+    "instance_api_requested": "1.1",
+    "extensions_supported": [
+      "VK_KHR_create_renderpass2",
+      "VK_KHR_depth_stencil_resolve"
+    ],
+    "supported_depth_resolve_modes": "0x1",
+    "supported_stencil_resolve_modes": "0x1",
+    "mode_name": "VK_RESOLVE_MODE_SAMPLE_ZERO_BIT",
+    "logical_device_created_with_both_extensions": true,
+    "vkCreateRenderPass2KHR_function": "available",
+    "sample_zero_depth_stencil_render_pass_creation": "VK_SUCCESS"
+  },
+  "renderer_regression": {
+    "source": "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
+    "android_test_binary_sha256": "bb572ba265352d9800200f26375241444449d3810213cd838c62a67902263195",
+    "android_renderer_library_sha256": "fb0bc2224dc30f6ff06125e8a525f51d8b2e45c4256f75b7d1c1a8c737aa9d6c",
+    "android_plugin_sha256": "d81209b7ca93f063458ff689eb646902b54a896496894f3707312615492fa048",
+    "android_ndk_ci_renderer_check_sha256": "6f8070137ad5c123eef89bd5888d6a3d72a2e683752f5fcd1fea286cfc828bb5",
+    "android_ndk_ci_native_activity_sha256": "6ac8a7c1893f04a0acd37771f72ee547939d7a68ddfce09aa5f331edea34cd96",
+    "result": "synthetic offscreen Vulkan 1.1 AutoIndex point and rectangle-list draw plus 4x-to-1x depth/stencil SAMPLE_ZERO preservation and captured sample-zero Copy/Convert passed on Mali-G76 MC4",
+    "android_ndk_ci_equivalent_build": "passed: arm64-v8a, Android API 26, NDK 28.2.13676358; NativeActivity and renderer check linked",
+    "android_validation_layer": "not active in this run",
+    "host_validation": "native renderer CTest 4/4 and ReXGlue plugin CTest 3/3 passed with VK_LAYER_KHRONOS_validation"
+  },
+  "integration_boundary": {
+    "provider_current_behavior": "shift-native receives a VkDevice from VulkanProvider; the provider does not currently request either resolve extension when GPU emulation features are disabled",
+    "required_contract": "backward-compatible optional capability: use Vulkan 1.2 core or atomically request both Vulkan 1.1 extensions, plus an indication that SAMPLE_ZERO is supported for depth and stencil; keep unrelated GPU-emulation feature requests disabled",
+    "status": "Process 1 accepted the contract; provider integration is pending",
+    "current_plugin_capability_passed": false,
+    "current_plugin_behavior": "passes false explicitly to the renderer; mixed 4x-to-1x depth/stencil submission fails closed until provider capability is wired"
+  },
+  "limitations": [
+    "The renderer regression uses synthetic smoke geometry and proves hardware/API behavior only; it is not retail image parity.",
+    "The SAMPLE_ZERO choice has not yet been established as the Xbox Xenos depth/stencil resolve rule from a retail capture.",
+    "The latest full Android app activity currently exits immediately after SDL_main returns, so no updated retail loading frame was produced on the device."
+  ]
+}
