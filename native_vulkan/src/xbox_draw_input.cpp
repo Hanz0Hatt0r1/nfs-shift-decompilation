@@ -1818,13 +1818,17 @@ bool copy_captured_r8_texture_2d(
         return fail("captured R8 texture byte range does not match its dimensions", error);
     }
 
-    std::vector<uint8_t> linear;
-    linear.reserve(static_cast<size_t>(output_bytes));
-    for (uint32_t y = 0; y < texture.height; ++y) {
-        const uint8_t* row = guest_bytes + static_cast<size_t>(y) * texture.pitch;
-        linear.insert(linear.end(), row, row + texture.width);
+    vulkan_bytes->resize(static_cast<size_t>(output_bytes));
+    if (texture.pitch == texture.width) {
+        std::memcpy(vulkan_bytes->data(), guest_bytes,
+                    static_cast<size_t>(output_bytes));
+    } else {
+        for (uint32_t y = 0; y < texture.height; ++y) {
+            const uint8_t* row = guest_bytes + static_cast<size_t>(y) * texture.pitch;
+            std::memcpy(vulkan_bytes->data() + static_cast<size_t>(y) * texture.width,
+                        row, texture.width);
+        }
     }
-    *vulkan_bytes = std::move(linear);
     if (error) error->clear();
     return true;
 }

@@ -723,6 +723,17 @@ int main() {
                 &movie_r8_native, &error) &&
                 movie_r8_native == std::vector<uint8_t>{0x20, 0x40, 0x60, 0x80},
             "captured retail Bink R8 plane did not preserve its native one-byte texels");
+    const uint8_t tight_movie_r8_bytes[] = {0xA0, 0xB0, 0xC0, 0xD0};
+    auto tight_movie_r8_fetch = small_movie_r8_fetch;
+    tight_movie_r8_fetch.pitch = tight_movie_r8_fetch.width;
+    tight_movie_r8_fetch.byte_length = sizeof(tight_movie_r8_bytes);
+    uint8_t* reusable_movie_r8_buffer = movie_r8_native.data();
+    require(shift::xbox::copy_captured_r8_texture_2d(
+                tight_movie_r8_fetch, tight_movie_r8_bytes,
+                sizeof(tight_movie_r8_bytes), &movie_r8_native, &error) &&
+                movie_r8_native.data() == reusable_movie_r8_buffer &&
+                movie_r8_native == std::vector<uint8_t>{0xA0, 0xB0, 0xC0, 0xD0},
+            "captured tightly packed Bink R8 plane did not use its contiguous buffer");
 
     const uint32_t retail_narrow_rgba8_descriptor[] = {
         0x804048FEu, 0x0A079086u, 0x0007E003u,
