@@ -50,7 +50,17 @@ assert all(target["indirect_guest_calls"] == 4 for target in targets.values())
 assert all(target["manager_indices"] == [0, 1, 2, 3] for target in targets.values())
 assert "rules out an empty/unregistered" in manager_probe["interpretation"]
 assert "does not show that callback execution produced pixels" in manager_probe["interpretation"]
+sink_probe = evidence["runtime_translation"]["p1_guest_sink_method_probe_20261025"]
+assert sink_probe["duration_seconds"] == 38
+assert sink_probe["callback_hits"] == {"0x83068250": 4, "0x83068608": 4}
+assert sink_probe["shared_vtable_guest_address"] == "0x820A8D28"
+assert sink_probe["vtable_method_targets"] == {
+    "offset_56": "0x82B9C9F0",
+    "offset_64": "0x82B9DC78",
+}
+assert len(sink_probe["downstream_guest_objects"]) == 4
+assert "does not prove a texture upload" in sink_probe["interpretation"]
 assert evidence["external_runtime_report"]["raw_pread_trace_or_log_hash_provided"] is False
 assert "not_proven" in evidence["interpretation"]
 
-print("retail Bink section, guest callsites, generated entries, and runtime-evidence limits match")
+print("retail Bink section, guest callsites, manager dispatch, sink vtable, and evidence limits match")
