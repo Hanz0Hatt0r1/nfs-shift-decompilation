@@ -22,6 +22,10 @@ A 120.027-second exact-XEX run loaded the P2 handover Linux plugin from commit `
 
 The exact `Franchise_Ident.bik` asset declares 281 frames and the guest Bink object had a frame target of `0x119`. The breakpoint trace observed 280 readiness, clock-update and video-wrapper calls; its last printed progress sample was `0x110` at hit 272 before SIGINT. Software breakpoints perturb timing, so natural movie completion and the next guest scene were not established. Continue at the retail scene-manager caller after the Bink wrapper stops, and capture the return/state transition around the first `menu_background.xml` miss. See [the post-video probe](../../evidence/xbox360_linux_post_video_frontend_probe_20261025.json). The SDK shared-memory unlink fix remains tracked separately in [ReXGlue SDK PR #4](https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/4); this local runtime hash is not the application's default runtime.
 
+## Host CPU warning
+
+When the host has fewer than six logical CPUs, ReXGlue skips host thread affinity and emits a warning on each affinity update. [SDK PR #534](https://github.com/rexglue/rexglue-sdk/pull/534) rate-limits that diagnostic to one message without changing guest CPU identity or scheduler behavior. The exact-XEX integration run recorded one warning and 935 accepted Copy/Convert entries in 40 seconds, with no guest fault; this does not show that the warning storm caused the frontend stall. See [the scheduler warning evidence](../../evidence/xbox360_linux_scheduler_warning_limit_20261025.json).
+
 ## Renderer note
 
 The Linux host now enables `VK_EXT_swapchain_maintenance1` together with its required surface-maintenance instance extensions and completes the retail splash run without Vulkan validation VUIDs. The complete device capability requirements for **Vulkan 1.1** and SHIFT have **not** been proven; a newer API/extension cannot be presumed available on a Vulkan 1.1-only Android GPU. Track this in gate X6.
