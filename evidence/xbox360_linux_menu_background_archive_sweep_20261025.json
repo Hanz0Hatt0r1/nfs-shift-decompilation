@@ -1,0 +1,548 @@
+{
+  "schema": "shift.xbox360.retail-menu-background-archive-sweep.v1",
+  "captured_on": "2026-10-25",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "input": {
+    "game_root": "/home/pes/work/process2-linux-retail-root-20261024/game",
+    "archive_indexer": "tools/xbox360/audit_xbox_bff_index.py",
+    "queries": [
+      "menu_background",
+      "scenes/menu_background"
+    ],
+    "archives_seen": 1845,
+    "archives_parsed": 1845,
+    "index_failures": []
+  },
+  "requested_loose_paths": [
+    "tracks\\_data\\instances\\scenes\\menu_background.xml",
+    "tracks\\_data\\static\\scenes\\menu_background.xml"
+  ],
+  "archive_member_sweep": {
+    "menu_background_related_member_count": 53,
+    "scene_path_substring_matches": [],
+    "exact_requested_path_matches": [],
+    "candidate_archives": [
+      {
+        "path": "PakFiles/BOOTPERSISTENT.bff",
+        "bytes": 212082,
+        "sha256": "b184ea3a8749f12328a31839299e381b46f91de0eb7d5f2143b9e0e0fd1ce99d",
+        "menu_background_member_count": 1
+      },
+      {
+        "path": "PakFiles/Dir/GUI.bff",
+        "bytes": 11573556,
+        "sha256": "69de02131138a44005323f67c9de66052a4b74f03f55ea782605607c10121b44",
+        "menu_background_member_count": 5
+      },
+      {
+        "path": "PakFiles/MENUSETUP.bff",
+        "bytes": 546298,
+        "sha256": "211c89f398407ff4dbc8877b2c4510906a72be10defa3d4c3f36c62bd1941d6c",
+        "menu_background_member_count": 2
+      },
+      {
+        "path": "PakFiles/Menu_Background.bff",
+        "bytes": 751727,
+        "sha256": "38346e13ff13f8e3b1fa47afee12fb67ae2b43ab1256476dc6178add55fe8a63",
+        "menu_background_member_count": 45
+      }
+    ],
+    "matches": [
+      {
+        "archive": "PakFiles/BOOTPERSISTENT.bff",
+        "compressed_size": 624,
+        "compression_type": 2,
+        "index": 45,
+        "offset": 108544,
+        "path": "tracks/_data/weather/menu_background.wdf",
+        "uncompressed_size": 1393
+      },
+      {
+        "archive": "PakFiles/Dir/GUI.bff",
+        "compressed_size": 764,
+        "compression_type": 2,
+        "index": 818,
+        "offset": 10336256,
+        "path": "gui/menu_background/grg1.bmt",
+        "uncompressed_size": 1512
+      },
+      {
+        "archive": "PakFiles/Dir/GUI.bff",
+        "compressed_size": 838,
+        "compression_type": 2,
+        "index": 819,
+        "offset": 10338304,
+        "path": "gui/menu_background/plane06.bmt",
+        "uncompressed_size": 1692
+      },
+      {
+        "archive": "PakFiles/Dir/GUI.bff",
+        "compressed_size": 238,
+        "compression_type": 2,
+        "index": 998,
+        "offset": 11501568,
+        "path": "gui/menu_background/lights.xml",
+        "uncompressed_size": 506
+      },
+      {
+        "archive": "PakFiles/Dir/GUI.bff",
+        "compressed_size": 1506,
+        "compression_type": 2,
+        "index": 1011,
+        "offset": 11571200,
+        "path": "gui/menu_background/boxov02.meb",
+        "uncompressed_size": 3892
+      },
+      {
+        "archive": "PakFiles/Dir/GUI.bff",
+        "compressed_size": 308,
+        "compression_type": 2,
+        "index": 1012,
+        "offset": 11573248,
+        "path": "gui/menu_background/plane06.meb",
+        "uncompressed_size": 428
+      },
+      {
+        "archive": "PakFiles/MENUSETUP.bff",
+        "compressed_size": 43,
+        "compression_type": 0,
+        "index": 0,
+        "offset": 6144,
+        "path": "gui/menu_background/cameras.lst",
+        "uncompressed_size": 43
+      },
+      {
+        "archive": "PakFiles/MENUSETUP.bff",
+        "compressed_size": 270,
+        "compression_type": 2,
+        "index": 41,
+        "offset": 542720,
+        "path": "gui/menu_background/defaultcamera.xml",
+        "uncompressed_size": 358
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 418,
+        "compression_type": 2,
+        "index": 12,
+        "offset": 51200,
+        "path": "tracks/textures/menu_background/menu_background_01.xtx",
+        "uncompressed_size": 16436
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 704,
+        "compression_type": 2,
+        "index": 13,
+        "offset": 53248,
+        "path": "gui/menu_background/background01.bmt",
+        "uncompressed_size": 1392
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 1752,
+        "compression_type": 2,
+        "index": 14,
+        "offset": 55296,
+        "path": "gui/menu_background/background01.meb",
+        "uncompressed_size": 4308
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 164,
+        "compression_type": 2,
+        "index": 15,
+        "offset": 57344,
+        "path": "tracks/textures/menu_background/white.xtx",
+        "uncompressed_size": 8244
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 306918,
+        "compression_type": 2,
+        "index": 16,
+        "offset": 59392,
+        "path": "tracks/textures/menu_background/marbleground001.xtx",
+        "uncompressed_size": 1441844
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 968,
+        "compression_type": 2,
+        "index": 17,
+        "offset": 366592,
+        "path": "gui/menu_background/garagefloor.bmt",
+        "uncompressed_size": 2416
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 2142,
+        "compression_type": 2,
+        "index": 18,
+        "offset": 368640,
+        "path": "gui/menu_background/box01.meb",
+        "uncompressed_size": 4104
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 86704,
+        "compression_type": 2,
+        "index": 19,
+        "offset": 372736,
+        "path": "tracks/textures/menu_background/menu_background_canopy01.xtx",
+        "uncompressed_size": 524340
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 834,
+        "compression_type": 2,
+        "index": 20,
+        "offset": 460800,
+        "path": "gui/menu_background/canopy01.bmt",
+        "uncompressed_size": 1696
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 9890,
+        "compression_type": 2,
+        "index": 21,
+        "offset": 462848,
+        "path": "gui/menu_background/canopy01.meb",
+        "uncompressed_size": 19384
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 197816,
+        "compression_type": 2,
+        "index": 22,
+        "offset": 473088,
+        "path": "tracks/textures/menu_background/parented_lensflare.xtx",
+        "uncompressed_size": 393268
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 780,
+        "compression_type": 2,
+        "index": 23,
+        "offset": 671744,
+        "path": "gui/menu_background/lensflare_on_a_stick.bmt",
+        "uncompressed_size": 1548
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 274,
+        "compression_type": 2,
+        "index": 24,
+        "offset": 673792,
+        "path": "gui/menu_background/lensflare_on_a_stick.meb",
+        "uncompressed_size": 592
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 3168,
+        "compression_type": 2,
+        "index": 25,
+        "offset": 675840,
+        "path": "tracks/textures/menu_background/menu_background_plane1.xtx",
+        "uncompressed_size": 81972
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 834,
+        "compression_type": 2,
+        "index": 26,
+        "offset": 679936,
+        "path": "gui/menu_background/plane01.bmt",
+        "uncompressed_size": 1692
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 328,
+        "compression_type": 2,
+        "index": 27,
+        "offset": 681984,
+        "path": "gui/menu_background/plane01.meb",
+        "uncompressed_size": 488
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 328,
+        "compression_type": 2,
+        "index": 28,
+        "offset": 684032,
+        "path": "gui/menu_background/plane01_copy01.meb",
+        "uncompressed_size": 496
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 342,
+        "compression_type": 2,
+        "index": 29,
+        "offset": 686080,
+        "path": "gui/menu_background/plane01_copy01_flipped.meb",
+        "uncompressed_size": 504
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 352,
+        "compression_type": 2,
+        "index": 30,
+        "offset": 688128,
+        "path": "gui/menu_background/plane01_copy02_flipped.meb",
+        "uncompressed_size": 504
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 2808,
+        "compression_type": 2,
+        "index": 31,
+        "offset": 690176,
+        "path": "tracks/textures/menu_background/menu_background_plane2.xtx",
+        "uncompressed_size": 81972
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 838,
+        "compression_type": 2,
+        "index": 32,
+        "offset": 694272,
+        "path": "gui/menu_background/plane02.bmt",
+        "uncompressed_size": 1692
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 318,
+        "compression_type": 2,
+        "index": 33,
+        "offset": 696320,
+        "path": "gui/menu_background/plane02.meb",
+        "uncompressed_size": 488
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 324,
+        "compression_type": 2,
+        "index": 34,
+        "offset": 698368,
+        "path": "gui/menu_background/plane02_copy01.meb",
+        "uncompressed_size": 496
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 330,
+        "compression_type": 2,
+        "index": 35,
+        "offset": 700416,
+        "path": "gui/menu_background/plane02_copy01_flipped.meb",
+        "uncompressed_size": 504
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 360,
+        "compression_type": 2,
+        "index": 36,
+        "offset": 702464,
+        "path": "gui/menu_background/plane02_copy02_flipped.meb",
+        "uncompressed_size": 504
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 2896,
+        "compression_type": 2,
+        "index": 37,
+        "offset": 704512,
+        "path": "tracks/textures/menu_background/menu_background_plane3.xtx",
+        "uncompressed_size": 81972
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 838,
+        "compression_type": 2,
+        "index": 38,
+        "offset": 708608,
+        "path": "gui/menu_background/plane03.bmt",
+        "uncompressed_size": 1692
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 332,
+        "compression_type": 2,
+        "index": 39,
+        "offset": 710656,
+        "path": "gui/menu_background/plane03.meb",
+        "uncompressed_size": 488
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 326,
+        "compression_type": 2,
+        "index": 40,
+        "offset": 712704,
+        "path": "gui/menu_background/plane03_copy01.meb",
+        "uncompressed_size": 496
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 338,
+        "compression_type": 2,
+        "index": 41,
+        "offset": 714752,
+        "path": "gui/menu_background/plane03_copy01_flipped.meb",
+        "uncompressed_size": 504
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 360,
+        "compression_type": 2,
+        "index": 42,
+        "offset": 716800,
+        "path": "gui/menu_background/plane03_copy02_flipped.meb",
+        "uncompressed_size": 504
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 2792,
+        "compression_type": 2,
+        "index": 43,
+        "offset": 718848,
+        "path": "tracks/textures/menu_background/menu_background_plane4.xtx",
+        "uncompressed_size": 81972
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 836,
+        "compression_type": 2,
+        "index": 44,
+        "offset": 722944,
+        "path": "gui/menu_background/plane04.bmt",
+        "uncompressed_size": 1692
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 320,
+        "compression_type": 2,
+        "index": 45,
+        "offset": 724992,
+        "path": "gui/menu_background/plane04.meb",
+        "uncompressed_size": 488
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 336,
+        "compression_type": 2,
+        "index": 46,
+        "offset": 727040,
+        "path": "gui/menu_background/plane04_copy01.meb",
+        "uncompressed_size": 496
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 334,
+        "compression_type": 2,
+        "index": 47,
+        "offset": 729088,
+        "path": "gui/menu_background/plane04_copy01_flipped.meb",
+        "uncompressed_size": 504
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 354,
+        "compression_type": 2,
+        "index": 48,
+        "offset": 731136,
+        "path": "gui/menu_background/plane04_copy02_flipped.meb",
+        "uncompressed_size": 504
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 2878,
+        "compression_type": 2,
+        "index": 49,
+        "offset": 733184,
+        "path": "tracks/textures/menu_background/menu_background_plane5.xtx",
+        "uncompressed_size": 81972
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 838,
+        "compression_type": 2,
+        "index": 50,
+        "offset": 737280,
+        "path": "gui/menu_background/plane05.bmt",
+        "uncompressed_size": 1692
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 314,
+        "compression_type": 2,
+        "index": 51,
+        "offset": 739328,
+        "path": "gui/menu_background/plane05.meb",
+        "uncompressed_size": 428
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 2726,
+        "compression_type": 2,
+        "index": 52,
+        "offset": 741376,
+        "path": "tracks/textures/menu_background/menu_background_plane7.xtx",
+        "uncompressed_size": 81972
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 838,
+        "compression_type": 2,
+        "index": 53,
+        "offset": 745472,
+        "path": "gui/menu_background/plane07.bmt",
+        "uncompressed_size": 1692
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 300,
+        "compression_type": 2,
+        "index": 54,
+        "offset": 747520,
+        "path": "gui/menu_background/plane07.meb",
+        "uncompressed_size": 428
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 1528,
+        "compression_type": 2,
+        "index": 55,
+        "offset": 749568,
+        "path": "gui/menu_background/menu_background.sgx",
+        "uncompressed_size": 10716
+      },
+      {
+        "archive": "PakFiles/Menu_Background.bff",
+        "compressed_size": 111,
+        "compression_type": 0,
+        "index": 56,
+        "offset": 751616,
+        "path": "gui/menu_background/menu_background.enx",
+        "uncompressed_size": 111
+      }
+    ]
+  },
+  "interpretation": {
+    "supported": [
+      "The indexer parsed all 1845 Xbox .bff archives under this game root with no index or range failures.",
+      "No archive member matches either requested tracks/_data/.../scenes/menu_background.xml path, and the scenes/menu_background substring query returned no members.",
+      "Different menu_background-related GUI assets do exist, including menu_background.sgx/.enx, lights.xml, defaultcamera.xml, and textures; they have different archive paths and names.",
+      "The separately traced retail parent returns success after the child loader reports the missing XML; see evidence/xbox360_linux_menu_background_missing_flow_20261025.json."
+    ],
+    "not_proven": [
+      "This archive sweep does not prove the missing loose XML is optional in every frontend or race state.",
+      "It does not establish equivalence between the missing scene XML and the differently named SGX/ENX/GUI members.",
+      "It does not prove the XML miss caused the last draw submission, identify the warning screen state, or establish main-menu/race entry."
+    ],
+    "next_step": "Keep retail file lookup semantics unchanged; trace the guest scene transition and downstream resource reads without inventing an archive alias."
+  }
+}

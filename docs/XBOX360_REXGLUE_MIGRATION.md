@@ -54,6 +54,8 @@ A direct retail event-dispatch trace tied keyboard Enter to virtual target `0x82
 
 A fresh 72-second Linux run captured only the `nfs_shift` window while emitting five uinput A/Start pulses. The window changed from black to the SHIFT emblem and then to the driving-safety warning; captures at 32, 44, 56, and 68 seconds are byte-identical. This run had no same-run XAM trace, so it does not prove the pulses reached retail input or caused any transition. The host log recorded 100 indexed submissions, then four missing `menu_background.xml` opens and no later submissions; that timing does not establish causality. The main menu and race remain unverified. See the [window/input run evidence](../evidence/xbox360_linux_uinput_gamepad_window_20261025.json).
 
+A read-only sweep then parsed every one of the 1,845 `.bff` archives under the exact retail game root with no index/range failures. None contains either requested `tracks/_data/{instances,static}/scenes/menu_background.xml` member or any `scenes/menu_background` path. Nearby packaged assets exist under different paths (`gui/menu_background/menu_background.sgx/.enx`, `lights.xml`, and `defaultcamera.xml`); the evidence does not establish they substitute for the absent XML. Combined with the traced parent return of success, this rules out an archive-member alias as a justified fix, while leaving the downstream frontend transition unresolved. See the [complete archive sweep](../evidence/xbox360_linux_menu_background_archive_sweep_20261025.json).
+
 ## Proposed pipeline
 
 ```text
