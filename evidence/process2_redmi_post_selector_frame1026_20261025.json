@@ -1,0 +1,104 @@
+{
+  "schema": "shift.process2.redmi_post_selector_frame1026_vulkan_readback.v1",
+  "capture_date": "2026-10-25",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": "13",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "display_extent": "2340x1080",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "activity": "org.libsdl.app.NfsShiftActivity"
+  },
+  "build": {
+    "process2_branch": "work/process2-xbox-live-ring-20261023",
+    "renderer_source_commit": "c69de3f2393e32f164ff7cc0581351bf24bfa730",
+    "branch_head_at_capture": "a1dc925b",
+    "production_candidate_apk_sha256": "5006ed47a1510a2389d48de9a27ef0f7a4b8a7c8f8719249b14f242963662305",
+    "diagnostic_repack_apk_sha256": "03f76b915d9ec5b64ab83f1df43037761cdf8d63a57d2234be70c6b883c4e8df",
+    "diagnostic_apk_signature_v3_verified": true,
+    "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "renderer_plugin_sha256": "f84281d8b48cad561f246fa4bf9e58172960ace16193bcd3dcd44d848b9a2f03",
+    "production_and_diagnostic_plugin_bytes_identical": true,
+    "install_mode": "adb install --no-streaming -r",
+    "application_data_cleared": false,
+    "game_assets_modified": false,
+    "readback_environment_confirmed": {
+      "SHIFT_NATIVE_VULKAN_READBACK_FRAME": "1026",
+      "SHIFT_NATIVE_VULKAN_READBACK_PATH": "/data/user/0/com.hanz0hatt0r.nfsshift/files/process2-frame1026-readback.a2b10g10r10",
+      "wrapper_marker_created": true
+    }
+  },
+  "vulkan_readback": {
+    "submitted_frame": 1026,
+    "captured_at_local": "2026-10-25T17:55:21.712+03:00",
+    "extent": "1280x720",
+    "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "file": "process2_redmi_post_selector_frame1026_readback_20261025.bin",
+    "bytes": 3686400,
+    "sha256": "c11f996797463001d90ebe646a929c64b40fc1dde8f190b8b86a86d22b2c9eda",
+    "non_black_pixels": 17951,
+    "fnv1a64": "AA8BC55196A29A73",
+    "decoded_image": "process2_redmi_post_selector_frame1026_readback_decoded_20261025.png",
+    "decoded_image_sha256": "bcae396fe08d1348cd66a8acaae1466d972ad220a5d0469e3b15acfda1ba5abc",
+    "decoder": "Read little-endian uint32 pixels; R=bits 0-9, G=bits 10-19, B=bits 20-29, A=bits 30-31; scale UNORM channels to 8-bit RGBA."
+  },
+  "device_screenshot": {
+    "file": "process2_redmi_post_selector_frame1026_device_20261025.png",
+    "sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "extent": "2340x1080",
+    "observed_screen": "Original English safety disclaimer on black with thin purple horizontal strips above and below the text."
+  },
+  "readback_screenshot_comparison": {
+    "method": "Crop the centered 1920x1080 16:9 viewport from the 2340x1080 device capture, then bilinear-resize to 1280x720.",
+    "compared_pixels": 921600,
+    "exact_rgb_pixel_matches": 894091,
+    "mean_absolute_rgb_error_8bit": [0.3777767, 0.3489703, 0.4093631],
+    "rms_rgb_error_8bit": [2.957926, 2.887703, 3.153431],
+    "interpretation": "The decoded Vulkan guest-output readback visually matches the contemporaneous device screenshot after accounting for Android viewport scaling. This compares two views of the same renderer output; it is not an independent retail parity reference."
+  },
+  "runtime": {
+    "log_file": "process2_redmi_post_selector_frame1026_runtime_20261025.log.gz",
+    "raw_log_sha256": "d8f6a23812a450ec07f0f3ab9b5a8636bf8f80c0faafa64c0c5ea0e555a2eece",
+    "compressed_log_sha256": "75eb2d9ec419510824c003a049a187b9ee5dd2f0c67da04f52dd4e9fe66b87a2",
+    "raw_log_bytes": 402951,
+    "successful_vulkan_submissions": 1182,
+    "submitted_draw_packets_total": 10471,
+    "accepted_copy_convert_operations": 1182,
+    "refresh_failure_count": 0,
+    "last_successful_submit_local": "2026-10-25T17:55:35.960+03:00",
+    "subsequent_guest_probes": [
+      {
+        "time_local": "2026-10-25T17:55:36.387+03:00",
+        "path": "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      },
+      {
+        "time_local": "2026-10-25T17:55:36.393+03:00",
+        "path": "D:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      }
+    ],
+    "later_observation": "At 17:57:59 the activity was still top-resumed, the process was alive, and the device screenshot remained byte-identical; no further renderer submits appeared after the file probes. The probes precede the stop but do not establish its cause."
+  },
+  "related_language_selector_evidence": {
+    "file": "process2_redmi_language_selector_live_android_20261025.json",
+    "visible_labels": [
+      "English",
+      "Français",
+      "Italiano",
+      "Deutsch",
+      "Español",
+      "Nederlands"
+    ],
+    "interpretation": "A separate live Redmi capture confirms the original selector labels are readable on this renderer build. This frame-1026 readback is from the later safety disclaimer, after the language choice had already been retained."
+  },
+  "limitations": [
+    "This verifies one real post-selector retail guest frame on Mali through the Vulkan presenter; it does not establish race-scene output or complete visual parity.",
+    "The purple strips are visible in both the device screenshot and the renderer readback; their source draw, texture, or video-plane contract has not yet been isolated.",
+    "The failed menu_background.xml probes are runtime evidence near the stop, not proof of causation and not a Process 2 renderer diagnosis.",
+    "No Process 1 runtime, scheduler, asset, or startup files were changed."
+  ]
+}

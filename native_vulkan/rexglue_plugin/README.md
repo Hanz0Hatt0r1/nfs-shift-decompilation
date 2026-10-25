@@ -586,3 +586,34 @@ After the selector appeared, the app process was suspended with `SIGSTOP` so the
 The installed APK later resumed from the held selector and rendered the original legal disclaimer. The selector capture shows all six language names; the non-selected rows are gray but readable. The disclaimer frame has thin purple horizontal artifacts above and below the text. Three screenshots over eight seconds were byte-identical. One Android `KEYCODE_BUTTON_A` event did not change the screen.
 
 The guest log stopped changing at 17:27:42.690 MSK. Its last successful Vulkan submission at 17:27:42.335 carried 14 captured draw packets; 0.35 seconds later, the guest probed `D:\tracks\_data\instances\scenes\menu_background.xml` and `D:\tracks\_data\static\scenes\menu_background.xml`, both returning `0xc000000f`. The app process and activity remained alive. This records a stable post-intro screen and nearby failed scene-file probes; it does not prove the probes caused the stall or identify the purple artifacts. Process 2 did not modify runtime or asset handling. See [`the device evidence`](../../evidence/process2_redmi_post_selector_disclaimer_stall_android_20261025.json), [screenshot](../../evidence/process2_redmi_post_selector_disclaimer_stall_android_20261025.png), and [compressed guest log](../../evidence/process2_redmi_post_selector_disclaimer_stall_android_20261025.log.gz).
+
+## Redmi post-selector Vulkan output readback (2026-10-25)
+
+A follow-up run enabled the native plugin's one-shot readback with the Android
+`wrap.sh` environment. The APK was installed with `-r` and without streaming;
+the wrapper marker and both readback variables were confirmed in the app
+process, and app data was retained. Its renderer DSO is byte-identical to the
+signed production candidate previously handed to Process 1. A separate live
+selector capture from this renderer build shows all six original language
+labels; in this run English was already persisted, so frame 1,026 is the later
+safety-disclaimer screen.
+
+The 1280x720 `VK_FORMAT_A2B10G10R10_UNORM_PACK32` readback at frame 1,026
+contains 17,951 non-black pixels and has FNV-1a `AA8BC55196A29A73`. Decoding
+the raw words produces the same disclaimer and purple strips seen in the
+2340x1080 device screenshot. Cropping the centered 16:9 viewport and scaling
+it to 1280x720 yields 894,091 exact RGB pixel matches out of 921,600; the
+remaining difference is consistent with display scaling. This compares the
+renderer readback with the phone's view of the same output, not with an
+independent retail reference.
+
+The run submitted 1,182 frames / 10,471 captured draw packets and accepted
+1,182 Copy/Convert operations without presenter refresh failures. Its final
+14-draw submit precedes the same missing `menu_background.xml` probes; no later
+submit appeared. The log proximity does not identify the cause of the stop.
+The raw readback, decoded image, screenshot, hashes, and run limits are in
+[`process2_redmi_post_selector_frame1026_20261025.json`](../../evidence/process2_redmi_post_selector_frame1026_20261025.json),
+[`the raw readback`](../../evidence/process2_redmi_post_selector_frame1026_readback_20261025.bin),
+[`the decoded readback`](../../evidence/process2_redmi_post_selector_frame1026_readback_decoded_20261025.png),
+[`the screenshot`](../../evidence/process2_redmi_post_selector_frame1026_device_20261025.png),
+and [`the compressed log`](../../evidence/process2_redmi_post_selector_frame1026_runtime_20261025.log.gz).

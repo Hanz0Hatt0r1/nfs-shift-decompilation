@@ -30,22 +30,32 @@ These are actual retail loading-screen pixels from the translated guest draw
 path, not a synthetic Vulkan scene. They do not establish menu, race, or full
 retail visual parity.
 
-## Current blocker
+## Current Android state
 
-The Linux run uses the provider branch with the opt-in
-`depthStencilResolveSampleZero` contract and proceeds through 24-draw batches
-without a renderer refresh failure. The Android APK still contains the older
-ReXGlue provider snapshot. On the phone, the initial five-draw loading frame is
-read back and displayed; once the game submits 24 draws, refresh fails because
-4x-to-1x depth/stencil preservation needs a provider-confirmed enabled resolve
-capability. The screen retains the last loading image. The renderer remains
-fail-closed when the provider does not advertise that capability.
+The earlier Android depth/stencil-resolve provider failure is superseded by a
+later APK built with the resolve-capable provider. On the Redmi Note 8 Pro, the
+live run reached 1,182 successful Vulkan submissions (10,471 captured draw
+packets) and accepted 1,182 Copy/Convert operations, with no presenter refresh
+failures. A separate live selector capture shows all six language labels
+readable on the device.
 
-The separate [ReXGlue provider integration PR #2](https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/2)
-is still the required Android runtime boundary. Building that newer SDK for
-Android currently fails in its POSIX fiber implementation because Bionic does
-not provide `getcontext`, `makecontext`, and `swapcontext`. Process 2 does not
-patch the guest scheduler/runtime or bypass the provider capability contract.
+At submitted frame 1,026, an actual Vulkan output readback contains 17,951
+non-black pixels (`AA8BC55196A29A73`). After scaling the centered 16:9 Android
+viewport to the readback extent, the decoded image closely matches the
+contemporaneous device screenshot. The screenshot and readback both show the
+original safety disclaimer and thin purple strips. See the [readback metadata](../evidence/process2_redmi_post_selector_frame1026_20261025.json),
+[decoded Vulkan output](../evidence/process2_redmi_post_selector_frame1026_readback_decoded_20261025.png),
+[raw Vulkan output](../evidence/process2_redmi_post_selector_frame1026_readback_20261025.bin),
+[device screenshot](../evidence/process2_redmi_post_selector_frame1026_device_20261025.png),
+and [compressed runtime log](../evidence/process2_redmi_post_selector_frame1026_runtime_20261025.log.gz).
+
+The last logged submission carried 14 draws at 17:55:35.960 MSK. About 0.4
+seconds later the guest tried both `D:\tracks\_data\instances\scenes\menu_background.xml`
+and `D:\tracks\_data\static\scenes\menu_background.xml`; both returned
+`0xc000000f`. No later submission appeared and the activity remained resumed.
+The timing does not establish that these file misses caused the stop. The
+renderer still has no verified menu-background or race-scene frame, and the
+purple strips' draw/resource source remains unknown.
 
 ## Verification boundary
 
@@ -53,12 +63,18 @@ patch the guest scheduler/runtime or bypass the provider capability contract.
 - ReXGlue plugin regressions: 3/3 against the current SDK and 4/4 against the
   resolve-capability provider branch.
 - ARM64 shader translation regression passed on the Redmi Note 8 Pro. The
-  actual frame-10 capture now also exercises the Android retail Vulkan path.
-- Android APK signature and both alias library entries were verified; the
-  Mali device and 2340x1080 swapchain initialized successfully.
-- The actual Android log records eight consecutive 24-draw refresh failures
-  after the successful frame-10 readback. This is evidence of the integration
-  boundary, not evidence of sustained rendering.
+  actual frame-10 loading capture and later frame-1,026 disclaimer capture
+  exercise the Android retail Vulkan path.
+- The diagnostic APK signature and renderer DSO hash were verified; its DSO is
+  byte-identical to the handed-off production candidate. The Mali device and
+  2340x1080 swapchain initialized successfully.
+- Host Vulkan and plugin regressions pass with Vulkan validation enabled. The
+  phone does not provide `VK_LAYER_KHRONOS_validation`; the live readback is
+  runtime evidence, not device validation-layer coverage.
+
+This confirms more than the first loading frame, but does not establish
+sustained cutscene playback, the complete menu, a race scene, or retail visual
+parity.
 
 No Process 1 files were changed. Both pre-existing desktop NFS Shift windows
 were left open.
