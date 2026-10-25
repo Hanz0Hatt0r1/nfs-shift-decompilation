@@ -49,7 +49,7 @@
   "trace_observation": {
     "format_strings_present_in_plugin": true,
     "smoke_harness_log_capture": "Plugin REXLOG trace records were not surfaced in the smoke harness output; the harness verifies ring consumption but not the logger sink. A P1 retail run is needed to confirm records and correlate the live guest WPTR.",
-    "retail_trace": "Two P1 retail runs confirmed real WPTR trace records but both used the earlier 8,192-record DSO and exhausted its cap before the menu_background.xml transition. The canonical handover path now points to the 32,768-record build for the next run."
+    "retail_trace": "The first two P1 retail runs used the earlier 8,192-record DSO and exhausted its cap before the menu_background.xml probes. A third run loaded the 32,768-record build, received CP_RB_WPTR=5651, and the worker consumed the range containing it."
   },
   "first_p1_retail_trace": {
     "process_id": 547583,
@@ -97,13 +97,76 @@
     "termination_time_local": "2026-10-25T22:59:04.206+03:00",
     "interpretation": "The second run repeated the cap exhaustion with the same old 8,192-record plugin path. The guest reached the same menu_background.xml missing-file probes; it did not exercise the 32,768-record build. The old DSO was preserved separately and the canonical handover path was updated only after the process exited."
   },
+  "third_p1_retail_trace": {
+    "process_id": 552820,
+    "workdir": "/dev/shm/nfs-p1-ring-trace-retail-20261026d",
+    "loaded_plugin": "/home/pes/work/process2-p1-ring-trace-handover-20261026b/librexgpu-shift-native.so",
+    "loaded_plugin_sha256": "9aaa4ea81faf1fb55981cce7ac59e99b34ca66943bbec7850af18e20c73425bc",
+    "trace_environment_confirmed": "SHIFT_NATIVE_VULKAN_TRACE_RING=1",
+    "log": "evidence/process2_p1_ring_trace_20261026.log.gz",
+    "source_log_sha256": "c12b3d682454138096feb9f59b7ac941336d7980f0fc4c3859031e28f83a9900",
+    "compressed_log_sha256": "e21cb08c4ef7ed2beb09ed0e2f5899e755d9f0dc49c4bf84ed1b4d3c72c09c90",
+    "trace_records_emitted": 10973,
+    "wptr_5651": {
+      "trace_id": 8395,
+      "time_local": "2026-10-25T23:00:19.539+03:00",
+      "previous": 5648,
+      "new": 5651,
+      "rptr": 5642,
+      "ring_dwords": 8192,
+      "generation": 1
+    },
+    "presenter_refresh_failures_before_wptr_5651": {
+      "count": 8,
+      "first_time_local": "2026-10-25T23:00:04.885+03:00",
+      "last_time_local": "2026-10-25T23:00:05.037+03:00",
+      "draw_count": 24,
+      "error": "mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability"
+    },
+    "worker_consumed_range_containing_5651": {
+      "snapshot_trace_id": 8400,
+      "complete_trace_id": 8401,
+      "time_local": "2026-10-25T23:00:19.556+03:00",
+      "snapshot": "rptr=5645 wptr=5657; snapshot-ok=true; batch-bytes=48; expand-ok=true; packets=83",
+      "consumed": "[5645,5657)",
+      "guest_rptr_writeback": "17AF403C: 0000160D->00001619"
+    },
+    "menu_background_probes": {
+      "time_local": "2026-10-25T23:00:23.441+03:00 through 23:00:23.442+03:00",
+      "paths": [
+        "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+        "D:\\tracks\\_data\\static\\scenes\\menu_background.xml"
+      ],
+      "attempts_per_path": 2,
+      "status": "0xc000000f"
+    },
+    "ring_activity_after_probes": {
+      "last_trace_id": 10972,
+      "last_trace_time_local": "2026-10-25T23:00:24.366+03:00",
+      "last_event": "consumed [1365,1371), current-rptr=1371 current-wptr=1371",
+      "interpretation": "Ring trace activity continued about 0.924 seconds after the last XML miss. The log then has no further ring trace before Window closing at 23:00:51.875 and Title terminated at 23:00:52.076; this does not establish why the guest later stopped or closed."
+    },
+    "capture": {
+      "screenshot": "evidence/process2_p1_ring_trace_t54_20261026.png",
+      "screenshot_sha256": "8215d9523c2b43ab5518e00a84f0dd944a2230ceb36f7ee910d61ad2dd92a20a",
+      "observation": "A very dark disclaimer screen with faint text; no menu or cutscene is visible."
+    },
+    "interpretation": "This confirms the cap-32768 plugin received CP_RB_WPTR=5651 and its worker consumed a snapshot whose [RPTR,WPTR) range contains it. It verifies ring delivery and packet expansion for this run, not downstream scene rendering, why the menu asset probes failed, or retail graphics parity."
+  },
   "p1_correlation_target": {
     "observed_guest_snapshot": {
       "queue_head": 5641,
       "queue_tail": 5651,
       "predicate": "0x04"
     },
-    "unresolved": "Both trace runs ended at WPTR 5396 and 5417, respectively, before their caps. Neither establishes whether CP_RB_WPTR=5651 reaches the plugin."
+    "third_run_result": "Confirmed in the third run: CP_RB_WPTR new=5651 was trace record 8395, and the worker later consumed [5645,5657), which includes that pointer. This run used a different process instance than the earlier guest snapshot, so it confirms the plugin path and pointer value but does not correlate the old snapshot to the third run."
+  },
+  "resolve_capable_trace_followup_build": {
+    "evidence": "evidence/process2_linux_resolve_provider_build_20261026.json",
+    "plugin_path": "/home/pes/work/process2-p1-ring-trace-resolve-handover-20261026/librexgpu-shift-native.so",
+    "plugin_sha256": "dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1",
+    "purpose": "Combine the current P2 ring tracing build with the provider-confirmed depth/stencil resolve capability that the third retail run lacked.",
+    "retail_status": "Built and validation-tested; no retail recapture with this candidate has been observed yet."
   },
   "language_selector_note": {
     "root_cause_commit": "ac7f5793a9d794e81078cd08bdbef15e0babcd0e",

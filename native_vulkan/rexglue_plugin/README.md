@@ -15,14 +15,26 @@ write-pointer notification and worker state.
 The 2026-10-26 Linux diagnostic build passed all three live-ring CTests with
 `VK_LAYER_KHRONOS_validation` forced through the loader. Those tests use
 synthetic geometry and resources. Their output does not expose the plugin's
-`REXLOG` trace sink. Two P1 retail runs confirmed actual WPTR updates, but both
-loaded the old 8,192-record DSO and exhausted its trace before the
-`menu_background.xml` probes. The canonical P1 handover path now points to the
-32,768-record build; the old binary is preserved with an `-8192cap` suffix.
-With the same synthetic readback fixture, trace-off and trace-on output was
-byte-identical. Build hash, commands, scope, and the unresolved P1 pointer
-observation are recorded in
+`REXLOG` trace sink. The first two P1 retail runs loaded the old 8,192-record
+DSO and exhausted the cap before the `menu_background.xml` probes. A third run
+loaded the trace-only 32,768-record build and confirmed `CP_RB_WPTR=5651` in
+the plugin;
+the worker snapshot `[5645,5657)` expanded 83 packets and completed its RPTR
+writeback, consuming the range containing that pointer. Ring processing
+continued for about 0.9 seconds after the later XML misses, then stopped before
+the process closed. Its screenshot still shows only a very dark disclaimer;
+the trace does not establish a menu transition, cutscene, or gameplay. The
+trace-only handover path is preserved separately; the 8,192-record binary is
+kept with an `-8192cap` suffix. A newer build combines this trace with provider
+depth/stencil resolve below. With the same synthetic readback fixture,
+trace-off and trace-on output was byte-identical. Build hash, commands, scope,
+and P1 trace details are recorded in
 [`process2_ring_trace_smoke_20261026.json`](../../evidence/process2_ring_trace_smoke_20261026.json).
+
+The durable copy of the third retail log is
+[`process2_p1_ring_trace_20261026.log.gz`](../../evidence/process2_p1_ring_trace_20261026.log.gz);
+the associated disclaimer capture is
+[`process2_p1_ring_trace_t54_20261026.png`](../../evidence/process2_p1_ring_trace_t54_20261026.png).
 
 The worker keeps the bounded captured register/shader contract, resolves the
 captured index, vertex, and tiled texture bytes, translates the observed shader
@@ -742,6 +754,28 @@ passed 4/4, including actual depth/stencil resolve semantics and fail-closed
 checks. This is host build and regression evidence only; a retail recapture is
 still needed to confirm the previously rejected frames render with this DSO.
 See the [build record](../../evidence/process2_linux_resolve_provider_build_20261026.json).
+
+### Current ring-trace build with depth/stencil resolve
+
+The third P1 ring-trace run used the 32,768-record DSO without the provider
+resolve capability. Its log shows eight failed 24-draw presenter refreshes
+because 4x-to-1x depth/stencil preservation was not enabled; those failures
+occurred before its observed `CP_RB_WPTR=5651`. The current P2 source was
+rebuilt against the same resolve-capability SDK branch. The resulting plugin
+is at
+`/home/pes/work/process2-p1-ring-trace-resolve-handover-20261026/librexgpu-shift-native.so`
+(SHA-256 `dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1`)
+and retains the ring trace cap of 32,768. It links against the matching
+`librexruntime.so` from that SDK worktree. The provider probe confirms the
+resolve pair and SAMPLE_ZERO on the GTX 950; all five plugin tests pass with
+`VK_LAYER_KHRONOS_validation`, and `ldd -r` reports no unresolved symbols.
+
+This candidate has not yet had a retail recapture, so it does not establish
+that those frames now render or that the menu/cutscene transition succeeds. It
+is a Linux x86_64 build; the evidence does not claim Android/ARM64 parity. The
+plugin/runtime hashes, build flags, probe and test results, and prior retail
+failure timestamps are in the [resolve-provider evidence](../../evidence/process2_linux_resolve_provider_build_20261026.json)
+and [retail ring trace record](../../evidence/process2_ring_trace_smoke_20261026.json).
 
 ## Redmi guest ring wait after the disclaimer (2026-10-25)
 

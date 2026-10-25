@@ -42,5 +42,42 @@
     "This host build does not prove that the exact retail 24-draw sequence renders with the provider enabled; recapture the failed frame and pair it with the mapped DSO hash.",
     "This is not an Android or ARM64 artifact.",
     "Synthetic renderer regressions are not retail visual parity evidence."
-  ]
+  ],
+  "current_p2_ring_trace_followup": {
+    "process2_source_commit": "c1f9e7e96a177540ea78d4c10e86ce0f353c62fd",
+    "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "sdk_branch": "work/process2-vulkan-resolve-capability-20261024",
+    "target": "Linux x86_64",
+    "compiler": "Clang 22.1.8",
+    "cxx_flags": "-mssse3",
+    "plugin_path": "/home/pes/work/process2-p1-ring-trace-resolve-handover-20261026/librexgpu-shift-native.so",
+    "plugin_size_bytes": 4096248,
+    "plugin_sha256": "dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1",
+    "guest_ring_trace_limit": 32768,
+    "matching_runtime_path": "/home/pes/work/rexglue-sdk-process2-resolve-20261024/out/linux-amd64/librexruntime.so",
+    "matching_runtime_sha256": "544154e1705686d8be06852a16cda2c670f95b0852e38b290f6e0144b3830732",
+    "provider_compile_definitions": [
+      "SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER=1",
+      "SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER=1"
+    ],
+    "provider_probe": {
+      "device": "NVIDIA GeForce GTX 950",
+      "api_version": "1.4",
+      "depth_stencil_resolve_pair_enabled": true,
+      "sample_zero_supported": true,
+      "gpu_emulation_features": "disabled"
+    },
+    "validation": {
+      "plugin_ctest": "5/5 passed with VK_LAYER_KHRONOS_validation",
+      "tests": [
+        "rexgpu_shift_native_factory_check",
+        "rexgpu_shift_native_live_ring_check",
+        "rexgpu_shift_native_live_ring_selected_draw_dump_check",
+        "rexgpu_shift_native_live_ring_readback_check",
+        "rexgpu_vulkan_resolve_capability_check"
+      ],
+      "dynamic_link_check": "ldd -r clean"
+    },
+    "retail_recapture": "Not yet performed. The prior cap-32768 run used plugin SHA-256 9aaa4ea81faf1fb55981cce7ac59e99b34ca66943bbec7850af18e20c73425bc and recorded eight depth/stencil resolve refresh failures for 24-draw frames at 23:00:04.885-23:00:05.037 local, before WPTR=5651. This candidate has the provider capability enabled at build/runtime but still requires a retail recapture to establish that the frame succeeds."
+  }
 }
