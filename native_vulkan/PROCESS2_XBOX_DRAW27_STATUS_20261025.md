@@ -268,3 +268,18 @@ selector capture shows all six labels after the interpolator-location shader
 fix. Gameplay, post-disclaimer menu rendering, and sustained cutscene playback
 remain unverified. The phone app was left resumed, and no Process 1 source was
 changed.
+
+## Redmi retail Bink pipeline-cache replay (2026-10-26)
+
+The latest renderer core was replayed on the Mali-G76 with the captured retail
+Bink draw #2614 and the same three R8 planes used by the earlier async-in-flight
+measurement. Across three alternating runs, the pipeline-cache build produced
+byte-identical readback and used 36% less replay-thread CPU time on average
+(1.303 ms vs. 2.043 ms per call). Wall time averaged 8.123 ms vs. 7.887 ms and
+did not improve in this sample. This isolates one GPU submission call; it does
+not measure Bink decode, the full mixed-sample frame, game scheduling, or
+end-to-end cutscene speed. The
+[A/B record](../evidence/process2_redmi_bink_pipeline_cache_20261026.json)
+includes the old/current replay hashes, shader/plane hashes, all samples, and
+the unchanged live-app state. The game remained resumed and was not reinstalled
+or restarted.

@@ -798,3 +798,15 @@ reference. The capture isolates which draws and texture produce the strips; it
 does not determine whether their pixels are intentional or a decode/blend bug.
 See the [draw-level record](../../evidence/process2_disclaimer_draw_isolation_20261026.json)
 and [Linux Vulkan readback](../../evidence/process2_linux_disclaimer_frame907_readback_20261026.png).
+
+## Redmi Bink draw replay with the pipeline cache (2026-10-26)
+
+An A/B on Mali-G76 replayed the captured retail Bink draw #2614 with identical
+SPIR-V and R8 planes. The P2 pipeline-cache build returned byte-identical
+readback and reduced replay-thread CPU time by 36% on average (1.303 ms vs.
+2.043 ms per call). Average wall time was 8.123 ms for the candidate and
+7.887 ms for the previous bounded-in-flight build, so this isolated run does
+not show a wall-time gain. It bypasses guest video decode and does not establish
+full-game or sustained cutscene performance. The app remained foreground and
+unchanged. See the [full A/B evidence](../../evidence/process2_redmi_bink_pipeline_cache_20261026.json)
+and the [captured retail draw preview](../../evidence/process2_redmi_bink_retail_draw_replay_20261025.png).
