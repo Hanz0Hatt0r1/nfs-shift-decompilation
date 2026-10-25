@@ -42,6 +42,8 @@ A 75.33-second follow-up emitted six A/Start pulses and placed conditional break
 
 A separate exact-XEX vtable read ties those entries to the same observed controller object: slot `+0x98` is the per-frame `XamInputGetState`/edge-update path `0x82308E60`, slot `+0xBC` is raw-mask getter `0x828B22B8`, and slot `+0x54` is changed-button dispatcher `0x8230D398`. The retail update and edge accumulator were reached, but the bounded scene probe did not observe the action-dispatch slots consuming A/Start. This does not identify the active frontend scene or justify changing Linux input semantics. The exact vtable and probe hashes are recorded in the same [frontend consumer evidence](../evidence/xbox360_linux_gamepad_frontend_consumer_probe_20261025.json).
 
+A 78-second follow-up sampled the exact retail wait predicate after the frontend's menu-background XML lookup. The guest expected cursor was `0x13dd` (5085), while the software-ring head/tail were 5077/5087 and the completion byte was `0x04`; the wait loop ran at least 2,816 times. The host log recorded 115 captured draw submissions and 1,116 Copy/Convert entries, then four missing `menu_background.xml` opens, with no guest fault. This confirms an outstanding retail queue cursor at the sample, but does not identify which component should advance it or prove the XML miss caused the wait. Preserve the predicate and queue semantics; no menu or race was reached. See the [read-only cursor capture](../evidence/xbox360_linux_retail_wait_cursor_20261025.json) and [reusable GDB trace](../tools/xbox360/trace_guest_ring_wait_cursor.gdb).
+
 ## Proposed pipeline
 
 ```text

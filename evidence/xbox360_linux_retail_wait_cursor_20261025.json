@@ -1,0 +1,94 @@
+{
+  "schema": "shift.xbox360.linux.retail-wait-cursor.v1",
+  "captured_at_local": "2026-10-25T16:55:06+03:00",
+  "input": {
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "host_platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b",
+    "runtime_note": "Diagnostic SDK build logs the low-host-core warning once; it does not change guest scheduling or guest state.",
+    "gpu_plugin_sha256": "42f338bc48e144e9dbc70dd208f9a169f437b506d1c338832896c1a6b83b7f10",
+    "plugin_identity_note": "The private staging directory placed this plugin beside the host executable to avoid the host's $ORIGIN lookup selecting an older plugin. Its file hash was verified; /proc maps was not sampled in this particular run.",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-linux-retail-root-20261024/game",
+      "--user_data_root=/tmp/nfs-p1-after-miss-cursor-20261025/user",
+      "--cache_root=/tmp/nfs-p1-after-miss-cursor-20261025/cache",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation",
+      "--fullscreen=false"
+    ]
+  },
+  "capture": {
+    "duration_seconds": 78.2,
+    "termination": "The runner sent SIGINT after its 70-second window; the title remained live and was killed after the 8-second shutdown grace period. No guest fault was recorded before termination.",
+    "input_events_sent": [
+      { "at_seconds": 10, "button": "A", "duration_seconds": 0.5 },
+      { "at_seconds": 20, "button": "Start", "duration_seconds": 0.5 },
+      { "at_seconds": 32, "button": "A", "duration_seconds": 0.5 },
+      { "at_seconds": 44, "button": "Start", "duration_seconds": 0.5 },
+      { "at_seconds": 56, "button": "A", "duration_seconds": 0.5 }
+    ],
+    "guest_memory_modified": false,
+    "gdb_script": {
+      "path": "tools/xbox360/trace_guest_ring_wait_cursor.gdb",
+      "sha256": "a67fadd7f5526addd1c5df161fcb7996570eaca3ff991acbf477edfc115744f4"
+    },
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-after-miss-cursor-20261025/gdb.log",
+      "sha256": "0c02f889e5147a4802b8f7f1f04488ca37e23bf880f8c73ff09126b860003218",
+      "bytes": 3690
+    },
+    "runtime_log": {
+      "external_path": "/tmp/nfs-p1-private-bin-20261025/logs/nfs_shift_007.log",
+      "sha256": "9dc6015ad30297033bbed757e8f6ca7cd1accf1c54fa6112ac6fc0038eb6fab8",
+      "bytes": 391259,
+      "captured_draw_submission_count": 115,
+      "accepted_copy_convert_count": 1116,
+      "last_draw_submission_time": "2026-10-25T16:55:06.584+03:00",
+      "first_menu_background_xml_miss_time": "2026-10-25T16:55:06.640+03:00",
+      "menu_background_xml_miss_count": 4,
+      "guest_fault_lines": 0
+    }
+  },
+  "guest_observation": {
+    "predicate_function": "0x823A0310",
+    "caller_return_address": "0x823B3560",
+    "gdb_thread_id": 31,
+    "wait_object": "0xB7365F00",
+    "wait_record_count": 4,
+    "wait_record_snapshot_head": 5077,
+    "wait_record_previous_value": 0,
+    "expected_cursor_from_guest_r30": "0x13DD",
+    "expected_cursor_decimal": 5085,
+    "guest_r4": "0x0",
+    "software_ring_head": 5077,
+    "software_ring_tail": 5087,
+    "predicate_byte_object_plus_0x2ABD": "0x04",
+    "predicate_mask_0x02_set": false,
+    "wait_predicate_hit_count_at_least": 2816,
+    "representative_samples": [1, 256, 512, 768, 1024, 1280, 1536, 1792, 2048, 2304, 2560, 2816]
+  },
+  "interpretation": {
+    "supported": [
+      "The original guest remains in its retail queue-wait predicate with expected cursor 5085, head 5077, and tail 5087.",
+      "The sampled completion mask 0x02 remains clear; this matches the exact-XEX wait semantics and is not by itself a runtime error.",
+      "The renderer host log continues to report captured draw submissions shortly before the menu-background file misses."
+    ],
+    "not_proven": [
+      "Which component must advance the software-ring head for this particular cursor.",
+      "That the menu-background XML miss causes the wait or black frame.",
+      "That a guest scheduler or P-code defect exists.",
+      "Entry into the retail main menu or an offline race."
+    ],
+    "next_step": "Trace the producer/consumer responsible for software-ring head advancement at this exact cursor. Preserve retail predicate and queue semantics until a runtime contract violation is demonstrated."
+  },
+  "limits": [
+    "GDB breakpoints pause guest execution and affect timing.",
+    "The captured runtime did not produce a retained pixel readback.",
+    "No claim is made that dispatch or draw-submission counts prove gameplay."
+  ]
+}
