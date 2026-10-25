@@ -217,8 +217,12 @@ The backend is not yet a complete production renderer. Full BMW
 shader/material execution and full RenderCommand submission remain bounded by
 shader/reference coverage and runtime evidence. The Xbox work currently covers
 one standalone captured draw, live AutoIndex point and rectangle-list draws,
-and a small, fail-closed microcode subset. One captured rectangle target state
-remains unsupported, and Xenos EDRAM accumulation remains unimplemented.
+and a small, fail-closed microcode subset. The observed 1280x720 source-0/sample-0
+color Copy/Convert form is decoded and submitted through a Vulkan resolve pass;
+other Xenos EDRAM copy/resolve forms and EDRAM accumulation remain unsupported.
+The current Redmi evidence records 1,090 accepted Copy/Convert operations paired
+with 1,090 presenter submissions, but does not establish post-disclaimer menu,
+race rendering, or full retail parity.
 
 ## Commands
 

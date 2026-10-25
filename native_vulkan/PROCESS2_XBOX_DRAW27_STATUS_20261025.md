@@ -353,8 +353,10 @@ from host CTest. No Process 1 files were changed.
 
 A read-only check of the currently installed app found it still resumed as PID
 24808 on the Redmi Note 8 Pro. Its latest retained guest log records 1,090
-successful Vulkan presenter submissions between 20:36:46 and 20:38:20 MSK,
-then two failed opens for `D:\tracks\_data\instances\scenes\menu_background.xml`
+accepted source-0/sample-0 Copy/Convert operations and 1,090 successful Vulkan
+presenter submissions between 20:36:46 and 20:38:20 MSK. The only unresolved
+draw reason logged was draw #0's incomplete raster state (`valid_mask=0x17038`).
+The runtime then logged two failed opens for `D:\tracks\_data\instances\scenes\menu_background.xml`
 and `D:\tracks\_data\static\scenes\menu_background.xml` at 20:38:21. The
 screen captured at 00:08:18 MSK remains the legal disclaimer with the same
 purple strips; its SHA-256 matches the earlier capture. The app was not
@@ -365,5 +367,7 @@ restarted and no input was sent. See the [device record](../evidence/process2_re
 This confirms that the live session currently provides no post-disclaimer menu
 or race draws to specify another renderer change. The file failures are owned
 by Process 1's runtime/content path; their timing does not prove causality. The
-Android process map is restricted, so the loaded renderer DSO hash is unknown.
-No Process 1 files were changed.
+observed 1280x720 Copy/Convert path is exercised live, but this does not prove
+other EDRAM resolve forms or full retail parity. The Android process map is
+restricted, so the loaded renderer DSO hash is unknown. No Process 1 files were
+changed.

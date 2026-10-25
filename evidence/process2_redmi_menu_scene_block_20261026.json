@@ -28,6 +28,7 @@
     "vulkan_device": "Mali-G76 MC4",
     "first_submit_local": "2026-10-25T20:36:46.356+03:00",
     "last_submit_local": "2026-10-25T20:38:20.537+03:00",
+    "accepted_copy_convert_records": 1090,
     "successful_submit_records": 1090,
     "draw_count_histogram": {
       "1": 43,
@@ -40,6 +41,9 @@
       "24": 185
     },
     "last_submit_draw_count": 14,
+    "unresolved_draw_reasons": [
+      "draw #0: incomplete captured raster register state, valid_mask=0x17038"
+    ],
     "last_copy_convert": "2026-10-25T20:38:20.515+03:00"
   },
   "runtime_frontier": {
