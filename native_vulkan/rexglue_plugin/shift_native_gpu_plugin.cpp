@@ -65,6 +65,7 @@ constexpr uint32_t kVblankStatusRegister = 0x1951u;
 constexpr uint32_t kVgtEventInitiatorRegister =
     rex::graphics::XE_GPU_REG_VGT_EVENT_INITIATOR;
 constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
+constexpr uint32_t kRectangleListInterpolatorCount = 16;
 
 bool parse_positive_environment_frame(const char* text, uint32_t* frame) {
   if (!text || !*text || !frame) return false;
@@ -80,35 +81,50 @@ const std::string kDebugFragmentColorShader =
     "#version 450\n"
     "layout(location=0) out vec4 shift_color0;\n"
     "void main() { shift_color0 = vec4(1.0, 0.0, 1.0, 1.0); }\n";
-const std::string kRectangleListGeometryShader =
-    "#version 450\n"
-    "layout(triangles) in;\n"
-    "layout(triangle_strip, max_vertices=4) out;\n"
-    "layout(location=0) in vec4 shift_interpolator0_in[];\n"
-    "layout(location=0) out vec4 shift_interpolator0;\n"
-    "void main() {\n"
-    "  vec2 p0=gl_in[0].gl_Position.xy;\n"
-    "  vec2 p1=gl_in[1].gl_Position.xy;\n"
-    "  vec2 p2=gl_in[2].gl_Position.xy;\n"
-    "  float d01=dot(p1-p0,p1-p0);\n"
-    "  float d12=dot(p2-p1,p2-p1);\n"
-    "  float d20=dot(p0-p2,p0-p2);\n"
-    "  int a; int b; int c;\n"
-    "  if (d12>d20 && d12>d01) { a=0; b=1; c=2; }\n"
-    "  else if (d20>d01) { a=1; b=2; c=0; }\n"
-    "  else { a=2; b=0; c=1; }\n"
-    "  for (int i=0; i<3; ++i) {\n"
-    "    int v=i==0 ? a : (i==1 ? b : c);\n"
-    "    gl_Position=gl_in[v].gl_Position;\n"
-    "    shift_interpolator0=shift_interpolator0_in[v];\n"
-    "    EmitVertex();\n"
-    "  }\n"
-    "  gl_Position=-gl_in[a].gl_Position+gl_in[b].gl_Position+gl_in[c].gl_Position;\n"
-    "  shift_interpolator0=-shift_interpolator0_in[a]+\n"
-    "                     shift_interpolator0_in[b]+shift_interpolator0_in[c];\n"
-    "  EmitVertex();\n"
-    "  EndPrimitive();\n"
-    "}\n";
+std::string rectangle_list_geometry_shader() {
+  std::ostringstream source;
+  source << "#version 450\n"
+         << "layout(triangles) in;\n"
+         << "layout(triangle_strip, max_vertices=4) out;\n";
+  for (uint32_t index = 0; index < kRectangleListInterpolatorCount; ++index) {
+    source << "layout(location=" << index << ") in vec4 shift_interpolator"
+           << index << "_in[];\n";
+  }
+  for (uint32_t index = 0; index < kRectangleListInterpolatorCount; ++index) {
+    source << "layout(location=" << index << ") out vec4 shift_interpolator"
+           << index << ";\n";
+  }
+  source << "void main() {\n"
+         << "  vec2 p0=gl_in[0].gl_Position.xy;\n"
+         << "  vec2 p1=gl_in[1].gl_Position.xy;\n"
+         << "  vec2 p2=gl_in[2].gl_Position.xy;\n"
+         << "  float d01=dot(p1-p0,p1-p0);\n"
+         << "  float d12=dot(p2-p1,p2-p1);\n"
+         << "  float d20=dot(p0-p2,p0-p2);\n"
+         << "  int a; int b; int c;\n"
+         << "  if (d12>d20 && d12>d01) { a=0; b=1; c=2; }\n"
+         << "  else if (d20>d01) { a=1; b=2; c=0; }\n"
+         << "  else { a=2; b=0; c=1; }\n"
+         << "  for (int i=0; i<3; ++i) {\n"
+         << "    int v=i==0 ? a : (i==1 ? b : c);\n"
+         << "    gl_Position=gl_in[v].gl_Position;\n";
+  for (uint32_t index = 0; index < kRectangleListInterpolatorCount; ++index) {
+    source << "    shift_interpolator" << index << "=shift_interpolator"
+           << index << "_in[v];\n";
+  }
+  source << "    EmitVertex();\n"
+         << "  }\n"
+         << "  gl_Position=-gl_in[a].gl_Position+gl_in[b].gl_Position+gl_in[c].gl_Position;\n";
+  for (uint32_t index = 0; index < kRectangleListInterpolatorCount; ++index) {
+    source << "  shift_interpolator" << index << "=-shift_interpolator" << index
+           << "_in[a]+shift_interpolator" << index << "_in[b]+shift_interpolator"
+           << index << "_in[c];\n";
+  }
+  source << "  EmitVertex();\n"
+         << "  EndPrimitive();\n"
+         << "}\n";
+  return source.str();
+}
 const std::string kCopyResolveVertexShader =
     "#version 450\n"
     "void main() {\n"
@@ -745,7 +761,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         return false;
       }
       if (!CompileVulkanShader("rectangle-list-geometry", EShLangGeometry,
-                               kRectangleListGeometryShader,
+                               rectangle_list_geometry_shader(),
                                &prepared.geometry_shader_spirv, error)) {
         return false;
       }

@@ -1,0 +1,50 @@
+{
+  "captured_at_local": "2026-10-25T12:07:17+03:00",
+  "title": "Need for Speed: Shift Xbox 360",
+  "title_id": "454108B4",
+  "render_path": "Retail guest draw stream through the project's emulator-free native Vulkan presenter; no Xenos GPU-render path or synthetic fragment override",
+  "host": {
+    "os": "Linux",
+    "gpu": "NVIDIA GeForce GTX 950",
+    "vulkan_api": "1.4.312",
+    "output": "1280x720 VK_FORMAT_A2B10G10R10_UNORM_PACK32"
+  },
+  "frame": {
+    "presenter_frame": 150,
+    "before": {
+      "readback_sha256": "97c9f04817c269b868bf1a223d5a1f30d2b0919e648932447cec8bf9dbb67f2b",
+      "readback_fnv1a64": "626676636F1C170C",
+      "non_black_pixels": 119808,
+      "image": "process2_linux_language_menu_before_20261025.png",
+      "image_sha256": "51d2ade1a106d8a65bdff515eef90937494c73eadf8f3c26debfb65e0e167ad2",
+      "observation": "The original menu rows and selection highlight render, but the title, language names, and select prompt are missing."
+    },
+    "after": {
+      "readback_sha256": "a0e0c1d3a5659e18ceb0c63dd7706acb84f6974a55bc99d57cb87fdabb835f0c",
+      "readback_fnv1a64": "DAE685755840E6EF",
+      "non_black_pixels": 127934,
+      "image": "process2_linux_language_menu_after_20261025.png",
+      "image_sha256": "10c478de1c635d5ccf68b04e266f9e152ff3bc7be575367fac9e7c52a1b4d1a1",
+      "observation": "The original menu title and all six labels (English, Français, Italiano, Deutsch, Español, Nederlands) plus SELECT [A] are visible."
+    }
+  },
+  "fix": {
+    "root_cause": "Vertex shader exports to Xenos interpolator registers were collapsed into Vulkan location 0, while the pixel shader read UVs from a nonzero register.",
+    "change": "Preserve all 16 Xenos interpolator indices as matching Vulkan locations, initialize and consume the matching per-stage registers, and forward those locations through the rectangle-list geometry stage.",
+    "regression": "xbox_shader_translate_check asserts separate exports and the pixel r[1] connection."
+  },
+  "validation": {
+    "native_vulkan_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation enabled",
+    "p2_plugin_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation enabled",
+    "retail_frame150_after_geometry_interface_change": {
+      "layer": "VK_LAYER_KHRONOS_validation",
+      "vuid_count": 0,
+      "non_black_pixels": 0,
+      "note": "This later frame-150 run was black and is not used as visual proof of the language menu."
+    }
+  },
+  "evidence_scope": {
+    "capture_order": "The after image was captured after the interpolator-index fix and before the follow-up geometry-stage pass-through change. In the captured frame, label draws #710-#731 use topology 0; the geometry pass-through change affects the separate topology-2 draws #708-#709. The final code passes both validation-enabled test suites, but a visible language-menu frame has not been recaptured with that final geometry change.",
+    "android": "The ARM64 consumer build is blocked in the existing shared ReXGlue SDK fiber_posix.cpp because Android NDK 28.2 does not declare getcontext, makecontext, or swapcontext. No Process 1 runtime files were changed; the language menu has not been tested on the phone after this fix."
+  }
+}

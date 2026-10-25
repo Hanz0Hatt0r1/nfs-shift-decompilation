@@ -38,6 +38,37 @@ std::vector<uint8_t> captured_full_mini_vertex_shader() {
     return shader;
 }
 
+std::vector<uint8_t> captured_multi_interpolator_vertex_shader() {
+    std::vector<uint8_t> shader(5 * 12, 0);
+    const uint32_t allocate_word0 = 2u;
+    const uint32_t allocate_word1 = (12u << 12) | (2u << 9);
+    const uint32_t exec_word0 = 2u | (2u << 12);
+    const uint32_t exec_word1 = 1u << 12;
+    write_be32(shader.data(), allocate_word0);
+    write_be32(shader.data() + 4,
+               allocate_word1 | ((exec_word0 & 0xFFFFu) << 16));
+    write_be32(shader.data() + 8,
+               (exec_word0 >> 16) | (exec_word1 << 16));
+
+    const uint32_t end_word0 = 4u | (1u << 12);
+    const uint32_t end_word1 = 2u << 12;
+    write_be32(shader.data() + 12, end_word0);
+    write_be32(shader.data() + 16, end_word1);
+
+    const auto write_export = [&shader](uint32_t address, uint32_t index,
+                                        uint32_t mask, uint32_t source) {
+        write_be32(shader.data() + address * 12,
+                   (50u << 26) | index | (1u << 15) | (mask << 16));
+        write_be32(shader.data() + address * 12 + 8,
+                   (2u << 24) | (1u << 31) | (1u << 30) |
+                       (source << 16) | (source << 8));
+    };
+    write_export(2, 1, 0x3u, 0);
+    write_export(3, 0, 0xFu, 1);
+    write_be32(shader.data() + 4 * 12, 50u << 26);
+    return shader;
+}
+
 void require(bool condition, const char* message) {
     if (!condition) {
         std::cerr << message << '\n';
@@ -112,6 +143,26 @@ int main() {
                 vertex_translated.glsl.find("r[0].x = fetched_vertex_1.x") !=
                     std::string::npos,
             "full/mini fetch translation lost the captured vertex layout");
+
+    const std::vector<uint8_t> multi_interpolator_shader =
+        captured_multi_interpolator_vertex_shader();
+    const bool translated_multi_interpolator =
+        shift::xbox::translate_captured_shader_glsl(
+            shift::xbox::CapturedShaderStage::Vertex,
+            multi_interpolator_shader.data(), multi_interpolator_shader.size(),
+            vertex_options, &vertex_translated, &vertex_error);
+    if (!translated_multi_interpolator) {
+        std::cerr << "multi-interpolator translation: " << vertex_error << '\n';
+    }
+    require(translated_multi_interpolator &&
+                vertex_translated.glsl.find(
+                    "layout(location=1) out vec4 shift_interpolator1") !=
+                    std::string::npos &&
+                vertex_translated.glsl.find(
+                    "shift_interpolator1.x = alu_2.x") != std::string::npos &&
+                vertex_translated.glsl.find(
+                    "shift_interpolator0.x = alu_3.x") != std::string::npos,
+            "captured Xenos interpolator exports collapsed to one Vulkan varying");
 
     vertex_options.clip_disabled_window_coordinates = true;
     vertex_options.window_coordinate_width = 1280;
@@ -275,9 +326,14 @@ int main() {
                 shift::xbox::CapturedShaderStage::Pixel,
                 nonzero_texture_registers.data(),
                 nonzero_texture_registers.size(), options, &translated, &error) &&
+                translated.glsl.find(
+                    "layout(location=1) in vec4 shift_interpolator1") !=
+                    std::string::npos &&
+                translated.glsl.find("r[1]=shift_interpolator1") !=
+                    std::string::npos &&
                 translated.glsl.find("r[1].xy") != std::string::npos &&
                 translated.glsl.find("r[1].x = fetched_0.x") != std::string::npos,
-            "captured texture fetch did not read/write its decoded temporary registers");
+            "captured pixel interpolator 1 was not connected to its sampled registers");
 
     std::vector<uint8_t> unsupported_texture_swizzle = shader;
     write_be32(unsupported_texture_swizzle.data() + 4 * 12 + 4,

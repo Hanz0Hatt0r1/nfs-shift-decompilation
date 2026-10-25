@@ -11,6 +11,8 @@
 namespace shift::xbox {
 namespace {
 
+constexpr uint32_t kVertexInterpolatorCount = 16;
+
 bool fail(const char* message, std::string* error) {
     if (error) *error = message;
     return false;
@@ -373,7 +375,11 @@ bool emit_alu(std::ostringstream& glsl,
         } else if (allocation_type == 1) {
             export_target = "gl_Position";
         } else if (allocation_type == 2) {
-            export_target = "shift_interpolator0";
+            if (instruction.vector_destination >= kVertexInterpolatorCount) {
+                return fail_at_slot("captured vertex interpolator export index exceeds 15");
+            }
+            export_target = "shift_interpolator" +
+                           std::to_string(instruction.vector_destination);
         } else {
             return fail("vertex export has no supported output allocation", error);
         }
@@ -683,11 +689,17 @@ bool translate_captured_shader_glsl(
             glsl << "layout(location=" << attribute.location << ") in " << type
                  << " shift_vertex_input_" << attribute.location << ";\n";
         }
-        glsl << "layout(location=0) out vec4 shift_interpolator0;\n"
-             << "layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;\n";
+        for (uint32_t index = 0; index < kVertexInterpolatorCount; ++index) {
+            glsl << "layout(location=" << index << ") out vec4 shift_interpolator"
+                 << index << ";\n";
+        }
+        glsl << "layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;\n";
     } else {
-        glsl << "layout(location=0) in vec4 shift_interpolator0;\n"
-             << "layout(location=0) out vec4 shift_color0;\n"
+        for (uint32_t index = 0; index < kVertexInterpolatorCount; ++index) {
+            glsl << "layout(location=" << index << ") in vec4 shift_interpolator"
+                 << index << ";\n";
+        }
+        glsl << "layout(location=0) out vec4 shift_color0;\n"
              << "layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;\n";
         for (uint32_t texture_index : texture_fetch_constant_indices) {
             glsl << "layout(set=1,binding=" << texture_index
@@ -720,10 +732,15 @@ bool translate_captured_shader_glsl(
          << "  int a0=0;\n  float previous_scalar=0.0;\n";
     if (stage == CapturedShaderStage::Vertex) {
         glsl << "  r[0].x=float(gl_VertexIndex);\n  gl_Position=vec4(0.0);\n"
-             << "  gl_PointSize=1.0;\n"
-             << "  shift_interpolator0=vec4(0.0);\n";
+             << "  gl_PointSize=1.0;\n";
+        for (uint32_t index = 0; index < kVertexInterpolatorCount; ++index) {
+            glsl << "  shift_interpolator" << index << "=vec4(0.0);\n";
+        }
     } else {
-        glsl << "  r[0]=shift_interpolator0;\n  shift_color0=vec4(0.0);\n";
+        for (uint32_t index = 0; index < kVertexInterpolatorCount; ++index) {
+            glsl << "  r[" << index << "]=shift_interpolator" << index << ";\n";
+        }
+        glsl << "  shift_color0=vec4(0.0);\n";
     }
 
     uint32_t allocation_type = 0;
