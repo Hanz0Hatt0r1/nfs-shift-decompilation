@@ -15,11 +15,12 @@ write-pointer notification and worker state.
 The 2026-10-26 Linux diagnostic build passed all three live-ring CTests with
 `VK_LAYER_KHRONOS_validation` forced through the loader. Those tests use
 synthetic geometry and resources. Their output does not expose the plugin's
-`REXLOG` trace sink, so only a retail run with this build can confirm that the
-records are emitted and correlate them with the guest WPTR. With the same
-synthetic readback fixture, trace-off and trace-on output was byte-identical.
-Build hash, commands, scope, and the unresolved P1 pointer observation are
-recorded in
+`REXLOG` trace sink. The first P1 retail run confirmed the records and actual
+WPTR updates, but the previous 8,192-record cap ended before the
+`menu_background.xml` probes. This build raises the cap to 32,768. With the
+same synthetic readback fixture, trace-off and trace-on output was
+byte-identical. Build hash, commands, scope, and the unresolved P1 pointer
+observation are recorded in
 [`process2_ring_trace_smoke_20261026.json`](../../evidence/process2_ring_trace_smoke_20261026.json).
 
 The worker keeps the bounded captured register/shader contract, resolves the
