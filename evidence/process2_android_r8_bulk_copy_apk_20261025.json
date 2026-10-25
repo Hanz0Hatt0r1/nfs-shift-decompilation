@@ -1,0 +1,45 @@
+{
+  "schema": "shift.process2.android_r8_bulk_copy_apk.v1",
+  "date": "2026-10-25",
+  "source": {
+    "process2_commit": "9b0057264d28a4b31738f24eadbd25a03a340783",
+    "plugin_source": "/home/pes/work/nfs-shift-xbox-live-ring-20261023/native_vulkan/rexglue_plugin",
+    "android_project": "/home/pes/work/nfsshift-rex/android",
+    "rexglue_sdk": "/home/pes/work/rexglue-sdk-v0.10.0-android",
+    "build_command": "./gradlew --no-daemon :app:assembleDebug -PREXSDK_DIR=/home/pes/work/rexglue-sdk-v0.10.0-android -PSHIFT_NATIVE_PLUGIN_DIR=/home/pes/work/nfs-shift-xbox-live-ring-20261023/native_vulkan/rexglue_plugin"
+  },
+  "build": {
+    "result": "BUILD SUCCESSFUL",
+    "elapsed": "1m 16s",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "abi": "arm64-v8a",
+    "minimum_android_api": 29,
+    "target_android_api": 33,
+    "signature_scheme_v2": true,
+    "apk_path": "/home/pes/work/process2-android-apk-20261024/app-process2-native-vulkan-r8-bulk-copy-20261025.apk",
+    "apk_bytes": 188540831,
+    "apk_sha256": "e21061537fa3d659504a18c75c8adcb3afb226056a6b4a623e1c0cd98ccc26c3"
+  },
+  "packaged_plugin": {
+    "paths": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "both_paths_byte_identical": true,
+    "stripped_sha256": "5f3287c56bfe54b77ab4b42940b874f34e52ddee23dd61822f48fd8909982c05",
+    "elf_build_id": "c0b445f3460dc08b76ad428a568e914363fe8f65",
+    "source_and_loader_alias_match": true
+  },
+  "device_state": {
+    "device": "Redmi Note 8 Pro (begonia, Android API 33)",
+    "running_game_pid_after_build": 6314,
+    "candidate_installed": false,
+    "game_restarted_or_stopped": false,
+    "live_performance_result": "not measured"
+  },
+  "limits": [
+    "The candidate uses the v0.10.0 Android Vulkan provider, which does not expose optional depth/stencil resolve.",
+    "APK packaging proves the current Process 2 library is present under both loader paths; it does not prove live playback speed or completion.",
+    "The active on-device session predates this APK and was left running."
+  ]
+}
