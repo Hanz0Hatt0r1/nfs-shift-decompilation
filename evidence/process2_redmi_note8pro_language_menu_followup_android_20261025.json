@@ -1,0 +1,65 @@
+{
+  "format": "SHIFT.Process2AndroidLanguageMenuFollowup/1",
+  "captured_at_local": "2026-10-25T13:10:00+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": "13",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift"
+  },
+  "renderer": "Process 2 native Vulkan plugin consuming live retail guest draws; no Xenos GPU-render path and no synthetic color override",
+  "installed_build": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "plugin_sha256": "5ab05c61392cd076a7211dfc9300b96c81f2f36792da6fd98c2de99adcfea718",
+    "installed_apk_sha256": "28912e5bbc62082cda0fbb8ab8d30a573297bfb5a77ba87a8a6488a30069eddd",
+    "shader_interface": "The log shows generated vertex and pixel GLSL interfaces for Xenos interpolator locations 0 through 15, matching the existing Linux language-selector fix."
+  },
+  "language_menu": {
+    "user_observation": "The game showed the language-selection menu between Loading and the EA intro, but its text labels were not visible.",
+    "device_screenshot_of_menu": null,
+    "diagnosis": "Not yet isolated on Android. The running package includes the shader-varying fix that makes the six retail language labels visible in the Linux capture. The current device log does not include a targeted per-draw capture of those labels, so it does not establish whether their Vulkan draws were submitted or which shader/resource differs on Mali."
+  },
+  "runtime_evidence": {
+    "log": "process2_redmi_note8pro_language_menu_followup_android_20261025.log.gz",
+    "log_sha256": "710c99cdb70b3f77e67462127b0dd482aff7c37b97a49415de2d98086a5ad929",
+    "compressed_log_sha256": "b4e861d3cd7dc59f1f3cf24458e8667cfbac3519495f5e6af2f8643301d576f5",
+    "retail_font_draws": {
+      "draw_7_time_local": "2026-10-25T12:53:08+03:00",
+      "draw_92_time_local": "2026-10-25T12:53:40+03:00",
+      "index_count": 60,
+      "font_atlas_guest_address": "0x09E57000",
+      "font_atlas_extent": "1024x512",
+      "font_atlas_format": 19,
+      "interpretation": "The Loading text is visible on the device and uses this retail font atlas. This confirms basic format-19 font sampling, but does not prove that the language-selector draws use the same shader constants or draw state."
+    },
+    "provider_failures": {
+      "count": 8,
+      "time_range_local": [
+        "2026-10-25T12:53:53+03:00",
+        "2026-10-25T12:53:58+03:00"
+      ],
+      "draws_per_refresh": 24,
+      "error": "mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability",
+      "interpretation": "The package's Android Vulkan provider did not expose the optional depth/stencil-resolve capability. These errors occurred during the loading-to-menu transition, but the log does not identify them as the cause of the missing labels."
+    },
+    "later_progress": {
+      "first_four_draw_frame_time_local": "2026-10-25T12:54:09+03:00",
+      "vulkan_readback_frame": 500,
+      "vulkan_readback_time_local": "2026-10-25T13:02:01+03:00",
+      "readback_extent": "1280x720",
+      "readback_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "non_black_pixels": 921274,
+      "fnv1a64": "853F4757F4BAFFB5",
+      "screenshot": "process2_redmi_note8pro_after_language_menu_android_20261025.png",
+      "screenshot_sha256": "550af0a6e83181b8e34bcfdec8ece3a26f7542630e9e6ca60b3a727eb4239c60",
+      "screen_recording": "process2_redmi_note8pro_ea_mark_sequence_android_20261025.mp4",
+      "screen_recording_sha256": "43033749a0098db555154907a269439efc56d528c8226c9e60993eab6c1dae90",
+      "screen_recording_duration_seconds": 10.069,
+      "screen_recording_changed_pixels_frame_1_to_9": 17313,
+      "interpretation": "The same process later rendered a changing original EA/NFS mark sequence. This supersedes the earlier observation that the screen stayed black before the intro, but does not verify the language labels. The exact Bink asset has not been matched."
+    }
+  },
+  "next_required_evidence": "After the Android provider is rebuilt with the enabled Vulkan 1.1 depth/stencil-resolve capability, capture a frame from the language menu with its per-draw shader/resource diagnostics and compare the six labels against the Linux retail capture."
+}
