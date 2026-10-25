@@ -51,6 +51,16 @@ original safety disclaimer and thin purple strips. See the [readback metadata](.
 [device screenshot](../evidence/process2_redmi_post_selector_frame1026_device_20261025.png),
 and [compressed runtime log](../evidence/process2_redmi_post_selector_frame1026_runtime_20261025.log.gz).
 
+A separate exact-XEX Linux retail run also shows the same disclaimer and purple
+strips in its Vulkan window. Its 32-second and 62-second screenshots match by
+SHA-256; the disclaimer was present by submit 551. The process mapped plugin
+hash `42f338bc…b7f10`, while its command manifest listed the newer handoff hash
+`512eb265…278fa98`, so this is evidence for the earlier P2 build, not for the
+latest handoff binary. The [Linux frame](../evidence/process2_linux_disclaimer_p1_run021_20261025.png)
+and [cross-host evidence record](../evidence/process2_linux_disclaimer_p1_run021_20261025.json)
+preserve that discrepancy. The draw/resource source of the strips remains
+unisolated.
+
 A five-sample Android thread snapshot at 18:04:37 shows the guest main thread
 at 101% CPU on average, SDL at 87.8%, the two controller threads at 88.8% and
 87.2%, while `SHIFT Native GP` stayed at 0%. No later Vulkan submissions

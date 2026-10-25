@@ -653,6 +653,29 @@ the guest completion bit. The P1 evidence is
 `/home/pes/work/nfs-shift-xbox360-runtime-p1-20261023/evidence/xbox360_linux_guest_ring_physical_virtual_alias_20261025.json`.
 See the [P2 implementation regression evidence](../../evidence/process2_event_write_shd_virtual_alias_20261025.json).
 
+## Linux reproduction of the Redmi disclaimer artifact (2026-10-25)
+
+A separate exact-XEX Linux retail run displays the original safety disclaimer
+with the same two purple horizontal strips seen in the Redmi Vulkan readback.
+The host screenshots at 32 and 62 seconds are byte-identical; the first shows
+the disclaimer by submit 551. This confirms the visible artifact is reproduced
+by the project-owned guest-draw/Vulkan path on another host. The process mapped
+the earlier P2 plugin `42f338bc…b7f10`; its command manifest claimed the current
+handoff hash `512eb265…278fa98`, which did not match the mapped file. Therefore
+this run does not test the latest handoff binary. The [captured Linux frame](../../evidence/process2_linux_disclaimer_p1_run021_20261025.png)
+and [run evidence](../../evidence/process2_linux_disclaimer_p1_run021_20261025.json)
+record both the image and that hash discrepancy.
+
+The current P2 plugin can dump the selected submit's prepared vertices,
+indices, and texture payloads with `SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME`,
+`SHIFT_NATIVE_VULKAN_DUMP_GEOMETRY_PREFIX`, and
+`SHIFT_NATIVE_VULKAN_DUMP_TEXTURES_PREFIX`. Pair those with
+`SHIFT_NATIVE_VULKAN_READBACK_FRAME` and `SHIFT_NATIVE_VULKAN_READBACK_PATH`
+to save the corresponding Vulkan output. Submit 551 is the observed Linux
+target; the next run should confirm the disclaimer frame number again before
+selecting it. The 14 constituent retail draws have not yet been isolated as
+the source of the strips.
+
 ## Redmi guest ring wait after the disclaimer (2026-10-25)
 
 A fresh read-only snapshot at 18:09:48 shows the phone still on the same

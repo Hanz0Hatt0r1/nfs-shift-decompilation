@@ -1,0 +1,71 @@
+{
+  "schema": "shift.process2.linux_disclaimer_cross_host_capture.v1",
+  "captured_at_local": "2026-10-25T18:46:42+03:00",
+  "runtime": {
+    "origin": "Process 1 exact-XEX Linux retail run, read-only renderer evidence",
+    "process_id": 365024,
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "command_manifest": "/tmp/nfs-p1-current-p2-retail-20261025/command.json",
+    "manifest_claimed_plugin_sha256": "512eb2658935c48a3fddcc5abc0e100da948913fad6eb3f42148b12eb278fa98",
+    "mapped_plugin_path": "/tmp/nfs-p1-private-bin-20261025/librexgpu-shift-native.so",
+    "mapped_plugin_sha256": "42f338bc48e144e9dbc70dd208f9a169f437b506d1c338832896c1a6b83b7f10",
+    "mapping_note": "The mapped file hash differed from command.json and from the b03c9f87 handoff build; this capture does not verify that build."
+  },
+  "output": {
+    "window_extent": [
+      879,
+      579
+    ],
+    "screen": "Original English safety disclaimer with two thin purple horizontal strips above and below the text.",
+    "screenshot": "process2_linux_disclaimer_p1_run021_20261025.png",
+    "screenshot_sha256": "5fe66dc058ea08a2ccc0633f3eeba387af2dc8e8f4c718cc5b73dd71c19cc4dc",
+    "earlier_captures": [
+      {
+        "elapsed_seconds": 20.08,
+        "path": "/tmp/nfs-p1-current-p2-retail-20261025/game-window-20s.png",
+        "sha256": "b14e7190dab6f85d3ce033a5b6d4ca8c27c9a0c1810e6fe86ff10129a7f9e1e7"
+      },
+      {
+        "elapsed_seconds": 32.07,
+        "path": "/tmp/nfs-p1-current-p2-retail-20261025/game-window-32s.png",
+        "sha256": "5fe66dc058ea08a2ccc0633f3eeba387af2dc8e8f4c718cc5b73dd71c19cc4dc"
+      },
+      {
+        "elapsed_seconds": 46.09,
+        "path": "/tmp/nfs-p1-current-p2-retail-20261025/game-window-46s.png",
+        "sha256": "5fe66dc058ea08a2ccc0633f3eeba387af2dc8e8f4c718cc5b73dd71c19cc4dc"
+      }
+    ],
+    "android_comparison": {
+      "device_screenshot": "process2_redmi_post_selector_frame1026_device_20261025.png",
+      "sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+      "vulkan_readback": "process2_redmi_post_selector_frame1026_readback_decoded_20261025.png",
+      "same_artifact_seen_on_android": true,
+      "pixel_identity_claimed": false
+    }
+  },
+  "run_log": {
+    "path": "/tmp/nfs-p1-private-bin-20261025/logs/nfs_shift_021.log",
+    "sha256": "3a8de3933476adc1ef061613f11092981b560cdab4baf3f6f9cd836d6db41086",
+    "successful_vulkan_submit_batches": 593,
+    "submitted_draw_packets_total": 3860,
+    "disclaimer_visible_by_submit": 551,
+    "last_submit_local": "2026-10-25T18:46:17.567+03:00",
+    "later_file_probes": [
+      {
+        "path": "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      },
+      {
+        "path": "D:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      }
+    ],
+    "note": "Submit counts are run-wide diagnostics. The nearby missing-file probes do not establish why the guest stopped submitting."
+  },
+  "assessment": {
+    "proved": "The same disclaimer and purple-strip artifact appear in the Linux window capture and the earlier Redmi Vulkan/device captures.",
+    "not_proved": "Which of the 14 retail draws in submit 551 creates the strips; output parity with an independent retail capture; menu-background or race rendering.",
+    "next_capture": "Repeat with the exact P2 b03c9f87 plugin mapped and SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME=551 plus texture/geometry/readback paths; selected frame diagnostics will identify all 14 draw inputs."
+  }
+}
