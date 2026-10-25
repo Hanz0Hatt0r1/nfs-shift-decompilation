@@ -2,7 +2,7 @@
   "schema": "shift.process2.guest_ring_trace_smoke.v1",
   "date": "2026-10-26",
   "branch": "work/process2-xbox-live-ring-20261023",
-  "source_head": "832488193",
+  "source_tree_commit": "ca9992eb4",
   "change": {
     "files": [
       "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
