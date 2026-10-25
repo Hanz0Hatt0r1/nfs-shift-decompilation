@@ -1,0 +1,118 @@
+{
+  "schema": "shift.xbox360.linux.p1-p2-synchronized-window-frame-evidence.v1",
+  "captured_at_local": "2026-10-25",
+  "target": {
+    "title_id": "454108B4",
+    "default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "platform": "Linux AMD64"
+  },
+  "run_exact": {
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b",
+    "renderer_source_commit": "b03c9f87",
+    "renderer_plugin_sha256": "512eb2658935c48a3fddcc5abc0e100da948913fad6eb3f42148b12eb278fa98",
+    "renderer_was_verified_in_proc_maps": true,
+    "process_id": 372830,
+    "duration_seconds": 45.36,
+    "termination": "Harness sent SIGINT; runtime returned 0.",
+    "guest_memory_modified_by_probe": false,
+    "synthetic_fragment_override": false
+  },
+  "input": {
+    "harness_emitted": [
+      {
+        "button": "A",
+        "at_seconds": 8
+      },
+      {
+        "button": "Start",
+        "at_seconds": 15
+      },
+      {
+        "button": "A",
+        "at_seconds": 24
+      },
+      {
+        "button": "A",
+        "at_seconds": 35
+      }
+    ],
+    "same_run_xam_input_trace_proven": false
+  },
+  "selected_presenter_frame": {
+    "frame": 640,
+    "readback_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "extent": [
+      1280,
+      720
+    ],
+    "raw_bytes": 3686400,
+    "raw_sha256": "31cf2f10f03dbaa52c7b8c6287d191dd6727401dc23a2d972b0bf584bb9c8b5a",
+    "readback_path_appeared_at_runtime_seconds": 22.862,
+    "window_capture_was_taken_immediately_when_readback_path_appeared": true,
+    "readback_sha256_from_harness": "31cf2f10f03dbaa52c7b8c6287d191dd6727401dc23a2d972b0bf584bb9c8b5a",
+    "content": "Retail SHIFT intro logo visible in the nfs_shift X11 window; not a menu or race frame."
+  },
+  "window_observation": {
+    "capture_scope": "Only the nfs_shift X11 window was captured.",
+    "visible_capture": {
+      "runtime_seconds": 22.862,
+      "path": "evidence/screenshots/xbox360_linux_window_frame640_synchronized_20261025.png",
+      "sha256": "60753a64aedd21232ae5124955d929e6ad51611af9e0ba34cd0c38071a6dca6c",
+      "size": [
+        879,
+        579
+      ],
+      "non_black_rgb_pixels": 432797,
+      "visual_observation": "Retail SHIFT intro logo is visible."
+    },
+    "later_captures": [
+      {
+        "runtime_seconds": 32.044,
+        "path": "evidence/screenshots/xbox360_linux_window_black_after_frame640_20261025.png",
+        "sha256": "bfab665b1a87ee24204163ac64183ba56e3a036b4d8ff10287888c1a301d10b9",
+        "size": [
+          879,
+          579
+        ],
+        "non_black_rgb_pixels": 0,
+        "visual_observation": "Completely black window."
+      },
+      {
+        "runtime_seconds": 40.032,
+        "path": "evidence/screenshots/xbox360_linux_window_black_after_frame640_20261025.png",
+        "sha256": "bfab665b1a87ee24204163ac64183ba56e3a036b4d8ff10287888c1a301d10b9",
+        "size": [
+          879,
+          579
+        ],
+        "non_black_rgb_pixels": 0,
+        "byte_identical_to_32_second_capture": true
+      }
+    ],
+    "interpretation": "The selected exact renderer can display this retail frame. The later black captures alone do not demonstrate a WSI fault because draw submissions had already stopped."
+  },
+  "runtime_frontier": {
+    "submitted_log_entries": 789,
+    "last_logged_draw_submission": "2026-10-25 18:58:11.971",
+    "last_logged_draw_submission_line": "[2026-10-25 18:58:11.971] [info] [core] [t372858] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)",
+    "accepted_copy_convert_entries": 1297,
+    "last_logged_copy_convert": "2026-10-25 18:58:17.802",
+    "menu_background_xml_miss_count": 4,
+    "first_menu_background_xml_miss_line": "[2026-10-25 18:58:17.893] [warning] [krnl] [t372879] [NtCreateFile] FAILED: path='d:\\tracks\\_data\\instances\\scenes\\menu_background.xml' -> 0xc000000f",
+    "mixed_msaa_resolve_failure_count": 8,
+    "first_mixed_msaa_resolve_failure_line": "[2026-10-25 18:57:55.823] [warning] [core] [t372858] shift-native: Vulkan frame refresh failed for 1280x720 with 24 captured draws (failure 1): mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability",
+    "runtime_log_sha256": "ae887f8a63a8a5e31b10955a828f6e9cad9c76d2ab6398054cde9c8f07534133",
+    "interpretation": "The final logged indexed draw submission precedes the last Copy/Convert accepts; four menu_background.xml opens fail afterward. Timing is not causal proof. Prior exact-XEX tracing shows the observed retail parent stores the child-loader failure and returns success; no guest alias/fallback was justified."
+  },
+  "artifacts": {
+    "bundle": "evidence/xbox360_linux_frame640_sync_b03c9f87_artifacts_20261025.tar.gz",
+    "bundle_bytes": 1030961,
+    "bundle_sha256": "82bc44dd7f62baf73d1f9d6855841197831651b073ba4e86109f7c570c0c6fc5"
+  },
+  "limits": [
+    "The captured content is an intro logo only; it does not prove a menu or race.",
+    "This run does not identify why retail output stops or whether renderer refresh failures and the guest frontend transition are causally connected.",
+    "No renderer or guest semantic code was changed."
+  ]
+}
