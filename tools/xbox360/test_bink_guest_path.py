@@ -32,7 +32,13 @@ registered = set(evidence["runtime_translation"]["generated_and_registered_guest
 assert {"0x830670B0", "0x83067920", "0x830655F8", "0x83067C20"} <= registered
 probe = evidence["runtime_translation"]["p1_breakpoint_probe"]
 assert probe["bink_entry_hits"] == 0
-assert "0x823A0998" in probe["termination"]
+assert probe["status"].startswith("superseded by ")
+live_probe = evidence["runtime_translation"]["p1_live_entry_probe_20261025"]
+assert live_probe["duration_seconds"] == 40
+assert live_probe["stop"].startswith("The harness sent SIGINT")
+assert set(live_probe["hit_counts"]) == {"0x823A0998", *registered}
+assert all(count > 0 for count in live_probe["hit_counts"].values())
+assert "does not demonstrate decoded pixels" in live_probe["interpretation"]
 assert evidence["external_runtime_report"]["raw_pread_trace_or_log_hash_provided"] is False
 assert "not_proven" in evidence["interpretation"]
 
