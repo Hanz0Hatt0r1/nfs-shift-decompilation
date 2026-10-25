@@ -302,3 +302,22 @@ resumed, its before/after screenshot hash was unchanged, and no APK, input, or
 restart was used. One offscreen draw does not establish full cutscene or game
 performance. See the [A/B record](../evidence/process2_redmi_bink_sampler_cache_20261025.json)
 and [matching raw readback](../evidence/process2_redmi_bink_sampler_cache_frame2614_20261025.bin.gz).
+
+## Redmi Bink source-frame comparison (2026-10-26)
+
+I rebuilt the ARM64 renderer archive from current source `e908a6829` and
+replayed the captured retail Bink draw on the Mali-G76. The current build
+produced the same 1280x720 A2B10G10R10 readback SHA as the prior capture
+(`8295d56a…55f41ca1`); the final readback after eight asynchronous replays
+matched the first. The live game process stayed resumed at the disclaimer; the
+replay sent no game input and did not install or restart the app.
+
+For an independent content check, I decoded all 281 frames of the retail
+`Franchise_Ident.bik` with FFmpeg and compared them with the Vulkan image. The
+closest 160x90 RGB match is frame 244 (MAE 0.178). At full resolution, 839,930
+of 921,600 RGB pixels match exactly; per-channel MAE is 0.159/0.134/0.165.
+This confirms that the captured shader and Y/V/U planes produce the original
+EA intro content on the current renderer build. It is one captured-draw replay,
+not evidence of sustained live cutscene playback or a complete game scene.
+Raw movie and plane bytes were not added to the repo. See the
+[Bink frame comparison record](../evidence/process2_redmi_bink_frame244_reference_20261026.json).
