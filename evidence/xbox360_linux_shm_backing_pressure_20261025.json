@@ -1,0 +1,103 @@
+{
+  "schema": "shift.xbox360.linux.shm-backing-pressure.v1",
+  "captured_at_utc": "2026-10-25T04:14:00Z",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+    "sdk_fix_commit": "ede359f8a93cd26cb95531a0b39ed8584aa93bb7",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-linux-retail-root-20261024/game",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "input_events_sent": false,
+    "guest_memory_modified": false
+  },
+  "before_cleanup": {
+    "shm_state": {
+      "mapping_files": 14,
+      "live_process_mappings": 0,
+      "filesystem": "/dev/shm",
+      "capacity_display": "5.9G",
+      "used_display": "4.7G",
+      "available_display": "1.2G"
+    },
+    "failure": {
+      "signal": "SIGBUS",
+      "host_function": "rex::memory::Memory::Initialize()",
+      "host_instruction_offset": 4048,
+      "fault_address": "0x18000001c",
+      "guest_operation": "write the compatibility constant at guest virtual address 0x8000001c",
+      "guest_runtime_started": false
+    },
+    "runtime_log": {
+      "external_path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_029.log",
+      "sha256": "38b7962651cc7d5fa2e46458bbf250fa83ed42e7baf5d9aced1c86bd87561ab2"
+    },
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-crash-state.log",
+      "sha256": "5bf739832ce094d1110336e8c4342f0466abc03619c8fde188b5d82999f92299"
+    }
+  },
+  "cleanup": {
+    "action": "Unlinked only the 14 xenia_memory_* objects after scanning /proc/*/maps and confirming no live mappings.",
+    "filesystem_after_cleanup": {
+      "used_display": "19M",
+      "available_display": "5.8G"
+    }
+  },
+  "after_cleanup": {
+    "same_host_runtime_plugin_xex": true,
+    "platform": "Linux AMD64, direct Wayland/X11 SDL window",
+    "bounded_seconds": 22,
+    "termination": "The GDB harness timed out with SIGINT after the observation window.",
+    "guest_memory_arena_mapped": true,
+    "runtime_activity": [
+      "The retail runtime passed Memory::Initialize and logged the 0x100000000/0x200000000 guest memory arena.",
+      "The selected plugin logged repeated submissions of 24 captured indexed draw packets and accepted source-0/sample-0 Copy/Convert operations."
+    ],
+    "runtime_log": {
+      "external_path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_030.log",
+      "sha256": "d0088dc7c0ea1a46911e589b493c2df434d6aebafefd67823eda4f7df3cf53d6"
+    },
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-startup-after-shm-cleanup.log",
+      "sha256": "8cecf098dc73735c52dc6d2fed997d2b39a90b54a5d5bb76c21dd809c900752d"
+    },
+    "shm_after_termination": {
+      "filesystem_used_display": "464M",
+      "named_objects_created_by_this_run": [
+        "xenia_memory_6652642594047"
+      ],
+      "cleanup": "After verifying no /proc/*/maps reference remained, this one test-created object was manually unlinked."
+    }
+  },
+  "fix": {
+    "repository": "https://github.com/Hanz0Hatt0r1/rexglue-sdk",
+    "commit": "d68122821a670dc1beea9990ecf411b12bf86f6a",
+    "summary": "Unlink the private POSIX guest-memory shm name immediately after opening; keep the file descriptor and mapping valid so process crashes cannot leave named 4.6 GB backing objects behind.",
+    "targeted_tests": {
+      "command": "/usr/bin/ctest --test-dir out/build/linux-amd64 -C Debug -R 'POSIX mapping' --output-on-failure",
+      "result": "2 passed"
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "Repeated interrupted or crashed runs had left 14 unreferenced POSIX shared-memory objects, and the accumulated backing pressure correlated with SIGBUS during guest-memory initialization.",
+      "After removing only those unreferenced objects, the same host executable, runtime, plugin, and XEX passed guest-memory initialization and continued into repeated retail GPU-submit/CopyConvert activity.",
+      "The prior runtime recreated a named 4.6 GB shm object on this bounded run; the separate P1 SDK change to unlink the name after opening targets this repeatable leak, with its POSIX mapping tests passing."
+    ],
+    "not_proven": [
+      "The game reached the main menu or an offline race.",
+      "The renderer output was visually correct or sustained beyond this bounded run.",
+      "Linux ARM64/Android compatibility or Vulkan 1.1-only device compatibility."
+    ]
+  }
+}
