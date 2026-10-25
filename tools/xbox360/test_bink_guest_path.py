@@ -50,29 +50,47 @@ assert all(target["indirect_guest_calls"] == 4 for target in targets.values())
 assert all(target["manager_indices"] == [0, 1, 2, 3] for target in targets.values())
 assert "rules out an empty/unregistered" in manager_probe["interpretation"]
 assert "does not show that callback execution produced pixels" in manager_probe["interpretation"]
-sink_probe = evidence["runtime_translation"]["p1_guest_sink_method_probe_20261025"]
-assert sink_probe["duration_seconds"] == 38
-assert sink_probe["callback_hits"] == {"0x83068250": 4, "0x83068608": 4}
-assert sink_probe["shared_vtable_guest_address"] == "0x820A8D28"
-assert sink_probe["vtable_method_targets"] == {
+callback_probe = evidence["runtime_translation"]["p1_guest_callback_method_probe_20261025"]
+assert callback_probe["duration_seconds"] == 38
+assert callback_probe["callback_hits"] == {"0x83068250": 4, "0x83068608": 4}
+assert callback_probe["shared_vtable_guest_address"] == "0x820A8D28"
+assert callback_probe["vtable_method_targets"] == {
     "offset_56": "0x82B9C9F0",
     "offset_64": "0x82B9DC78",
 }
-assert len(sink_probe["downstream_guest_objects"]) == 4
-assert "does not prove a texture upload" in sink_probe["interpretation"]
-downstream_probe = evidence["runtime_translation"]["p1_guest_sink_downstream_probe_20261025"]
+assert len(callback_probe["downstream_guest_objects"]) == 4
+assert "does not prove a texture upload" in callback_probe["interpretation"]
+downstream_probe = evidence["runtime_translation"]["p1_guest_callback_downstream_probe_20261025"]
 assert downstream_probe["dynamic_hits"] == {
     "0x82B9C9F0": 4,
     "0x82B9DC78": 4,
     "0x82BA9258": 4,
 }
-assert downstream_probe["sink_call_arguments"]["0x82B9DC78"]["r7_guest_stack_array"] == "0x7018F6F0"
-transform_probe = evidence["runtime_translation"]["p1_guest_sink_transform_probe_20261025"]
-assert transform_probe["sink_compare_entries"] == 4
+assert downstream_probe["callback_call_arguments"]["0x82B9DC78"]["r7_guest_stack_array"] == "0x7018F6F0"
+transform_probe = evidence["runtime_translation"]["p1_guest_callback_transform_probe_20261025"]
+assert transform_probe["callback_compare_entries"] == 4
 assert transform_probe["transform_entries"] == 3
 assert transform_probe["transform_vtable_offset_12_target"] == "0x82BB50E8"
-assert "did not set a breakpoint on that target" in transform_probe["interpretation"]
+assert "did not verify pixel/GPU output" in transform_probe["interpretation"]
+lock_probe = evidence["runtime_translation"]["p1_resource_lock_probe_20261025"]
+assert lock_probe["resource_wrapper_entry_hits"] == 3
+assert lock_probe["child_vtable"] == "0x820A8C08"
+assert lock_probe["lock_method_targets"] == {
+    "vtable_offset_8": "0x82B982D0",
+    "vtable_offset_20": "0x82B982E0",
+}
+assert "RtlEnterCriticalSection" in lock_probe["method_identity"]["0x82B982D0"]
+assert "RtlLeaveCriticalSection" in lock_probe["method_identity"]["0x82B982E0"]
+assert lock_probe["resource_wrapper_static_dispatch"]["function"] == "0x82BB4F20"
+assert lock_probe["resource_wrapper_static_dispatch"]["lock_wrapper_entry_breakpoints_set"] is False
+assert "not evidence of a graphics sink" in lock_probe["interpretation"]
+resource_probe = evidence["runtime_translation"]["p1_resource_update_probe_20261025"]
+assert resource_probe["observed_bink_calls"] == 3
+assert resource_probe["resource_update_calls"] == 3
+assert resource_probe["non_null_allocator_returns"] == ["0xB740C6E0", "0xB740C6E0", "0xB7B09220"]
+assert resource_probe["resource_update_returns"] == ["0x0", "0x0", "0x0"]
+assert "does not establish a decoded-pixel or GPU-transfer path" in resource_probe["interpretation"]
 assert evidence["external_runtime_report"]["raw_pread_trace_or_log_hash_provided"] is False
 assert "not_proven" in evidence["interpretation"]
 
-print("retail Bink section, guest callsites, manager dispatch, sink vtable, and evidence limits match")
+print("retail Bink section, guest callsites, manager dispatch, callback and lock-object evidence match")

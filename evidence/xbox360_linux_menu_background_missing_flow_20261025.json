@@ -105,6 +105,58 @@
     "later_ntcreatefile_hits": [72, 73],
     "interpretation": "The scene-loader call returns to later file activity, but no further draw submission is logged for the remainder of this bounded run. This temporal relation does not prove the missing XML caused the renderer/frontend stall."
   },
+  "retail_parent_field_probe_20261025": {
+    "target_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+    "bounded_seconds": 65,
+    "input_events_sent": false,
+    "guest_memory_modified_by_probe": false,
+    "instrumentation": "GDB breakpoint at parent initializer 0x82F7C938 filtered to caller LR 0x82E8BDB4/0x82F47DC4, a source breakpoint immediately after the parent+1456 store, a hardware read watchpoint on the field, and a conditional breakpoint on candidate reader 0x82B84CD8.",
+    "gdb_script": {
+      "external_path": "/tmp/nfs-p1-menu-child-consumer-final-20261025/trace.gdb",
+      "sha256": "b88facb4342ff28a4cbdf9c53c01b80cb7c3594a15e60af8d855b67bfa67679b"
+    },
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-menu-child-consumer-final-20261025/gdb.log",
+      "sha256": "718e6010da65a04139398af4e24e0f9d74efabef3620b4c5988354965132c407"
+    },
+    "observed": {
+      "parent_entry_hits": 1,
+      "parent_guest_object": "0x831EA280",
+      "caller_lr": "0x82E8BDB4",
+      "child_loader_return": "0x00000000",
+      "stored_parent_field_offset": 1456,
+      "stored_field_value": "0x00000000",
+      "later_field_access_hits": 0,
+      "candidate_reader": "0x82B84CD8",
+      "candidate_reader_hits_for_parent": 0,
+      "guest_faults": [],
+      "termination": "External timeout sent SIGINT after 65 seconds while the runtime remained live.",
+      "draw_submissions_in_runtime_log": 1032,
+      "last_draw_before_xml_miss": "2026-10-25T15:36:28.053+03:00",
+      "first_xml_miss": "2026-10-25T15:36:28.159+03:00",
+      "draw_submissions_after_xml_misses": 0,
+      "runtime_log": {
+        "external_path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_110.log",
+        "sha256": "b7bbaf675d584efe3c939dce00e7027ad3c956f59bcb686fa3158f8da6f856ab"
+      }
+    },
+    "interpretation": {
+      "supported": [
+        "In this run, the child loader returned 0 and the parent stored that value while its own retail initializer continued.",
+        "No later access to this parent object's +1456 field or call to candidate reader 0x82B84CD8 with this object was observed in the bounded run.",
+        "The repeated draw submissions stopped around the same time as the loose XML misses, but the trace does not establish a causal link."
+      ],
+      "not_proven": [
+        "That the field is never consumed in a later frontend state or race state.",
+        "That the absent XML has no visual or gameplay effect.",
+        "Main-menu entry, offline-race entry, or successful rendering."
+      ],
+      "next_step": "Continue with the retail frontend state/input transition trace. Do not add a VFS alias without proof of retail lookup equivalence."
+    }
+  },
   "instruction_checks": [
     {"address": "0x82F7CB44", "bytes_big_endian": "4bfffa1d", "meaning": "call 0x82F7C560"},
     {"address": "0x82F7CB4C", "bytes_big_endian": "906605b0", "meaning": "store child result at parent+1456"},
@@ -122,9 +174,10 @@
     "not_proven": [
       "That the missing XML is optional in every frontend or race state, or that its absence has no visual effect.",
       "That the retail main menu or an offline race was reached.",
-      "Whether the missing XML is related to the draw submissions stopping after 12:53:40.109; the trace establishes timing but not causality.",
+      "Whether the missing XML is related to draw submissions stopping in either bounded trace; the traces establish timing but not causality.",
+      "Whether a later frontend or race state consumes parent+1456; no matching access was observed in the 65-second probe.",
       "The cause of black output; the selected GPU plugin remains a separate renderer workstream."
     ],
-    "next_step": "Trace the consumer of parent+1456 and the next retail frontend state/input transition. Do not alias the absent XML to archive members without evidence of retail lookup equivalence."
+    "next_step": "Continue tracing the retail frontend state/input transition. No field access was observed in the bounded parent+1456 probe; do not alias the absent XML to archive members without evidence of retail lookup equivalence."
   }
 }
