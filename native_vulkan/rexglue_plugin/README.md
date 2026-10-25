@@ -5,6 +5,21 @@ the guest PM4 ring without loading the `rexgpu-xenos` renderer. It creates the
 SDK's Vulkan presenter with GPU emulation disabled and receives ring updates
 through `InitializeRingBuffer` and `CP_RB_WPTR`.
 
+Set `SHIFT_NATIVE_VULKAN_TRACE_RING=1` to emit a bounded ring-contract trace:
+each accepted `CP_RB_WPTR`, the worker's `[RPTR, WPTR)` snapshot, and its
+consumption plus guest RPTR writeback. The trace stops after 8,192 records and
+is disabled by default; it does not change packet parsing or pointer updates.
+Use it to correlate a retail guest queue snapshot with the plugin's actual
+write-pointer notification and worker state.
+
+The 2026-10-26 Linux diagnostic build passed all three live-ring CTests with
+`VK_LAYER_KHRONOS_validation` forced through the loader. Those tests use
+synthetic geometry and resources. Their output does not expose the plugin's
+`REXLOG` trace sink, so only a retail run with this build can confirm that the
+records are emitted and correlate them with the guest WPTR. Build hash,
+commands, scope, and the unresolved P1 pointer observation are recorded in
+[`process2_ring_trace_smoke_20261026.json`](../../evidence/process2_ring_trace_smoke_20261026.json).
+
 The worker keeps the bounded captured register/shader contract, resolves the
 captured index, vertex, and tiled texture bytes, translates the observed shader
 pair to project GLSL, and compiles that GLSL to Vulkan 1.1 SPIR-V. It batches

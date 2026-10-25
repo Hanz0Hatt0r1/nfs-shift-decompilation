@@ -77,6 +77,21 @@ bool parse_positive_environment_frame(const char* text, uint32_t* frame) {
   return true;
 }
 
+bool GuestRingTraceEnabled() {
+  static const bool enabled = [] {
+    const char* value = std::getenv("SHIFT_NATIVE_VULKAN_TRACE_RING");
+    return value && std::string(value) == "1";
+  }();
+  return enabled;
+}
+
+uint32_t NextGuestRingTraceRecord() {
+  static std::atomic<uint32_t> record{0};
+  return record.fetch_add(1, std::memory_order_relaxed);
+}
+
+constexpr uint32_t kMaxGuestRingTraceRecords = 8192;
+
 const std::string kDebugFragmentColorShader =
     "#version 450\n"
     "layout(location=0) out vec4 shift_color0;\n"
@@ -1257,15 +1272,35 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     const uint32_t index = (address & 0xFFFFu) / sizeof(uint32_t);
     if (index != kRingWritePointerRegister) return;
 
+    uint32_t previous_write_pointer = 0;
+    uint32_t read_pointer = 0;
+    uint32_t ring_dwords = 0;
+    uint64_t ring_generation = 0;
     {
       std::lock_guard<std::mutex> lock(ring_mutex_);
       if (!ring_initialized_ || !memory_) return;
-      const uint32_t ring_dwords = static_cast<uint32_t>(ring_byte_length_ / sizeof(uint32_t));
+      ring_dwords = static_cast<uint32_t>(ring_byte_length_ / sizeof(uint32_t));
       if (value >= ring_dwords) {
         REXLOG_WARN("shift-native: ignored out-of-range CP_RB_WPTR {:08X}", value);
         return;
       }
+      previous_write_pointer = ring_write_pointer_;
+      read_pointer = ring_read_pointer_;
+      ring_generation = ring_generation_;
       ring_write_pointer_ = value;
+    }
+    if (GuestRingTraceEnabled()) {
+      const uint32_t trace_record = NextGuestRingTraceRecord();
+      if (trace_record < kMaxGuestRingTraceRecords) {
+        const uint32_t distance = value >= read_pointer
+            ? value - read_pointer
+            : ring_dwords - read_pointer + value;
+        REXLOG_INFO("shift-native: ring trace wptr #{} mmio={:08X} "
+                    "previous={} new={} rptr={} modular-distance={} "
+                    "ring-dwords={} generation={}",
+                    trace_record, address, previous_write_pointer, value,
+                    read_pointer, distance, ring_dwords, ring_generation);
+      }
     }
     ring_changed_.notify_one();
   }
@@ -1320,6 +1355,20 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         ring_byte_length = ring_byte_length_;
         ring_generation = ring_generation_;
       }
+      if (GuestRingTraceEnabled()) {
+        const uint32_t trace_record = NextGuestRingTraceRecord();
+        if (trace_record < kMaxGuestRingTraceRecords) {
+          const uint32_t ring_dwords =
+              static_cast<uint32_t>(ring_byte_length / sizeof(uint32_t));
+          const uint32_t distance = write_pointer >= read_pointer
+              ? write_pointer - read_pointer
+              : ring_dwords - read_pointer + write_pointer;
+          REXLOG_INFO("shift-native: ring trace wake #{} rptr={} wptr={} "
+                      "modular-distance={} ring-dwords={} generation={}",
+                      trace_record, read_pointer, write_pointer, distance,
+                      ring_dwords, ring_generation);
+        }
+      }
       if (ring_generation != observed_ring_generation) {
         raster_register_state.reset();
         shader_register_state.reset();
@@ -1347,6 +1396,18 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         shift::xbox::ExpandedGuestCommandStream expanded{};
         const bool expanded_ok = snapshotted && shift::xbox::expand_guest_indirect_buffers(
             batch, ReadGuestMemory, this, &expanded, &error);
+        if (GuestRingTraceEnabled()) {
+          const uint32_t trace_record = NextGuestRingTraceRecord();
+          if (trace_record < kMaxGuestRingTraceRecords) {
+            REXLOG_INFO("shift-native: ring trace snapshot #{} rptr={} wptr={} "
+                        "ring-bytes={} snapshot-ok={} batch-bytes={} "
+                        "expand-ok={} packets={} error={}",
+                        trace_record, read_pointer, write_pointer,
+                        ring_byte_length, snapshotted, batch.bytes.size(),
+                        expanded_ok, expanded.packets.size(),
+                        error.empty() ? "none" : error);
+          }
+        }
 
         uint32_t decoded_draws = 0;
         uint32_t draws_with_raster_state = 0;
@@ -2232,35 +2293,53 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       }
 
       uint32_t writeback_address = 0;
+      uint32_t current_read_pointer = 0;
+      uint32_t current_write_pointer = 0;
+      uint64_t current_ring_generation = 0;
       {
         std::lock_guard<std::mutex> lock(ring_mutex_);
         // Consume unsupported packets to keep the guest command producer moving.
         ring_read_pointer_ = write_pointer;
         writeback_address = read_pointer_writeback_address_;
+        current_read_pointer = ring_read_pointer_;
+        current_write_pointer = ring_write_pointer_;
+        current_ring_generation = ring_generation_;
       }
+      uint32_t previous_writeback = 0;
+      uint32_t stored_writeback = 0;
       if (writeback_address &&
           physical_span_valid(writeback_address, sizeof(uint32_t))) {
         auto *writeback_word =
             memory_->TranslatePhysical<uint32_t *>(writeback_address);
-        const uint32_t previous_value =
-            rex::memory::load_and_swap<uint32_t>(writeback_word);
+        previous_writeback = rex::memory::load_and_swap<uint32_t>(writeback_word);
         rex::memory::store_and_swap<uint32_t>(writeback_word, write_pointer);
-        const uint32_t stored_value =
-            rex::memory::load_and_swap<uint32_t>(writeback_word);
+        stored_writeback = rex::memory::load_and_swap<uint32_t>(writeback_word);
         static std::atomic<uint32_t> writeback_log_count{0};
         const uint32_t log_index =
             writeback_log_count.fetch_add(1, std::memory_order_relaxed);
-        if (log_index < 8 || stored_value != write_pointer) {
+        if (log_index < 8 || stored_writeback != write_pointer) {
           REXLOG_INFO(
               "shift-native: RPTR writeback #{} guest={:08X}, translated={:p}, "
-              "value={:08X}, memory={:08X}->{:08X}",
+                     "value={:08X}, memory={:08X}->{:08X}",
               log_index, writeback_address, static_cast<void *>(writeback_word),
-              write_pointer, previous_value, stored_value);
+              write_pointer, previous_writeback, stored_writeback);
         }
       } else if (writeback_address) {
         REXLOG_ERROR("shift-native: RPTR writeback address {:08X} is outside "
                      "physical memory",
                      writeback_address);
+      }
+      if (GuestRingTraceEnabled()) {
+        const uint32_t trace_record = NextGuestRingTraceRecord();
+        if (trace_record < kMaxGuestRingTraceRecords) {
+          REXLOG_INFO("shift-native: ring trace complete #{} consumed=[{},{}), "
+                      "current-rptr={} current-wptr={} generation={} "
+                      "writeback-guest={:08X} value={:08X}->{:08X}",
+                      trace_record, read_pointer, write_pointer,
+                      current_read_pointer, current_write_pointer,
+                      current_ring_generation, writeback_address,
+                      previous_writeback, stored_writeback);
+        }
       }
       try {
         for (const uint32_t cpu_mask : pending_interrupt_masks) {
