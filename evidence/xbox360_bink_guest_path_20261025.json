@@ -124,6 +124,7 @@
       "interpretation": "No title-specific host-side Bink/XBMOVIE decoder callback was found in these app sources; the retail executable contains its own Bink PPC code. This does not claim the generic runtime has no video-related kernel exports."
     },
     "p1_breakpoint_probe": {
+      "status": "superseded by p1_live_entry_probe_20261025",
       "breakpoints": [
         "0x83065188",
         "0x830654D0",
@@ -139,8 +140,42 @@
         "0x83067C20"
       ],
       "bink_entry_hits": 0,
-      "termination": "The GDB-instrumented run faulted before any listed Bink entry, at guest function 0x823A0998 (SIGSEGV).",
+      "termination": "The earlier GDB attempt was recorded as stopping before the Bink entries at guest function 0x823A0998 (SIGSEGV). Its raw log is no longer available, and the failure did not reproduce in the controlled follow-up below.",
       "log_sha256": "8870c9757b1c459b06ac5748cb7d8409f6fc75aac105d276d8e66b6f4fd705fa"
+    },
+    "p1_live_entry_probe_20261025": {
+      "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "duration_seconds": 40,
+      "stop": "The harness sent SIGINT after the process remained running. GDB recorded no SIGSEGV or SIGBUS before stop.",
+      "input": "No synthetic or physical input was sent.",
+      "instrumentation": "GDB software breakpoints on all twelve generated Bink entry functions and retail helper 0x823A0998; breakpoints perturb scheduling.",
+      "gdb_script": {
+        "external_path": "/tmp/nfs-p1-bink-trace-20261025/trace.gdb",
+        "sha256": "73f8fbcc098fba51f084690605ce01904304de44e76bfee2638a297f2dcda51d"
+      },
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-bink-trace-20261025/gdb.log",
+        "sha256": "c14b213a91c430672f4acaacf8c4a9785774a7c7443d528d0eb4ad22bacbe731"
+      },
+      "hit_counts": {
+        "0x823A0998": 656,
+        "0x83065188": 1,
+        "0x830654D0": 2,
+        "0x830655A8": 1,
+        "0x830655F8": 1,
+        "0x830670B0": 280,
+        "0x830670B8": 216,
+        "0x83067118": 280,
+        "0x83067310": 1,
+        "0x830675F0": 217,
+        "0x83067920": 4,
+        "0x830679B8": 4,
+        "0x83067C20": 1
+      },
+      "interpretation": "All twelve listed embedded-Bink guest functions executed in this bounded Linux run. This confirms execution of the retail decoder path but does not demonstrate decoded pixels or successful video presentation."
     }
   },
   "external_runtime_report": {
@@ -165,20 +200,22 @@
     "supported": [
       "The exact retail image contains a substantial PPC Bink code section and game-code call sites into generated Bink functions.",
       "The local generated Linux runtime registers the Bink-section function entries listed above.",
-      "The Franchise_Ident.bik file is a Bink-family asset, and the local trace confirms the retail process opened it twice."
+      "The Franchise_Ident.bik file is a Bink-family asset, and the local trace confirms the retail process opened it twice.",
+      "A fresh 40-second P1 GDB trace hit all twelve registered embedded-Bink entry points and called 0x823A0998 656 times; it was manually interrupted without a recorded SIGSEGV or SIGBUS."
     ],
     "likely_but_not_runtime_proven": [
       "Process 2's reported sustained pread64 activity while the cutscene was active is consistent with guest Bink decoding; the raw read trace was not available in the shared artifacts."
     ],
     "not_proven": [
-      "A P1 live breakpoint hit in the Bink decode/update functions.",
+      "That execution of the Bink decoder produced a visible video frame.",
       "The exact guest RAM address, texture format, or EDRAM destination for decoded pixels.",
-      "That the black frame is caused by a missing host media callback or by the renderer."
+      "That the black frame is caused by a missing host media callback, by the renderer, or by another part of the Bink texture handoff.",
+      "Main-menu entry, offline-race entry, or sustained gameplay."
     ],
-    "working_conclusion": "The title's Bink decoder is guest PPC code inside the XEX; there is no evidence that P1 needs a separate host Bink decoder callback. The embedded Bink texture integration points toward a guest-memory/Xenos-texture handoff. The exact surface contract still needs a live pointer/format trace before assigning the black output to either guest media setup or renderer behavior."
+    "working_conclusion": "The title's Bink decoder is guest PPC code inside the XEX, and the fresh P1 trace confirms that its generated entry points execute. There is no evidence that P1 needs a separate host Bink decoder callback. The embedded Bink texture integration points toward a guest-memory/Xenos-texture handoff. The exact surface contract still needs a live pointer/format trace before assigning the black output to guest media setup, texture handoff, or rendering."
   },
   "limitations": [
-    "The P1 GDB probe did not reach the Bink entries and is not evidence that they are never called.",
+    "The fresh P1 GDB probe was interrupted after 40 seconds and instrumented execution; it does not establish the natural video end or a scene transition.",
     "The P2 pread64 totals and draw summary were relayed without their raw log or hash.",
     "The black readback is evidence of output state only; it does not identify the missing stage."
   ]
