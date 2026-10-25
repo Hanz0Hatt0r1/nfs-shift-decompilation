@@ -70,6 +70,8 @@ A 75-second run without GDB or breakpoints repeated the retail safety warning in
 
 A one-time GDB stack sample with no breakpoints found the retail `Core 0/0: Main` thread in `0x823A0310`, called from the original `0x823B34A0` queue wait. The same read-only snapshot had software-ring head/tail `4937/4947` and predicate `0x04`; the host `SHIFT Native GP` thread was asleep in `RingWorkerLoop`'s condition-variable wait. This narrows the next investigation to the queue-to-worker wake/consume contract, but does not prove the queue state is invalid or assign the cause to P1 or P2. The retail predicate and guest queue semantics remain unchanged. See the [wait-stack evidence](../evidence/xbox360_linux_retail_wait_stack_20261025.json).
 
+The same wait path reproduced with Process 2's newer Linux plugin (`e908a682`, SHA-256 `bf7034cc…`). The read-only snapshot resolved the wait target to `5649`, between guest head/tail `5641/5651`, with predicate `0x04`; the main thread remained in `0x823A0310` and `SHIFT Native GP` waited in `RingWorkerLoop`. This confirms the frontier under the current plugin but still does not prove a guest protocol violation or identify the owner of the outstanding words. See the [latest-plugin wait snapshot](../evidence/xbox360_linux_retail_wait_stack_latest_p2_20261025.json).
+
 ## Proposed pipeline
 
 ```text
