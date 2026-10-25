@@ -61,6 +61,43 @@ and [cross-host evidence record](../evidence/process2_linux_disclaimer_p1_run021
 preserve that discrepancy. The draw/resource source of the strips remains
 unisolated.
 
+A later exact-XEX run verifies the current P2 DSO hash `512eb265…278fa98`
+against `/proc` and renders a full-screen retail EA intro Bink frame at
+presenter frame 551. This confirms the current plugin's Bink path on the GTX
+950, not a disclaimer frame or a fix for its purple strips. The Linux provider
+also rejected eight earlier 24-draw refreshes because depth/stencil resolve
+was not enabled. The same run's 32/40-second X11 captures are black; the last
+successful draw submission precedes them, and there is no readback of the last
+presenter frame. Current evidence is consistent with the guest ceasing to
+submit draws; it does not prove a separate WSI failure. See the [exact-plugin evidence](../evidence/process2_linux_exact_p2_bink_frame551_20261025.json),
+[decoded Bink output](../evidence/process2_linux_exact_p2_bink_frame551_20261025.png),
+and [raw Vulkan readback](../evidence/process2_linux_exact_p2_bink_frame551_20261025.bin.gz).
+
+The eight mixed-sample refresh rejections were a provider/build mismatch at
+source commit `b03c9f87`, not an unsupported shader or a reason to drop depth
+contents. In those 24-draw frames, captured 4x and 1x draws both use
+depth/stencil on the same target, so the renderer preserves the 4x D24S8
+attachment by resolving depth and stencil with `SAMPLE_ZERO` before continuing
+at 1x. The old provider API did not request or expose the optional pair
+`VK_KHR_create_renderpass2` + `VK_KHR_depth_stencil_resolve` (or Vulkan 1.2 core
+promotions), and the plugin therefore passed `false` for the enabled capability.
+It correctly failed closed; bypassing the check would lose depth/stencil
+semantics.
+
+A resolve-capable Linux x86_64 plugin was built from P2 source `35dab256`
+against ReXGlue SDK commit `fb151b94b4956d1c74ba5052e8838b0829eb9c99`. Its
+SHA-256 is
+`1fa623feecb9a7ac6c1cd8d6de61bcabc6a4a01b12dfbeb9b0255fa29945042c`; the local
+artifact is `/home/pes/work/process2-current-p2-resolve-linux-plugin-20261026/librexgpu-shift-native.so`.
+The GTX 950/Vulkan 1.4 provider probe reports the resolve pair enabled and
+`SAMPLE_ZERO=1` for both aspects. Plugin CTest passed 5/5 and the standalone
+native Vulkan CTest passed 4/4 with `VK_LAYER_KHRONOS_validation`, including
+depth/stencil preservation and fail-closed regressions. This verifies provider
+setup and renderer behavior on the host; the exact retail 24-draw sequence
+still needs recapture with this DSO before claiming those frames now render.
+Build metadata is in
+[`resolve provider build record`](../evidence/process2_linux_resolve_provider_build_20261026.json).
+
 A five-sample Android thread snapshot at 18:04:37 shows the guest main thread
 at 101% CPU on average, SDL at 87.8%, the two controller threads at 88.8% and
 87.2%, while `SHIFT Native GP` stayed at 0%. No later Vulkan submissions

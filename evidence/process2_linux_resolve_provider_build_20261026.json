@@ -1,0 +1,46 @@
+{
+  "schema": "shift.process2.linux_resolve_provider_build.v1",
+  "built_at_local": "2026-10-26",
+  "purpose": "Resolve-capable Linux plugin handoff for exact retail recapture",
+  "baseline_failure": {
+    "renderer_source_commit": "b03c9f87",
+    "retail_run_plugin_sha256": "512eb2658935c48a3fddcc5abc0e100da948913fad6eb3f42148b12eb278fa98",
+    "failure_count": 8,
+    "error": "mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability",
+    "bounded_interpretation": "The old provider did not expose the optional enabled resolve capability; these refresh failures alone do not establish the cause of later black output or guest draw cessation."
+  },
+  "build": {
+    "process2_branch": "work/process2-xbox-live-ring-20261023",
+    "process2_source_commit": "35dab256",
+    "sdk_branch": "work/process2-vulkan-resolve-capability-20261024",
+    "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "target": "Linux x86_64",
+    "compiler": "Clang 22.1.8",
+    "artifact_path": "/home/pes/work/process2-current-p2-resolve-linux-plugin-20261026/librexgpu-shift-native.so",
+    "artifact_sha256": "1fa623feecb9a7ac6c1cd8d6de61bcabc6a4a01b12dfbeb9b0255fa29945042c",
+    "dynamic_link_check": "ldd -r clean"
+  },
+  "provider_probe": {
+    "device": "NVIDIA GeForce GTX 950",
+    "vulkan_api": "1.4",
+    "create_renderpass2_and_depth_stencil_resolve_pair_enabled": true,
+    "sample_zero_supported_for_depth_and_stencil": true,
+    "gpu_emulation_features": "disabled"
+  },
+  "validation": {
+    "plugin_ctest": "5/5 passed with VK_LAYER_KHRONOS_validation",
+    "native_vulkan_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation",
+    "coverage": [
+      "provider resolve capability pair and SAMPLE_ZERO probe",
+      "4x-to-1x depth preservation",
+      "4x-to-1x stencil preservation",
+      "unconfirmed capability fails closed",
+      "plugin factory, live ring, geometry dump, and readback checks"
+    ]
+  },
+  "limits": [
+    "This host build does not prove that the exact retail 24-draw sequence renders with the provider enabled; recapture the failed frame and pair it with the mapped DSO hash.",
+    "This is not an Android or ARM64 artifact.",
+    "Synthetic renderer regressions are not retail visual parity evidence."
+  ]
+}

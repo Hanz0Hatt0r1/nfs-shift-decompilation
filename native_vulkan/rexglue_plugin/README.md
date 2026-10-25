@@ -676,6 +676,54 @@ target; the next run should confirm the disclaimer frame number again before
 selecting it. The 14 constituent retail draws have not yet been isolated as
 the source of the strips.
 
+## Exact-current-plugin live Bink capture (2026-10-25)
+
+A later exact-XEX run loaded the current P2 plugin hash `512eb265…278fa98`
+(source commit `b03c9f87`), and its `/proc` mapping matched the run manifest.
+The selected Vulkan readback at presenter frame 551 contains the full-screen
+retail EA intro mark. The selected bundle includes the three R8 Bink planes
+for draw #5380; the raw frame has 920,723 non-black pixels. This proves one
+real Bink frame renders with the exact current plugin on the Linux GTX 950.
+It only supersedes the earlier DSO-hash mismatch for this Bink capture; it does
+not show whether the purple disclaimer strips remain in this build.
+
+The same run had 640 successful presenter refreshes and eight earlier failed
+refreshes of 24-draw mixed-sample frames. Those failures report that the Linux
+provider did not enable the required depth/stencil resolve capability; they
+precede the successful Bink readback. The X11 captures at 32 and 40 seconds are
+both black, after the last logged draw submission at 18:50:27.718;
+Copy/Convert accepts continue through 18:50:33.646. The P2 plugin calls
+`RefreshGuestOutput()` only for swaps that contain resolved draw packets, so
+cessation of guest draws is consistent with the later black window. The run
+did not read back its last presenter frame or pair a readback with the black
+screenshots, so a separate WSI failure is not established. The next
+discriminating capture is a failed 24-draw frame and the final successful
+presenter frame (frame 640 in this run), each alongside a same-time X11
+screenshot, using the resolve-capable provider. See the [run record](../../evidence/process2_linux_exact_p2_bink_frame551_20261025.json),
+[decoded frame](../../evidence/process2_linux_exact_p2_bink_frame551_20261025.png),
+and [lossless raw readback](../../evidence/process2_linux_exact_p2_bink_frame551_20261025.bin.gz).
+
+## Resolve-capable Linux handoff build (2026-10-26)
+
+The eight logged 24-draw failures from the prior retail run were caused by its
+older ReXGlue provider API, which could not enable and report the optional
+`VK_KHR_create_renderpass2` / `VK_KHR_depth_stencil_resolve` pair. The renderer
+uses this resolve to preserve the shared D24S8 state when the captured stream
+transitions from 4x to 1x and subsequent draws still test or write depth or
+stencil. It intentionally rejects the frame if the provider cannot confirm
+both depth and stencil `SAMPLE_ZERO` support.
+
+A new Linux x86_64 plugin built from P2 HEAD `35dab256` against SDK commit
+`fb151b94b4956d1c74ba5052e8838b0829eb9c99` is available at
+`/home/pes/work/process2-current-p2-resolve-linux-plugin-20261026/librexgpu-shift-native.so`
+(SHA-256 `1fa623feecb9a7ac6c1cd8d6de61bcabc6a4a01b12dfbeb9b0255fa29945042c`).
+The GTX 950/Vulkan 1.4 provider reports the pair enabled and SAMPLE_ZERO
+supported. Validation-enabled plugin CTest passed 5/5; native Vulkan CTest
+passed 4/4, including actual depth/stencil resolve semantics and fail-closed
+checks. This is host build and regression evidence only; a retail recapture is
+still needed to confirm the previously rejected frames render with this DSO.
+See the [build record](../../evidence/process2_linux_resolve_provider_build_20261026.json).
+
 ## Redmi guest ring wait after the disclaimer (2026-10-25)
 
 A fresh read-only snapshot at 18:09:48 shows the phone still on the same
