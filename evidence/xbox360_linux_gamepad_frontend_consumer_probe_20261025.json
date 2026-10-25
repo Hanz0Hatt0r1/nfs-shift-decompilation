@@ -1,0 +1,103 @@
+{
+  "schema": "shift.xbox360.linux-retail-gamepad-frontend-consumer-probe.v1",
+  "captured_on": "2026-10-25",
+  "retail_image": {
+    "path": "/home/pes/work/process2-linux-retail-root-20261024/game/default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637"
+  },
+  "input_setup": {
+    "device": "Linux uinput Microsoft X-Box 360 pad, VID:PID 045e:028e",
+    "physical_controller_filter": "SDL_GAMECONTROLLER_IGNORE_DEVICES=0x045e/0x0b12",
+    "events_relative_to_start_seconds": [
+      {
+        "at": 12,
+        "button": "A",
+        "xinput_mask": "0x1000",
+        "duration_ms": 750
+      },
+      {
+        "at": 20,
+        "button": "Start",
+        "xinput_mask": "0x0010",
+        "duration_ms": 750
+      },
+      {
+        "at": 28,
+        "button": "A",
+        "xinput_mask": "0x1000",
+        "duration_ms": 750
+      },
+      {
+        "at": 45,
+        "button": "Start",
+        "xinput_mask": "0x0010",
+        "duration_ms": 750
+      },
+      {
+        "at": 60,
+        "button": "A",
+        "xinput_mask": "0x1000",
+        "duration_ms": 750
+      },
+      {
+        "at": 68,
+        "button": "Start",
+        "xinput_mask": "0x0010",
+        "duration_ms": 750
+      }
+    ],
+    "instrumentation": "GDB conditional breakpoints altered scheduling; the process was interrupted after 75.33 seconds, not observed exiting naturally."
+  },
+  "retail_consumer_candidates": {
+    "controller_vtable": "0x8212E5B8",
+    "raw_button_mask_getter": {
+      "retail_function": "0x828B22B8",
+      "vtable_offset": "0xBC",
+      "static_behavior": "Returns the 32-bit field at controller+128."
+    },
+    "button_change_dispatcher": {
+      "retail_function": "0x8230D398",
+      "vtable_offset": "0x54",
+      "static_behavior": "Compares controller+128 and controller+132, then routes nonzero changed bits through the controller's registered mapping/dispatch path."
+    }
+  },
+  "observed": {
+    "run_duration_seconds": 75.33,
+    "process_state_at_stop": "Still running when the harness sent SIGINT.",
+    "raw_button_getter_non_neutral_condition_hits": 0,
+    "button_change_dispatcher_a_start_condition_hits": 0,
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-input-consumer-20261025/frontend-button-long-run-gdb.log",
+      "sha256": "c85a1755f4b858855e76000e3bb23afd76861eafebba7a7eb5ad94148dc0ca4e"
+    },
+    "runner_console": {
+      "external_path": "/tmp/nfs-p1-input-consumer-20261025/frontend-button-long-run-console.log",
+      "sha256": "1a6f0279bff903a29c48359c68a79a821a59edd70daccbe954764d802f934e06"
+    },
+    "runner_script": {
+      "external_path": "/tmp/nfs-p1-input-consumer-20261025/run-frontend-button-long-run.py",
+      "sha256": "9a4dffb1013bf5865f84a6612ef845b9342030a4d885a47afcdcd5b521c274b9"
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The harness emitted six A/Start uinput pulses during this 75.33-second retail run.",
+      "The conditional breakpoint on the raw-mask getter did not observe A/Start state, and the conditional breakpoint on the changed-mask dispatcher did not observe an A/Start transition in this run.",
+      "The previously recorded run independently proves that successful user-0 XamInputGetState polls can contain masks 0x0010 and 0x1000 and that the retail button-edge accumulator updates; see evidence/xbox360_linux_retail_gamepad_consumer_20261025.json."
+    ],
+    "not_proven": [
+      "The exact scene or whether this 75-second run reached the main menu.",
+      "Whether the same pulses reached this run's XamInputGetState call.",
+      "That either candidate is the only frontend input path, or that the retail title has an input defect.",
+      "Main-menu entry, offline-race entry, sustained gameplay, or correct rendering."
+    ]
+  }
+}
