@@ -22,6 +22,8 @@ A separate input trace followed the retail `XamInputGetKeystrokeEx` poll at `0x8
 
 A retail-consumer trace now follows `sub_82308E60` after its `XamInputGetState` call at guest return address `0x82308EA8`. Successful user-0 polls contain non-neutral button masks `0x0010` and `0x1000`, the retail capability matcher accepts the connected controller, `sub_8230CD00` advances the corresponding per-button edge bytes, and four enabled child-state paths run. These results rule out failure before the retail input edge accumulator as the current frontend blocker; the later frontend action handler and scene transition remain unverified. See [the retail gamepad consumer trace](../evidence/xbox360_linux_retail_gamepad_consumer_20261025.json).
 
+A 75.33-second follow-up emitted six A/Start pulses and placed conditional breakpoints on the retail raw-mask getter `0x828B22B8` and changed-mask dispatcher `0x8230D398`. Neither observed an A/Start state under the probe conditions. This run did not capture the scene, so it narrows the next trace to frontend/boot progress without proving a title input failure or main-menu state. See [the frontend consumer probe](../evidence/xbox360_linux_gamepad_frontend_consumer_probe_20261025.json).
+
 ## Proposed pipeline
 
 ```text
