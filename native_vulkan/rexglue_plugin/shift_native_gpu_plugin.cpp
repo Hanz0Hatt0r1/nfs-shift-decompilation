@@ -481,6 +481,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       ring_host_worker_.reset();
     }
     if (ring_worker_.joinable()) ring_worker_.join();
+    texture_cache_.clear();
     if (pipeline_cache_ && provider_) {
       if (auto* device = provider_->vulkan_device(); device) {
         if (destroy_pipeline_cache_) {
@@ -2054,7 +2055,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                           depth_stencil_resolve_enabled,
                           {device->properties().samplerAnisotropy,
                            device->properties().maxSamplerAnisotropy},
-                          pipeline_cache_);
+                          pipeline_cache_, &texture_cache_);
                     });
                 if (refreshed) {
                   ++submitted_frames;
@@ -2278,6 +2279,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   std::unique_ptr<rex::ui::vulkan::VulkanProvider> provider_;
   std::unique_ptr<rex::ui::Presenter> presenter_;
   VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
+  shift::xbox::CapturedVulkanTextureCache texture_cache_;
   PFN_vkDestroyPipelineCache destroy_pipeline_cache_ = nullptr;
   rex::ui::WindowedAppContext* app_context_ = nullptr;
   rex::memory::Memory* memory_ = nullptr;

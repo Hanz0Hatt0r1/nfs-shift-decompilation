@@ -369,6 +369,7 @@ int main(int argc, char** argv) {
 
     std::string error;
     std::vector<uint32_t> output_readback;
+    shift::xbox::CapturedVulkanTextureCache texture_cache;
     VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
     VkPipelineCacheCreateInfo pipeline_cache_info{};
     pipeline_cache_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
@@ -381,9 +382,14 @@ int main(int argc, char** argv) {
     const bool submitted = shift::xbox::submit_captured_vulkan_frame(
         physical_device, device, queue, queue_family, output_image, output_view, false,
         1280, 720, draws, &error, &output_readback,
-        enabled_features.geometryShader, &copy, false, {}, pipeline_cache);
+        enabled_features.geometryShader, &copy, false, {}, pipeline_cache,
+        &texture_cache);
     if (!submitted) {
         std::cerr << "captured Vulkan draw submission failed: " << error << '\n';
+        return 1;
+    }
+    if (texture_cache.size() != draws.size()) {
+        std::cerr << "captured R8 texture cache did not retain one plane per draw\n";
         return 1;
     }
     const std::vector<uint32_t> cached_output = output_readback;
@@ -391,9 +397,36 @@ int main(int argc, char** argv) {
     if (!shift::xbox::submit_captured_vulkan_frame(
             physical_device, device, queue, queue_family, output_image, output_view,
             false, 1280, 720, draws, &error, &repeated_cached_output,
-            enabled_features.geometryShader, &copy, false, {}, pipeline_cache) ||
+            enabled_features.geometryShader, &copy, false, {}, pipeline_cache,
+            &texture_cache) ||
         repeated_cached_output != cached_output) {
         std::cerr << "reused Vulkan pipeline cache changed captured draw output: "
+                  << error << '\n';
+        return 1;
+    }
+
+    auto changed_texture_draws = draws;
+    changed_texture_draws.front().textures.front().pixels.front() = 0;
+    const std::vector<shift::xbox::CapturedVulkanDraw> changed_texture_draw{
+        changed_texture_draws.front()};
+    std::vector<uint32_t> cached_updated_output;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, changed_texture_draw, &error, &cached_updated_output,
+            enabled_features.geometryShader, &copy, false, {}, pipeline_cache,
+            &texture_cache) || texture_cache.size() != draws.size()) {
+        std::cerr << "reused Vulkan R8 texture cache failed to update a video plane: "
+                  << error << '\n';
+        return 1;
+    }
+    std::vector<uint32_t> uncached_updated_output;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, changed_texture_draw, &error, &uncached_updated_output,
+            enabled_features.geometryShader, &copy) ||
+        cached_updated_output != uncached_updated_output ||
+        cached_updated_output == cached_output) {
+        std::cerr << "reused Vulkan R8 texture cache disagrees with fresh video upload: "
                   << error << '\n';
         return 1;
     }
@@ -967,6 +1000,7 @@ int main(int argc, char** argv) {
         if (pixel & 0x000003FFu) has_source_red = true;
         if (pixel & 0x000FFC00u) has_source_green = true;
     }
+    texture_cache.clear();
     vkDestroyImageView(device, output_view, nullptr);
     vkDestroyImage(device, output_image, nullptr);
     vkFreeMemory(device, output_memory, nullptr);

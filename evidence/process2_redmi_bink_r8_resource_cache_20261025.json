@@ -1,0 +1,64 @@
+{
+  "schema": "shift.process2.redmi_bink_r8_resource_cache.v1",
+  "observed_at_local": "2026-10-25",
+  "change": {
+    "scope": "Process 2 native Vulkan renderer and ReXGlue Vulkan plugin only",
+    "texture_format": "VK_FORMAT_R8_UNORM",
+    "cache_key": ["draw slot", "fetch constant index", "width", "height"],
+    "budget_bytes": 16777216,
+    "eviction_after_unused_submitted_frames": 120,
+    "per_submission": [
+      "copy current captured R8 plane bytes into a persistent upload mapping",
+      "flush the mapped allocation when host-coherent memory is unavailable",
+      "transition the reused image from shader-read to transfer destination before upload"
+    ],
+    "fallbacks": [
+      "RGBA8 remains on the existing per-submit allocation path",
+      "R8 allocations that exceed the remaining cache budget use the existing per-submit path"
+    ]
+  },
+  "regression": {
+    "host_native_vulkan_ctest": {
+      "result": "passed",
+      "passed": 4,
+      "total": 4,
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "validation_errors": 0,
+      "checks": [
+        "cached repeated frame output matches the original output",
+        "updated R8 plane output matches fresh allocation output",
+        "updated R8 plane output differs from the previous content"
+      ]
+    },
+    "host_process2_plugin_ctest": {
+      "result": "passed",
+      "passed": 4,
+      "total": 4,
+      "validation_layer": "VK_LAYER_KHRONOS_validation"
+    },
+    "android_arm64_build": {
+      "renderer": "passed",
+      "plugin_translation_unit": "passed",
+      "full_plugin_link": "blocked by existing ReXGlue SDK runtime build errors",
+      "errors": [
+        "fiber_posix.cpp: Android NDK does not declare getcontext, makecontext, or swapcontext",
+        "memory_posix.cpp: GetAndroidApiLevel is not declared"
+      ]
+    },
+    "redmi_note_8_pro_offscreen": {
+      "result": "passed",
+      "device": "Redmi Note 8 Pro (begonia)",
+      "gpu": "Mali-G76 MC4",
+      "test": "synthetic offscreen Vulkan 1.1 renderer regression",
+      "validation_layer": "unavailable on device",
+      "retail_game_pid_after_test": 6314,
+      "retail_game_activity_remained_resumed": true
+    }
+  },
+  "limits": [
+    "The device regression uses synthetic shader inputs and does not establish retail Bink parity.",
+    "The installed game predates this resource cache and was not restarted or updated.",
+    "No after-change full-game frame rate or cutscene transition was measured.",
+    "The cache removes recurring R8 image and upload-buffer allocation; other per-submit Vulkan and guest video costs remain."
+  ]
+}

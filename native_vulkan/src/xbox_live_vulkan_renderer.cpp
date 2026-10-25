@@ -3,9 +3,11 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <functional>
 #include <initializer_list>
 #include <limits>
 #include <sstream>
+#include <unordered_map>
 #include <utility>
 
 namespace shift::xbox {
@@ -15,12 +17,15 @@ struct BufferResource {
     VkBuffer buffer = VK_NULL_HANDLE;
     VkDeviceMemory memory = VK_NULL_HANDLE;
     VkMemoryPropertyFlags memory_flags = 0;
+    void* mapped = nullptr;
+    VkDeviceSize allocation_size = 0;
 };
 
 struct ImageResource {
     VkImage image = VK_NULL_HANDLE;
     VkDeviceMemory memory = VK_NULL_HANDLE;
     VkImageView view = VK_NULL_HANDLE;
+    VkDeviceSize allocation_size = 0;
 };
 
 struct DrawTextureResources {
@@ -30,6 +35,8 @@ struct DrawTextureResources {
     BufferResource upload;
     ImageResource image;
     VkSampler sampler = VK_NULL_HANDLE;
+    VkImageLayout upload_old_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    bool cached = false;
 };
 
 struct DrawResources {
@@ -47,6 +54,46 @@ struct DrawResources {
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     VkPipeline pipeline = VK_NULL_HANDLE;
 };
+
+struct TextureCacheKey {
+    size_t draw_index = 0;
+    uint32_t fetch_constant_index = 0;
+    uint32_t width = 0;
+    uint32_t height = 0;
+
+    bool operator==(const TextureCacheKey& other) const {
+        return draw_index == other.draw_index &&
+               fetch_constant_index == other.fetch_constant_index &&
+               width == other.width && height == other.height;
+    }
+};
+
+struct TextureCacheKeyHash {
+    size_t operator()(const TextureCacheKey& key) const {
+        size_t hash = key.draw_index;
+        hash = hash * 16777619u ^ key.fetch_constant_index;
+        hash = hash * 16777619u ^ key.width;
+        return hash * 16777619u ^ key.height;
+    }
+};
+
+struct CachedR8Texture {
+    BufferResource upload;
+    ImageResource image;
+    uint64_t estimated_bytes = 0;
+    uint64_t last_used_frame = 0;
+    bool initialized = false;
+};
+
+struct TextureCacheState {
+    VkDevice device = VK_NULL_HANDLE;
+    uint64_t frame = 0;
+    uint64_t estimated_bytes = 0;
+    std::unordered_map<TextureCacheKey, CachedR8Texture, TextureCacheKeyHash> textures;
+};
+
+constexpr uint64_t kR8TextureCacheBudgetBytes = 16u * 1024u * 1024u;
+constexpr uint64_t kR8TextureCacheLifetimeFrames = 120;
 
 struct FrameResources {
     VkDevice device = VK_NULL_HANDLE;
@@ -87,8 +134,10 @@ struct FrameResources {
             if (draw.pixel_shader) vkDestroyShaderModule(device, draw.pixel_shader, nullptr);
             for (DrawTextureResources& texture : draw.textures) {
                 if (texture.sampler) vkDestroySampler(device, texture.sampler, nullptr);
-                destroy_image(texture.image);
-                destroy_buffer(texture.upload);
+                if (!texture.cached) {
+                    destroy_image(texture.image);
+                    destroy_buffer(texture.upload);
+                }
             }
             destroy_buffer(draw.pixel_constants);
             destroy_buffer(draw.vertex_constants);
@@ -118,6 +167,9 @@ struct FrameResources {
     }
 
     void destroy_buffer(BufferResource& resource) const {
+        if (resource.mapped && resource.memory) {
+            vkUnmapMemory(device, resource.memory);
+        }
         if (resource.buffer) vkDestroyBuffer(device, resource.buffer, nullptr);
         if (resource.memory) vkFreeMemory(device, resource.memory, nullptr);
         resource = {};
@@ -184,6 +236,7 @@ bool create_buffer(
 
     VkMemoryRequirements requirements{};
     vkGetBufferMemoryRequirements(device, output->buffer, &requirements);
+    output->allocation_size = requirements.size;
     const uint32_t memory_type = find_memory_type(
         memory_properties, requirements.memoryTypeBits,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
@@ -246,6 +299,7 @@ bool create_texture_image(
 
     VkMemoryRequirements requirements{};
     vkGetImageMemoryRequirements(device, output->image, &requirements);
+    output->allocation_size = requirements.size;
     const uint32_t memory_type = find_memory_type(
         memory_properties, requirements.memoryTypeBits, 0, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (memory_type == UINT32_MAX) return fail("no compatible Vulkan texture memory type", error);
@@ -269,6 +323,126 @@ bool create_texture_image(
     result = vkCreateImageView(device, &view_info, nullptr, &output->view);
     if (result != VK_SUCCESS) return vk_fail("vkCreateImageView(texture)", result, error);
     return true;
+}
+
+void destroy_cached_r8_texture(VkDevice device, CachedR8Texture& texture) {
+    if (texture.upload.mapped && texture.upload.memory) {
+        vkUnmapMemory(device, texture.upload.memory);
+    }
+    if (texture.upload.buffer) vkDestroyBuffer(device, texture.upload.buffer, nullptr);
+    if (texture.upload.memory) vkFreeMemory(device, texture.upload.memory, nullptr);
+    if (texture.image.view) vkDestroyImageView(device, texture.image.view, nullptr);
+    if (texture.image.image) vkDestroyImage(device, texture.image.image, nullptr);
+    if (texture.image.memory) vkFreeMemory(device, texture.image.memory, nullptr);
+    texture = {};
+}
+
+bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
+                               std::string* error) {
+    if (!cache) return true;
+    if (cache->device && cache->device != device && !cache->textures.empty()) {
+        return fail("captured R8 texture cache cannot be shared across Vulkan devices", error);
+    }
+    cache->device = device;
+    ++cache->frame;
+    if (cache->frame == 0) ++cache->frame;
+    for (auto it = cache->textures.begin(); it != cache->textures.end();) {
+        if (cache->frame - it->second.last_used_frame > kR8TextureCacheLifetimeFrames) {
+            cache->estimated_bytes -= it->second.estimated_bytes;
+            destroy_cached_r8_texture(device, it->second);
+            it = cache->textures.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    return true;
+}
+
+bool acquire_cached_r8_texture(
+    TextureCacheState* cache,
+    const VkPhysicalDeviceMemoryProperties& memory_properties,
+    VkDevice device,
+    size_t draw_index,
+    uint32_t fetch_constant_index,
+    uint32_t width,
+    uint32_t height,
+    const std::vector<uint8_t>& pixels,
+    DrawTextureResources* output,
+    bool* cached,
+    std::string* error) {
+    if (!cache || !output || !cached) return fail("invalid R8 texture cache request", error);
+    *cached = false;
+    const TextureCacheKey key{draw_index, fetch_constant_index, width, height};
+    auto found = cache->textures.find(key);
+    if (found == cache->textures.end()) {
+        const uint64_t minimum_allocation = static_cast<uint64_t>(pixels.size()) * 2u;
+        if (minimum_allocation > kR8TextureCacheBudgetBytes - cache->estimated_bytes) {
+            return true;
+        }
+        CachedR8Texture created{};
+        if (!create_buffer(memory_properties, device, pixels.size(),
+                           VK_BUFFER_USAGE_TRANSFER_SRC_BIT, nullptr,
+                           &created.upload, error) ||
+            !create_texture_image(memory_properties, device, width, height,
+                                  VK_FORMAT_R8_UNORM, &created.image, error)) {
+            destroy_cached_r8_texture(device, created);
+            return false;
+        }
+        created.estimated_bytes = created.upload.allocation_size +
+                                  created.image.allocation_size;
+        if (created.estimated_bytes >
+            kR8TextureCacheBudgetBytes - cache->estimated_bytes) {
+            destroy_cached_r8_texture(device, created);
+            return true;
+        }
+        VkResult result = vkMapMemory(device, created.upload.memory, 0,
+                                      VK_WHOLE_SIZE, 0, &created.upload.mapped);
+        if (result != VK_SUCCESS) {
+            destroy_cached_r8_texture(device, created);
+            return vk_fail("vkMapMemory(cached R8 upload)", result, error);
+        }
+        found = cache->textures.emplace(key, std::move(created)).first;
+        cache->estimated_bytes += found->second.estimated_bytes;
+    }
+
+    CachedR8Texture& texture = found->second;
+    std::memcpy(texture.upload.mapped, pixels.data(), pixels.size());
+    if ((texture.upload.memory_flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+        VkMappedMemoryRange range{};
+        range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        range.memory = texture.upload.memory;
+        range.size = VK_WHOLE_SIZE;
+        const VkResult result = vkFlushMappedMemoryRanges(device, 1, &range);
+        if (result != VK_SUCCESS) return vk_fail("vkFlushMappedMemoryRanges(cached R8)",
+                                                 result, error);
+    }
+    texture.last_used_frame = cache->frame;
+    output->upload = texture.upload;
+    output->image = texture.image;
+    output->upload_old_layout = texture.initialized
+        ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        : VK_IMAGE_LAYOUT_UNDEFINED;
+    output->cached = true;
+    *cached = true;
+    return true;
+}
+
+void finish_texture_cache_frame(TextureCacheState* cache) {
+    if (!cache) return;
+    for (auto& [key, texture] : cache->textures) {
+        if (texture.last_used_frame == cache->frame) texture.initialized = true;
+    }
+}
+
+void clear_texture_cache(TextureCacheState* cache) {
+    if (!cache) return;
+    for (auto& [key, texture] : cache->textures) {
+        destroy_cached_r8_texture(cache->device, texture);
+    }
+    cache->textures.clear();
+    cache->estimated_bytes = 0;
+    cache->device = VK_NULL_HANDLE;
+    cache->frame = 0;
 }
 
 bool create_render_attachment(
@@ -407,6 +581,8 @@ void set_copy_resolution_constants(
 
 bool create_draw_resources(
     const CapturedVulkanDraw& source,
+    size_t draw_index,
+    TextureCacheState* texture_cache,
     const VkPhysicalDeviceMemoryProperties& memory_properties,
     VkDevice device,
     VkRenderPass render_pass,
@@ -519,11 +695,20 @@ bool create_draw_resources(
             input.format == CapturedVulkanTexture::Format::R8
                 ? VK_FORMAT_R8_UNORM
                 : VK_FORMAT_R8G8B8A8_UNORM;
-        if (!create_buffer(memory_properties, device, input.pixels->size(),
-                           VK_BUFFER_USAGE_TRANSFER_SRC_BIT, input.pixels->data(),
-                           &texture.upload, error) ||
-            !create_texture_image(memory_properties, device, input.width, input.height,
-                                  image_format, &texture.image, error)) {
+        if (texture_cache && input.format == CapturedVulkanTexture::Format::R8) {
+            if (!acquire_cached_r8_texture(
+                    texture_cache, memory_properties, device, draw_index,
+                    input.fetch_constant_index, input.width, input.height,
+                    *input.pixels, &texture, &texture.cached, error)) {
+                return false;
+            }
+        }
+        if (!texture.cached &&
+            (!create_buffer(memory_properties, device, input.pixels->size(),
+                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT, input.pixels->data(),
+                            &texture.upload, error) ||
+             !create_texture_image(memory_properties, device, input.width,
+                                   input.height, image_format, &texture.image, error))) {
             return false;
         }
         bool sampler_supported = true;
@@ -1095,7 +1280,8 @@ bool submit_mixed_sample_copy_frame(
     const CapturedVulkanCopy& copy,
     bool depth_stencil_resolve_enabled,
     CapturedVulkanSamplerCapabilities sampler_capabilities,
-    VkPipelineCache pipeline_cache) {
+    VkPipelineCache pipeline_cache,
+    TextureCacheState* texture_cache) {
     if (draws.empty() || draws.front().raster.sample_count != 4 ||
         copy.single_sample_pixel_shader_spirv.empty()) {
         return fail("mixed captured frame requires 4x-MSAA followed by 1x and a single-sample Copy/Convert shader",
@@ -1449,7 +1635,8 @@ bool submit_mixed_sample_copy_frame(
             ? resources.mixed_msaa_render_pass
             : resources.mixed_single_render_pass;
         draw_resource_indices[draw_index] = resource_index;
-        if (!create_draw_resources(resource_draw, memory_properties, device, pass,
+        if (!create_draw_resources(resource_draw, draw_index, texture_cache,
+                                   memory_properties, device, pass,
                                    pipeline_cache,
                                    geometry_shader_enabled, sampler_capabilities,
                                    &resources.draws[resource_index], error)) {
@@ -1483,7 +1670,8 @@ bool submit_mixed_sample_copy_frame(
     copy_draw.texture_sampling.anisotropy = TextureAnisotropy::Disabled;
     copy_draw.texture_sampling.border_color = TextureBorderColor::AbgrBlack;
     copy_draw.texture_sampling.border_alpha_known = true;
-    if (!create_draw_resources(copy_draw, memory_properties, device,
+    if (!create_draw_resources(copy_draw, std::numeric_limits<size_t>::max(), nullptr,
+                               memory_properties, device,
                                resources.mixed_copy_render_pass, pipeline_cache, false,
                                sampler_capabilities, &resources.copy_draw, error)) {
         return false;
@@ -1575,8 +1763,11 @@ bool submit_mixed_sample_copy_frame(
         for (const DrawTextureResources& texture : draw.textures) {
             VkImageMemoryBarrier to_upload{};
             to_upload.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            to_upload.srcAccessMask = texture.upload_old_layout ==
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                ? VK_ACCESS_SHADER_READ_BIT : 0;
             to_upload.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            to_upload.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            to_upload.oldLayout = texture.upload_old_layout;
             to_upload.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             to_upload.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             to_upload.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1584,7 +1775,11 @@ bool submit_mixed_sample_copy_frame(
             to_upload.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             to_upload.subresourceRange.levelCount = 1;
             to_upload.subresourceRange.layerCount = 1;
-            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            vkCmdPipelineBarrier(command,
+                                 texture.upload_old_layout ==
+                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                                     ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                                     : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                                  VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
                                  0, nullptr, 0, nullptr, 1, &to_upload);
             VkBufferImageCopy upload{};
@@ -1836,6 +2031,7 @@ bool submit_mixed_sample_copy_frame(
     result = vkQueueWaitIdle(queue);
     if (result != VK_SUCCESS) return vk_fail("vkQueueWaitIdle(mixed frame)", result, error);
     resources.submitted = false;
+    finish_texture_cache_frame(texture_cache);
     if (output_readback) {
         void* mapped = nullptr;
         result = vkMapMemory(device, resources.output_readback.memory, 0,
@@ -1863,6 +2059,31 @@ bool submit_mixed_sample_copy_frame(
 
 }  // namespace
 
+struct CapturedVulkanTextureCache::Impl {
+    TextureCacheState state;
+};
+
+struct CapturedVulkanTextureCacheAccess {
+    static TextureCacheState& get(CapturedVulkanTextureCache& cache) {
+        if (!cache.impl_) cache.impl_ = std::make_unique<CapturedVulkanTextureCache::Impl>();
+        return cache.impl_->state;
+    }
+};
+
+CapturedVulkanTextureCache::CapturedVulkanTextureCache() = default;
+
+CapturedVulkanTextureCache::~CapturedVulkanTextureCache() {
+    clear();
+}
+
+void CapturedVulkanTextureCache::clear() {
+    if (impl_) clear_texture_cache(&impl_->state);
+}
+
+size_t CapturedVulkanTextureCache::size() const {
+    return impl_ ? impl_->state.textures.size() : 0;
+}
+
 bool submit_captured_vulkan_frame(
     VkPhysicalDevice physical_device,
     VkDevice device,
@@ -1880,7 +2101,8 @@ bool submit_captured_vulkan_frame(
     const CapturedVulkanCopy* copy,
     bool depth_stencil_resolve_enabled,
     CapturedVulkanSamplerCapabilities sampler_capabilities,
-    VkPipelineCache pipeline_cache) {
+    VkPipelineCache pipeline_cache,
+    CapturedVulkanTextureCache* texture_cache) {
     if (output_readback) output_readback->clear();
     if (!physical_device || !device || !queue || !output_image || !output_view ||
         !output_width || !output_height || draws.empty() || queue_family_index == UINT32_MAX) {
@@ -1892,6 +2114,11 @@ bool submit_captured_vulkan_frame(
     }
     VkPhysicalDeviceMemoryProperties memory_properties{};
     vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
+    TextureCacheState* texture_cache_state = nullptr;
+    if (texture_cache) {
+        texture_cache_state = &CapturedVulkanTextureCacheAccess::get(*texture_cache);
+        if (!begin_texture_cache_frame(texture_cache_state, device, error)) return false;
+    }
     FrameResources resources{};
     resources.device = device;
     resources.queue = queue;
@@ -1926,7 +2153,8 @@ bool submit_captured_vulkan_frame(
             physical_device, device, queue, queue_family_index, output_image,
             output_view, output_written_before, output_width, output_height,
             draws, error, output_readback, geometry_shader_enabled, *copy,
-            depth_stencil_resolve_enabled, sampler_capabilities, pipeline_cache);
+            depth_stencil_resolve_enabled, sampler_capabilities, pipeline_cache,
+            texture_cache_state);
     }
     const CapturedRasterState& frame_target = draws.front().raster;
     const uint32_t source_width = copy && copy->source_width
@@ -2198,7 +2426,8 @@ bool submit_captured_vulkan_frame(
         copy_draw.texture_sampling.anisotropy = TextureAnisotropy::Disabled;
         copy_draw.texture_sampling.border_color = TextureBorderColor::AbgrBlack;
         copy_draw.texture_sampling.border_alpha_known = true;
-        if (!create_draw_resources(copy_draw, memory_properties, device,
+        if (!create_draw_resources(copy_draw, std::numeric_limits<size_t>::max(), nullptr,
+                                   memory_properties, device,
                                    resources.copy_render_pass, pipeline_cache, false,
                                    sampler_capabilities, &resources.copy_draw, error)) {
             return false;
@@ -2223,7 +2452,8 @@ bool submit_captured_vulkan_frame(
     for (size_t i = 0; i < draws.size(); ++i) {
         DrawResources& draw = resources.draws[i];
         // Recreate just the graphics pipeline with this frame's render pass.
-        if (!create_draw_resources(draws[i], memory_properties, device, resources.render_pass,
+        if (!create_draw_resources(draws[i], i, texture_cache_state,
+                                   memory_properties, device, resources.render_pass,
                                    pipeline_cache,
                                    geometry_shader_enabled, sampler_capabilities,
                                    &draw, error)) {
@@ -2311,8 +2541,11 @@ bool submit_captured_vulkan_frame(
         for (const DrawTextureResources& texture : draw.textures) {
             VkImageMemoryBarrier texture_barrier{};
             texture_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            texture_barrier.srcAccessMask = texture.upload_old_layout ==
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                ? VK_ACCESS_SHADER_READ_BIT : 0;
             texture_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            texture_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            texture_barrier.oldLayout = texture.upload_old_layout;
             texture_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             texture_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             texture_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -2320,7 +2553,11 @@ bool submit_captured_vulkan_frame(
             texture_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             texture_barrier.subresourceRange.levelCount = 1;
             texture_barrier.subresourceRange.layerCount = 1;
-            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            vkCmdPipelineBarrier(command,
+                                 texture.upload_old_layout ==
+                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                                     ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                                     : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                                  VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
                                  0, nullptr, 0, nullptr, 1, &texture_barrier);
             VkBufferImageCopy copy{};
@@ -2527,6 +2764,7 @@ bool submit_captured_vulkan_frame(
     result = vkQueueWaitIdle(queue);
     if (result != VK_SUCCESS) return vk_fail("vkQueueWaitIdle(captured frame)", result, error);
     resources.submitted = false;
+    finish_texture_cache_frame(texture_cache_state);
     if (output_readback) {
         void* mapped = nullptr;
         result = vkMapMemory(device, resources.output_readback.memory, 0,

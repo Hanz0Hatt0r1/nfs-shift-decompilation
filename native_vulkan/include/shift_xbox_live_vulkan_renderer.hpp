@@ -5,7 +5,9 @@
 
 #include <vulkan/vulkan.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -59,6 +61,25 @@ struct CapturedVulkanSamplerCapabilities {
     float max_anisotropy = 1.0f;
 };
 
+// Reuses upload buffers and images for live R8 texture slots across frames.
+// Keep this object alive for one Vulkan device and clear it before destroying
+// that device. Calls that share it must be externally synchronized.
+class CapturedVulkanTextureCache {
+ public:
+    CapturedVulkanTextureCache();
+    ~CapturedVulkanTextureCache();
+    CapturedVulkanTextureCache(const CapturedVulkanTextureCache&) = delete;
+    CapturedVulkanTextureCache& operator=(const CapturedVulkanTextureCache&) = delete;
+
+    void clear();
+    size_t size() const;
+
+ private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+    friend struct CapturedVulkanTextureCacheAccess;
+};
+
 // Records and submits the captured game draws into the ReXGlue presenter image.
 // The caller must externally synchronize the supplied graphics queue. The
 // optional pipeline cache must belong to device and be externally synchronized
@@ -84,6 +105,7 @@ bool submit_captured_vulkan_frame(
     const CapturedVulkanCopy* copy = nullptr,
     bool depth_stencil_resolve_enabled = false,
     CapturedVulkanSamplerCapabilities sampler_capabilities = {},
-    VkPipelineCache pipeline_cache = VK_NULL_HANDLE);
+    VkPipelineCache pipeline_cache = VK_NULL_HANDLE,
+    CapturedVulkanTextureCache* texture_cache = nullptr);
 
 }  // namespace shift::xbox
