@@ -16,6 +16,8 @@ A follow-up 45-second read-only GDB trace with that runtime observed source-0 an
 
 The exact live-memory-derived PPC ELF also narrows the `cameraconfig.xml` miss: the retail file reader maps the failed open to sentinel `-5`, the config probe returns `false`, and its outer initializer cleans up two associated objects before continuing into later initialization. This caller path does not justify changing VFS status semantics or establish a main menu/race. See [the missing-asset caller evidence](../evidence/xbox360_linux_missing_asset_caller_semantics_20261025.json).
 
+A 90-second exact-XEX trace also followed both loose `menu_background.xml` misses through the retail resource loader. The parent stores the child loader result at offset `1456`, sets its own return value to `1`, and returns on the observed path, so the miss does not directly fail that parent initializer. The last 14-packet draw submission precedes the first miss by about 0.75 seconds; no later draw submission appears before the run ends. That timing makes this a useful transition to trace, but does not establish causality or that the XML is irrelevant to later visuals. No VFS alias is justified. See [the menu-background return-flow evidence](../evidence/xbox360_linux_menu_background_missing_flow_20261025.json).
+
 ## Proposed pipeline
 
 ```text
