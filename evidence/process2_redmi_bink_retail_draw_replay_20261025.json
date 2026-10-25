@@ -1,0 +1,116 @@
+{
+  "schema": "shift.process2.redmi_bink_retail_draw_replay.v1",
+  "observed_at_local": "2026-10-25T14:56+03:00",
+  "retail_capture": {
+    "source_log": "/home/pes/work/process2-linux-muls-prev-retail-20261025/bin/logs/nfs_shift_015.log",
+    "source_log_sha256": "4915f90dbfb43f1fc24f0a6e0f0e84d0fbcb1a9cecc7b82ac83ca04f785291b",
+    "presenter_frame": 400,
+    "draw_index": 2614,
+    "topology": "RectangleList",
+    "auto_index": true,
+    "index_count": 4,
+    "extent": [1280, 720],
+    "vertex_shader": {
+      "byte_length": 96,
+      "fnv1a64": "0x6b6846221d758944",
+      "compiled_spirv_sha256": "6513c3af8972e760ebf88201197fc65bcabf87a6ccdab3c27aed57a5b658269f"
+    },
+    "pixel_shader": {
+      "byte_length": 144,
+      "fnv1a64": "0xae0dde2bd729877d",
+      "compiled_spirv_sha256": "77a4e4ea038010370ef61f327d49ee4230375c2eeee278032a3d23566188129b"
+    },
+    "geometry_shader_spirv_sha256": "c3bfd622a80f01d038d6b250e2fd2e666704f40f0b1350ddb1025f864acc61b0",
+    "texture_planes": [
+      {
+        "role": "luma",
+        "extent": [1280, 720],
+        "format": "R8_UNORM",
+        "byte_length": 921600,
+        "sha256": "228cff2ce890f70ddfa4456231a75c2640c875ee25c46409779cf821d6136e2a"
+      },
+      {
+        "role": "chroma V",
+        "extent": [640, 360],
+        "format": "R8_UNORM",
+        "byte_length": 230400,
+        "sha256": "a81bcb8aca6abfc5ea1a79d915c851923ddc0a20b985f8b3a360067f053408d5"
+      },
+      {
+        "role": "chroma U",
+        "extent": [640, 360],
+        "format": "R8_UNORM",
+        "byte_length": 230400,
+        "sha256": "f1953394e4d76212565e5dbf7e08f03b3fe196e88160d4648be497c9a6ac56b3"
+      }
+    ]
+  },
+  "plane_reconstruction": {
+    "source": "Prior expanded RGBA texture dumps for the captured draw",
+    "method": "Extract the red byte for each texel into a tight R8 plane; the renderer samples each plane as VK_FORMAT_R8_UNORM with the captured [X,X,X,One] swizzle.",
+    "original_captured_byte_lengths": [921600, 276480, 276480],
+    "replay_plane_byte_lengths": [921600, 230400, 230400]
+  },
+  "replay": {
+    "method": "Compiled the captured retail Bink shader translation to Vulkan 1.1 SPIR-V and submitted the captured shader, constants, raster state, rectangle geometry, and three raw R8 planes through submit_captured_vulkan_frame.",
+    "renderer": "Process 2 native Vulkan renderer",
+    "target": "Offscreen VK_FORMAT_A2B10G10R10_UNORM_PACK32, 1280x720, single sample",
+    "copy_convert": false,
+    "depth_stencil_resolve": false,
+    "runner_source_sha256": "6497700f4fc1eb886c0a3b21e1f5753e385b96ff81c3e91851e5ebffa6e02740",
+    "android_arm64_runner_sha256": "8764a10eb085f412c2b6ebf47e20ad7b8f716760e42cafa6fe3841f74373ad95"
+  },
+  "host": {
+    "gpu": "NVIDIA GeForce GTX 950",
+    "vulkan_api": "1.4.312",
+    "validation_layer": "VK_LAYER_KHRONOS_validation",
+    "validation_enabled": true,
+    "validation_errors": 0,
+    "first_submit_ms": 782.246,
+    "steady_replays": 8,
+    "steady_mean_ms": 4.07529,
+    "steady_min_ms": 4.03021,
+    "steady_max_ms": 4.15604,
+    "readback_sha256": "1fdfee5d3962ae66c8dd9f5f987ff96f8818aa0693cd27ef4afc4046438486b6"
+  },
+  "android": {
+    "device": "Redmi Note 8 Pro (begonia)",
+    "android_version": "13",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "geometry_shader": true,
+    "validation_layer": {
+      "enabled": false,
+      "reason": "VK_LAYER_KHRONOS_validation is unavailable in the device Vulkan layer inventory"
+    },
+    "first_submit_ms": 159.304,
+    "warmup_replays": 2,
+    "steady_replays": 8,
+    "steady_mean_ms": 13.1044,
+    "steady_min_ms": 10.2351,
+    "steady_max_ms": 17.0462,
+    "readback_sha256": "8295d56ab66664365991ad06a6fb1f018dc3db37ba07afccdad91b2555f41ca1",
+    "repeat_readback_sha256": "8295d56ab66664365991ad06a6fb1f018dc3db37ba07afccdad91b2555f41ca1",
+    "repeat_readback_bitwise_identical": true,
+    "decoded_output_png": "process2_redmi_bink_retail_draw_replay_20261025.png",
+    "decoded_output_png_sha256": "b78a0d4d632b4c732a902445ae4651fe03585604076775f23e0b6b5c706329b1",
+    "nonblack_rgb_pixels": 921528,
+    "bounding_box": [0, 0, 1279, 719]
+  },
+  "cross_device_comparison": {
+    "channel_domain": "10-bit RGB from A2B10G10R10 readbacks",
+    "mali_vs_gtx_mean_absolute_error": [0.0041178385, 0.0032562934, 0.0035449219],
+    "mali_vs_gtx_maximum_absolute_error": [2, 2, 2]
+  },
+  "game_process_after_replay": {
+    "pid": 6314,
+    "foreground_activity": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity",
+    "restarted_or_stopped": false
+  },
+  "limitations": [
+    "This replays one real captured retail draw and renders the original EA intro mark; it does not replay the surrounding four-draw mixed-sample frame.",
+    "The isolated replay bypasses guest execution, Bink decoding, and Copy/Convert, so its timing is not live game frame rate or a measured end-to-end speedup.",
+    "Android validation-layer coverage is unavailable; validation ran on the GTX 950 host only.",
+    "This Bink replay does not exercise the language selector or verify its labels on Mali."
+  ]
+}
