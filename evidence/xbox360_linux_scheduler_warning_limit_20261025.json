@@ -1,0 +1,61 @@
+{
+  "schema": "shift.xbox360.linux.scheduler-warning-limit.v1",
+  "captured_on": "2026-10-25",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "source_change": {
+    "repository": "https://github.com/rexglue/rexglue-sdk",
+    "pull_request": "https://github.com/rexglue/rexglue-sdk/pull/534",
+    "commit": "c1784dd8ddf48229e200e5036ac020180ed80bfc",
+    "file": "src/system/xthread.cpp",
+    "file_sha256": "dedb57c32bdbf587c83210b94dfb658f69fe6606cd6577d3bc68482aa52dd7a9",
+    "behavior": "Logs the low-host-CPU warning once; guest CPU identity and scheduler behavior are unchanged."
+  },
+  "tested_build": {
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b",
+    "runtime_build_id": "5a27beda43e5cad393ed1d937aa09f91317d0aa2",
+    "sdk_checkout_commit": "32afce4e6522f74b5e30031865fceeb9fb08ab5e",
+    "patch_source_commit": "c1784dd8ddf48229e200e5036ac020180ed80bfc",
+    "patch_matches_pr_commit": true,
+    "p2_renderer_plugin": {
+      "sha256": "e2679a4ca54178a312af3f6cc7cc2ba0eb8dd562a8e730a32131068d46736bf4",
+      "build_id": "173c8c62e2dea1cf2b5a8161003e6e63e294fb8d",
+      "source_commit": "99cdd93a92a580d562ca3f0c4c88e2e4a9d3b537"
+    }
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "duration_seconds": 40.0,
+    "instrumentation": "No GDB; guest memory was not modified.",
+    "input_events_sent": false,
+    "termination": "Harness sent SIGINT while the retail process remained live; host returned 0.",
+    "loaded_libraries_verified_from_proc_maps": true,
+    "runtime_log": {
+      "path": "/tmp/nfs-p1-cpu-warning-20261025/bin/logs/nfs_shift_001.log",
+      "bytes": 330558,
+      "sha256": "affc8a23fb92f9dd80b84fd01e0cc218098451a27893deca600b9fab7d1a8cca",
+      "too_few_processor_cores_warning_count": 1,
+      "first_warning_local_time": "2026-10-25 21:25:16.038",
+      "accepted_copy_convert_entries": 935,
+      "first_copy_convert_local_time": "2026-10-25 21:25:17.379",
+      "last_copy_convert_local_time": "2026-10-25 21:25:54.720",
+      "guest_faults": 0,
+      "sigsegv": 0,
+      "sigbus": 0
+    },
+    "pixels_captured": false
+  },
+  "comparison": {
+    "baseline_evidence": "evidence/xbox360_linux_p2_handover_frontend_followthrough_20261025.json",
+    "baseline_duration_seconds": 120.027,
+    "baseline_runtime_sha256": "d0516220e6e3db828d4d016a517f5f870705628fa7016409067b7e6c94f4c740",
+    "baseline_same_host_xex_and_plugin": true,
+    "baseline_warning_count": 8196,
+    "interpretation": "The repeated warning is now rate-limited in the tested runtime. The runs differ in runtime build and duration; this comparison does not prove warning spam caused the frontend stall or that the game progressed further."
+  }
+}
