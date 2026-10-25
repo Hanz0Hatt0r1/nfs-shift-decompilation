@@ -1,0 +1,124 @@
+{
+  "schema": "shift.xbox360.linux-bink-callback-payload.v1",
+  "captured_on": "2026-10-25",
+  "target": {
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "live_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "host_runtime": {
+    "platform": "Linux AMD64",
+    "executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_override_sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b",
+    "gpu_plugin_sha256": "42f338bc48e144e9dbc70dd208f9a169f437b506d1c338832896c1a6b83b7f10"
+  },
+  "probe": {
+    "duration_seconds": 45.16,
+    "termination": "The harness sent SIGINT while the retail process remained live; no SIGSEGV or SIGBUS was recorded.",
+    "input_events_sent": false,
+    "guest_memory_modified": false,
+    "instrumentation": "Read-only GDB software breakpoints on the retail callback buffer comparison and its post-copy callback. PPC register offsets were cross-checked against prior probes.",
+    "guest_thread_id": 15,
+    "callback_compare_hits": 4,
+    "post_copy_callback_hits": 3,
+    "artifacts": {
+      "gdb_script": {
+        "path": "tools/xbox360/trace_bink_callback_buffer.gdb",
+        "sha256": "dd44b409ffaa83859b3d304d7afeae40e69d2f02d2e250c3bb2416d2bbf8b581"
+      },
+      "gdb_console_log": {
+        "external_path": "/tmp/nfs-p1-bink-buffer-registerfix-20261025/console.log",
+        "sha256": "f510e4437e0a08113affbb630cf70e3da2b9d5b9ceb069c417c98f894a2da916"
+      },
+      "runtime_log": {
+        "external_path": "/tmp/nfs-p1-private-bin-20261025/logs/nfs_shift_010.log",
+        "sha256": "e93d8abc47edbd52d9b250439b4fea07e080cf85d0f16805cf8ae4046cb4c2c7"
+      }
+    }
+  },
+  "static_contract": {
+    "retail_callback": "0x82BA9258",
+    "buffer_compare_copy_function": "0x82BA8DA8",
+    "post_copy_callback": "0x82B9C770",
+    "copy_helper": "0x826D9940",
+    "source_context": {
+      "path": "/home/pes/work/nfsshift-rex/generated/default/nfs_shift_recomp.27.cpp",
+      "sha256": "8cf0b3adb3c9ee1d481f5b5b9b8a6702210429f64d6b10541f6723eb605d6b4a"
+    },
+    "compare_copy_context": {
+      "path": "/home/pes/work/nfsshift-rex/generated/default/nfs_shift_recomp.228.cpp",
+      "sha256": "04d528802705ea1bfc58a1a41bf229f7e2d888af296a231cc9a4938d2b616156"
+    },
+    "decoded_behavior": "The callback passes a six-element payload to 0x82BA8DA8. That function reads two dimensions at object offsets +4 and +8, a destination pointer at +20, and compares/copies width*height*4 bytes using 0x826D9940. A changed payload then reaches 0x82B9C770."
+  },
+  "guest_observation": {
+    "context_register_offsets": {
+      "r3": 0,
+      "r4": 32,
+      "r5": 40,
+      "r6": 48,
+      "lr": 256
+    },
+    "source_guest_address": "0x7018F6F0",
+    "samples": [
+      {
+        "object": "0xB7B03C6C",
+        "selector": "0x2",
+        "element_count": 6,
+        "dimensions": [2, 6],
+        "copy_bytes": 48,
+        "destination": "0xB7B05290",
+        "source_first_24_bytes": "3f80000000000000000000003f8000000000000000000000",
+        "destination_before_first_24_bytes": "3f80000000000000000000003f8000000000000000000000",
+        "destination_after_captured": false,
+        "note": "This sample did not produce an observed post-copy callback; the remaining 24 bytes were not captured, so full-buffer equality is unknown."
+      },
+      {
+        "object": "0xB7B06B30",
+        "selector": "0x1",
+        "element_count": 6,
+        "dimensions": [1, 6],
+        "copy_bytes": 24,
+        "destination": "0xB73E2308",
+        "source_first_24_bytes": "00000000000000003f800000000000000000000000000000",
+        "destination_before_first_24_bytes": "3f8000003f80000000000000000000000000000000000000",
+        "destination_after_first_24_bytes": "00000000000000003f800000000000000000000000000000"
+      },
+      {
+        "object": "0xB7B06B5C",
+        "selector": "0x1",
+        "element_count": 6,
+        "dimensions": [1, 6],
+        "copy_bytes": 24,
+        "destination": "0xB73E35B8",
+        "source_first_24_bytes": "0000000000000000000000003f8000000000000000000000",
+        "destination_before_first_24_bytes": "3f8000003f80000000000000000000000000000000000000",
+        "destination_after_first_24_bytes": "0000000000000000000000003f8000000000000000000000"
+      },
+      {
+        "object": "0xB7B06B88",
+        "selector": "0x2",
+        "element_count": 6,
+        "dimensions": [2, 6],
+        "copy_bytes": 48,
+        "destination": "0xB73E3D50",
+        "source_first_24_bytes": "000000000000000000000000000000000000000000000000",
+        "destination_before_first_24_bytes": "3f80000000000000000000003f8000000000000000000000",
+        "destination_after_first_24_bytes": "000000000000000000000000000000000000000000000000"
+      }
+    ],
+    "interpretation": {
+      "supported": [
+        "The observed callback payload is six 32-bit values with 24- or 48-byte compare/copy spans; values include the IEEE-754 1.0 bit pattern 0x3f800000.",
+        "Three observed mismatches were copied to the expected guest destination buffers; captured destination bytes then match the corresponding captured source prefix.",
+        "This Bink-associated path processes small transform-like metadata, not a decoded video frame."
+      ],
+      "not_proven": [
+        "The decoded Bink pixel buffer address, format, or GPU transfer path.",
+        "Whether the Bink media output is presented by the renderer.",
+        "A frontend scene transition, main menu, or offline race."
+      ]
+    }
+  }
+}
