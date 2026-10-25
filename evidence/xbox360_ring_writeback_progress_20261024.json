@@ -100,5 +100,6 @@
     "not_proven": "This does not establish why the separate software queue at descriptor+0x00 and predicate bit 0x02 remain unchanged, whether that wait prevents frontend progress, or whether a visible retail frame, menu, or race was reached. It does not independently bind the generated executable to the locked XEX build invocation.",
     "next_p1_frontier": "Trace the original worker/callback path that advances the +0x00 software queue and exact-XEX predicate bit. Preserve the retail wait and scheduler semantics until the missing transition is identified."
   },
+  "historical_watchpoint_caveat": "The descriptor+0x00 watchpoint in this capture was placed on the virtual host mapping. It could miss EVENT_WRITE_SHD stores made through the separate physical host mapping. The later exact-XEX alias trace observed matching physical and guest-virtual values for 360 writes; see evidence/xbox360_linux_guest_ring_physical_virtual_alias_20261025.json. This file's measured writeback values remain valid, but the descriptor-stayed-at-1 inference is superseded.",
   "local_gdb_log": "/tmp/p1-vdwriteback-probe-20261024/logs/gdb-vd-writeback-target.log"
 }
