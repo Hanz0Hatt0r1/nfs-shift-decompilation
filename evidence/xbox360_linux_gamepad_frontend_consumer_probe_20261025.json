@@ -123,13 +123,90 @@
     "supported": [
       "The harness emitted six A/Start uinput pulses during this 75.33-second retail run.",
       "The conditional breakpoint on the raw-mask getter did not observe A/Start state, and the conditional breakpoint on the changed-mask dispatcher did not observe an A/Start transition in this run.",
-      "The previously recorded run independently proves that successful user-0 XamInputGetState polls can contain masks 0x0010 and 0x1000 and that the retail button-edge accumulator updates; see evidence/xbox360_linux_retail_gamepad_consumer_20261025.json."
+      "The previously recorded run independently proves that successful user-0 XamInputGetState polls can contain masks 0x0010 and 0x1000 and that the retail button-edge accumulator updates; see evidence/xbox360_linux_retail_gamepad_consumer_20261025.json.",
+      "A same-run 91.23-second trace links six uinput A/Start pulses to 18 successful non-neutral user-0 retail XamInputGetState samples; neither candidate frontend getter nor dispatcher observed those bits."
     ],
     "not_proven": [
       "The exact scene or whether this 75-second run reached the main menu.",
       "Whether the same pulses reached this run's XamInputGetState call.",
       "That either candidate is the only frontend input path, or that the retail title has an input defect.",
-      "Main-menu entry, offline-race entry, sustained gameplay, or correct rendering."
+      "Main-menu entry, offline-race entry, sustained gameplay, or correct rendering.",
+      "Why the active frontend path did not call either candidate button handler, or whether the game remained in a non-skippable intro scene; this run captured no scene pixels."
     ]
+  },
+  "same_run_input_xam_correlation_20261025": {
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+    "duration_seconds": 91.23,
+    "input_events": [
+      {
+        "at_seconds": 15,
+        "button": "A",
+        "duration_ms": 750,
+        "xinput_mask": "0x1000"
+      },
+      {
+        "at_seconds": 25,
+        "button": "Start",
+        "duration_ms": 750,
+        "xinput_mask": "0x0010"
+      },
+      {
+        "at_seconds": 40,
+        "button": "A",
+        "duration_ms": 750,
+        "xinput_mask": "0x1000"
+      },
+      {
+        "at_seconds": 50,
+        "button": "Start",
+        "duration_ms": 750,
+        "xinput_mask": "0x0010"
+      },
+      {
+        "at_seconds": 70,
+        "button": "A",
+        "duration_ms": 750,
+        "xinput_mask": "0x1000"
+      },
+      {
+        "at_seconds": 80,
+        "button": "Start",
+        "duration_ms": 750,
+        "xinput_mask": "0x0010"
+      }
+    ],
+    "guest_observations": {
+      "xam_getstate_wrapper_hits": 1044,
+      "retail_state_update_hits": 1040,
+      "successful_non_neutral_user0_samples": {
+        "0x1000": 5,
+        "0x0010": 13
+      },
+      "candidate_non_neutral_getter_hits": 0,
+      "candidate_non_neutral_dispatcher_hits": 0,
+      "main_guest_thread_at_interrupt": [
+        "Core 0/0: Main",
+        "0x823A0310"
+      ],
+      "draw_submit_log_entries": 94
+    },
+    "termination": "External SIGINT at 90 seconds while the process remained live; no guest trap, SIGSEGV, or SIGBUS was logged.",
+    "guest_memory_modified": false,
+    "gdb_script": {
+      "path": "/tmp/nfs-p1-input-correlation-20261025/trace.gdb",
+      "sha256": "ed81f2a4e300461c5b4649d2ac4f13bb674eb712ad64660c5cb0c594c627b380"
+    },
+    "gdb_log": {
+      "path": "/tmp/nfs-p1-input-correlation-20261025/gdb.log",
+      "sha256": "2e6a57ff0b017b2c3efbb206e2704cb2f98c7c09f7ba26a76f6508cc18296e39"
+    },
+    "app_log": {
+      "path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_112.log",
+      "sha256": "54445a4fb10bf29d94b4e8a0fb991504af6de22484bb47f2ae2dbd04a513061c"
+    },
+    "interpretation": "This exact run confirms that A and Start reached successful retail user-0 XamInputGetState samples. The candidate raw-mask getter and button-change dispatcher did not observe those bits. The final guest stack sample was inside the retail predicate 0x823A0310; this point-in-time sample does not establish a permanent stall. The trace does not identify the active screen or prove a menu or race transition, and no pixel readback was captured."
   }
 }

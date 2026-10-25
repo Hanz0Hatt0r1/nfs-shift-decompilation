@@ -24,5 +24,18 @@ assert all(len(value) == 64 for key, value in probe["external_probe"].items() if
 claims = probe["interpretation"]
 assert any("only route" in claim.lower() for claim in claims["not_proven"])
 assert any("defective" in claim.lower() for claim in claims["not_proven"])
+correlated = evidence["same_run_input_xam_correlation_20261025"]
+assert correlated["retail_xex_sha256"] == evidence["retail_image"]["sha256"]
+assert correlated["duration_seconds"] >= 90
+assert correlated["guest_observations"]["successful_non_neutral_user0_samples"] == {
+    "0x1000": 5,
+    "0x0010": 13,
+}
+assert correlated["guest_observations"]["candidate_non_neutral_getter_hits"] == 0
+assert correlated["guest_observations"]["candidate_non_neutral_dispatcher_hits"] == 0
+assert correlated["guest_observations"]["main_guest_thread_at_interrupt"] == [
+    "Core 0/0: Main", "0x823A0310"
+]
+assert "no pixel readback" in correlated["interpretation"]
 
-print("retail gamepad vtable slots and bounded dispatch limits match")
+print("retail gamepad vtable and same-run input correlation match")
