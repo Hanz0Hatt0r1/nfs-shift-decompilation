@@ -1,0 +1,93 @@
+{
+  "schema": "shift.xbox360.linux-retail-gamepad-consumer.v1",
+  "captured_on": "2026-10-25",
+  "retail_image": {
+    "path": "/home/pes/work/process2-linux-retail-root-20261024/game/default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4"
+  },
+  "host_runtime": {
+    "executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637"
+  },
+  "input_setup": {
+    "device": "Linux uinput Microsoft X-Box 360 pad, VID:PID 045e:028e",
+    "physical_controller_filter": "SDL_GAMECONTROLLER_IGNORE_DEVICES=0x045e/0x0b12",
+    "mnk_mode": false,
+    "pulses": ["A press/release", "Start press/release", "A press/release"],
+    "instrumentation": "GDB stops after the retail XamInputGetState wrapper in sub_82308E60; stop timing can perturb input scheduling."
+  },
+  "retail_consumer": {
+    "function": "0x82308E60",
+    "xam_state_return_address": "0x82308EA8",
+    "gdb_source_breakpoint": "/home/pes/work/nfsshift-rex/generated/default/nfs_shift_recomp.170.cpp:3237",
+    "breakpoint_hits": 900,
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-input-consumer-20261025/retail-state-gdb.log",
+      "sha256": "8e7f5726e80648a89f0cb3fac4fd53c3fb6db33b0ccc0ea2e7874293216676ed"
+    },
+    "observed_successful_states": [
+      {
+        "poll": 1,
+        "packet": 1,
+        "buttons": "0x0000"
+      },
+      {
+        "poll": 293,
+        "packet": 3,
+        "buttons": "0x0010"
+      },
+      {
+        "poll": 701,
+        "packet": 5,
+        "buttons": "0x1000"
+      },
+      {
+        "poll": 705,
+        "packet": 5,
+        "buttons": "0x1000"
+      },
+      {
+        "poll": 709,
+        "packet": 5,
+        "buttons": "0x1000"
+      },
+      {
+        "poll": 713,
+        "packet": 5,
+        "buttons": "0x1000"
+      },
+      {
+        "poll": 717,
+        "packet": 5,
+        "buttons": "0x1000"
+      },
+      {
+        "poll": 721,
+        "packet": 5,
+        "buttons": "0x1000"
+      }
+    ],
+    "other_users": {
+      "observed_result": "0x0000048f",
+      "meaning": "X_ERROR_DEVICE_NOT_CONNECTED",
+      "caveat": "The output buffer is not valid for failed polls and may retain bytes from a preceding successful poll."
+    },
+    "separate_callsite_trace": {
+      "external_path": "/tmp/nfs-p1-input-consumer-20261025/getstate-calls-gdb.log",
+      "sha256": "61290550854f4ded4d840a1236de0c200647cc57d175118eeace9999a8658efe",
+      "observation": "Repeated calls to this XAM wrapper used guest return address 0x82308EA8 for user indices 0 through 3."
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The original retail consumer reaches XamInputGetState repeatedly and receives successful non-neutral button states for user 0.",
+      "The Linux input path is not blocked before the retail state consumer."
+    ],
+    "not_proven": [
+      "A frontend scene transition or the exact mapping between each timed uinput pulse and the observed button bit; GDB stop timing perturbs the run.",
+      "Main-menu identity, offline race entry, sustained gameplay, or correct rendering."
+    ]
+  }
+}
