@@ -41,3 +41,7 @@ jobs:
           python3 tools/xbox360/test_callback_setter_823a5730.py
           python3 tools/xbox360/test_registered_callback_82649b68.py
           python3 tools/xbox360/test_callback_gate_writer_826489d0.py
+      - name: Check retail missing-asset return paths
+        run: |
+          python3 tools/xbox360/test_linux_missing_asset_caller_semantics.py
+          python3 tools/xbox360/test_linux_menu_background_missing_flow.py
