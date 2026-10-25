@@ -1,0 +1,73 @@
+{
+  "schema": "shift.process2.redmi_resolve_async_renderer_check.v1",
+  "date": "2026-10-25",
+  "source": {
+    "renderer_code_commit": "f07ebff9c30243b6990e6f0da1fe9e279477f485",
+    "evidence_commit_before_this_record": "189467bbd261b705fdec400d6356ae429be2f4a0",
+    "branch": "work/process2-xbox-live-ring-20261023"
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "supported_device_extensions": [
+      "VK_KHR_create_renderpass2",
+      "VK_KHR_depth_stencil_resolve"
+    ],
+    "supported_depth_resolve_modes": "0x1",
+    "supported_stencil_resolve_modes": "0x1",
+    "sample_zero_depth_supported": true,
+    "sample_zero_stencil_supported": true
+  },
+  "capability_probe": {
+    "method": "Standalone Android ARM64 executable created a Vulkan 1.1 instance, enumerated the physical device and device extensions, and queried VkPhysicalDeviceDepthStencilResolveProperties.",
+    "source_path": "/tmp/p2_vk_resolve_probe.cpp",
+    "source_sha256": "75f0dd667d69f6ad84464529609486408167049893132a8d7bb25917637177ad",
+    "binary_sha256": "1254325338cde6695f4aa760d2e09b965ec09b2f1c192857b906a68bb4abe687",
+    "output": "device=Mali-G76 MC4 api=1.1.131 renderpass2=1 depth_stencil_resolve=1 depth_samples=0xd stencil_samples=0xd; supported_depth_modes=0x1 supported_stencil_modes=0x1 independent_resolve=0 independent_resolve_none=0 sample_zero_depth=1 sample_zero_stencil=1"
+  },
+  "renderer_test": {
+    "cmake_source": "/home/pes/work/nfs-shift-xbox-live-ring-20261023/native_vulkan",
+    "build_dir": "/home/pes/work/process2-android-renderer-check-async-build",
+    "ndk": "28.2.13676358 (r28c)",
+    "android_platform": 29,
+    "abi": "arm64-v8a",
+    "configure_command": "cmake -S /home/pes/work/nfs-shift-xbox-live-ring-20261023/native_vulkan -B /home/pes/work/process2-android-renderer-check-async-build -G Ninja -DCMAKE_TOOLCHAIN_FILE=/home/pes/Android/Sdk/ndk/28.2.13676358/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-29 -DANDROID_STL=c++_shared -DVulkan_INCLUDE_DIR=/home/pes/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -DVulkan_LIBRARY=/home/pes/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/29/libvulkan.so -DGLSLANG_VALIDATOR=/usr/bin/glslangValidator",
+    "build_command": "cmake --build /home/pes/work/process2-android-renderer-check-async-build --target xbox_live_vulkan_renderer_check -j4",
+    "binary_path": "/home/pes/work/process2-android-renderer-check-async-build/xbox_live_vulkan_renderer_check",
+    "binary_sha256": "09ae4f3fb338fb64fcbd7374b2898e346caf2bff789601463694a0ab518a784f",
+    "runtime_action": "Pushed the test executable, libc++_shared.so, and generated SPIR-V files to /data/local/tmp/p2-async-check; ran the test with its eight shader arguments; removed only those temporary files afterward.",
+    "extensions_enabled_by_test_device": [
+      "VK_KHR_create_renderpass2",
+      "VK_KHR_depth_stencil_resolve"
+    ],
+    "result": "synthetic offscreen Vulkan 1.1 AutoIndex point and rectangle-list draw plus 4x-to-1x depth/stencil SAMPLE_ZERO preservation and captured sample-zero Copy/Convert passed on Mali-G76 MC4",
+    "covered_regression": "Includes four cached asynchronous submissions followed by a synchronous output readback compared byte-for-byte with the prior cached test output.",
+    "android_validation_layer": "Not available; this device run had no VK_LAYER_KHRONOS_validation."
+  },
+  "game_state": {
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id_after_test": 22527,
+    "candidate_apk_installed": false,
+    "game_process_restarted_or_stopped": false,
+    "app_log_latest_modification": "2026-10-25 15:53"
+  },
+  "interpretation_and_limits": [
+    "The device driver supports both required extensions and the current renderer successfully executes its standalone 4x-to-1x depth/stencil resolve path when a test-created VkDevice enables them.",
+    "The currently installed app provider is still the v0.10.0 provider and does not expose or enable these extensions; this test does not change that runtime.",
+    "The renderer test uses offscreen regression fixtures. It is not a retail language-menu capture or proof of retail image parity.",
+    "No Android validation layer was available, and the running game process was left untouched."
+  ],
+  "shader_sha256": {
+    "clip_disabled_window.frag.spv": "65fb84e8d6df91cf90afa70115bd18558d475208c50a5596613c76d3b3fde495",
+    "clip_disabled_window.vert.spv": "d6be45287d4b80d84ba41c71b7856f3ab8ff9292e4ae8d0266f1777961ff83e4",
+    "live_draw_rectlist.geom.spv": "895220f84281c16bd7b86e4bad9b33317760a3fd7ea7044770e1b3edea7d9439",
+    "live_draw_smoke.frag.spv": "749e3c769c253de022849f402f6d913a896892c78688ec60d87951ce078eb85f",
+    "live_draw_smoke.vert.spv": "1a46b0783e1a5ea7d9cfce27d406cc2ffd17096ca697ee6375587f65eee3d7eb",
+    "xenos_copy_sample0.frag.spv": "0b869674bf8a651cb6a6dbc2f8a12f95ad74cba3d1eff8d488efc8e053bdc756",
+    "xenos_copy_sample0.vert.spv": "e37d0dca1f6fccefef89a4b49735ed6e99e4997d806d7c5e8b4a8f2945d83646",
+    "xenos_copy_sample0_single.frag.spv": "8b19e33520fd634b3b434e069d34b65f302cba64c1bc16482b5defc5f6abf116"
+  }
+}
