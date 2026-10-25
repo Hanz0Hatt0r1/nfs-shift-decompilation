@@ -1,0 +1,63 @@
+{
+  "schema": "shift.process2.android_resolve_symbol_binding_handover.v1",
+  "date": "2026-10-25",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "published_commit": "3b5a5482bed54c595dbdc44f1bd4a71460e7198e",
+    "source_change": "native_vulkan/rexglue_plugin/CMakeLists.txt adds Android-only -Bsymbolic when the optional depth/stencil resolve provider is embedded.",
+    "source_diff_sha256": "b2862d2447dc1743f909d0f6543c7a61e5e6caad2a1867e19423a58f037c9451",
+    "sdk_commit": "fb151b9",
+    "sdk_path": "/home/pes/work/rexglue-sdk-process2-resolve-20261024"
+  },
+  "cmake": {
+    "android_reconfigure": "passed",
+    "generated_plugin_link_rule_contains": "-Xlinker -Bsymbolic",
+    "scope": "ANDROID AND SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER",
+    "full_android_target": "The SDK runtime still has the previously recorded Bionic fiber and GetAndroidApiLevel build errors; see process2_android_resolve_plugin_build_20261025.json."
+  },
+  "elf_comparison": {
+    "architecture": "AArch64",
+    "unstripped_bsymbolic_plugin": {
+      "path": "/home/pes/work/process2-resolve-plugin-android-linked/librexgpu-shift-natived-bsymbolic.so",
+      "sha256": "103f92cf6f4c84bab56f2c02abb12c47849aca1ee9e177fe4ea047cdf1c9eb85",
+      "build_id": "63b26354123b2e2755d39e89612abf29d0e10777"
+    },
+    "provider_device_dynamic_relocations": {
+      "without_bsymbolic": 23,
+      "with_bsymbolic": 0,
+      "method": "readelf -rW, demangled with c++filt, filtered for VulkanProvider or VulkanDevice"
+    },
+    "meaning": "The linker binds references to these definitions within this DSO. This is static ELF evidence only; it does not demonstrate Android loader behavior or ABI compatibility with librexruntimed.so."
+  },
+  "handover_plugin": {
+    "path": "/home/pes/work/process2-latest-renderer-handover-20261025/stage/lib/arm64-v8a/librexgpu-shift-natived.so",
+    "sha256": "f84281d8b48cad561f246fa4bf9e58172960ace16193bcd3dcd44d848b9a2f03",
+    "build_id": "63b26354123b2e2755d39e89612abf29d0e10777",
+    "aliases_byte_identical": true
+  },
+  "handover_apk": {
+    "path": "/home/pes/work/process2-latest-renderer-handover-20261025/app-process2-vulkan-latest-bsymbolic-candidate-20261025.apk",
+    "sha256": "5006ed47a1510a2389d48de9a27ef0f7a4b8a7c8f8719249b14f242963662305",
+    "signature": "APK Signature Scheme v3 verified",
+    "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "base_apk_sha256": "39681bdc12d87ad06b8e74a824d83ebb8677727753f416aeb60f47c1261de51e",
+    "plugin_entries": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "runtime_entry_preserved_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a"
+  },
+  "handover": {
+    "process1_thread_id": "01a15b2f-a82e-7c10-9683-31115e86146b",
+    "message_sent": true,
+    "device_install_or_launch": false,
+    "adb_state": "offline; no current connect port available",
+    "retail_language_menu_parity": "not verified"
+  },
+  "limitations": [
+    "The APK retains the older Android runtime DSO from its base package.",
+    "The resolve-enabled plugin and APK have not been loaded or launched on the Redmi Note 8 Pro.",
+    "Static symbol binding analysis does not establish provider ABI compatibility.",
+    "This handover does not establish language-selector label parity or full retail scene parity."
+  ]
+}

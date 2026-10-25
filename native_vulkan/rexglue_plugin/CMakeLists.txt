@@ -104,6 +104,13 @@ target_link_libraries(rexgpu-shift-native PRIVATE
   OSDependent
   OGLCompiler
 )
+if(ANDROID AND SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER)
+  # This provider is embedded in the plugin while Android's librexruntime may
+  # still export the older VulkanProvider implementation. Keep the embedded
+  # provider's vtables and calls bound to this DSO instead of allowing ELF
+  # interposition to route them through the runtime's older definitions.
+  target_link_options(rexgpu-shift-native PRIVATE "LINKER:-Bsymbolic")
+endif()
 if(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
   target_compile_definitions(rexgpu-shift-native PRIVATE
     SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER=1
