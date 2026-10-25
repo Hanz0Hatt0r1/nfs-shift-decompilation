@@ -2,14 +2,14 @@
   "schema": "shift.process2.guest_ring_trace_smoke.v1",
   "date": "2026-10-26",
   "branch": "work/process2-xbox-live-ring-20261023",
-  "source_tree_commit": "ca9992eb4",
+  "source_tree_commit": "847ba2c3c",
   "change": {
     "files": [
       "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
       "native_vulkan/rexglue_plugin/README.md"
     ],
     "trace_environment": "SHIFT_NATIVE_VULKAN_TRACE_RING=1",
-    "record_limit": 8192,
+    "record_limit": 32768,
     "trace_points": [
       "accepted CP_RB_WPTR notification",
       "ring worker wake and pointer snapshot",
@@ -22,8 +22,8 @@
     "target": "rexgpu-shift-native",
     "compiler": "Clang 22.1.8",
     "architecture": "linux-amd64",
-    "artifact": "/home/pes/work/process2-current-linux-plugin-output/librexgpu-shift-native.so",
-    "sha256": "8f456faa20677d87daa3e729dda009b3000c3c62937dfbe190dcb066f56fe5b9"
+    "artifact": "/home/pes/work/process2-p1-ring-trace-handover-20261026b/librexgpu-shift-native.so",
+    "sha256": "9aaa4ea81faf1fb55981cce7ac59e99b34ca66943bbec7850af18e20c73425bc"
   },
   "validation": {
     "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation SHIFT_NATIVE_VULKAN_TRACE_RING=1 /usr/bin/ctest --test-dir /home/pes/work/process2-p2161-plugin-build-clang --output-on-failure -V -R '^rexgpu_shift_native_live_ring_'",
@@ -47,7 +47,33 @@
   "trace_observation": {
     "format_strings_present_in_plugin": true,
     "smoke_harness_log_capture": "Plugin REXLOG trace records were not surfaced in the smoke harness output; the harness verifies ring consumption but not the logger sink. A P1 retail run is needed to confirm records and correlate the live guest WPTR.",
-    "retail_trace": "not yet captured"
+    "retail_trace": "The first P1 retail trace was captured but exhausted the earlier 8,192-record cap before the menu_background.xml transition; the current build raises the cap to 32,768."
+  },
+  "first_p1_retail_trace": {
+    "process_id": 547583,
+    "workdir": "/dev/shm/nfs-p1-ring-trace-retail-20261026b",
+    "loaded_plugin": "/home/pes/work/process2-p1-ring-trace-handover-20261026/librexgpu-shift-native.so",
+    "loaded_plugin_sha256": "8f456faa20677d87daa3e729dda009b3000c3c62937dfbe190dcb066f56fe5b9",
+    "trace_environment_confirmed": "SHIFT_NATIVE_VULKAN_TRACE_RING=1",
+    "log": "/dev/shm/nfs-p1-ring-trace-retail-20261026b/bin/logs/nfs_shift_001.log",
+    "trace_records_emitted": 8192,
+    "last_trace_record": {
+      "id": 8191,
+      "time_local": "2026-10-25T22:53:27.697+03:00",
+      "kind": "wptr",
+      "previous": 5393,
+      "new": 5396,
+      "rptr": 5393,
+      "ring_dwords": 8192,
+      "generation": 1
+    },
+    "nearby_guest_event": {
+      "time_local": "2026-10-25T22:53:31.203+03:00",
+      "event": "two failed probes of D:\\tracks\\_data\\instances\\scenes\\menu_background.xml and two of D:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+      "status": "0xc000000f"
+    },
+    "interpretation": "The trace cap was reached 3.506 seconds before the menu_background.xml probes. It proves WPTR notifications and normal packet snapshot/expansion earlier in this run, but does not establish whether WPTR 5651 reached the plugin at the later transition. The log continued to record Copy/Convert operations through 22:53:31.121.",
+    "process_state_at_inspection": "The retail process was still alive. It was not stopped or modified by Process 2."
   },
   "p1_correlation_target": {
     "observed_guest_snapshot": {
