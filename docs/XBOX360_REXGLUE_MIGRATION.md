@@ -4,7 +4,13 @@
 
 On 2026-10-22 the project selected the Xbox 360 retail version of Need for Speed: SHIFT as the **primary proposed** source for a native Linux / Android ARM64 port. ReXGlue SDK is the first-choice AOT compiler/runtime foundation. The older PC 1.02 P-code recompilation is preserved and moved to a research/maintenance role.
 
-This remains a **pre-playability migration**, not a successful port. A user-provided retail XEX and an initial Linux guest/GPU trace are now recorded as metadata-only evidence in the gate ledger; no frontend, real retail frame, or race has been verified.
+This remains a **pre-playability migration**, not a successful port. The exact retail XEX, individual splash readbacks, and bounded Linux guest/GPU runs are recorded in the gate ledger. The main menu and an offline race are still unverified.
+
+## Linux AMD64 runtime frontier (2026-10-25)
+
+A matched Linux AMD64 launch reproduced `SIGBUS` in `Memory::Initialize` while `/dev/shm` held 14 unreferenced `xenia_memory_*` objects from interrupted runs. Unlinking only those stale names allowed the same host executable, ReXGlue runtime, GPU plugin, and retail XEX to pass guest-memory initialization and continue through repeated retail submit/CopyConvert activity for a bounded 22-second run. It did not establish menu or race progress.
+
+The old runtime left one more named 4.6 GB shared-memory object after the bounded run was stopped. SDK commit `d68122821a670dc1beea9990ecf411b12bf86f6a` adds unlink-after-open for private POSIX guest memory mappings and two focused mapping lifecycle tests; those tests pass. The matching P1-runtime integration build is still pending. See [the shared-memory pressure evidence](../evidence/xbox360_linux_shm_backing_pressure_20261025.json).
 
 ## Proposed pipeline
 
