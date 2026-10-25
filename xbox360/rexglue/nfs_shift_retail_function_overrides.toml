@@ -10,6 +10,8 @@
 "0x82341198" = {}
 # Runtime captured a pointer-adjusting retail thunk.
 "0x82B9DD08" = {}
+# Live retail code is addi r3,r3,-4 followed by a tail branch to 0x82BA2840.
+"0x82BA27C0" = {}
 # Runtime captured another indirect retail entry (function extent pending codegen).
 "0x82BA3188" = {}
 # Runtime captured a field-load thunk to a registered helper.
