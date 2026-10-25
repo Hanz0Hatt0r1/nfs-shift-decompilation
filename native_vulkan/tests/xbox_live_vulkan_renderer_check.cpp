@@ -380,29 +380,32 @@ int main(int argc, char** argv) {
         return 1;
     }
     const bool submitted = shift::xbox::submit_captured_vulkan_frame(
-        physical_device, device, queue, queue_family, output_image, output_view, false,
-        1280, 720, draws, &error, &output_readback,
+        physical_device, device, queue, queue_family, output_image, output_view,
+        false, 1280, 720, draws, &error, &output_readback,
         enabled_features.geometryShader, &copy, false, {}, pipeline_cache,
         &texture_cache);
     if (!submitted) {
-        std::cerr << "captured Vulkan draw submission failed: " << error << '\n';
-        return 1;
+      std::cerr << "captured Vulkan draw submission failed: " << error << '\n';
+      return 1;
     }
-    if (texture_cache.size() != draws.size()) {
-        std::cerr << "captured R8 texture cache did not retain one plane per draw\n";
-        return 1;
+    if (texture_cache.size() != draws.size() ||
+        texture_cache.cached_pipeline_count() != draws.size()) {
+      std::cerr << "captured texture or graphics pipeline cache did not retain "
+                   "each draw resource\n";
+      return 1;
     }
     const std::vector<uint32_t> cached_output = output_readback;
     std::vector<uint32_t> repeated_cached_output;
     if (!shift::xbox::submit_captured_vulkan_frame(
-            physical_device, device, queue, queue_family, output_image, output_view,
-            false, 1280, 720, draws, &error, &repeated_cached_output,
-            enabled_features.geometryShader, &copy, false, {}, pipeline_cache,
-            &texture_cache) ||
-        repeated_cached_output != cached_output) {
-        std::cerr << "reused Vulkan pipeline cache changed captured draw output: "
-                  << error << '\n';
-        return 1;
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, draws, &error,
+            &repeated_cached_output, enabled_features.geometryShader, &copy,
+            false, {}, pipeline_cache, &texture_cache) ||
+        repeated_cached_output != cached_output ||
+        texture_cache.cached_pipeline_count() != draws.size()) {
+      std::cerr << "reused Vulkan pipeline cache changed captured draw output: "
+                << error << '\n';
+      return 1;
     }
 
     auto changed_texture_draws = draws;
@@ -411,49 +414,60 @@ int main(int argc, char** argv) {
         changed_texture_draws.front()};
     std::vector<uint32_t> cached_updated_output;
     if (!shift::xbox::submit_captured_vulkan_frame(
-            physical_device, device, queue, queue_family, output_image, output_view,
-            false, 1280, 720, changed_texture_draw, &error, &cached_updated_output,
-            enabled_features.geometryShader, &copy, false, {}, pipeline_cache,
-            &texture_cache) || texture_cache.size() != draws.size()) {
-        std::cerr << "reused Vulkan R8 texture cache failed to update a video plane: "
-                  << error << '\n';
-        return 1;
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, changed_texture_draw, &error,
+            &cached_updated_output, enabled_features.geometryShader, &copy,
+            false, {}, pipeline_cache, &texture_cache) ||
+        texture_cache.size() != draws.size() ||
+        texture_cache.cached_pipeline_count() != draws.size()) {
+      std::cerr
+          << "reused Vulkan R8 texture cache failed to update a video plane: "
+          << error << '\n';
+      return 1;
     }
     std::vector<uint32_t> uncached_updated_output;
     if (!shift::xbox::submit_captured_vulkan_frame(
-            physical_device, device, queue, queue_family, output_image, output_view,
-            false, 1280, 720, changed_texture_draw, &error, &uncached_updated_output,
-            enabled_features.geometryShader, &copy) ||
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, changed_texture_draw, &error,
+            &uncached_updated_output, enabled_features.geometryShader, &copy) ||
         cached_updated_output != uncached_updated_output ||
         cached_updated_output == cached_output) {
-        std::cerr << "reused Vulkan R8 texture cache disagrees with fresh video upload: "
-                  << error << '\n';
-        return 1;
+      std::cerr << "reused Vulkan R8 texture cache disagrees with fresh video "
+                   "upload: "
+                << error << '\n';
+      return 1;
     }
 
     shift::xbox::CapturedVulkanTextureCache asynchronous_cache;
     for (uint32_t frame = 0; frame < 4; ++frame) {
-        if (!shift::xbox::submit_captured_vulkan_frame(
-                physical_device, device, queue, queue_family, output_image, output_view,
-                true, 1280, 720, draws, &error, nullptr,
-                enabled_features.geometryShader, &copy, false, {}, pipeline_cache,
-                &asynchronous_cache)) {
-            std::cerr << "asynchronous cached Vulkan frame " << frame
-                      << " failed: " << error << '\n';
-            return 1;
-        }
+      if (!shift::xbox::submit_captured_vulkan_frame(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, true, 1280, 720, draws, &error, nullptr,
+              enabled_features.geometryShader, &copy, false, {}, pipeline_cache,
+              &asynchronous_cache)) {
+        std::cerr << "asynchronous cached Vulkan frame " << frame
+                  << " failed: " << error << '\n';
+        return 1;
+      }
     }
     std::vector<uint32_t> asynchronous_readback;
     if (!shift::xbox::submit_captured_vulkan_frame(
-            physical_device, device, queue, queue_family, output_image, output_view,
-            true, 1280, 720, draws, &error, &asynchronous_readback,
+            physical_device, device, queue, queue_family, output_image,
+            output_view, true, 1280, 720, draws, &error, &asynchronous_readback,
             enabled_features.geometryShader, &copy, false, {}, pipeline_cache,
-            &asynchronous_cache) || asynchronous_readback != cached_output) {
-        std::cerr << "in-flight cached Vulkan frames changed the captured output: "
-                  << error << '\n';
-        return 1;
+            &asynchronous_cache) ||
+        asynchronous_readback != cached_output) {
+      std::cerr
+          << "in-flight cached Vulkan frames changed the captured output: "
+          << error << '\n';
+      return 1;
     }
     asynchronous_cache.clear();
+    if (asynchronous_cache.cached_pipeline_count() != 0) {
+      std::cerr
+          << "clearing in-flight texture cache retained graphics pipelines\n";
+      return 1;
+    }
 
     auto window_coordinates = draw;
     window_coordinates.vertex_shader_spirv = std::move(window_vertex_spirv);
@@ -1018,22 +1032,31 @@ int main(int argc, char** argv) {
     size_t colored_pixels = 0;
     for (const uint32_t pixel : output_readback) {
         if (pixel & 0x3FFFFFFFu) {
-            has_color = true;
-            ++colored_pixels;
+          has_color = true;
+          ++colored_pixels;
         }
-        if (pixel & 0x000003FFu) has_source_red = true;
-        if (pixel & 0x000FFC00u) has_source_green = true;
+        if (pixel & 0x000003FFu)
+          has_source_red = true;
+        if (pixel & 0x000FFC00u)
+          has_source_green = true;
     }
     texture_cache.clear();
+    if (texture_cache.cached_pipeline_count() != 0) {
+      std::cerr << "clearing texture cache retained graphics pipelines\n";
+      return 1;
+    }
     vkDestroyImageView(device, output_view, nullptr);
     vkDestroyImage(device, output_image, nullptr);
     vkFreeMemory(device, output_memory, nullptr);
     vkDestroyPipelineCache(device, pipeline_cache, nullptr);
     vkDestroyDevice(device, nullptr);
     if (messenger) {
-        auto destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-            vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
-        if (destroy_messenger) destroy_messenger(instance, messenger, nullptr);
+      auto destroy_messenger =
+          reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+              vkGetInstanceProcAddr(instance,
+                                    "vkDestroyDebugUtilsMessengerEXT"));
+      if (destroy_messenger)
+        destroy_messenger(instance, messenger, nullptr);
     }
     vkDestroyInstance(instance, nullptr);
 

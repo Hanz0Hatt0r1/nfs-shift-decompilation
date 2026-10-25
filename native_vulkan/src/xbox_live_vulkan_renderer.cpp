@@ -23,178 +23,232 @@ struct BufferResource {
 };
 
 struct ImageResource {
-    VkImage image = VK_NULL_HANDLE;
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-    VkImageView view = VK_NULL_HANDLE;
-    VkDeviceSize allocation_size = 0;
+  VkImage image = VK_NULL_HANDLE;
+  VkDeviceMemory memory = VK_NULL_HANDLE;
+  VkImageView view = VK_NULL_HANDLE;
+  VkDeviceSize allocation_size = 0;
 };
 
+struct CachedGraphicsPipeline;
+
 struct DrawTextureResources {
-    uint32_t fetch_constant_index = 0;
-    uint32_t width = 0;
-    uint32_t height = 0;
-    BufferResource upload;
-    ImageResource image;
-    VkSampler sampler = VK_NULL_HANDLE;
-    VkImageLayout upload_old_layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    bool cached = false;
+  uint32_t fetch_constant_index = 0;
+  uint32_t width = 0;
+  uint32_t height = 0;
+  BufferResource upload;
+  ImageResource image;
+  VkSampler sampler = VK_NULL_HANDLE;
+  VkImageLayout upload_old_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+  bool cached = false;
 };
 
 struct DrawResources {
-    BufferResource vertices;
-    BufferResource indices;
-    BufferResource vertex_constants;
-    BufferResource pixel_constants;
-    std::vector<DrawTextureResources> textures;
-    VkShaderModule vertex_shader = VK_NULL_HANDLE;
-    VkShaderModule geometry_shader = VK_NULL_HANDLE;
-    VkShaderModule pixel_shader = VK_NULL_HANDLE;
-    VkDescriptorSetLayout descriptor_layouts[2]{};
-    VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
-    VkDescriptorSet descriptor_sets[2]{};
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    VkPipeline pipeline = VK_NULL_HANDLE;
+  BufferResource vertices;
+  BufferResource indices;
+  BufferResource vertex_constants;
+  BufferResource pixel_constants;
+  std::vector<DrawTextureResources> textures;
+  VkShaderModule vertex_shader = VK_NULL_HANDLE;
+  VkShaderModule geometry_shader = VK_NULL_HANDLE;
+  VkShaderModule pixel_shader = VK_NULL_HANDLE;
+  VkDescriptorSetLayout descriptor_layouts[2]{};
+  VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
+  VkDescriptorSet descriptor_sets[2]{};
+  VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+  VkPipeline pipeline = VK_NULL_HANDLE;
+  CachedGraphicsPipeline *cached_pipeline_entry = nullptr;
 };
 
 struct TextureCacheKey {
-    size_t draw_index = 0;
-    uint32_t fetch_constant_index = 0;
-    uint32_t width = 0;
-    uint32_t height = 0;
+  size_t draw_index = 0;
+  uint32_t fetch_constant_index = 0;
+  uint32_t width = 0;
+  uint32_t height = 0;
 
-    bool operator==(const TextureCacheKey& other) const {
-        return draw_index == other.draw_index &&
-               fetch_constant_index == other.fetch_constant_index &&
-               width == other.width && height == other.height;
-    }
+  bool operator==(const TextureCacheKey &other) const {
+    return draw_index == other.draw_index &&
+           fetch_constant_index == other.fetch_constant_index &&
+           width == other.width && height == other.height;
+  }
 };
 
 struct TextureCacheKeyHash {
-    size_t operator()(const TextureCacheKey& key) const {
-        size_t hash = key.draw_index;
-        hash = hash * 16777619u ^ key.fetch_constant_index;
-        hash = hash * 16777619u ^ key.width;
-        return hash * 16777619u ^ key.height;
-    }
+  size_t operator()(const TextureCacheKey &key) const {
+    size_t hash = key.draw_index;
+    hash = hash * 16777619u ^ key.fetch_constant_index;
+    hash = hash * 16777619u ^ key.width;
+    return hash * 16777619u ^ key.height;
+  }
 };
 
 constexpr uint32_t kFramesInFlight = 2;
 
 struct CachedR8Texture {
-    std::array<BufferResource, kFramesInFlight> uploads;
-    ImageResource image;
-    uint64_t estimated_bytes = 0;
-    uint64_t last_used_frame = 0;
-    bool initialized = false;
+  std::array<BufferResource, kFramesInFlight> uploads;
+  ImageResource image;
+  uint64_t estimated_bytes = 0;
+  uint64_t last_used_frame = 0;
+  bool initialized = false;
 };
 
 constexpr uint64_t kR8TextureCacheBudgetBytes = 16u * 1024u * 1024u;
 constexpr uint64_t kR8TextureCacheLifetimeFrames = 120;
+constexpr size_t kGraphicsPipelineCacheEntryLimit = 128;
+
+struct CachedGraphicsPipeline {
+  VkPipeline pipeline = VK_NULL_HANDLE;
+  uint64_t last_used_frame = 0;
+};
+
+using GraphicsPipelineKey = std::vector<uint64_t>;
+
+struct GraphicsPipelineKeyHash {
+  size_t operator()(const GraphicsPipelineKey &key) const noexcept {
+    uint64_t hash = 14695981039346656037ull;
+    for (uint64_t value : key) {
+      hash ^= value;
+      hash *= 1099511628211ull;
+    }
+    return static_cast<size_t>(hash);
+  }
+};
 
 struct FrameResources {
-    VkDevice device = VK_NULL_HANDLE;
-    VkQueue queue = VK_NULL_HANDLE;
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    VkFramebuffer framebuffer = VK_NULL_HANDLE;
-    VkRenderPass copy_render_pass = VK_NULL_HANDLE;
-    VkFramebuffer copy_framebuffer = VK_NULL_HANDLE;
-    ImageResource multisample_color;
-    ImageResource depth;
-    VkRenderPass mixed_msaa_render_pass = VK_NULL_HANDLE;
-    VkFramebuffer mixed_msaa_framebuffer = VK_NULL_HANDLE;
-    VkRenderPass mixed_single_render_pass = VK_NULL_HANDLE;
-    VkFramebuffer mixed_single_framebuffer = VK_NULL_HANDLE;
-    VkRenderPass mixed_copy_render_pass = VK_NULL_HANDLE;
-    VkFramebuffer mixed_copy_framebuffer = VK_NULL_HANDLE;
-    ImageResource mixed_color;
-    ImageResource mixed_msaa_color;
-    ImageResource mixed_msaa_depth;
-    ImageResource mixed_single_depth;
-    BufferResource output_readback;
-    VkCommandPool command_pool = VK_NULL_HANDLE;
-    VkFence completion_fence = VK_NULL_HANDLE;
-    uint32_t upload_slot = 0;
-    std::vector<DrawResources> draws;
-    DrawResources copy_draw;
-    bool submitted = false;
+  VkDevice device = VK_NULL_HANDLE;
+  VkQueue queue = VK_NULL_HANDLE;
+  VkRenderPass render_pass = VK_NULL_HANDLE;
+  VkFramebuffer framebuffer = VK_NULL_HANDLE;
+  VkRenderPass copy_render_pass = VK_NULL_HANDLE;
+  VkFramebuffer copy_framebuffer = VK_NULL_HANDLE;
+  ImageResource multisample_color;
+  ImageResource depth;
+  VkRenderPass mixed_msaa_render_pass = VK_NULL_HANDLE;
+  VkFramebuffer mixed_msaa_framebuffer = VK_NULL_HANDLE;
+  VkRenderPass mixed_single_render_pass = VK_NULL_HANDLE;
+  VkFramebuffer mixed_single_framebuffer = VK_NULL_HANDLE;
+  VkRenderPass mixed_copy_render_pass = VK_NULL_HANDLE;
+  VkFramebuffer mixed_copy_framebuffer = VK_NULL_HANDLE;
+  ImageResource mixed_color;
+  ImageResource mixed_msaa_color;
+  ImageResource mixed_msaa_depth;
+  ImageResource mixed_single_depth;
+  BufferResource output_readback;
+  VkCommandPool command_pool = VK_NULL_HANDLE;
+  VkFence completion_fence = VK_NULL_HANDLE;
+  uint32_t upload_slot = 0;
+  std::vector<DrawResources> draws;
+  DrawResources copy_draw;
+  bool submitted = false;
 
-    ~FrameResources() {
-        if (submitted) {
-            if (completion_fence) {
-                vkWaitForFences(device, 1, &completion_fence, VK_TRUE, UINT64_MAX);
-            } else if (queue) {
-                vkQueueWaitIdle(queue);
-            }
+  ~FrameResources() {
+    if (submitted) {
+      if (completion_fence) {
+        vkWaitForFences(device, 1, &completion_fence, VK_TRUE, UINT64_MAX);
+      } else if (queue) {
+        vkQueueWaitIdle(queue);
+      }
+    }
+    const auto destroy_draw = [this](DrawResources &draw) {
+      if (draw.pipeline && !draw.cached_pipeline_entry) {
+        vkDestroyPipeline(device, draw.pipeline, nullptr);
+      }
+      if (draw.pipeline_layout) {
+        vkDestroyPipelineLayout(device, draw.pipeline_layout, nullptr);
+      }
+      if (draw.descriptor_pool)
+        vkDestroyDescriptorPool(device, draw.descriptor_pool, nullptr);
+      for (VkDescriptorSetLayout layout : draw.descriptor_layouts) {
+        if (layout)
+          vkDestroyDescriptorSetLayout(device, layout, nullptr);
+      }
+      if (draw.vertex_shader)
+        vkDestroyShaderModule(device, draw.vertex_shader, nullptr);
+      if (draw.geometry_shader)
+        vkDestroyShaderModule(device, draw.geometry_shader, nullptr);
+      if (draw.pixel_shader)
+        vkDestroyShaderModule(device, draw.pixel_shader, nullptr);
+      for (DrawTextureResources &texture : draw.textures) {
+        if (texture.sampler)
+          vkDestroySampler(device, texture.sampler, nullptr);
+        if (!texture.cached) {
+          destroy_image(texture.image);
+          destroy_buffer(texture.upload);
         }
-        const auto destroy_draw = [this](DrawResources& draw) {
-            if (draw.pipeline) vkDestroyPipeline(device, draw.pipeline, nullptr);
-            if (draw.pipeline_layout) vkDestroyPipelineLayout(device, draw.pipeline_layout, nullptr);
-            if (draw.descriptor_pool) vkDestroyDescriptorPool(device, draw.descriptor_pool, nullptr);
-            for (VkDescriptorSetLayout layout : draw.descriptor_layouts) {
-                if (layout) vkDestroyDescriptorSetLayout(device, layout, nullptr);
-            }
-            if (draw.vertex_shader) vkDestroyShaderModule(device, draw.vertex_shader, nullptr);
-            if (draw.geometry_shader) vkDestroyShaderModule(device, draw.geometry_shader, nullptr);
-            if (draw.pixel_shader) vkDestroyShaderModule(device, draw.pixel_shader, nullptr);
-            for (DrawTextureResources& texture : draw.textures) {
-                if (texture.sampler) vkDestroySampler(device, texture.sampler, nullptr);
-                if (!texture.cached) {
-                    destroy_image(texture.image);
-                    destroy_buffer(texture.upload);
-                }
-            }
-            destroy_buffer(draw.pixel_constants);
-            destroy_buffer(draw.vertex_constants);
-            destroy_buffer(draw.indices);
-            destroy_buffer(draw.vertices);
-        };
-        destroy_draw(copy_draw);
-        for (auto it = draws.rbegin(); it != draws.rend(); ++it) destroy_draw(*it);
-        if (copy_framebuffer) vkDestroyFramebuffer(device, copy_framebuffer, nullptr);
-        if (framebuffer) vkDestroyFramebuffer(device, framebuffer, nullptr);
-        destroy_image(multisample_color);
-        destroy_image(depth);
-        if (mixed_msaa_framebuffer) vkDestroyFramebuffer(device, mixed_msaa_framebuffer, nullptr);
-        if (mixed_single_framebuffer) vkDestroyFramebuffer(device, mixed_single_framebuffer, nullptr);
-        if (mixed_copy_framebuffer) vkDestroyFramebuffer(device, mixed_copy_framebuffer, nullptr);
-        destroy_image(mixed_color);
-        destroy_image(mixed_msaa_color);
-        destroy_image(mixed_msaa_depth);
-        destroy_image(mixed_single_depth);
-        destroy_buffer(output_readback);
-        if (copy_render_pass) vkDestroyRenderPass(device, copy_render_pass, nullptr);
-        if (render_pass) vkDestroyRenderPass(device, render_pass, nullptr);
-        if (mixed_msaa_render_pass) vkDestroyRenderPass(device, mixed_msaa_render_pass, nullptr);
-        if (mixed_single_render_pass) vkDestroyRenderPass(device, mixed_single_render_pass, nullptr);
-        if (mixed_copy_render_pass) vkDestroyRenderPass(device, mixed_copy_render_pass, nullptr);
-        if (command_pool) vkDestroyCommandPool(device, command_pool, nullptr);
-        if (completion_fence) vkDestroyFence(device, completion_fence, nullptr);
-    }
+      }
+      destroy_buffer(draw.pixel_constants);
+      destroy_buffer(draw.vertex_constants);
+      destroy_buffer(draw.indices);
+      destroy_buffer(draw.vertices);
+    };
+    destroy_draw(copy_draw);
+    for (auto it = draws.rbegin(); it != draws.rend(); ++it)
+      destroy_draw(*it);
+    if (copy_framebuffer)
+      vkDestroyFramebuffer(device, copy_framebuffer, nullptr);
+    if (framebuffer)
+      vkDestroyFramebuffer(device, framebuffer, nullptr);
+    destroy_image(multisample_color);
+    destroy_image(depth);
+    if (mixed_msaa_framebuffer)
+      vkDestroyFramebuffer(device, mixed_msaa_framebuffer, nullptr);
+    if (mixed_single_framebuffer)
+      vkDestroyFramebuffer(device, mixed_single_framebuffer, nullptr);
+    if (mixed_copy_framebuffer)
+      vkDestroyFramebuffer(device, mixed_copy_framebuffer, nullptr);
+    destroy_image(mixed_color);
+    destroy_image(mixed_msaa_color);
+    destroy_image(mixed_msaa_depth);
+    destroy_image(mixed_single_depth);
+    destroy_buffer(output_readback);
+    if (copy_render_pass)
+      vkDestroyRenderPass(device, copy_render_pass, nullptr);
+    if (render_pass)
+      vkDestroyRenderPass(device, render_pass, nullptr);
+    if (mixed_msaa_render_pass)
+      vkDestroyRenderPass(device, mixed_msaa_render_pass, nullptr);
+    if (mixed_single_render_pass)
+      vkDestroyRenderPass(device, mixed_single_render_pass, nullptr);
+    if (mixed_copy_render_pass)
+      vkDestroyRenderPass(device, mixed_copy_render_pass, nullptr);
+    if (command_pool)
+      vkDestroyCommandPool(device, command_pool, nullptr);
+    if (completion_fence)
+      vkDestroyFence(device, completion_fence, nullptr);
+  }
 
-    void destroy_buffer(BufferResource& resource) const {
-        if (resource.mapped && resource.memory) {
-            vkUnmapMemory(device, resource.memory);
-        }
-        if (resource.buffer) vkDestroyBuffer(device, resource.buffer, nullptr);
-        if (resource.memory) vkFreeMemory(device, resource.memory, nullptr);
-        resource = {};
+  void destroy_buffer(BufferResource &resource) const {
+    if (resource.mapped && resource.memory) {
+      vkUnmapMemory(device, resource.memory);
     }
+    if (resource.buffer)
+      vkDestroyBuffer(device, resource.buffer, nullptr);
+    if (resource.memory)
+      vkFreeMemory(device, resource.memory, nullptr);
+    resource = {};
+  }
 
-    void destroy_image(ImageResource& resource) const {
-        if (resource.view) vkDestroyImageView(device, resource.view, nullptr);
-        if (resource.image) vkDestroyImage(device, resource.image, nullptr);
-        if (resource.memory) vkFreeMemory(device, resource.memory, nullptr);
-        resource = {};
-    }
+  void destroy_image(ImageResource &resource) const {
+    if (resource.view)
+      vkDestroyImageView(device, resource.view, nullptr);
+    if (resource.image)
+      vkDestroyImage(device, resource.image, nullptr);
+    if (resource.memory)
+      vkFreeMemory(device, resource.memory, nullptr);
+    resource = {};
+  }
 };
 
 struct TextureCacheState {
-    VkDevice device = VK_NULL_HANDLE;
-    uint64_t frame = 0;
-    uint64_t estimated_bytes = 0;
-    uint32_t upload_slot = 0;
-    std::unordered_map<TextureCacheKey, CachedR8Texture, TextureCacheKeyHash> textures;
-    std::deque<std::unique_ptr<FrameResources>> in_flight;
+  VkDevice device = VK_NULL_HANDLE;
+  uint64_t frame = 0;
+  uint64_t estimated_bytes = 0;
+  uint32_t upload_slot = 0;
+  std::unordered_map<TextureCacheKey, CachedR8Texture, TextureCacheKeyHash>
+      textures;
+  std::unordered_map<GraphicsPipelineKey, CachedGraphicsPipeline,
+                     GraphicsPipelineKeyHash>
+      graphics_pipelines;
+  std::deque<std::unique_ptr<FrameResources>> in_flight;
 };
 
 bool fail(const char* message, std::string* error) {
@@ -395,11 +449,46 @@ bool wait_for_all_frames(TextureCacheState* cache, std::string* error) {
     return true;
 }
 
+void destroy_cached_graphics_pipeline(VkDevice device,
+                                     CachedGraphicsPipeline& pipeline) {
+    if (pipeline.pipeline) vkDestroyPipeline(device, pipeline.pipeline, nullptr);
+    pipeline = {};
+}
+
+bool graphics_pipeline_is_in_flight(const TextureCacheState& cache,
+                                    const CachedGraphicsPipeline* pipeline) {
+    for (const auto& frame : cache.in_flight) {
+        for (const DrawResources& draw : frame->draws) {
+            if (draw.cached_pipeline_entry == pipeline) return true;
+        }
+        if (frame->copy_draw.cached_pipeline_entry == pipeline) return true;
+    }
+    return false;
+}
+
+bool make_room_for_graphics_pipeline(TextureCacheState* cache) {
+    if (cache->graphics_pipelines.size() < kGraphicsPipelineCacheEntryLimit) return true;
+    auto victim = cache->graphics_pipelines.end();
+    for (auto it = cache->graphics_pipelines.begin();
+         it != cache->graphics_pipelines.end(); ++it) {
+        if (graphics_pipeline_is_in_flight(*cache, &it->second)) continue;
+        if (victim == cache->graphics_pipelines.end() ||
+            it->second.last_used_frame < victim->second.last_used_frame) {
+            victim = it;
+        }
+    }
+    if (victim == cache->graphics_pipelines.end()) return false;
+    destroy_cached_graphics_pipeline(cache->device, victim->second);
+    cache->graphics_pipelines.erase(victim);
+    return true;
+}
+
 bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
                                std::string* error) {
     if (!cache) return true;
     if (cache->device && cache->device != device &&
-        (!cache->textures.empty() || !cache->in_flight.empty())) {
+        (!cache->textures.empty() || !cache->graphics_pipelines.empty() ||
+         !cache->in_flight.empty())) {
         return fail("captured R8 texture cache cannot be shared across Vulkan devices", error);
     }
     cache->device = device;
@@ -515,6 +604,10 @@ void finish_texture_cache_frame(TextureCacheState* cache) {
 void clear_texture_cache(TextureCacheState* cache) {
     if (!cache) return;
     wait_for_all_frames(cache, nullptr);
+    for (auto& [key, pipeline] : cache->graphics_pipelines) {
+        destroy_cached_graphics_pipeline(cache->device, pipeline);
+    }
+    cache->graphics_pipelines.clear();
     for (auto& [key, texture] : cache->textures) {
         destroy_cached_r8_texture(cache->device, texture);
     }
@@ -644,322 +737,427 @@ VkFormat captured_color_format(CapturedColorTargetFormat format) {
     return VK_FORMAT_UNDEFINED;
 }
 
-void set_copy_resolution_constants(
-    CapturedVulkanDraw* draw,
-    uint32_t source_width,
-    uint32_t source_height,
-    uint32_t destination_width,
-    uint32_t destination_height) {
-    if (!draw || !destination_width || !destination_height) return;
-    const float scale[2] = {
-        static_cast<float>(source_width) / destination_width,
-        static_cast<float>(source_height) / destination_height,
-    };
-    std::memcpy(draw->constants.pixel_float_constants[0].data(), scale,
-                sizeof(scale));
+void set_copy_resolution_constants(CapturedVulkanDraw *draw,
+                                   uint32_t source_width,
+                                   uint32_t source_height,
+                                   uint32_t destination_width,
+                                   uint32_t destination_height) {
+  if (!draw || !destination_width || !destination_height)
+    return;
+  const float scale[2] = {
+      static_cast<float>(source_width) / destination_width,
+      static_cast<float>(source_height) / destination_height,
+  };
+  std::memcpy(draw->constants.pixel_float_constants[0].data(), scale,
+              sizeof(scale));
+}
+
+uint64_t regular_render_pass_key(VkFormat color_format,
+                                 VkSampleCountFlagBits samples,
+                                 bool needs_depth, bool has_copy) {
+  return (uint64_t{1} << 63) | (static_cast<uint64_t>(color_format) << 32) |
+         (static_cast<uint64_t>(samples) << 8) |
+         (needs_depth ? uint64_t{2} : uint64_t{0}) |
+         (has_copy ? uint64_t{1} : uint64_t{0});
 }
 
 bool create_draw_resources(
-    const CapturedVulkanDraw& source,
-    size_t draw_index,
-    TextureCacheState* texture_cache,
-    const VkPhysicalDeviceMemoryProperties& memory_properties,
-    VkDevice device,
-    VkRenderPass render_pass,
-    VkPipelineCache pipeline_cache,
-    bool geometry_shader_enabled,
+    const CapturedVulkanDraw &source, size_t draw_index,
+    TextureCacheState *texture_cache,
+    const VkPhysicalDeviceMemoryProperties &memory_properties, VkDevice device,
+    VkRenderPass render_pass, uint64_t render_pass_key,
+    VkPipelineCache pipeline_cache, bool geometry_shader_enabled,
     CapturedVulkanSamplerCapabilities sampler_capabilities,
-    DrawResources* output,
-    std::string* error) {
-    const uint32_t vertex_constants_size = sizeof(source.constants.vertex_float_constants);
-    const uint32_t pixel_constants_size = sizeof(source.constants.pixel_float_constants);
-    const bool has_vertex_inputs = !source.vertex_input_attributes.empty();
-    struct TextureInput {
-        uint32_t fetch_constant_index;
-        const CapturedTextureSampling* sampling;
-        uint32_t width;
-        uint32_t height;
-        CapturedVulkanTexture::Format format;
-        const std::vector<uint8_t>* pixels;
+    DrawResources *output, std::string *error) {
+  const uint32_t vertex_constants_size =
+      sizeof(source.constants.vertex_float_constants);
+  const uint32_t pixel_constants_size =
+      sizeof(source.constants.pixel_float_constants);
+  const bool has_vertex_inputs = !source.vertex_input_attributes.empty();
+  struct TextureInput {
+    uint32_t fetch_constant_index;
+    const CapturedTextureSampling *sampling;
+    uint32_t width;
+    uint32_t height;
+    CapturedVulkanTexture::Format format;
+    const std::vector<uint8_t> *pixels;
+  };
+  std::vector<TextureInput> texture_inputs;
+  if (source.textures.empty()) {
+    texture_inputs.push_back({0, &source.texture_sampling, source.texture_width,
+                              source.texture_height,
+                              CapturedVulkanTexture::Format::Rgba8,
+                              &source.texture_rgba8});
+  } else {
+    texture_inputs.reserve(source.textures.size());
+    for (const CapturedVulkanTexture &texture : source.textures) {
+      texture_inputs.push_back({texture.fetch_constant_index, &texture.sampling,
+                                texture.width, texture.height, texture.format,
+                                &texture.pixels});
+    }
+  }
+  uint64_t total_texture_size = 0;
+  for (size_t i = 0; i < texture_inputs.size(); ++i) {
+    const TextureInput &texture = texture_inputs[i];
+    const uint64_t pixel_count =
+        static_cast<uint64_t>(texture.width) * texture.height;
+    const uint32_t bytes_per_pixel =
+        texture.format == CapturedVulkanTexture::Format::R8 ? 1u : 4u;
+    if (texture.format != CapturedVulkanTexture::Format::R8 &&
+        texture.format != CapturedVulkanTexture::Format::Rgba8) {
+      return fail("captured Vulkan texture format is unsupported", error);
+    }
+    if (texture.fetch_constant_index >= 32 || texture.width == 0 ||
+        texture.height == 0 || pixel_count > (uint64_t{1} << 24) ||
+        pixel_count * bytes_per_pixel != texture.pixels->size() ||
+        total_texture_size >
+            (uint64_t{1} << 26) - pixel_count * bytes_per_pixel) {
+      return fail(
+          "captured Vulkan texture resources are incomplete or oversized",
+          error);
+    }
+    for (size_t j = 0; j < i; ++j) {
+      if (texture_inputs[j].fetch_constant_index ==
+          texture.fetch_constant_index) {
+        return fail("captured Vulkan textures use a duplicate fetch constant",
+                    error);
+      }
+    }
+    total_texture_size += pixel_count * bytes_per_pixel;
+  }
+  std::sort(texture_inputs.begin(), texture_inputs.end(),
+            [](const TextureInput &left, const TextureInput &right) {
+              return left.fetch_constant_index < right.fetch_constant_index;
+            });
+  if ((has_vertex_inputs && source.vertices.empty()) ||
+      (!has_vertex_inputs && !source.vertices.empty()) ||
+      source.index_count == 0 ||
+      (source.auto_index ? !source.indices.empty() : source.indices.empty()) ||
+      source.vertex_shader_spirv.empty() || source.pixel_shader_spirv.empty() ||
+      (source.topology == PrimitiveTopology::RectangleList &&
+       source.geometry_shader_spirv.empty()) ||
+      (source.topology != PrimitiveTopology::RectangleList &&
+       !source.geometry_shader_spirv.empty()) ||
+      (!source.geometry_shader_spirv.empty() && !geometry_shader_enabled) ||
+      (has_vertex_inputs && source.vertex_stride_bytes == 0) ||
+      texture_inputs.empty()) {
+    return fail("captured Vulkan draw resources are incomplete or oversized",
+                error);
+  }
+  if (source.raster.blend_control_0 != 0x07060706u &&
+      source.raster.blend_control_0 != 0x07010706u &&
+      source.raster.blend_control_0 != 0x00010001u) {
+    return fail("captured blend control is outside the supported retail draw",
+                error);
+  }
+  const VkSampleCountFlagBits raster_samples =
+      sample_count_flag(source.raster.sample_count);
+  if (raster_samples == VkSampleCountFlagBits{}) {
+    return fail("captured sample count is outside the Vulkan 1.1 subset",
+                error);
+  }
+
+  GraphicsPipelineKey pipeline_key;
+  CachedGraphicsPipeline *cached_pipeline_entry = nullptr;
+  if (texture_cache && render_pass_key != 0) {
+    pipeline_key.reserve(32 + source.vertex_shader_spirv.size() +
+                         source.geometry_shader_spirv.size() +
+                         source.pixel_shader_spirv.size());
+    const auto append = [&pipeline_key](uint64_t value) {
+      pipeline_key.push_back(value);
     };
-    std::vector<TextureInput> texture_inputs;
-    if (source.textures.empty()) {
-        texture_inputs.push_back({0, &source.texture_sampling, source.texture_width,
-                                  source.texture_height,
-                                  CapturedVulkanTexture::Format::Rgba8,
-                                  &source.texture_rgba8});
-    } else {
-        texture_inputs.reserve(source.textures.size());
-        for (const CapturedVulkanTexture& texture : source.textures) {
-            texture_inputs.push_back({texture.fetch_constant_index, &texture.sampling,
-                                      texture.width, texture.height, texture.format,
-                                      &texture.pixels});
-        }
+    const auto append_shader = [&append](const std::vector<uint32_t> &shader) {
+      append(shader.size());
+      for (uint32_t word : shader)
+        append(word);
+    };
+    append(1); // Pipeline key schema.
+    append(render_pass_key);
+    append(source.vertex_stride_bytes);
+    append(static_cast<uint32_t>(source.topology));
+    append(has_vertex_inputs);
+    append(source.vertex_input_attributes.size());
+    for (const CapturedVertexInputAttribute &attribute :
+         source.vertex_input_attributes) {
+      append(attribute.location);
+      append(static_cast<uint64_t>(attribute.offset_dwords));
+      append(static_cast<uint64_t>(attribute.stride_dwords));
+      append(attribute.vertex_format);
     }
-    uint64_t total_texture_size = 0;
-    for (size_t i = 0; i < texture_inputs.size(); ++i) {
-        const TextureInput& texture = texture_inputs[i];
-        const uint64_t pixel_count = static_cast<uint64_t>(texture.width) * texture.height;
-        const uint32_t bytes_per_pixel =
-            texture.format == CapturedVulkanTexture::Format::R8 ? 1u : 4u;
-        if (texture.format != CapturedVulkanTexture::Format::R8 &&
-            texture.format != CapturedVulkanTexture::Format::Rgba8) {
-            return fail("captured Vulkan texture format is unsupported", error);
-        }
-        if (texture.fetch_constant_index >= 32 || texture.width == 0 || texture.height == 0 ||
-            pixel_count > (uint64_t{1} << 24) ||
-            pixel_count * bytes_per_pixel != texture.pixels->size() ||
-            total_texture_size > (uint64_t{1} << 26) - pixel_count * bytes_per_pixel) {
-            return fail("captured Vulkan texture resources are incomplete or oversized", error);
-        }
-        for (size_t j = 0; j < i; ++j) {
-            if (texture_inputs[j].fetch_constant_index == texture.fetch_constant_index) {
-                return fail("captured Vulkan textures use a duplicate fetch constant", error);
-            }
-        }
-        total_texture_size += pixel_count * bytes_per_pixel;
-    }
-    std::sort(texture_inputs.begin(), texture_inputs.end(),
-              [](const TextureInput& left, const TextureInput& right) {
-                  return left.fetch_constant_index < right.fetch_constant_index;
-              });
-    if ((has_vertex_inputs && source.vertices.empty()) ||
-        (!has_vertex_inputs && !source.vertices.empty()) ||
-        source.index_count == 0 ||
-        (source.auto_index ? !source.indices.empty() : source.indices.empty()) ||
-        source.vertex_shader_spirv.empty() || source.pixel_shader_spirv.empty() ||
-        (source.topology == PrimitiveTopology::RectangleList &&
-         source.geometry_shader_spirv.empty()) ||
-        (source.topology != PrimitiveTopology::RectangleList &&
-         !source.geometry_shader_spirv.empty()) ||
-        (!source.geometry_shader_spirv.empty() && !geometry_shader_enabled) ||
-        (has_vertex_inputs && source.vertex_stride_bytes == 0) || texture_inputs.empty()) {
-        return fail("captured Vulkan draw resources are incomplete or oversized", error);
-    }
-    if (source.raster.blend_control_0 != 0x07060706u &&
-        source.raster.blend_control_0 != 0x07010706u &&
-        source.raster.blend_control_0 != 0x00010001u) {
-        return fail("captured blend control is outside the supported retail draw", error);
-    }
-    const VkSampleCountFlagBits raster_samples =
-        sample_count_flag(source.raster.sample_count);
-    if (raster_samples == VkSampleCountFlagBits{}) {
-        return fail("captured sample count is outside the Vulkan 1.1 subset", error);
+    append(static_cast<uint32_t>(source.raster.color_format));
+    append(source.raster.sample_count);
+    append(static_cast<uint32_t>(source.raster.cull_mode));
+    append(source.raster.front_face_ccw);
+    append(source.raster.depth_test_enabled);
+    append(source.raster.depth_write_enabled);
+    append(source.raster.depth_control);
+    append(source.raster.stencil_test_enabled);
+    append(source.raster.stencil_refmask);
+    append(source.raster.blend_control_0);
+    append(source.raster.color_write_mask);
+    append_shader(source.vertex_shader_spirv);
+    append_shader(source.geometry_shader_spirv);
+    append_shader(source.pixel_shader_spirv);
+    append(texture_inputs.size());
+    for (const TextureInput &texture : texture_inputs) {
+      append(texture.fetch_constant_index);
     }
 
-    if ((has_vertex_inputs &&
-         !create_buffer(memory_properties, device, source.vertices.size(),
-                        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, source.vertices.data(),
-                        &output->vertices, error)) ||
-        (!source.auto_index &&
-         !create_buffer(memory_properties, device, source.indices.size(),
-                        VK_BUFFER_USAGE_INDEX_BUFFER_BIT, source.indices.data(),
-                        &output->indices, error)) ||
-        !create_buffer(memory_properties, device, vertex_constants_size,
-                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                       source.constants.vertex_float_constants.data(),
-                       &output->vertex_constants, error) ||
-        !create_buffer(memory_properties, device, pixel_constants_size,
-                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                       source.constants.pixel_float_constants.data(),
-                       &output->pixel_constants, error)) {
+    const auto found = texture_cache->graphics_pipelines.find(pipeline_key);
+    if (found != texture_cache->graphics_pipelines.end()) {
+      cached_pipeline_entry = &found->second;
+      cached_pipeline_entry->last_used_frame = texture_cache->frame;
+      output->cached_pipeline_entry = cached_pipeline_entry;
+      output->pipeline = cached_pipeline_entry->pipeline;
+    }
+  }
+
+  if ((has_vertex_inputs &&
+       !create_buffer(memory_properties, device, source.vertices.size(),
+                      VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, source.vertices.data(),
+                      &output->vertices, error)) ||
+      (!source.auto_index &&
+       !create_buffer(memory_properties, device, source.indices.size(),
+                      VK_BUFFER_USAGE_INDEX_BUFFER_BIT, source.indices.data(),
+                      &output->indices, error)) ||
+      !create_buffer(memory_properties, device, vertex_constants_size,
+                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     source.constants.vertex_float_constants.data(),
+                     &output->vertex_constants, error) ||
+      !create_buffer(memory_properties, device, pixel_constants_size,
+                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     source.constants.pixel_float_constants.data(),
+                     &output->pixel_constants, error)) {
+    return false;
+  }
+
+  for (const TextureInput &input : texture_inputs) {
+    DrawTextureResources &texture = output->textures.emplace_back();
+    texture.fetch_constant_index = input.fetch_constant_index;
+    texture.width = input.width;
+    texture.height = input.height;
+    const VkFormat image_format =
+        input.format == CapturedVulkanTexture::Format::R8
+            ? VK_FORMAT_R8_UNORM
+            : VK_FORMAT_R8G8B8A8_UNORM;
+    if (texture_cache && input.format == CapturedVulkanTexture::Format::R8) {
+      if (!acquire_cached_r8_texture(texture_cache, memory_properties, device,
+                                     draw_index, input.fetch_constant_index,
+                                     input.width, input.height, *input.pixels,
+                                     &texture, &texture.cached, error)) {
         return false;
+      }
     }
-
-    for (const TextureInput& input : texture_inputs) {
-        DrawTextureResources& texture = output->textures.emplace_back();
-        texture.fetch_constant_index = input.fetch_constant_index;
-        texture.width = input.width;
-        texture.height = input.height;
-        const VkFormat image_format =
-            input.format == CapturedVulkanTexture::Format::R8
-                ? VK_FORMAT_R8_UNORM
-                : VK_FORMAT_R8G8B8A8_UNORM;
-        if (texture_cache && input.format == CapturedVulkanTexture::Format::R8) {
-            if (!acquire_cached_r8_texture(
-                    texture_cache, memory_properties, device, draw_index,
-                    input.fetch_constant_index, input.width, input.height,
-                    *input.pixels, &texture, &texture.cached, error)) {
-                return false;
-            }
-        }
-        if (!texture.cached &&
-            (!create_buffer(memory_properties, device, input.pixels->size(),
-                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT, input.pixels->data(),
-                            &texture.upload, error) ||
-             !create_texture_image(memory_properties, device, input.width,
-                                   input.height, image_format, &texture.image, error))) {
-            return false;
-        }
-        bool sampler_supported = true;
-        VkSamplerCreateInfo sampler_info{};
-        sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        sampler_info.magFilter = sampler_filter(input.sampling->mag_filter, &sampler_supported);
-        sampler_info.minFilter = sampler_filter(input.sampling->min_filter, &sampler_supported);
-        switch (input.sampling->mip_filter) {
-            case TextureFilter::Point:
-            case TextureFilter::BaseMap:
-                sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-                break;
-            case TextureFilter::Linear:
-                sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-                break;
-            default:
-                sampler_supported = false;
-                sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-                break;
-        }
-        sampler_info.addressModeU = sampler_address_mode(input.sampling->clamps[0], &sampler_supported);
-        sampler_info.addressModeV = sampler_address_mode(input.sampling->clamps[1], &sampler_supported);
-        sampler_info.addressModeW = sampler_address_mode(input.sampling->clamps[2], &sampler_supported);
-        sampler_info.maxLod = 0.0f;
-        sampler_info.borderColor = input.sampling->border_alpha_known
-                                       ? VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK
-                                       : VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-        float requested_anisotropy = 1.0f;
-        switch (input.sampling->anisotropy) {
-            case TextureAnisotropy::Disabled:
-            case TextureAnisotropy::Max1To1:
-                break;
-            case TextureAnisotropy::Max2To1:
-                requested_anisotropy = 2.0f;
-                break;
-            case TextureAnisotropy::Max4To1:
-                requested_anisotropy = 4.0f;
-                break;
-            case TextureAnisotropy::Max8To1:
-                requested_anisotropy = 8.0f;
-                break;
-            case TextureAnisotropy::Max16To1:
-                requested_anisotropy = 16.0f;
-                break;
-            default:
-                sampler_supported = false;
-                break;
-        }
-        if (sampler_capabilities.anisotropy_enabled &&
-            sampler_capabilities.max_anisotropy > 1.0f &&
-            requested_anisotropy > 1.0f) {
-            sampler_info.anisotropyEnable = VK_TRUE;
-            sampler_info.maxAnisotropy = std::min(
-                requested_anisotropy, sampler_capabilities.max_anisotropy);
-        }
-        if (!sampler_supported ||
-            input.sampling->border_color != TextureBorderColor::AbgrBlack) {
-            return fail("captured sampler state is outside the Vulkan 1.1 live-draw subset", error);
-        }
-        const VkResult sampler_result =
-            vkCreateSampler(device, &sampler_info, nullptr, &texture.sampler);
-        if (sampler_result != VK_SUCCESS) return vk_fail("vkCreateSampler", sampler_result, error);
+    if (!texture.cached &&
+        (!create_buffer(memory_properties, device, input.pixels->size(),
+                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT, input.pixels->data(),
+                        &texture.upload, error) ||
+         !create_texture_image(memory_properties, device, input.width,
+                               input.height, image_format, &texture.image,
+                               error))) {
+      return false;
     }
+    bool sampler_supported = true;
+    VkSamplerCreateInfo sampler_info{};
+    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_info.magFilter =
+        sampler_filter(input.sampling->mag_filter, &sampler_supported);
+    sampler_info.minFilter =
+        sampler_filter(input.sampling->min_filter, &sampler_supported);
+    switch (input.sampling->mip_filter) {
+    case TextureFilter::Point:
+    case TextureFilter::BaseMap:
+      sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+      break;
+    case TextureFilter::Linear:
+      sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+      break;
+    default:
+      sampler_supported = false;
+      sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+      break;
+    }
+    sampler_info.addressModeU =
+        sampler_address_mode(input.sampling->clamps[0], &sampler_supported);
+    sampler_info.addressModeV =
+        sampler_address_mode(input.sampling->clamps[1], &sampler_supported);
+    sampler_info.addressModeW =
+        sampler_address_mode(input.sampling->clamps[2], &sampler_supported);
+    sampler_info.maxLod = 0.0f;
+    sampler_info.borderColor = input.sampling->border_alpha_known
+                                   ? VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK
+                                   : VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+    float requested_anisotropy = 1.0f;
+    switch (input.sampling->anisotropy) {
+    case TextureAnisotropy::Disabled:
+    case TextureAnisotropy::Max1To1:
+      break;
+    case TextureAnisotropy::Max2To1:
+      requested_anisotropy = 2.0f;
+      break;
+    case TextureAnisotropy::Max4To1:
+      requested_anisotropy = 4.0f;
+      break;
+    case TextureAnisotropy::Max8To1:
+      requested_anisotropy = 8.0f;
+      break;
+    case TextureAnisotropy::Max16To1:
+      requested_anisotropy = 16.0f;
+      break;
+    default:
+      sampler_supported = false;
+      break;
+    }
+    if (sampler_capabilities.anisotropy_enabled &&
+        sampler_capabilities.max_anisotropy > 1.0f &&
+        requested_anisotropy > 1.0f) {
+      sampler_info.anisotropyEnable = VK_TRUE;
+      sampler_info.maxAnisotropy =
+          std::min(requested_anisotropy, sampler_capabilities.max_anisotropy);
+    }
+    if (!sampler_supported ||
+        input.sampling->border_color != TextureBorderColor::AbgrBlack) {
+      return fail(
+          "captured sampler state is outside the Vulkan 1.1 live-draw subset",
+          error);
+    }
+    const VkResult sampler_result =
+        vkCreateSampler(device, &sampler_info, nullptr, &texture.sampler);
+    if (sampler_result != VK_SUCCESS)
+      return vk_fail("vkCreateSampler", sampler_result, error);
+  }
 
-    VkResult result = VK_SUCCESS;
+  VkResult result = VK_SUCCESS;
+  if (!cached_pipeline_entry) {
     VkShaderModuleCreateInfo shader_info{};
     shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     shader_info.codeSize = source.vertex_shader_spirv.size() * sizeof(uint32_t);
     shader_info.pCode = source.vertex_shader_spirv.data();
-    result = vkCreateShaderModule(device, &shader_info, nullptr, &output->vertex_shader);
-    if (result != VK_SUCCESS) return vk_fail("vkCreateShaderModule(vertex)", result, error);
+    result = vkCreateShaderModule(device, &shader_info, nullptr,
+                                  &output->vertex_shader);
+    if (result != VK_SUCCESS) {
+      return vk_fail("vkCreateShaderModule(vertex)", result, error);
+    }
     if (!source.geometry_shader_spirv.empty()) {
-        shader_info.codeSize = source.geometry_shader_spirv.size() * sizeof(uint32_t);
-        shader_info.pCode = source.geometry_shader_spirv.data();
-        result = vkCreateShaderModule(device, &shader_info, nullptr,
-                                      &output->geometry_shader);
-        if (result != VK_SUCCESS) {
-            return vk_fail("vkCreateShaderModule(geometry)", result, error);
-        }
+      shader_info.codeSize =
+          source.geometry_shader_spirv.size() * sizeof(uint32_t);
+      shader_info.pCode = source.geometry_shader_spirv.data();
+      result = vkCreateShaderModule(device, &shader_info, nullptr,
+                                    &output->geometry_shader);
+      if (result != VK_SUCCESS) {
+        return vk_fail("vkCreateShaderModule(geometry)", result, error);
+      }
     }
     shader_info.codeSize = source.pixel_shader_spirv.size() * sizeof(uint32_t);
     shader_info.pCode = source.pixel_shader_spirv.data();
-    result = vkCreateShaderModule(device, &shader_info, nullptr, &output->pixel_shader);
-    if (result != VK_SUCCESS) return vk_fail("vkCreateShaderModule(pixel)", result, error);
-
-    VkDescriptorSetLayoutBinding constant_bindings[2]{};
-    constant_bindings[0] = {14, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
-                            VK_SHADER_STAGE_VERTEX_BIT, nullptr};
-    constant_bindings[1] = {15, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
-                            VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    VkDescriptorSetLayoutCreateInfo descriptor_layout_info{};
-    descriptor_layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptor_layout_info.bindingCount = 2;
-    descriptor_layout_info.pBindings = constant_bindings;
-    result = vkCreateDescriptorSetLayout(device, &descriptor_layout_info, nullptr,
-                                         &output->descriptor_layouts[0]);
-    if (result != VK_SUCCESS) return vk_fail("vkCreateDescriptorSetLayout(constants)", result, error);
-
-    std::vector<VkDescriptorSetLayoutBinding> texture_bindings;
-    texture_bindings.reserve(output->textures.size());
-    for (const DrawTextureResources& texture : output->textures) {
-        texture_bindings.push_back({texture.fetch_constant_index,
-                                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+    result = vkCreateShaderModule(device, &shader_info, nullptr,
+                                  &output->pixel_shader);
+    if (result != VK_SUCCESS) {
+      return vk_fail("vkCreateShaderModule(pixel)", result, error);
     }
-    descriptor_layout_info.bindingCount = static_cast<uint32_t>(texture_bindings.size());
-    descriptor_layout_info.pBindings = texture_bindings.data();
-    result = vkCreateDescriptorSetLayout(device, &descriptor_layout_info, nullptr,
-                                         &output->descriptor_layouts[1]);
-    if (result != VK_SUCCESS) return vk_fail("vkCreateDescriptorSetLayout(texture)", result, error);
+  }
 
-    const VkDescriptorPoolSize pool_sizes[2] = {
-        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
-        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-         static_cast<uint32_t>(output->textures.size())},
-    };
-    VkDescriptorPoolCreateInfo pool_info{};
-    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.maxSets = 2;
-    pool_info.poolSizeCount = 2;
-    pool_info.pPoolSizes = pool_sizes;
-    result = vkCreateDescriptorPool(device, &pool_info, nullptr, &output->descriptor_pool);
-    if (result != VK_SUCCESS) return vk_fail("vkCreateDescriptorPool", result, error);
-    VkDescriptorSetAllocateInfo set_info{};
-    set_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    set_info.descriptorPool = output->descriptor_pool;
-    set_info.descriptorSetCount = 2;
-    set_info.pSetLayouts = output->descriptor_layouts;
-    result = vkAllocateDescriptorSets(device, &set_info, output->descriptor_sets);
-    if (result != VK_SUCCESS) return vk_fail("vkAllocateDescriptorSets", result, error);
+  VkDescriptorSetLayoutBinding constant_bindings[2]{};
+  constant_bindings[0] = {14, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
+                          VK_SHADER_STAGE_VERTEX_BIT, nullptr};
+  constant_bindings[1] = {15, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
+                          VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+  VkDescriptorSetLayoutCreateInfo descriptor_layout_info{};
+  descriptor_layout_info.sType =
+      VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+  descriptor_layout_info.bindingCount = 2;
+  descriptor_layout_info.pBindings = constant_bindings;
+  result = vkCreateDescriptorSetLayout(device, &descriptor_layout_info, nullptr,
+                                       &output->descriptor_layouts[0]);
+  if (result != VK_SUCCESS)
+    return vk_fail("vkCreateDescriptorSetLayout(constants)", result, error);
 
-    VkDescriptorBufferInfo vertex_constant_info{output->vertex_constants.buffer, 0,
-                                                vertex_constants_size};
-    VkDescriptorBufferInfo pixel_constant_info{output->pixel_constants.buffer, 0,
-                                               pixel_constants_size};
-    std::vector<VkDescriptorImageInfo> texture_infos;
-    std::vector<VkWriteDescriptorSet> writes(2 + output->textures.size());
-    texture_infos.reserve(output->textures.size());
-    writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writes[0].dstSet = output->descriptor_sets[0];
-    writes[0].dstBinding = 14;
-    writes[0].descriptorCount = 1;
-    writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    writes[0].pBufferInfo = &vertex_constant_info;
-    writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writes[1].dstSet = output->descriptor_sets[0];
-    writes[1].dstBinding = 15;
-    writes[1].descriptorCount = 1;
-    writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    writes[1].pBufferInfo = &pixel_constant_info;
-    for (size_t i = 0; i < output->textures.size(); ++i) {
-        const DrawTextureResources& texture = output->textures[i];
-        texture_infos.push_back({texture.sampler, texture.image.view,
-                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
-        VkWriteDescriptorSet& write = writes[2 + i];
-        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write.dstSet = output->descriptor_sets[1];
-        write.dstBinding = texture.fetch_constant_index;
-        write.descriptorCount = 1;
-        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        write.pImageInfo = &texture_infos.back();
-    }
-    vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+  std::vector<VkDescriptorSetLayoutBinding> texture_bindings;
+  texture_bindings.reserve(output->textures.size());
+  for (const DrawTextureResources &texture : output->textures) {
+    texture_bindings.push_back({texture.fetch_constant_index,
+                                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1,
+                                VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+  }
+  descriptor_layout_info.bindingCount =
+      static_cast<uint32_t>(texture_bindings.size());
+  descriptor_layout_info.pBindings = texture_bindings.data();
+  result = vkCreateDescriptorSetLayout(device, &descriptor_layout_info, nullptr,
+                                       &output->descriptor_layouts[1]);
+  if (result != VK_SUCCESS)
+    return vk_fail("vkCreateDescriptorSetLayout(texture)", result, error);
 
-    const VkPipelineLayoutCreateInfo pipeline_layout_info{
-        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 2,
-        output->descriptor_layouts, 0, nullptr};
-    result = vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr,
-                                    &output->pipeline_layout);
-    if (result != VK_SUCCESS) return vk_fail("vkCreatePipelineLayout", result, error);
+  const VkDescriptorPoolSize pool_sizes[2] = {
+      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
+      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+       static_cast<uint32_t>(output->textures.size())},
+  };
+  VkDescriptorPoolCreateInfo pool_info{};
+  pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  pool_info.maxSets = 2;
+  pool_info.poolSizeCount = 2;
+  pool_info.pPoolSizes = pool_sizes;
+  result = vkCreateDescriptorPool(device, &pool_info, nullptr,
+                                  &output->descriptor_pool);
+  if (result != VK_SUCCESS)
+    return vk_fail("vkCreateDescriptorPool", result, error);
+  VkDescriptorSetAllocateInfo set_info{};
+  set_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+  set_info.descriptorPool = output->descriptor_pool;
+  set_info.descriptorSetCount = 2;
+  set_info.pSetLayouts = output->descriptor_layouts;
+  result = vkAllocateDescriptorSets(device, &set_info, output->descriptor_sets);
+  if (result != VK_SUCCESS)
+    return vk_fail("vkAllocateDescriptorSets", result, error);
 
+  VkDescriptorBufferInfo vertex_constant_info{output->vertex_constants.buffer,
+                                              0, vertex_constants_size};
+  VkDescriptorBufferInfo pixel_constant_info{output->pixel_constants.buffer, 0,
+                                             pixel_constants_size};
+  std::vector<VkDescriptorImageInfo> texture_infos;
+  std::vector<VkWriteDescriptorSet> writes(2 + output->textures.size());
+  texture_infos.reserve(output->textures.size());
+  writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  writes[0].dstSet = output->descriptor_sets[0];
+  writes[0].dstBinding = 14;
+  writes[0].descriptorCount = 1;
+  writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  writes[0].pBufferInfo = &vertex_constant_info;
+  writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  writes[1].dstSet = output->descriptor_sets[0];
+  writes[1].dstBinding = 15;
+  writes[1].descriptorCount = 1;
+  writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  writes[1].pBufferInfo = &pixel_constant_info;
+  for (size_t i = 0; i < output->textures.size(); ++i) {
+    const DrawTextureResources &texture = output->textures[i];
+    texture_infos.push_back({texture.sampler, texture.image.view,
+                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+    VkWriteDescriptorSet &write = writes[2 + i];
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = output->descriptor_sets[1];
+    write.dstBinding = texture.fetch_constant_index;
+    write.descriptorCount = 1;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    write.pImageInfo = &texture_infos.back();
+  }
+  vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()),
+                         writes.data(), 0, nullptr);
+
+  const VkPipelineLayoutCreateInfo pipeline_layout_info{
+      VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+      nullptr,
+      0,
+      2,
+      output->descriptor_layouts,
+      0,
+      nullptr};
+  result = vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr,
+                                  &output->pipeline_layout);
+  if (result != VK_SUCCESS)
+    return vk_fail("vkCreatePipelineLayout", result, error);
+
+  if (!cached_pipeline_entry) {
     VkPipelineShaderStageCreateInfo stages[3]{};
     stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -967,13 +1165,15 @@ bool create_draw_resources(
     stages[0].pName = "main";
     uint32_t stage_count = 1;
     if (output->geometry_shader) {
-        stages[stage_count].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        stages[stage_count].stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-        stages[stage_count].module = output->geometry_shader;
-        stages[stage_count].pName = "main";
-        ++stage_count;
+      stages[stage_count].sType =
+          VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+      stages[stage_count].stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+      stages[stage_count].module = output->geometry_shader;
+      stages[stage_count].pName = "main";
+      ++stage_count;
     }
-    stages[stage_count].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stages[stage_count].sType =
+        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     stages[stage_count].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     stages[stage_count].module = output->pixel_shader;
     stages[stage_count].pName = "main";
@@ -982,75 +1182,80 @@ bool create_draw_resources(
         0, source.vertex_stride_bytes, VK_VERTEX_INPUT_RATE_VERTEX};
     std::vector<VkVertexInputAttributeDescription> vertex_attributes;
     if (has_vertex_inputs) {
-        vertex_attributes.reserve(source.vertex_input_attributes.size());
-        for (const CapturedVertexInputAttribute& input :
-             source.vertex_input_attributes) {
-            VkFormat format = VK_FORMAT_UNDEFINED;
-            if (input.vertex_format == 6) {
-                format = VK_FORMAT_R8G8B8A8_UNORM;
-            } else if (input.vertex_format == 37) {
-                format = VK_FORMAT_R32G32_SFLOAT;
-            } else if (input.vertex_format == 57) {
-                format = VK_FORMAT_R32G32B32_SFLOAT;
-            } else if (input.vertex_format == 38) {
-                format = VK_FORMAT_R32G32B32A32_SFLOAT;
-            } else {
-                return fail("captured Vulkan vertex format is unsupported", error);
-            }
-            if (input.offset_dwords < 0 ||
-                static_cast<uint64_t>(input.stride_dwords) * 4u !=
-                    source.vertex_stride_bytes) {
-                return fail("captured Vulkan vertex layout is inconsistent", error);
-            }
-            vertex_attributes.push_back({
-                input.location, 0, format,
-                static_cast<uint32_t>(input.offset_dwords) * 4u});
+      vertex_attributes.reserve(source.vertex_input_attributes.size());
+      for (const CapturedVertexInputAttribute &input :
+           source.vertex_input_attributes) {
+        VkFormat format = VK_FORMAT_UNDEFINED;
+        if (input.vertex_format == 6) {
+          format = VK_FORMAT_R8G8B8A8_UNORM;
+        } else if (input.vertex_format == 37) {
+          format = VK_FORMAT_R32G32_SFLOAT;
+        } else if (input.vertex_format == 57) {
+          format = VK_FORMAT_R32G32B32_SFLOAT;
+        } else if (input.vertex_format == 38) {
+          format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        } else {
+          return fail("captured Vulkan vertex format is unsupported", error);
         }
+        if (input.offset_dwords < 0 ||
+            static_cast<uint64_t>(input.stride_dwords) * 4u !=
+                source.vertex_stride_bytes) {
+          return fail("captured Vulkan vertex layout is inconsistent", error);
+        }
+        vertex_attributes.push_back(
+            {input.location, 0, format,
+             static_cast<uint32_t>(input.offset_dwords) * 4u});
+      }
     }
     VkPipelineVertexInputStateCreateInfo vertex_input{};
-    vertex_input.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertex_input.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input.vertexBindingDescriptionCount = has_vertex_inputs ? 1u : 0u;
-    vertex_input.pVertexBindingDescriptions = has_vertex_inputs ? &vertex_binding : nullptr;
+    vertex_input.pVertexBindingDescriptions =
+        has_vertex_inputs ? &vertex_binding : nullptr;
     vertex_input.vertexAttributeDescriptionCount =
         static_cast<uint32_t>(vertex_attributes.size());
     vertex_input.pVertexAttributeDescriptions = vertex_attributes.data();
     VkPipelineInputAssemblyStateCreateInfo assembly{};
-    assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    assembly.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     if (source.topology == PrimitiveTopology::TriangleList) {
-        assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+      assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     } else if (source.topology == PrimitiveTopology::PointList) {
-        assembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+      assembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     } else if (source.topology == PrimitiveTopology::RectangleList) {
-        assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+      assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     } else if (source.topology == PrimitiveTopology::TriangleStrip) {
-        assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+      assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     } else {
-        return fail("captured Vulkan primitive topology is unsupported", error);
+      return fail("captured Vulkan primitive topology is unsupported", error);
     }
     VkPipelineViewportStateCreateInfo viewport_state{};
-    viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewport_state.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewport_state.viewportCount = 1;
     viewport_state.scissorCount = 1;
     VkPipelineRasterizationStateCreateInfo raster{};
     raster.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     raster.polygonMode = VK_POLYGON_MODE_FILL;
     switch (source.raster.cull_mode) {
-        case CapturedRasterState::CullMode::None:
-            raster.cullMode = VK_CULL_MODE_NONE;
-            break;
-        case CapturedRasterState::CullMode::Front:
-            raster.cullMode = VK_CULL_MODE_FRONT_BIT;
-            break;
-        case CapturedRasterState::CullMode::Back:
-            raster.cullMode = VK_CULL_MODE_BACK_BIT;
-            break;
+    case CapturedRasterState::CullMode::None:
+      raster.cullMode = VK_CULL_MODE_NONE;
+      break;
+    case CapturedRasterState::CullMode::Front:
+      raster.cullMode = VK_CULL_MODE_FRONT_BIT;
+      break;
+    case CapturedRasterState::CullMode::Back:
+      raster.cullMode = VK_CULL_MODE_BACK_BIT;
+      break;
     }
     raster.frontFace = source.raster.front_face_ccw
                            ? VK_FRONT_FACE_COUNTER_CLOCKWISE
                            : VK_FRONT_FACE_CLOCKWISE;
     raster.lineWidth = 1.0f;
     VkPipelineMultisampleStateCreateInfo multisample{};
-    multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisample.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisample.rasterizationSamples = raster_samples;
     VkPipelineDepthStencilStateCreateInfo depth{};
     depth.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -1068,46 +1273,61 @@ bool create_draw_resources(
         stencil_op((source.raster.depth_control >> 14) & 7u),
         stencil_op((source.raster.depth_control >> 17) & 7u),
         compare_op((source.raster.depth_control >> 8) & 7u),
-        stencil_compare_mask, stencil_write_mask, stencil_reference};
+        stencil_compare_mask,
+        stencil_write_mask,
+        stencil_reference};
     VkStencilOpState back_stencil = front_stencil;
     if ((source.raster.depth_control & (1u << 7)) != 0) {
-        back_stencil.failOp = stencil_op((source.raster.depth_control >> 23) & 7u);
-        back_stencil.passOp = stencil_op((source.raster.depth_control >> 26) & 7u);
-        back_stencil.depthFailOp = stencil_op((source.raster.depth_control >> 29) & 7u);
-        back_stencil.compareOp = compare_op((source.raster.depth_control >> 20) & 7u);
+      back_stencil.failOp =
+          stencil_op((source.raster.depth_control >> 23) & 7u);
+      back_stencil.passOp =
+          stencil_op((source.raster.depth_control >> 26) & 7u);
+      back_stencil.depthFailOp =
+          stencil_op((source.raster.depth_control >> 29) & 7u);
+      back_stencil.compareOp =
+          compare_op((source.raster.depth_control >> 20) & 7u);
     }
     depth.front = front_stencil;
     depth.back = back_stencil;
     VkPipelineColorBlendAttachmentState blend_attachment{};
     blend_attachment.blendEnable = source.raster.blend_control_0 != 0x00010001u;
     if (source.raster.blend_control_0 == 0x07060706u) {
-        blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-        blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-        blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+      blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+      blend_attachment.dstColorBlendFactor =
+          VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+      blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+      blend_attachment.dstAlphaBlendFactor =
+          VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     } else if (source.raster.blend_control_0 == 0x07010706u) {
-        blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-        blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-        blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+      blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+      blend_attachment.dstColorBlendFactor =
+          VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+      blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+      blend_attachment.dstAlphaBlendFactor =
+          VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     } else {
-        blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-        blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-        blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-        blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+      blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+      blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+      blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+      blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
     }
     blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
     blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
     blend_attachment.colorWriteMask = 0;
-    if (source.raster.color_write_mask & 1u) blend_attachment.colorWriteMask |= VK_COLOR_COMPONENT_R_BIT;
-    if (source.raster.color_write_mask & 2u) blend_attachment.colorWriteMask |= VK_COLOR_COMPONENT_G_BIT;
-    if (source.raster.color_write_mask & 4u) blend_attachment.colorWriteMask |= VK_COLOR_COMPONENT_B_BIT;
-    if (source.raster.color_write_mask & 8u) blend_attachment.colorWriteMask |= VK_COLOR_COMPONENT_A_BIT;
+    if (source.raster.color_write_mask & 1u)
+      blend_attachment.colorWriteMask |= VK_COLOR_COMPONENT_R_BIT;
+    if (source.raster.color_write_mask & 2u)
+      blend_attachment.colorWriteMask |= VK_COLOR_COMPONENT_G_BIT;
+    if (source.raster.color_write_mask & 4u)
+      blend_attachment.colorWriteMask |= VK_COLOR_COMPONENT_B_BIT;
+    if (source.raster.color_write_mask & 8u)
+      blend_attachment.colorWriteMask |= VK_COLOR_COMPONENT_A_BIT;
     VkPipelineColorBlendStateCreateInfo blend{};
     blend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     blend.attachmentCount = 1;
     blend.pAttachments = &blend_attachment;
-    const VkDynamicState dynamic_values[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    const VkDynamicState dynamic_values[] = {VK_DYNAMIC_STATE_VIEWPORT,
+                                             VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dynamic{};
     dynamic.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamic.dynamicStateCount = 2;
@@ -1126,10 +1346,28 @@ bool create_draw_resources(
     pipeline_info.pDynamicState = &dynamic;
     pipeline_info.layout = output->pipeline_layout;
     pipeline_info.renderPass = render_pass;
-    result = vkCreateGraphicsPipelines(device, pipeline_cache, 1, &pipeline_info, nullptr,
-                                       &output->pipeline);
-    if (result != VK_SUCCESS) return vk_fail("vkCreateGraphicsPipelines", result, error);
-    return true;
+    result = vkCreateGraphicsPipelines(
+        device, pipeline_cache, 1, &pipeline_info, nullptr, &output->pipeline);
+    if (result != VK_SUCCESS)
+      return vk_fail("vkCreateGraphicsPipelines", result, error);
+    if (texture_cache && render_pass_key != 0 &&
+        make_room_for_graphics_pipeline(texture_cache)) {
+      auto [entry, inserted] = texture_cache->graphics_pipelines.emplace(
+          std::move(pipeline_key),
+          CachedGraphicsPipeline{output->pipeline, texture_cache->frame});
+      if (inserted) {
+        cached_pipeline_entry = &entry->second;
+        output->cached_pipeline_entry = cached_pipeline_entry;
+      } else {
+        vkDestroyPipeline(device, output->pipeline, nullptr);
+        output->pipeline = entry->second.pipeline;
+        entry->second.last_used_frame = texture_cache->frame;
+        cached_pipeline_entry = &entry->second;
+        output->cached_pipeline_entry = cached_pipeline_entry;
+      }
+    }
+  }
+  return true;
 }
 
 bool create_mixed_msaa_render_pass(
@@ -1719,6 +1957,7 @@ bool submit_mixed_sample_copy_frame(
         draw_resource_indices[draw_index] = resource_index;
         if (!create_draw_resources(resource_draw, draw_index, texture_cache,
                                    memory_properties, device, pass,
+                                   0,
                                    pipeline_cache,
                                    geometry_shader_enabled, sampler_capabilities,
                                    &resources.draws[resource_index], error)) {
@@ -1754,7 +1993,7 @@ bool submit_mixed_sample_copy_frame(
     copy_draw.texture_sampling.border_alpha_known = true;
     if (!create_draw_resources(copy_draw, std::numeric_limits<size_t>::max(), nullptr,
                                memory_properties, device,
-                               resources.mixed_copy_render_pass, pipeline_cache, false,
+                               resources.mixed_copy_render_pass, 0, pipeline_cache, false,
                                sampler_capabilities, &resources.copy_draw, error)) {
         return false;
     }
@@ -2017,15 +2256,17 @@ bool submit_mixed_sample_copy_frame(
     source_to_sample.subresourceRange.levelCount = 1;
     source_to_sample.subresourceRange.layerCount = 1;
     vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                         0, nullptr, 0, nullptr, 1, &source_to_sample);
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                         0, nullptr, 1, &source_to_sample);
 
     VkImageMemoryBarrier output_to_color{};
     output_to_color.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    output_to_color.srcAccessMask = output_written_before ? VK_ACCESS_SHADER_READ_BIT : 0;
+    output_to_color.srcAccessMask =
+        output_written_before ? VK_ACCESS_SHADER_READ_BIT : 0;
     output_to_color.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     output_to_color.oldLayout = output_written_before
-        ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED;
+                                    ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                                    : VK_IMAGE_LAYOUT_UNDEFINED;
     output_to_color.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     output_to_color.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     output_to_color.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -2034,10 +2275,11 @@ bool submit_mixed_sample_copy_frame(
     output_to_color.subresourceRange.levelCount = 1;
     output_to_color.subresourceRange.layerCount = 1;
     vkCmdPipelineBarrier(command,
-                         output_written_before ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-                                               : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0,
-                         0, nullptr, 0, nullptr, 1, &output_to_color);
+                         output_written_before
+                             ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                             : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
+                         nullptr, 0, nullptr, 1, &output_to_color);
 
     VkRenderPassBeginInfo copy_begin{};
     copy_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -2170,6 +2412,10 @@ void CapturedVulkanTextureCache::clear() {
 
 size_t CapturedVulkanTextureCache::size() const {
     return impl_ ? impl_->state.textures.size() : 0;
+}
+
+size_t CapturedVulkanTextureCache::cached_pipeline_count() const {
+    return impl_ ? impl_->state.graphics_pipelines.size() : 0;
 }
 
 bool submit_captured_vulkan_frame(
@@ -2518,7 +2764,7 @@ bool submit_captured_vulkan_frame(
         copy_draw.texture_sampling.border_alpha_known = true;
         if (!create_draw_resources(copy_draw, std::numeric_limits<size_t>::max(), nullptr,
                                    memory_properties, device,
-                                   resources.copy_render_pass, pipeline_cache, false,
+                                   resources.copy_render_pass, 0, pipeline_cache, false,
                                    sampler_capabilities, &resources.copy_draw, error)) {
             return false;
         }
@@ -2541,9 +2787,12 @@ bool submit_captured_vulkan_frame(
     // the pass exists. Resource upload and descriptor creation are independent.
     for (size_t i = 0; i < draws.size(); ++i) {
         DrawResources& draw = resources.draws[i];
+        const uint64_t pass_key = regular_render_pass_key(
+            raster_color_format, raster_samples, needs_depth, copy != nullptr);
         // Recreate just the graphics pipeline with this frame's render pass.
         if (!create_draw_resources(draws[i], i, texture_cache_state,
                                    memory_properties, device, resources.render_pass,
+                                   pass_key,
                                    pipeline_cache,
                                    geometry_shader_enabled, sampler_capabilities,
                                    &draw, error)) {

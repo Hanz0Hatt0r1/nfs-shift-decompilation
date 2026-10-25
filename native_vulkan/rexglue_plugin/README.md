@@ -761,3 +761,26 @@ playback remain unverified. The app was left open on the disclaimer. The
 [evidence record](../../evidence/process2_redmi_resolve_candidate_live_startup_20261025.json)
 contains APK/plugin hashes, readback details, screenshots, and the complete
 verification boundary.
+
+## Bounded graphics pipeline object cache (2026-10-25)
+
+The live renderer now reuses compatible `VkPipeline` objects across repeated
+draws. Its 128-entry cache key includes the SPIR-V words, vertex layout,
+pipeline-relevant raster state, texture binding slots, and render-pass
+compatibility key. LRU eviction skips pipelines referenced by in-flight frames.
+Descriptor sets and per-draw buffers remain frame-owned; mixed-sample and
+copy-only render paths do not use this object cache.
+
+The renderer regression submits identical draws twice and requires identical
+readback, then changes an R8 video plane and confirms the cached result matches
+an uncached submission. Native Vulkan CTest passed 4/4 and the ReXGlue
+live-ring/readback suite passed 5/5 with `VK_LAYER_KHRONOS_validation`
+enabled. An ARM64 Android renderer archive also compiled. The Linux plugin and
+ARM64 archive are staged under
+`/home/pes/work/process2-renderer-handover-pipeline-cache/`; hashes and build
+IDs are in [the pipeline-cache handoff evidence](../../evidence/process2_pipeline_cache_handoff_20261025.json).
+
+This verifies cache reuse and output preservation in synthetic regressions. It
+does not measure a retail frame-time gain or establish retail image parity. No
+Android APK was rebuilt or installed for this cache change, and the current
+phone session was left untouched.
