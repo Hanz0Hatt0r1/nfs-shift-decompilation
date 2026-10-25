@@ -369,6 +369,43 @@
       "resource_update_returns": ["0x0", "0x0", "0x0"],
       "call_chain": ["0x82BB50E8", "0x82BB4F20", "0x82BB6460", "0x82B98128"],
       "interpretation": "Three Bink-associated resource updates entered the retail allocator, returned non-null addresses, and the update method returned 0 each time; no guest fault was observed. Other resource updates in the same trace were not counted as Bink-associated. This shows guest resource-table progress only; it does not establish a decoded-pixel or GPU-transfer path."
+    },
+    "p1_frame_clock_probe_20261025": {
+      "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "duration_seconds": 46.67,
+      "stop": "Harness sent SIGINT after the guest remained live. GDB recorded no SIGSEGV or SIGBUS before stop.",
+      "input": "No synthetic or physical input was sent.",
+      "instrumentation": "GDB breakpoints on generated guest Bink functions 0x83066838 and 0x830670B8 and wrapper 0x82678FD0; guest PPC registers and memory read through the host ABI. Software breakpoints perturb scheduling.",
+      "gdb_script": {
+        "external_path": "/tmp/nfs-p1-bink-clock-20261025/trace.gdb",
+        "sha256": "d508e8f2529438292ff7c5c9acc530a8069d91edeb757fc7977c5c49aca2e09b"
+      },
+      "runner": {
+        "external_path": "/tmp/nfs-p1-bink-clock-20261025/run.py",
+        "sha256": "a46726e056705330fc9718615b87ac35d215961b1ba11a442582ec75d41b7586"
+      },
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-bink-clock-20261025/gdb.log",
+        "sha256": "27d2b54bcdd328050d210554f7a39aad30787c3c6fe26d2fec719bea5b69ced8"
+      },
+      "host_console_log": {
+        "external_path": "/tmp/nfs-p1-bink-clock-20261025/console.log",
+        "sha256": "16b734de91bad63f2e8fa90b9480c778a9b4e6016537bc2c7af0b7f56c2d5ff7"
+      },
+      "observed": {
+        "video_wrapper_address": "0xBF0E5EA0",
+        "video_wrapper_vtable": "0x82036CBC",
+        "bink_object_address": "0xE6795040",
+        "bink_object_field_0x08": "0x00000119",
+        "bink_object_field_0x0c_at_hit_256": "0x00000100",
+        "wrapper_hits": 280,
+        "ready_check_hits": 280,
+        "clock_helper_hits": 280
+      },
+      "interpretation": "The same non-null Bink object reached the retail readiness and clock helpers. Its +0x0c counter advanced monotonically to 0x100 by update 256 while +0x08 remained 0x119; the readiness and clock helpers each ran 280 times during the bounded trace. Static 0x830670B8 compares +0x0c against +0x08. This confirms progress through the retail Bink timing path, not decoded pixels or a scene transition."
     }
   },
   "external_runtime_report": {
@@ -397,7 +434,8 @@
       "A fresh 40-second P1 GDB trace hit all twelve registered embedded-Bink entry points and called 0x823A0998 656 times; it was manually interrupted without a recorded SIGSEGV or SIGBUS.",
       "A separate 40-second exact-XEX GDB probe observed both Bink manager callback slots dispatching guest targets 0x83068250 and 0x83068608 for each of four entries; the slots were populated and no SIGSEGV/SIGBUS was recorded before manual interruption.",
       "A 38-second exact-XEX probe observed all four callback slots point to distinct downstream guest objects sharing vtable 0x820A8D28. Vtable offsets 56 and 64 contain guest targets 0x82B9C9F0 and 0x82B9DC78.",
-      "A follow-up dynamically hit 0x82B9C9F0, 0x82B9DC78, and 0x82BA9258 four times each. A further probe reached the six-element transform callback three times and read its vtable target 0x82BB50E8. The target adjusts into 0x82BB4F20, whose child vtable methods are RtlEnterCriticalSection/RtlLeaveCriticalSection wrappers; its three Bink-associated resource allocations returned non-null addresses and the update method returned 0 each time. This is resource-table progress, not proof of a graphics sink, pixel transfer, or GPU output."
+      "A follow-up dynamically hit 0x82B9C9F0, 0x82B9DC78, and 0x82BA9258 four times each. A further probe reached the six-element transform callback three times and read its vtable target 0x82BB50E8. The target adjusts into 0x82BB4F20, whose child vtable methods are RtlEnterCriticalSection/RtlLeaveCriticalSection wrappers; its three Bink-associated resource allocations returned non-null addresses and the update method returned 0 each time. This is resource-table progress, not proof of a graphics sink, pixel transfer, or GPU output.",
+      "A 46.67-second exact-XEX trace observed the live video wrapper point to non-null Bink object 0xE6795040. Its +0x0c progress counter advanced to 0x100 by update 256 against a stable +0x08 threshold of 0x119; the retail readiness and clock helpers each ran 280 times."
     ],
     "likely_but_not_runtime_proven": [
       "Process 2's reported sustained pread64 activity while the cutscene was active is consistent with guest Bink decoding; the raw read trace was not available in the shared artifacts."
@@ -406,13 +444,15 @@
       "That execution of the Bink decoder produced a visible video frame.",
       "The exact guest RAM address, texture format, or EDRAM destination for decoded pixels.",
       "That the black frame is caused by a missing host media callback, by the renderer, or by another part of the Bink texture handoff.",
-      "Main-menu entry, offline-race entry, or sustained gameplay."
+      "Main-menu entry, offline-race entry, or sustained gameplay.",
+      "That the advancing Bink counter corresponds to frames decoded or presented, or that natural clip completion leads to frontend/menu progress."
     ],
     "working_conclusion": "The title's Bink decoder and both manager callbacks are guest PPC code inside the XEX; fresh P1 traces confirm the decoder entries execute and populated callback slots dispatch to 0x83068250 and 0x83068608. Those callbacks reference four downstream guest objects sharing vtable 0x820A8D28, and the methods 0x82B9C9F0, 0x82B9DC78, and 0x82BA9258 execute on the traced path. A six-element transform callback executes for three of four comparisons and reaches 0x82BB50E8, which enters a lock/resource-table wrapper. Three Bink-associated resource updates allocate non-null addresses and return 0 without a guest fault. There is no evidence that P1 needs a separate host Bink decoder callback or that callback slots are missing. The surface contract, pixel transfer, and GPU command path remain unverified."
   },
   "limitations": [
     "The fresh P1 GDB probe was interrupted after 40 seconds and instrumented execution; it does not establish the natural video end or a scene transition.",
     "The P2 pread64 totals and draw summary were relayed without their raw log or hash.",
-    "The black readback is evidence of output state only; it does not identify the missing stage."
+    "The black readback is evidence of output state only; it does not identify the missing stage.",
+    "The 46.67-second Bink clock trace used software breakpoints, stopped by SIGINT, and sampled the progress counter only through update 256; it does not establish natural clip completion or a scene transition."
   ]
 }
