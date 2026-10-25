@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-25",
+  "task": "Process 2 bounded asynchronous Vulkan submissions for the captured retail Bink draw",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "gpu": "Mali-G76 MC4",
+    "adb_endpoint": "192.168.1.32:33153",
+    "app_id": "com.hanz0hatt0r.nfsshift",
+    "installed_apk_sha256": "0e574c0a7a92a2cf07a87c245aebe8b657dcd7ad392ffa6ecb651b1877e0b40a",
+    "app_installed_or_restarted_for_this_test": false,
+    "process_remained_resumed": true,
+    "screen_sha256_before_and_after": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839"
+  },
+  "retail_capture": {
+    "asset": "Franchise_Ident.bik",
+    "asset_sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+    "draw_index": 2614,
+    "scope": "Offscreen replay of one captured Bink draw using retail translated vertex, geometry, pixel, and Copy/Convert shaders, captured shader constants, three R8 planes, and harness full-screen rectangle vertices. Does not replay guest decode or the full mixed-sample frame."
+  },
+  "implementation": {
+    "frames_in_flight_limit": 2,
+    "synchronization": "Per-frame VkFence; cached no-readback calls return after submission. Fence-signaled resources are reclaimed on later calls. Reusing an upload slot waits only for frames using that slot; reaching the in-flight bound waits for the oldest frame.",
+    "upload_slots_per_cached_r8_plane": 2,
+    "synchronous_paths": [
+      "output readback requested",
+      "no captured texture cache supplied"
+    ],
+    "api_requirement": "Vulkan 1.1",
+    "window_system_dependency": false
+  },
+  "device_microbenchmark": {
+    "timed_calls_per_sample": 8,
+    "samples_ms_per_call": {
+      "synchronous_baseline": [11.6589, 11.1602, 11.3942],
+      "bounded_in_flight_candidate": [7.41563, 7.61978, 8.20862]
+    },
+    "mean_ms_per_call": {
+      "synchronous_baseline": 11.40443,
+      "bounded_in_flight_candidate": 7.74801
+    },
+    "candidate_elapsed_time_reduction_percent": 32.06,
+    "measurement_limit": "CPU-side renderer-call elapsed time including bounded fence backpressure; not GPU-only time, full-game FPS, or end-to-end Bink playback rate."
+  },
+  "output_parity": {
+    "baseline_raw_sha256": "8295d56ab66664365991ad06a6fb1f018dc3db37ba07afccdad91b2555f41ca1",
+    "candidate_raw_sha256": "8295d56ab66664365991ad06a6fb1f018dc3db37ba07afccdad91b2555f41ca1",
+    "candidate_harness_reported_final_output_matches": true,
+    "nonblack_pixels": 921528
+  },
+  "device_inputs_sha256": {
+    "bink.vert.spv": "6513c3af8972e760ebf88201197fc65bcabf87a6ccdab3c27aed57a5b658269f",
+    "bink.frag.spv": "77a4e4ea038010370ef61f327d49ee4230375c2eeee278032a3d23566188129b",
+    "bink.geom.spv": "c3bfd622a80f01d038d6b250e2fd2e666704f40f0b1350ddb1025f864acc61b0",
+    "copy.vert.spv": "e37d0dca1f6fccefef89a4b49735ed6e99e4997d806d7c5e8b4a8f2945d83646",
+    "copy.single.frag.spv": "8b19e33520fd634b3b434e069d34b65f302cba64c1bc16482b5defc5f6abf116",
+    "plane0.r8": "228cff2ce890f70ddfa4456231a75c2640c875ee25c46409779cf821d6136e2a",
+    "plane1.r8": "a81bcb8aca6abfc5ea1a79d915c851923ddc0a20b985f8b3a360067f053408d5",
+    "plane2.r8": "f1953394e4d76212565e5dbf7e08f03b3fe196e88160d4648be497c9a6ac56b3"
+  },
+  "host_regression": {
+    "native_vulkan_ctest": "4/4 passed",
+    "linux_plugin_ctest": "4/4 passed",
+    "renderer_regression": "Submits four cached asynchronous frames, follows with synchronous readback, and checks output equality with the prior captured test frame.",
+    "vulkan_validation": "Enabled for native renderer CTest; zero validation errors reported."
+  },
+  "artifacts": {
+    "linux_plugin": {
+      "path": "/home/pes/work/process2-inflight-linux-plugin/plugin-output/librexgpu-shift-native.so",
+      "sha256": "42f338bc48e144e9dbc70dd208f9a169f437b506d1c338832896c1a6b83b7f10",
+      "elf_build_id": "e3c76299eada62c5b8a3f10b95f6343732f89137"
+    },
+    "android_arm64_plugin": {
+      "path": "/home/pes/work/process2-android-inflight-plugin/plugin-output/librexgpu-shift-natived.so",
+      "sha256": "9e2f455c127a183f03b3f1626adda904ffa0ca1b8569003e5c83f772db92801a",
+      "elf_build_id": "a220a9df9eaacd654f8cd358eb51ac6ccc4864bc",
+      "full_apk_built_or_installed": false,
+      "provider_sdk_depth_stencil_resolve_capability": "Not present in the v0.10.0 Android provider snapshot."
+    },
+    "arm64_renderer_static_library_sha256": "2d4ad63477fa74157c69d65f454f59e3db5d0a2177743757bbe17f79c27986ef",
+    "candidate_replay_binary_sha256": "726bbf855fa1bd97c64a9c16c05e36954304de0e234e2cf0b86065acfcfd7b6c",
+    "baseline_replay_binary_sha256": "0e428a28cbcc97ebae2cd0e3f99338123a8e2e64c520bc8a7ddb0ec50a622375"
+  },
+  "limitations": [
+    "Single captured draw replay; no claim of full cutscene or game parity.",
+    "The candidate timing is not an end-to-end throughput result.",
+    "No APK was rebuilt or installed; the existing game process was not restarted.",
+    "Language-selector labels remain unverified on this Mali device."
+  ]
+}

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <deque>
 #include <functional>
 #include <initializer_list>
 #include <limits>
@@ -77,19 +78,14 @@ struct TextureCacheKeyHash {
     }
 };
 
+constexpr uint32_t kFramesInFlight = 2;
+
 struct CachedR8Texture {
-    BufferResource upload;
+    std::array<BufferResource, kFramesInFlight> uploads;
     ImageResource image;
     uint64_t estimated_bytes = 0;
     uint64_t last_used_frame = 0;
     bool initialized = false;
-};
-
-struct TextureCacheState {
-    VkDevice device = VK_NULL_HANDLE;
-    uint64_t frame = 0;
-    uint64_t estimated_bytes = 0;
-    std::unordered_map<TextureCacheKey, CachedR8Texture, TextureCacheKeyHash> textures;
 };
 
 constexpr uint64_t kR8TextureCacheBudgetBytes = 16u * 1024u * 1024u;
@@ -116,12 +112,20 @@ struct FrameResources {
     ImageResource mixed_single_depth;
     BufferResource output_readback;
     VkCommandPool command_pool = VK_NULL_HANDLE;
+    VkFence completion_fence = VK_NULL_HANDLE;
+    uint32_t upload_slot = 0;
     std::vector<DrawResources> draws;
     DrawResources copy_draw;
     bool submitted = false;
 
     ~FrameResources() {
-        if (submitted) vkQueueWaitIdle(queue);
+        if (submitted) {
+            if (completion_fence) {
+                vkWaitForFences(device, 1, &completion_fence, VK_TRUE, UINT64_MAX);
+            } else if (queue) {
+                vkQueueWaitIdle(queue);
+            }
+        }
         const auto destroy_draw = [this](DrawResources& draw) {
             if (draw.pipeline) vkDestroyPipeline(device, draw.pipeline, nullptr);
             if (draw.pipeline_layout) vkDestroyPipelineLayout(device, draw.pipeline_layout, nullptr);
@@ -164,6 +168,7 @@ struct FrameResources {
         if (mixed_single_render_pass) vkDestroyRenderPass(device, mixed_single_render_pass, nullptr);
         if (mixed_copy_render_pass) vkDestroyRenderPass(device, mixed_copy_render_pass, nullptr);
         if (command_pool) vkDestroyCommandPool(device, command_pool, nullptr);
+        if (completion_fence) vkDestroyFence(device, completion_fence, nullptr);
     }
 
     void destroy_buffer(BufferResource& resource) const {
@@ -181,6 +186,15 @@ struct FrameResources {
         if (resource.memory) vkFreeMemory(device, resource.memory, nullptr);
         resource = {};
     }
+};
+
+struct TextureCacheState {
+    VkDevice device = VK_NULL_HANDLE;
+    uint64_t frame = 0;
+    uint64_t estimated_bytes = 0;
+    uint32_t upload_slot = 0;
+    std::unordered_map<TextureCacheKey, CachedR8Texture, TextureCacheKeyHash> textures;
+    std::deque<std::unique_ptr<FrameResources>> in_flight;
 };
 
 bool fail(const char* message, std::string* error) {
@@ -326,26 +340,79 @@ bool create_texture_image(
 }
 
 void destroy_cached_r8_texture(VkDevice device, CachedR8Texture& texture) {
-    if (texture.upload.mapped && texture.upload.memory) {
-        vkUnmapMemory(device, texture.upload.memory);
+    for (BufferResource& upload : texture.uploads) {
+        if (upload.mapped && upload.memory) vkUnmapMemory(device, upload.memory);
+        if (upload.buffer) vkDestroyBuffer(device, upload.buffer, nullptr);
+        if (upload.memory) vkFreeMemory(device, upload.memory, nullptr);
     }
-    if (texture.upload.buffer) vkDestroyBuffer(device, texture.upload.buffer, nullptr);
-    if (texture.upload.memory) vkFreeMemory(device, texture.upload.memory, nullptr);
     if (texture.image.view) vkDestroyImageView(device, texture.image.view, nullptr);
     if (texture.image.image) vkDestroyImage(device, texture.image.image, nullptr);
     if (texture.image.memory) vkFreeMemory(device, texture.image.memory, nullptr);
     texture = {};
 }
 
+bool wait_for_frame(FrameResources& frame, std::string* error) {
+    if (!frame.submitted) return true;
+    if (!frame.completion_fence) {
+        return fail("submitted Vulkan frame has no completion fence", error);
+    }
+    const VkResult result = vkWaitForFences(
+        frame.device, 1, &frame.completion_fence, VK_TRUE, UINT64_MAX);
+    if (result != VK_SUCCESS) return vk_fail("vkWaitForFences(frame resources)", result, error);
+    frame.submitted = false;
+    return true;
+}
+
+bool retire_reusable_frames(TextureCacheState* cache, uint32_t upload_slot,
+                            std::string* error) {
+    for (auto it = cache->in_flight.begin(); it != cache->in_flight.end();) {
+        FrameResources& frame = **it;
+        const VkResult status = vkGetFenceStatus(frame.device, frame.completion_fence);
+        if (status == VK_SUCCESS) {
+            frame.submitted = false;
+            it = cache->in_flight.erase(it);
+        } else if (status == VK_NOT_READY && frame.upload_slot == upload_slot) {
+            if (!wait_for_frame(frame, error)) return false;
+            it = cache->in_flight.erase(it);
+        } else if (status == VK_NOT_READY) {
+            ++it;
+        } else {
+            return vk_fail("vkGetFenceStatus(frame resources)", status, error);
+        }
+    }
+    while (cache->in_flight.size() >= kFramesInFlight) {
+        if (!wait_for_frame(*cache->in_flight.front(), error)) return false;
+        cache->in_flight.pop_front();
+    }
+    return true;
+}
+
+bool wait_for_all_frames(TextureCacheState* cache, std::string* error) {
+    while (!cache->in_flight.empty()) {
+        if (!wait_for_frame(*cache->in_flight.front(), error)) return false;
+        cache->in_flight.pop_front();
+    }
+    return true;
+}
+
 bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
                                std::string* error) {
     if (!cache) return true;
-    if (cache->device && cache->device != device && !cache->textures.empty()) {
+    if (cache->device && cache->device != device &&
+        (!cache->textures.empty() || !cache->in_flight.empty())) {
         return fail("captured R8 texture cache cannot be shared across Vulkan devices", error);
     }
     cache->device = device;
     ++cache->frame;
     if (cache->frame == 0) ++cache->frame;
+    cache->upload_slot = static_cast<uint32_t>((cache->frame - 1u) % kFramesInFlight);
+    if (!retire_reusable_frames(cache, cache->upload_slot, error)) return false;
+    const bool evicting = std::any_of(
+        cache->textures.begin(), cache->textures.end(), [&](const auto& entry) {
+            return cache->frame - entry.second.last_used_frame >
+                   kR8TextureCacheLifetimeFrames;
+        });
+    if (evicting && !wait_for_all_frames(cache, error)) return false;
     for (auto it = cache->textures.begin(); it != cache->textures.end();) {
         if (cache->frame - it->second.last_used_frame > kR8TextureCacheLifetimeFrames) {
             cache->estimated_bytes -= it->second.estimated_bytes;
@@ -375,49 +442,60 @@ bool acquire_cached_r8_texture(
     const TextureCacheKey key{draw_index, fetch_constant_index, width, height};
     auto found = cache->textures.find(key);
     if (found == cache->textures.end()) {
-        const uint64_t minimum_allocation = static_cast<uint64_t>(pixels.size()) * 2u;
+        const uint64_t minimum_allocation =
+            static_cast<uint64_t>(pixels.size()) * (1u + kFramesInFlight);
         if (minimum_allocation > kR8TextureCacheBudgetBytes - cache->estimated_bytes) {
             return true;
         }
         CachedR8Texture created{};
-        if (!create_buffer(memory_properties, device, pixels.size(),
-                           VK_BUFFER_USAGE_TRANSFER_SRC_BIT, nullptr,
-                           &created.upload, error) ||
-            !create_texture_image(memory_properties, device, width, height,
+        for (BufferResource& upload : created.uploads) {
+            if (!create_buffer(memory_properties, device, pixels.size(),
+                               VK_BUFFER_USAGE_TRANSFER_SRC_BIT, nullptr,
+                               &upload, error)) {
+                destroy_cached_r8_texture(device, created);
+                return false;
+            }
+        }
+        if (!create_texture_image(memory_properties, device, width, height,
                                   VK_FORMAT_R8_UNORM, &created.image, error)) {
             destroy_cached_r8_texture(device, created);
             return false;
         }
-        created.estimated_bytes = created.upload.allocation_size +
-                                  created.image.allocation_size;
+        created.estimated_bytes = created.image.allocation_size;
+        for (const BufferResource& upload : created.uploads) {
+            created.estimated_bytes += upload.allocation_size;
+        }
         if (created.estimated_bytes >
             kR8TextureCacheBudgetBytes - cache->estimated_bytes) {
             destroy_cached_r8_texture(device, created);
             return true;
         }
-        VkResult result = vkMapMemory(device, created.upload.memory, 0,
-                                      VK_WHOLE_SIZE, 0, &created.upload.mapped);
-        if (result != VK_SUCCESS) {
-            destroy_cached_r8_texture(device, created);
-            return vk_fail("vkMapMemory(cached R8 upload)", result, error);
+        for (BufferResource& upload : created.uploads) {
+            const VkResult result = vkMapMemory(
+                device, upload.memory, 0, VK_WHOLE_SIZE, 0, &upload.mapped);
+            if (result != VK_SUCCESS) {
+                destroy_cached_r8_texture(device, created);
+                return vk_fail("vkMapMemory(cached R8 upload)", result, error);
+            }
         }
         found = cache->textures.emplace(key, std::move(created)).first;
         cache->estimated_bytes += found->second.estimated_bytes;
     }
 
     CachedR8Texture& texture = found->second;
-    std::memcpy(texture.upload.mapped, pixels.data(), pixels.size());
-    if ((texture.upload.memory_flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+    BufferResource& upload = texture.uploads[cache->upload_slot];
+    std::memcpy(upload.mapped, pixels.data(), pixels.size());
+    if ((upload.memory_flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
         VkMappedMemoryRange range{};
         range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-        range.memory = texture.upload.memory;
+        range.memory = upload.memory;
         range.size = VK_WHOLE_SIZE;
         const VkResult result = vkFlushMappedMemoryRanges(device, 1, &range);
         if (result != VK_SUCCESS) return vk_fail("vkFlushMappedMemoryRanges(cached R8)",
                                                  result, error);
     }
     texture.last_used_frame = cache->frame;
-    output->upload = texture.upload;
+    output->upload = upload;
     output->image = texture.image;
     output->upload_old_layout = texture.initialized
         ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
@@ -436,6 +514,7 @@ void finish_texture_cache_frame(TextureCacheState* cache) {
 
 void clear_texture_cache(TextureCacheState* cache) {
     if (!cache) return;
+    wait_for_all_frames(cache, nullptr);
     for (auto& [key, texture] : cache->textures) {
         destroy_cached_r8_texture(cache->device, texture);
     }
@@ -443,6 +522,7 @@ void clear_texture_cache(TextureCacheState* cache) {
     cache->estimated_bytes = 0;
     cache->device = VK_NULL_HANDLE;
     cache->frame = 0;
+    cache->upload_slot = 0;
 }
 
 bool create_render_attachment(
@@ -1423,9 +1503,11 @@ bool submit_mixed_sample_copy_frame(
 
     VkPhysicalDeviceMemoryProperties memory_properties{};
     vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
-    FrameResources resources{};
+    auto resources_owner = std::make_unique<FrameResources>();
+    FrameResources& resources = *resources_owner;
     resources.device = device;
     resources.queue = queue;
+    resources.upload_slot = texture_cache ? texture_cache->upload_slot : 0;
     std::vector<size_t> draw_resource_indices(
         draws.size(), std::numeric_limits<size_t>::max());
     resources.draws.resize(rendered_draw_indices.size());
@@ -2021,17 +2103,23 @@ bool submit_mixed_sample_copy_frame(
     }
     result = vkEndCommandBuffer(command);
     if (result != VK_SUCCESS) return vk_fail("vkEndCommandBuffer(mixed frame)", result, error);
+    VkFenceCreateInfo fence_info{};
+    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    result = vkCreateFence(device, &fence_info, nullptr, &resources.completion_fence);
+    if (result != VK_SUCCESS) return vk_fail("vkCreateFence(mixed frame)", result, error);
     VkSubmitInfo submit{};
     submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit.commandBufferCount = 1;
     submit.pCommandBuffers = &command;
-    result = vkQueueSubmit(queue, 1, &submit, VK_NULL_HANDLE);
+    result = vkQueueSubmit(queue, 1, &submit, resources.completion_fence);
     if (result != VK_SUCCESS) return vk_fail("vkQueueSubmit(mixed frame)", result, error);
     resources.submitted = true;
-    result = vkQueueWaitIdle(queue);
-    if (result != VK_SUCCESS) return vk_fail("vkQueueWaitIdle(mixed frame)", result, error);
-    resources.submitted = false;
     finish_texture_cache_frame(texture_cache);
+    if (output_readback || !texture_cache) {
+        if (!wait_for_frame(resources, error)) return false;
+    } else {
+        texture_cache->in_flight.push_back(std::move(resources_owner));
+    }
     if (output_readback) {
         void* mapped = nullptr;
         result = vkMapMemory(device, resources.output_readback.memory, 0,
@@ -2119,9 +2207,11 @@ bool submit_captured_vulkan_frame(
         texture_cache_state = &CapturedVulkanTextureCacheAccess::get(*texture_cache);
         if (!begin_texture_cache_frame(texture_cache_state, device, error)) return false;
     }
-    FrameResources resources{};
+    auto resources_owner = std::make_unique<FrameResources>();
+    FrameResources& resources = *resources_owner;
     resources.device = device;
     resources.queue = queue;
+    resources.upload_slot = texture_cache_state ? texture_cache_state->upload_slot : 0;
     resources.draws.resize(draws.size());
     const uint32_t samples = draws.front().raster.sample_count;
     const VkSampleCountFlagBits raster_samples = sample_count_flag(samples);
@@ -2754,17 +2844,23 @@ bool submit_captured_vulkan_frame(
     }
     result = vkEndCommandBuffer(command);
     if (result != VK_SUCCESS) return vk_fail("vkEndCommandBuffer", result, error);
+    VkFenceCreateInfo fence_info{};
+    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    result = vkCreateFence(device, &fence_info, nullptr, &resources.completion_fence);
+    if (result != VK_SUCCESS) return vk_fail("vkCreateFence(captured frame)", result, error);
     VkSubmitInfo submit{};
     submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit.commandBufferCount = 1;
     submit.pCommandBuffers = &command;
-    result = vkQueueSubmit(queue, 1, &submit, VK_NULL_HANDLE);
+    result = vkQueueSubmit(queue, 1, &submit, resources.completion_fence);
     if (result != VK_SUCCESS) return vk_fail("vkQueueSubmit(captured frame)", result, error);
     resources.submitted = true;
-    result = vkQueueWaitIdle(queue);
-    if (result != VK_SUCCESS) return vk_fail("vkQueueWaitIdle(captured frame)", result, error);
-    resources.submitted = false;
     finish_texture_cache_frame(texture_cache_state);
+    if (output_readback || !texture_cache_state) {
+        if (!wait_for_frame(resources, error)) return false;
+    } else {
+        texture_cache_state->in_flight.push_back(std::move(resources_owner));
+    }
     if (output_readback) {
         void* mapped = nullptr;
         result = vkMapMemory(device, resources.output_readback.memory, 0,

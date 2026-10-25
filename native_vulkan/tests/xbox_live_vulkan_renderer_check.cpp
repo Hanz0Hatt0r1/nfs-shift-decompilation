@@ -431,6 +431,30 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    shift::xbox::CapturedVulkanTextureCache asynchronous_cache;
+    for (uint32_t frame = 0; frame < 4; ++frame) {
+        if (!shift::xbox::submit_captured_vulkan_frame(
+                physical_device, device, queue, queue_family, output_image, output_view,
+                true, 1280, 720, draws, &error, nullptr,
+                enabled_features.geometryShader, &copy, false, {}, pipeline_cache,
+                &asynchronous_cache)) {
+            std::cerr << "asynchronous cached Vulkan frame " << frame
+                      << " failed: " << error << '\n';
+            return 1;
+        }
+    }
+    std::vector<uint32_t> asynchronous_readback;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            true, 1280, 720, draws, &error, &asynchronous_readback,
+            enabled_features.geometryShader, &copy, false, {}, pipeline_cache,
+            &asynchronous_cache) || asynchronous_readback != cached_output) {
+        std::cerr << "in-flight cached Vulkan frames changed the captured output: "
+                  << error << '\n';
+        return 1;
+    }
+    asynchronous_cache.clear();
+
     auto window_coordinates = draw;
     window_coordinates.vertex_shader_spirv = std::move(window_vertex_spirv);
     window_coordinates.geometry_shader_spirv = rectangle_geometry_spirv;

@@ -81,10 +81,13 @@ class CapturedVulkanTextureCache {
 };
 
 // Records and submits the captured game draws into the ReXGlue presenter image.
-// The caller must externally synchronize the supplied graphics queue. The
-// optional pipeline cache must belong to device and be externally synchronized
-// across calls; its lifetime remains owned by the caller. The renderer uses
-// only Vulkan 1.1 and has no window-system dependency. Set
+// With a texture cache and no readback request, frame resources remain owned by
+// that cache until their Vulkan fences signal; without a cache, or with a
+// readback request, the call waits for completion. The caller must externally
+// synchronize the supplied graphics queue. The optional pipeline cache must
+// belong to device and be externally synchronized across calls; its lifetime
+// remains owned by the caller. The renderer uses only Vulkan 1.1 and has no
+// window-system dependency. Set
 // depth_stencil_resolve_enabled only from an affirmative provider capability
 // that includes enabled Vulkan entry points and SAMPLE_ZERO support for both
 // depth and stencil, not from extension enumeration alone.
