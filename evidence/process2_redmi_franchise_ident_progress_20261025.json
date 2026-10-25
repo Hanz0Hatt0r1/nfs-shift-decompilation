@@ -1,0 +1,72 @@
+{
+  "schema": "shift.process2.redmi_franchise_ident_progress.v1",
+  "date": "2026-10-25",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 6314
+  },
+  "retail_movie": {
+    "file": "Franchise_Ident.bik",
+    "sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+    "hash_match_evidence": "process2_redmi_note8pro_franchise_ident_android_20261025.json"
+  },
+  "phone_captures": [
+    {
+      "file": "process2_redmi_franchise_ident_frame_a_20261025.png",
+      "sha256": "9788c3052a2ab26fe6fe7daf09dbe742bcb6a27813e37a72626c0c10ccbb9e93",
+      "host_monotonic_capture_midpoint_seconds": 10757.676,
+      "best_source_match_seconds": 4.9,
+      "pearson_grayscale_correlation": 0.90713
+    },
+    {
+      "file": "process2_redmi_franchise_ident_frame_b_20261025.png",
+      "sha256": "f6a58e1800500c15921dfc0fdd4d0552777721d7b98349e1532056a11e6ee81f",
+      "host_monotonic_capture_midpoint_seconds": 10764.914,
+      "best_source_match_seconds": 5.1,
+      "pearson_grayscale_correlation": 0.99732
+    },
+    {
+      "file": "process2_redmi_franchise_ident_frame_c_20261025.png",
+      "sha256": "c1fcfb698b3a361f6c747b262e3414bf5e4493be48ccd769f454f6f4c8634132",
+      "host_monotonic_capture_midpoint_seconds": 10859.581,
+      "best_source_match_seconds": 7.7,
+      "pearson_grayscale_correlation": 0.99812
+    }
+  ],
+  "comparison": {
+    "method": "Crop the 16:9 game viewport, scale phone and retail frames to 160x90 grayscale, sample the Bink source at 10 fps, and select the maximum normalized Pearson correlation.",
+    "intervals": [
+      {"wall_seconds": 7.238, "source_seconds_advanced_nearest_sample": 0.2},
+      {"wall_seconds": 94.667, "source_seconds_advanced_nearest_sample": 2.6}
+    ],
+    "overall_media_seconds_per_wall_second_estimate": 0.0275,
+    "interpretation": "The phone is displaying and advancing the original retail Franchise_Ident Bink video through the native Vulkan path, at roughly 2.7% of source playback speed during this session. Source-time estimates are quantized to 0.1 seconds; this is not a direct frame counter or an FPS measurement."
+  },
+  "cpu_snapshot": {
+    "device_local_time": "2026-10-25T14:25:17+03:00",
+    "source": "top -H -b -n 1 -p 6314",
+    "one_shot_thread_cpu_percent": {
+      "SHIFT Native GPU worker": 116,
+      "Core 0/0 Main": 116,
+      "Core 2/1 Controller thread A": 106,
+      "Core 2/1 Controller thread B": 103,
+      "Audio Worker": 66.6
+    },
+    "simpleperf": "Could not open cpu-cycles perf event: permission denied."
+  },
+  "test_state": {
+    "game_process_left_running": true,
+    "apk_updated_or_reinstalled": false,
+    "installed_plugin_includes_commit_2eead541": false,
+    "no_speedup_claim_for_recent_r8_changes": true
+  },
+  "limits": [
+    "Frame matching proves this video content is reaching the display and moving forward; it does not prove the complete video or startup transition finishes.",
+    "The installed Android plugin predates the latest R8 row-copy change, so this observation is not an after-change benchmark.",
+    "The CPU snapshot is not a profile and cannot allocate the playback delay to the renderer alone."
+  ]
+}
