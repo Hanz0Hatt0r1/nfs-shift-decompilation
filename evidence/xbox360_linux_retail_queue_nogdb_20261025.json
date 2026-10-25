@@ -1,0 +1,224 @@
+{
+  "schema": "shift.xbox360.linux.retail-queue-nogdb-probe.v1",
+  "captured_at_utc": "2026-10-25T18:56:08Z",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "host": {
+      "path": "/tmp/nfs-p1-queue-nogdb-20261026/bin/nfs_shift",
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "runtime": {
+      "path": "/home/pes/work/rexglue-sdk-xbox360-memory-lifecycle-20261025/out/linux-amd64/Release/librexruntime.so",
+      "sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b"
+    },
+    "gpu_plugin": {
+      "path": "/home/pes/work/process2-latest-renderer-handover-20261026/librexgpu-shift-native-linux-x86_64.so",
+      "sha256": "e2679a4ca54178a312af3f6cc7cc2ba0eb8dd562a8e730a32131068d46736bf4"
+    },
+    "runtime_paths_verified_from_proc_maps": true
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "duration_seconds": 75.005,
+    "return_code": 0,
+    "instrumentation": "No GDB or breakpoints. Read-only sampling through /proc/<pid>/mem; no guest-memory writes.",
+    "memory_mapping": "Guest virtual addresses were read through the 0x100000000 host alias; the shared mapping was marked deleted while the process ran.",
+    "sample_script_external": "/tmp/run_nfs_p1_queue_nogdb_20261026.py",
+    "sample_script_sha256": "64c020ef6620433340a876e0a03f9847c96b6673b49f129105a0157605754808"
+  },
+  "retail_queue": {
+    "object_guest_address": "0xB7365F00",
+    "head_pointer_field_object_plus": "0x2A90",
+    "head_writeback_guest_address": "0xB7AF4000",
+    "tail_field_object_plus": "0x2A9C",
+    "predicate_byte_field_object_plus": "0x2ABD",
+    "tested_completion_mask": "0x02",
+    "representative_samples": [
+      {
+        "elapsed_seconds": 2.006,
+        "head": 3,
+        "tail": 21,
+        "predicate": "0x14"
+      },
+      {
+        "elapsed_seconds": 25.778,
+        "head": 3569,
+        "tail": 3571,
+        "predicate": "0x04"
+      },
+      {
+        "elapsed_seconds": 33.816,
+        "head": 4275,
+        "tail": 4277,
+        "predicate": "0x04"
+      },
+      {
+        "elapsed_seconds": 34.821,
+        "head": 4329,
+        "tail": 4339,
+        "predicate": "0x04"
+      },
+      {
+        "elapsed_seconds": 74.855,
+        "head": 4329,
+        "tail": 4339,
+        "predicate": "0x04"
+      }
+    ],
+    "unchanged_final_state": {
+      "head": 4329,
+      "tail": 4339,
+      "predicate": "0x04",
+      "pending_cursor_units": 10,
+      "stable_sample_count": 38,
+      "first_elapsed_seconds": 34.821,
+      "last_elapsed_seconds": 74.855
+    },
+    "sampling_note": "The sampled address/layout matches the earlier GDB-observed retail wait object. This run did not sample the current guest PC, so it does not prove the main thread remained in that wait function."
+  },
+  "runtime_log": {
+    "path_external": "/tmp/nfs-p1-queue-nogdb-20261026/bin/logs/nfs_shift_001.log",
+    "sha256": "163754edb073949cd7f52f234b09b5bb8b383aaed2ea3afbc3b9a9730f10ab38",
+    "indexed_draw_submission_entries": 105,
+    "last_submission_local_time": "2026-10-25 21:56:41.642",
+    "copy_convert_entries": 940,
+    "last_copy_convert_local_time": "2026-10-25 21:56:41.612",
+    "menu_background_open_failures": 4,
+    "first_menu_background_failure_local_time": "2026-10-25 21:56:41.698",
+    "guest_fault_entries": 0,
+    "vulkan_frame_refresh_failures": 0
+  },
+  "game_window_captures": [
+    {
+      "elapsed_seconds": 41.08,
+      "path_external": "/tmp/nfs-p1-queue-nogdb-20261026/captures/t38.png",
+      "sha256": "e92cda5dd71a28c610a40e54a0d5eeb2d220fe5dfd0747d9ae8fbeef242bf3e3",
+      "observation": "Retail driving-safety warning text"
+    },
+    {
+      "elapsed_seconds": 54.148,
+      "path_external": "/tmp/nfs-p1-queue-nogdb-20261026/captures/t54.png",
+      "sha256": "1b8768ffbcfcd8be6c82b148db09fde535dbdb8d6d405b2136fc3877ed876d5d",
+      "observation": "Pixel-identical retail driving-safety warning text"
+    },
+    {
+      "elapsed_seconds": 68.126,
+      "path_external": "/tmp/nfs-p1-queue-nogdb-20261026/captures/t68.png",
+      "sha256": "ea59640b4194a7b74ed0647b6132f5b2f68dc2960ee9581f421465641a04cc13",
+      "observation": "Pixel-identical retail driving-safety warning text"
+    }
+  ],
+  "input_schedule": [
+    {
+      "at": 8.033,
+      "button": "A",
+      "edge": "press"
+    },
+    {
+      "at": 8.686,
+      "button": "A",
+      "edge": "release"
+    },
+    {
+      "at": 15.043,
+      "button": "Start",
+      "edge": "press"
+    },
+    {
+      "at": 15.693,
+      "button": "Start",
+      "edge": "release"
+    },
+    {
+      "at": 24.025,
+      "button": "A",
+      "edge": "press"
+    },
+    {
+      "at": 24.675,
+      "button": "A",
+      "edge": "release"
+    },
+    {
+      "at": 35.023,
+      "button": "Start",
+      "edge": "press"
+    },
+    {
+      "at": 35.673,
+      "button": "Start",
+      "edge": "release"
+    },
+    {
+      "at": 41.133,
+      "button": "A",
+      "edge": "press"
+    },
+    {
+      "at": 41.783,
+      "button": "A",
+      "edge": "release"
+    },
+    {
+      "at": 48.018,
+      "button": "A",
+      "edge": "press"
+    },
+    {
+      "at": 48.669,
+      "button": "A",
+      "edge": "release"
+    },
+    {
+      "at": 56.011,
+      "button": "Start",
+      "edge": "press"
+    },
+    {
+      "at": 56.661,
+      "button": "Start",
+      "edge": "release"
+    },
+    {
+      "at": 64.044,
+      "button": "A",
+      "edge": "press"
+    },
+    {
+      "at": 64.694,
+      "button": "A",
+      "edge": "release"
+    },
+    {
+      "at": 70.034,
+      "button": "A",
+      "edge": "press"
+    },
+    {
+      "at": 70.684,
+      "button": "A",
+      "edge": "release"
+    }
+  ],
+  "interpretation": {
+    "supported": [
+      "The exact retail XEX stayed alive for 75 seconds without debugger breakpoints or guest faults.",
+      "The guest-visible ring head advanced early in the run, then remained 4329 while the tail remained 4339 and completion mask 0x02 stayed clear for 38 read-only samples spanning 40.034 seconds.",
+      "The game window remained pixel-identical on the safety warning across the three captured samples.",
+      "The host log recorded 105 indexed draw submissions and 940 Copy/Convert accepts; four menu_background.xml opens failed after the last recorded draw submission."
+    ],
+    "not_proven": [
+      "That the menu_background.xml misses caused the queue to stop.",
+      "Which component must consume or retire the remaining cursor units.",
+      "That A/Start reached the active frontend action handler in this run.",
+      "Main-menu entry or offline-race entry.",
+      "That a P1 scheduler or PPC semantic defect exists; the sampled queue/head state is a runtime observation, not a call-stack sample."
+    ],
+    "next_p1_step": "Trace the current guest PC and exact caller/return path as the retail queue stops advancing; keep the original completion predicate and VFS result semantics unchanged unless that trace proves a P1 defect."
+  }
+}
