@@ -1,0 +1,72 @@
+{
+  "schema": "shift.xbox360.linux.private-shm-unlink-integration.v1",
+  "captured_at_utc": "2026-10-25T08:44:39Z",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "build": {
+    "platform": "Linux AMD64",
+    "sdk_repository": "https://github.com/Hanz0Hatt0r1/rexglue-sdk",
+    "sdk_branch": "work/xbox360-memory-lifecycle-20261025",
+    "sdk_commit": "58e4d4b973aac482a1fb08a665195a30c7b5e5b9",
+    "sdk_parent": "ede359f8a93cd26cb95531a0b39ed8584aa93bb7",
+    "release_runtime_sha256": "85a519fbac4eedac961ca48fc1108ffa2cd8d045fbb878b5b52f6adac4c773e0",
+    "patch_sha256": "e9dc73e87968f980714d6608d9d906b35cba21cd90ac513ad2b5a8f761fd1ccb",
+    "tested_patch_commit": "d68122821a670dc1beea9990ecf411b12bf86f6a",
+    "targeted_tests": {
+      "command": "/usr/bin/ctest --test-dir out/build/linux-amd64 -C Debug -R 'POSIX mapping' --output-on-failure",
+      "result": "2 passed",
+      "patch_matches_sdk_commit": true
+    }
+  },
+  "runtime": {
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "original_app_runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+    "selected_runtime_sha256": "85a519fbac4eedac961ca48fc1108ffa2cd8d045fbb878b5b52f6adac4c773e0",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+    "runtime_selection": "Temporary LD_LIBRARY_PATH override; no app or plugin files were changed.",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-linux-retail-root-20261024/game",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "input_events_sent": false,
+    "guest_memory_modified": false
+  },
+  "run": {
+    "bounded_seconds": 25,
+    "termination": "timeout sent SIGINT after the observation window; exit code 124",
+    "guest_memory_arena_mapped": true,
+    "runtime_activity": [
+      "The retail title initialized and logged the 0x100000000/0x200000000 guest memory arena.",
+      "The selected plugin started its guest vblank worker, then logged repeated captured indexed draw submissions and source-0/sample-0 Copy/Convert activity."
+    ],
+    "runtime_log": {
+      "external_path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_034.log",
+      "sha256": "aa6c5dd66645d88291a90d276a47391b65aeca3af8444172454608cabbb9b47b"
+    },
+    "launch_output": {
+      "external_path": "/tmp/nfs-p1-patched-shm-run-release.log",
+      "sha256": "c848530a35e0d41b82034e1221ea6ce931b239251fb36b13b8769e6ed8776aea"
+    },
+    "shm_observation": {
+      "own_mapping": "xenia_memory_1121940028151; /proc map entries showed (deleted) while the game process was alive",
+      "unrelated_live_mapping": "A separate concurrently running nfs_shift process owned the only linked xenia_memory_* name observed; it was left untouched.",
+      "sigbus": false
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The current SDK Release runtime loaded with the unchanged P1 host executable and selected P2 plugin, passed guest-memory initialization and entered retail execution.",
+      "The private POSIX shared-memory name was unlinked while the runtime retained usable mappings; the separate live process's named mapping was not mistaken for this run's backing object.",
+      "The same source patch has two passing focused POSIX mapping lifecycle regressions."
+    ],
+    "not_proven": [
+      "The renderer output was visually correct or the game reached its main menu or an offline race.",
+      "Linux ARM64/Android compatibility or Vulkan 1.1-only device compatibility.",
+      "That the SDK fix has been merged or packaged into the app's default runtime."
+    ]
+  }
+}
