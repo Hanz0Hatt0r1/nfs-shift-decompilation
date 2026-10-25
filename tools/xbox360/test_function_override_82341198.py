@@ -59,5 +59,16 @@ assert evidence["codegen_validation"]["next_registered_entry"] == "0x823411DC"
 assert evidence["build_validation"]["result"] == "success"
 assert evidence["postbuild_runtime_attempt"]["entered_xstart"] is True
 assert evidence["postbuild_runtime_attempt"]["entered_82341198"] is False
+probe = evidence["current_exact_xex_probe_20261025"]
+assert probe["xex_sha256"] == evidence["xex_sha256"]
+assert probe["host_executable_sha256"] == "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+assert probe["runtime_override_sha256"] == "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90"
+assert probe["gpu_plugin_sha256"] == "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637"
+assert probe["duration_seconds"] >= 70
+assert probe["input_injected"] is False
+assert probe["breakpoint"] == {"guest_address": "0x82341198", "hits": 0}
+assert "0x823B34A0" in probe["main_guest_thread_stack_at_interrupt"]
+assert "SIGINT after 75 seconds" in probe["termination"]
+assert "point-in-time sample" in probe["interpretation"]
 assert overrides["functions"]["0x82341198"] == {}
 print("0x82341198: live bytes, tail paths, codegen, build, and override match")

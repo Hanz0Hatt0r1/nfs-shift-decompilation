@@ -125,10 +125,34 @@
     "termination": "Timeout interrupted GDB at 180 seconds; the inferior reported no trap or crash.",
     "host_log": "/tmp/nfs_shift_82341198_postbuild.log"
   },
+  "current_exact_xex_probe_20261025": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+    "duration_seconds": 75.62,
+    "input_injected": false,
+    "breakpoint": {
+      "guest_address": "0x82341198",
+      "hits": 0
+    },
+    "main_guest_thread_stack_at_interrupt": [
+      "compare<unsigned int>",
+      "0x823B34A0",
+      "0x823B3850"
+    ],
+    "host_interrupt_location": "libnvidia-glcore.so.580.178.04",
+    "termination": "The harness sent SIGINT after 75 seconds. No guest trap, crash, or process fault was observed.",
+    "gdb_log": "/tmp/nfs-p1-current-82341198-20261025/gdb.log",
+    "gdb_log_sha256": "1cad718b9e019e903738e678f7868cc11d6db327c15aca7d0e94d843fd3682f6",
+    "host_log": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_111.log",
+    "host_log_sha256": "78e56d8e6c8c0f54f3f71533fcf72aec638a28231bc69a536d0cca35601bc83a",
+    "interpretation": "This sampled the retail guest main thread in the already documented ring-queue wait helper. It did not execute 0x82341198 during this bounded run. The SIGINT stack is a point-in-time sample, not proof that this remained the only active guest path throughout the run."
+  },
   "capture_limitations": [
     "The invalid-function trap occurred before any instruction at 0x82341198 executed; these bytes establish the live mapping and control flow, not the values or selected path in that run.",
     "The local extracted default.pe artifact (extraction provenance unverified; SHA-256 23844dbba0cf72bc11512821b90008ea5d2b06ee886d921f416ca6caae43a628) is not byte-equivalent: its mapped byte at 0x82341198 is 0x90 while this exact retail XEX live capture begins with 0x81.",
-    "Codegen/build registration are verified. The post-build launch entered xstart but did not reach 0x82341198 within 180 seconds; the selected retail path and next runtime frontier remain unknown.",
+    "Codegen/build registration are verified. The post-build launch entered xstart but did not reach 0x82341198 within 180 seconds. A separate 75.62-second exact-XEX follow-up using the current runtime override also did not reach it; its sampled guest thread was in the previously documented retail ring-queue wait. The selected path to this dispatcher remains unknown.",
     "The user confirmed that the loading screen appeared during a ReXGlue Xbox run, but the exact process/build hash was not recorded and the screen is no longer visible. It is not correlated to this controlled binary."
   ],
   "independent_decode": {
