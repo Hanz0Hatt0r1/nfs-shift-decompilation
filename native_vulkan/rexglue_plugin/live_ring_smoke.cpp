@@ -432,6 +432,23 @@ int main(int argc, char** argv) {
     }
     std::cout << "selected-frame raw vertex/index dump matches decoded fixture buffers\n";
   }
+  const char* texture_dump_prefix =
+      std::getenv("SHIFT_NATIVE_VULKAN_DUMP_TEXTURES_PREFIX");
+  if (texture_dump_prefix && *texture_dump_prefix) {
+    const std::string texture_dump_path =
+        std::string(texture_dump_prefix) + ".frame1.draw0.texture0.rgba8";
+    std::ifstream texture_file(texture_dump_path, std::ios::binary);
+    const std::vector<uint8_t> dumped_texture(
+        std::istreambuf_iterator<char>(texture_file), {});
+    if (dumped_texture.size() != kTextureBytes ||
+        !std::all_of(dumped_texture.begin(), dumped_texture.end(),
+                     [](uint8_t value) { return value == 0xFFu; })) {
+      std::cerr << diagnostics << '\n';
+      return fail(
+          "selected-frame texture dump differs from the captured fixture bytes");
+    }
+    std::cout << "selected-frame raw texture dump matches captured fixture bytes\n";
+  }
   if (!consumed) {
     std::cerr << diagnostics << '\n';
     return fail("PM4 stream was not consumed through live MMIO");

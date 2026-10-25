@@ -166,12 +166,27 @@ The timing does not establish that these file misses caused the stop. The
 renderer still has no verified menu-background or race-scene frame, and the
 purple strips' draw/resource source remains unknown.
 
+## Current Redmi screen and installed package (2026-10-25)
+
+A read-only ADB capture at 19:48:28 shows the app still resumed as PID 7611.
+The 2340x1080 screen has readable safety-disclaimer text and thin purple bars
+on black; it does not show the language selector. The installed base APK hash
+is `03f76b91…83c4e8df`. Its two packaged ARM64 renderer aliases are byte-identical,
+with SHA-256 `f84281d8…b9a2f03` and ELF BuildID
+`63b26354123b2e2755d39e89612abf29d0e10777`. This confirms package contents,
+but `/proc/7611/maps` is restricted, so the DSO mapped in the running process
+was not independently verified in this capture. No APK install or app restart
+was performed. See the [device record](../evidence/process2_redmi_current_disclaimer_20261025.json)
+and [screen capture](../evidence/process2_redmi_current_disclaimer_20261025.png).
+
 ## Verification boundary
 
 - Native Vulkan regressions: 4/4 passed, including Vulkan validation.
-- ReXGlue plugin regressions: 4/4 against the current SDK, including the
-  `EVENT_WRITE_SHD` physical/virtual alias check and selected-frame geometry
-  dump; the resolve-capability provider branch passes 4/4.
+- Latest ReXGlue host plugin regressions: 5/5 with
+  `VK_LAYER_KHRONOS_validation`, including `EVENT_WRITE_SHD` aliasing, selected
+  geometry and RGBA8 texture dumps, readback, and resolve capability. The new
+  texture test checks a 1 MiB synthetic white texture fixture; it verifies dump
+  plumbing, not retail texture parity. See the [test record](../evidence/process2_selected_draw_dump_regression_20261025.json).
 - ARM64 shader translation regression passed on the Redmi Note 8 Pro. The
   actual frame-10 loading capture and later frame-1,026 disclaimer capture
   exercise the Android retail Vulkan path.
@@ -181,6 +196,21 @@ purple strips' draw/resource source remains unknown.
 - Host Vulkan and plugin regressions pass with Vulkan validation enabled. The
   phone does not provide `VK_LAYER_KHRONOS_validation`; the live readback is
   runtime evidence, not device validation-layer coverage.
+
+## Current resolve-enabled Android candidate (2026-10-25)
+
+A fresh ARM64 DSO was built from the current P2 source against the resolve SDK
+branch and linked with the unchanged runtime DSO extracted from the installed
+APK. The generated link passed `--no-undefined`. Both packaged aliases are
+identical, and an APK candidate built from the installed base passes zip
+alignment and APK v3 signature verification with the same debug signer. It
+selects presenter frame 1026 for readback. The candidate has not been installed;
+PID 7611 was left untouched. Standalone shell-process probes could not validate
+the provider or plugin: the capability check aborted with `std::bad_cast`, and
+a minimal `dlopen` probe faulted inside the extracted runtime before returning.
+Those failures happened outside the app Activity/JVM context and are
+inconclusive about an in-app load. The candidate needs an application-context
+retail run before it can be treated as usable. See the [candidate build record](../evidence/process2_current_resolve_android_plugin_candidate_20261025.json).
 
 The retail Linux log also confirms `EVENT_WRITE_SHD` writes the descriptor's
 physical base `0x17AF4000` (`1 -> 3 -> 5`), while Vd RPTR writeback separately
