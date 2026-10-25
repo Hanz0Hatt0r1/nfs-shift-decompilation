@@ -23,7 +23,9 @@
     "compiler": "Clang 22.1.8",
     "architecture": "linux-amd64",
     "artifact": "/home/pes/work/process2-p1-ring-trace-handover-20261026b/librexgpu-shift-native.so",
-    "sha256": "9aaa4ea81faf1fb55981cce7ac59e99b34ca66943bbec7850af18e20c73425bc"
+    "sha256": "9aaa4ea81faf1fb55981cce7ac59e99b34ca66943bbec7850af18e20c73425bc",
+    "canonical_p1_handover_alias": "/home/pes/work/process2-p1-ring-trace-handover-20261026/librexgpu-shift-native.so",
+    "old_8192_cap_backup": "/home/pes/work/process2-p1-ring-trace-handover-20261026/librexgpu-shift-native-8192cap.so"
   },
   "validation": {
     "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation SHIFT_NATIVE_VULKAN_TRACE_RING=1 /usr/bin/ctest --test-dir /home/pes/work/process2-p2161-plugin-build-clang --output-on-failure -V -R '^rexgpu_shift_native_live_ring_'",
@@ -47,7 +49,7 @@
   "trace_observation": {
     "format_strings_present_in_plugin": true,
     "smoke_harness_log_capture": "Plugin REXLOG trace records were not surfaced in the smoke harness output; the harness verifies ring consumption but not the logger sink. A P1 retail run is needed to confirm records and correlate the live guest WPTR.",
-    "retail_trace": "The first P1 retail trace was captured but exhausted the earlier 8,192-record cap before the menu_background.xml transition; the current build raises the cap to 32,768."
+    "retail_trace": "Two P1 retail runs confirmed real WPTR trace records but both used the earlier 8,192-record DSO and exhausted its cap before the menu_background.xml transition. The canonical handover path now points to the 32,768-record build for the next run."
   },
   "first_p1_retail_trace": {
     "process_id": 547583,
@@ -75,13 +77,33 @@
     "interpretation": "The trace cap was reached 3.506 seconds before the menu_background.xml probes. It proves WPTR notifications and normal packet snapshot/expansion earlier in this run, but does not establish whether WPTR 5651 reached the plugin at the later transition. The log continued to record Copy/Convert operations through 22:53:31.121.",
     "process_state_at_inspection": "The retail process was still alive. It was not stopped or modified by Process 2."
   },
+  "second_p1_retail_trace": {
+    "process_id": 551463,
+    "workdir": "/dev/shm/nfs-p1-ring-trace-retail-20261026c",
+    "loaded_plugin_path": "/home/pes/work/process2-p1-ring-trace-handover-20261026/librexgpu-shift-native.so",
+    "loaded_plugin_sha256": "8f456faa20677d87daa3e729dda009b3000c3c62937dfbe190dcb066f56fe5b9",
+    "trace_records_emitted": 8192,
+    "last_trace_record": {
+      "id": 8191,
+      "time_local": "2026-10-25T22:58:36.367+03:00",
+      "kind": "wptr",
+      "previous": 5414,
+      "new": 5417,
+      "rptr": 5393,
+      "ring_dwords": 8192,
+      "generation": 1
+    },
+    "menu_background_probes_time_local": "2026-10-25T22:58:44.558+03:00",
+    "termination_time_local": "2026-10-25T22:59:04.206+03:00",
+    "interpretation": "The second run repeated the cap exhaustion with the same old 8,192-record plugin path. The guest reached the same menu_background.xml missing-file probes; it did not exercise the 32,768-record build. The old DSO was preserved separately and the canonical handover path was updated only after the process exited."
+  },
   "p1_correlation_target": {
     "observed_guest_snapshot": {
       "queue_head": 5641,
       "queue_tail": 5651,
       "predicate": "0x04"
     },
-    "unresolved": "Existing P1 evidence does not prove that CP_RB_WPTR=5651 reached the plugin."
+    "unresolved": "Both trace runs ended at WPTR 5396 and 5417, respectively, before their caps. Neither establishes whether CP_RB_WPTR=5651 reaches the plugin."
   },
   "language_selector_note": {
     "root_cause_commit": "ac7f5793a9d794e81078cd08bdbef15e0babcd0e",

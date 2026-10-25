@@ -15,10 +15,11 @@ write-pointer notification and worker state.
 The 2026-10-26 Linux diagnostic build passed all three live-ring CTests with
 `VK_LAYER_KHRONOS_validation` forced through the loader. Those tests use
 synthetic geometry and resources. Their output does not expose the plugin's
-`REXLOG` trace sink. The first P1 retail run confirmed the records and actual
-WPTR updates, but the previous 8,192-record cap ended before the
-`menu_background.xml` probes. This build raises the cap to 32,768. With the
-same synthetic readback fixture, trace-off and trace-on output was
+`REXLOG` trace sink. Two P1 retail runs confirmed actual WPTR updates, but both
+loaded the old 8,192-record DSO and exhausted its trace before the
+`menu_background.xml` probes. The canonical P1 handover path now points to the
+32,768-record build; the old binary is preserved with an `-8192cap` suffix.
+With the same synthetic readback fixture, trace-off and trace-on output was
 byte-identical. Build hash, commands, scope, and the unresolved P1 pointer
 observation are recorded in
 [`process2_ring_trace_smoke_20261026.json`](../../evidence/process2_ring_trace_smoke_20261026.json).
