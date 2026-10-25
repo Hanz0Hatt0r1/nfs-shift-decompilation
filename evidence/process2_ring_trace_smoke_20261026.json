@@ -36,6 +36,14 @@
     "scope": "The ring tests submit synthetic fixture geometry/resources through Vulkan 1.1. The selected-draw dump and magenta readback are test fixtures, not retail parity evidence.",
     "validation_layer": "VK_LAYER_KHRONOS_validation was forced through the Vulkan loader environment; CTest exited successfully and emitted no validation diagnostics."
   },
+  "trace_transparency_check": {
+    "test": "rexgpu_shift_native_live_ring_readback_check",
+    "validation_layer": "VK_LAYER_KHRONOS_validation",
+    "trace_off_readback_sha256": "bac5569a33a5dbff11ac418a9c89bd18824c1bc0c862420c8da1d7598fc328f2",
+    "trace_on_readback_sha256": "bac5569a33a5dbff11ac418a9c89bd18824c1bc0c862420c8da1d7598fc328f2",
+    "byte_identical": true,
+    "fixture_scope": "Synthetic magenta live-ring draw fixture, not a retail frame."
+  },
   "trace_observation": {
     "format_strings_present_in_plugin": true,
     "smoke_harness_log_capture": "Plugin REXLOG trace records were not surfaced in the smoke harness output; the harness verifies ring consumption but not the logger sink. A P1 retail run is needed to confirm records and correlate the live guest WPTR.",
