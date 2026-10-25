@@ -1,7 +1,7 @@
 {
   "schema": "shift.process2.android_prebuilt_runtime_plugin.v1",
-  "observed_at_local": "2026-10-26T02:18:59+03:00",
-  "purpose": "Build the latest Process 2 ARM64 Vulkan plugin and package it without rebuilding the Android runtime or disturbing the live phone session.",
+  "observed_at_local": "2026-10-26T02:25:02+03:00",
+  "purpose": "Build, package, install and live-test the latest Process 2 ARM64 Vulkan plugin without rebuilding the Android runtime.",
   "source": {
     "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
     "branch": "work/process2-xbox-live-ring-20261023",
@@ -11,7 +11,8 @@
     "ndk": "28.2.13676358",
     "android_abi": "arm64-v8a",
     "android_api": 26,
-    "build_type": "Debug"
+    "build_type": "Debug",
+    "handoff_source_commit": "7162a6e17fed53d9ab7e86235ae213933e75d027"
   },
   "build": {
     "directory": "/tmp/nfs-p2-prebuilt-runtime-build",
@@ -55,7 +56,31 @@
     "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
     "zipalign": "passed with 16-KiB page alignment for uncompressed native libraries"
   },
-  "device_state": {
+  "verification": {
+    "cmake_android_plugin_target": "passed",
+    "elf_and_runtime_dependency_inspection": "passed",
+    "apk_signature_and_certificate_check": "passed",
+    "apk_zipalign_check": "passed",
+    "apk_payload_comparison": "passed; only the two Process 2 plugin aliases changed",
+    "renderer_core_host_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation forced; see process2_draw_upload_buffer_cache_ctest_20261026.log.",
+    "renderer_core_redmi_test": "passed on Mali-G76 MC4 with Vulkan 1.1.131; see process2_draw_upload_buffer_cache_redmi_check_20261026.log. This is an offscreen regression binary, not this APK.",
+    "retail_plugin_runtime_test": "APK installed and plugin loaded; original loading/logo/disclaimer frames presented through the live Vulkan path. No Bink/cutscene or racing-scene result established."
+  },
+  "limits": [
+    "This is not a full Android application/runtime rebuild; it intentionally reuses the packaged runtime DSO.",
+    "The live run confirms presentation of loading, logo and safety-disclaimer frames through the plugin on Mali-G76/Vulkan 1.1; it does not establish Bink playback, cutscene output, racing-scene rendering, full retail parity or performance.",
+    "The safety-disclaimer text is readable, but thin purple horizontal artifacts remain near the screen edges.",
+    "The language selector was skipped because the English selection persisted; this run does not verify selector text visibility.",
+    "No Khronos validation layer is available on the device; on-device verification used the dedicated offscreen regression binary.",
+    "Process 1 runtime/source files were not changed by the plugin-only build or installation."
+  ],
+  "references": {
+    "renderer_core_cache_evidence": "process2_draw_upload_buffer_cache_20261026.json",
+    "host_ctest_log": "process2_draw_upload_buffer_cache_ctest_20261026.log",
+    "redmi_regression_log": "process2_draw_upload_buffer_cache_redmi_check_20261026.log",
+    "live_retail_screenshot_and_log": "/home/pes/work/process2-latest-renderer-handover-20261026/android-plugin-buffer-cache-20261026/live-retail-evidence"
+  },
+  "pre_install_device_state": {
     "device": "Redmi Note 8 Pro (begonia)",
     "gpu": "Mali-G76 MC4",
     "vulkan": "1.1.131",
@@ -69,26 +94,28 @@
     "app_input_or_restart_sent": false,
     "candidate_plugin_loaded_by_game": false
   },
-  "verification": {
-    "cmake_android_plugin_target": "passed",
-    "elf_and_runtime_dependency_inspection": "passed",
-    "apk_signature_and_certificate_check": "passed",
-    "apk_zipalign_check": "passed",
-    "apk_payload_comparison": "passed; only the two Process 2 plugin aliases changed",
-    "renderer_core_host_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation forced; see process2_draw_upload_buffer_cache_ctest_20261026.log.",
-    "renderer_core_redmi_test": "passed on Mali-G76 MC4 with Vulkan 1.1.131; see process2_draw_upload_buffer_cache_redmi_check_20261026.log. This is an offscreen regression binary, not this APK.",
-    "retail_plugin_runtime_test": "not run; candidate was not installed"
-  },
-  "limits": [
-    "This is not a full Android application/runtime rebuild; it intentionally reuses the packaged runtime DSO.",
-    "The packaged P2 plugin has not been loaded in the game on the phone.",
-    "No new retail scene parity or performance claim follows from the build/package checks.",
-    "The live guest remains at the disclaimer after its final captured submission; this scene-transition frontier is separate from the plugin build path.",
-    "The project working tree and all Process 1 source/runtime files remain unmodified by the build; the existing game package was not installed or changed."
-  ],
-  "references": {
-    "renderer_core_cache_evidence": "process2_draw_upload_buffer_cache_20261026.json",
-    "host_ctest_log": "process2_draw_upload_buffer_cache_ctest_20261026.log",
-    "redmi_regression_log": "process2_draw_upload_buffer_cache_redmi_check_20261026.log"
+  "device_state": {
+    "device": "Redmi Note 8 Pro (begonia)",
+    "gpu": "Mali-G76 MC4",
+    "vulkan": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615",
+    "package_process_id": 24561,
+    "activity_top_resumed": true,
+    "apk_installed_or_launched": true,
+    "apk_sha256_matches_candidate": true,
+    "candidate_plugin_loaded_by_game": true,
+    "screen": "Retail safety disclaimer text visible; thin purple horizontal artifacts remain near screen edges. Frame unchanged across two captures 7 seconds apart.",
+    "screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "guest_log": "/home/pes/work/process2-latest-renderer-handover-20261026/android-plugin-buffer-cache-20261026/live-retail-evidence/nfs_shift_013.log",
+    "guest_log_sha256": "cd7a6d77e224f2b4b577834374060aba5c040d63373cb32f8a5ef0655909ee93",
+    "captured_indexed_draw_submission_lines": 641,
+    "captured_copy_convert_lines": 641,
+    "live_transition_sequence": [
+      "Loading screen with the original logo and orange/yellow progress bar; first captured frame also showed Loading text.",
+      "Full-screen original Need for Speed Shift logo.",
+      "Retail safety disclaimer text on black with thin purple horizontal artifacts."
+    ],
+    "evidence_directory": "/home/pes/work/process2-latest-renderer-handover-20261026/android-plugin-buffer-cache-20261026/live-retail-evidence",
+    "language_selector": "Not shown in this run because the saved English selection persisted."
   }
 }

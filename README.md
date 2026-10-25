@@ -237,6 +237,8 @@ The separate `shift-native` ReXGlue plugin consumes the Xbox guest PM4 ring and 
 
 The 2026-10-24 Android rebuild on Redmi Note 8 Pro now dispatches the guest source-0/VBlank callback at 60 Hz. Its runtime log records two guest swaps, two Vulkan frame submissions, and a fully black readback and screenshot; no additional PM4 batches appeared during the next 170 seconds. VBlank delivery is therefore confirmed, while visible retail output and progress beyond those startup batches remain unverified. See the [VBlank probe](evidence/process2_redmi_note8pro_vblank_probe_20261024.json).
 
+The 2026-10-26 plugin-only ARM64 build was installed on the Redmi Note 8 Pro and loaded by the retail game using the existing runtime DSO. The live Vulkan output advanced through the original loading screen, SHIFT logo, and safety disclaimer; the plugin log records 641 captured indexed-draw submissions and 641 Copy/Convert presentations. The disclaimer text is readable, with thin purple artifacts at the screen edges. The persisted English selection skipped the language selector, and this run did not verify Bink/cutscene or racing output. This confirms those startup frames only, not retail parity; see the [Android plugin build and live-run evidence](evidence/process2_android_prebuilt_runtime_plugin_20261026.json).
+
 ## Validation
 
 The repository records reproducible evidence instead of treating local success as proof.
