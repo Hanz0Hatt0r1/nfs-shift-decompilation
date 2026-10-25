@@ -52,6 +52,8 @@ A 70.35-second exact-XEX run with `--mnk_mode=true` emitted six Enter/Space puls
 
 A direct retail event-dispatch trace tied keyboard Enter to virtual target `0x82321198`. The generated body is the original one-instruction return, so this is a base no-op method, not an identified frontend action consumer. Preserve that guest behavior; the trace does not explain the active scene or establish menu/race progress. An earlier global-address probe was invalid and is excluded. See the [virtual-dispatch evidence](../evidence/xbox360_linux_keyboard_virtual_dispatch_20261025.json).
 
+A fresh 72-second Linux run captured only the `nfs_shift` window while emitting five uinput A/Start pulses. The window changed from black to the SHIFT emblem and then to the driving-safety warning; captures at 32, 44, 56, and 68 seconds are byte-identical. This run had no same-run XAM trace, so it does not prove the pulses reached retail input or caused any transition. The host log recorded 100 indexed submissions, then four missing `menu_background.xml` opens and no later submissions; that timing does not establish causality. The main menu and race remain unverified. See the [window/input run evidence](../evidence/xbox360_linux_uinput_gamepad_window_20261025.json).
+
 ## Proposed pipeline
 
 ```text
