@@ -1,0 +1,96 @@
+{
+  "schema": "shift.xbox360.linux-uinput-gamepad-window.v1",
+  "captured_on": "2026-10-25",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b",
+    "gpu_plugin": "shift-native",
+    "gpu_plugin_sha256": "42f338bc48e144e9dbc70dd208f9a169f437b506d1c338832896c1a6b83b7f10",
+    "arguments": [
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation",
+      "--fullscreen=false"
+    ]
+  },
+  "run": {
+    "duration_seconds": 72.05,
+    "termination": "The harness sent SIGINT; the host process returned 0 after ReXGlue logged title termination. No GDB breakpoints or guest-memory writes were used.",
+    "input_device": "Linux uinput Microsoft Xbox 360 pad, VID:PID 045e:028e",
+    "input_events": [
+      { "at_seconds": 12, "button": "A", "duration_ms": 750 },
+      { "at_seconds": 22, "button": "Start", "duration_ms": 750 },
+      { "at_seconds": 34, "button": "A", "duration_ms": 750 },
+      { "at_seconds": 46, "button": "Start", "duration_ms": 750 },
+      { "at_seconds": 58, "button": "A", "duration_ms": 750 }
+    ],
+    "same_run_guest_xam_state_trace": false,
+    "runtime_log": {
+      "external_path": "/tmp/nfs-p1-private-bin-20261025/logs/nfs_shift_020.log",
+      "sha256": "58562d75817f37a6590cd53fd9189b98258d112951ce17ac336bfc129c58a533",
+      "indexed_draw_submission_entries": 100,
+      "packets_per_entry": 14,
+      "resolution": [1280, 720],
+      "last_submission_before_xml_misses": "2026-10-25 18:13:36.632",
+      "first_menu_background_xml_miss": "2026-10-25 18:13:36.682",
+      "menu_background_xml_misses": 4,
+      "draw_submissions_after_misses": 0
+    },
+    "runner_console_sha256": "58dc51b74aca6dfd7f74f0441fa5298722b32d42fafdd0441e81a212a4a6a5ba"
+  },
+  "window_capture": {
+    "title": "nfs_shift [rexglue-v0.10.0-Release]",
+    "capture_method": "ImageMagick import of the game window X11 window ID; no desktop capture",
+    "dimensions": [879, 579],
+    "samples": [
+      {
+        "at_seconds": 8,
+        "sha256": "bfab665b1a87ee24204163ac64183ba56e3a036b4d8ff10287888c1a301d10b9",
+        "external_path": "/tmp/nfs-p1-linux-input-window-20261025/window-08s.png",
+        "visual_observation": "Black window before the logo frame."
+      },
+      {
+        "at_seconds": 20,
+        "sha256": "7cd6f820684c5bea60f7759cbdacaf35bdda93813ca6abd8b76c67d75d485f4b",
+        "repository_path": "evidence/screenshots/xbox360_linux_shift_logo_window_20261025.png",
+        "visual_observation": "Original SHIFT emblem on black background."
+      },
+      {
+        "at_seconds": 32,
+        "sha256": "5fe66dc058ea08a2ccc0633f3eeba387af2dc8e8f4c718cc5b73dd71c19cc4dc",
+        "repository_path": "evidence/screenshots/xbox360_linux_safety_warning_screen_20261025.png",
+        "visual_observation": "Retail driving-safety warning."
+      },
+      {
+        "at_seconds": 44,
+        "sha256": "5fe66dc058ea08a2ccc0633f3eeba387af2dc8e8f4c718cc5b73dd71c19cc4dc"
+      },
+      {
+        "at_seconds": 56,
+        "sha256": "5fe66dc058ea08a2ccc0633f3eeba387af2dc8e8f4c718cc5b73dd71c19cc4dc"
+      },
+      {
+        "at_seconds": 68,
+        "sha256": "5fe66dc058ea08a2ccc0633f3eeba387af2dc8e8f4c718cc5b73dd71c19cc4dc"
+      }
+    ]
+  },
+  "interpretation": {
+    "supported": [
+      "The target window changed from a black startup frame to the SHIFT logo, then to the safety warning by 32 seconds.",
+      "The 32-, 44-, 56-, and 68-second window captures are byte-identical; the later captures follow the A/Start events at 34, 46, and 58 seconds.",
+      "The host log records 100 submissions of 14 indexed packets before four missing menu_background.xml opens; no further submission is logged afterward."
+    ],
+    "not_proven": [
+      "That any button reached XamInputGetState in this same run or caused the black-to-logo-to-warning changes.",
+      "That the missing XML caused the unchanged warning frame or stopped the submissions.",
+      "Main-menu entry, offline-race entry, or correct sustained rendering."
+    ],
+    "cross_reference": "A separate exact-XEX run recorded A/Start masks 0x1000/0x0010 in successful retail XamInputGetState polls; see evidence/xbox360_linux_gamepad_frontend_consumer_probe_20261025.json. The diagnostic run used a different runtime override."
+  }
+}
