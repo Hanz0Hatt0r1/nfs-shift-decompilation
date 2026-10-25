@@ -348,3 +348,22 @@ game's cutscene scheduling. The app stayed resumed at the disclaimer; its
 before/after screenshot hashes match, and no input, reinstall, or restart was
 used. Android has no Vulkan validation layer, so validation coverage remains
 from host CTest. No Process 1 files were changed.
+
+## Redmi current runtime frontier (2026-10-26)
+
+A read-only check of the currently installed app found it still resumed as PID
+24808 on the Redmi Note 8 Pro. Its latest retained guest log records 1,090
+successful Vulkan presenter submissions between 20:36:46 and 20:38:20 MSK,
+then two failed opens for `D:\tracks\_data\instances\scenes\menu_background.xml`
+and `D:\tracks\_data\static\scenes\menu_background.xml` at 20:38:21. The
+screen captured at 00:08:18 MSK remains the legal disclaimer with the same
+purple strips; its SHA-256 matches the earlier capture. The app was not
+restarted and no input was sent. See the [device record](../evidence/process2_redmi_menu_scene_block_20261026.json),
+[screen capture](../evidence/process2_redmi_menu_scene_block_20261026.png), and
+[compressed guest log](../evidence/process2_redmi_menu_scene_block_20261026.log.gz).
+
+This confirms that the live session currently provides no post-disclaimer menu
+or race draws to specify another renderer change. The file failures are owned
+by Process 1's runtime/content path; their timing does not prove causality. The
+Android process map is restricted, so the loaded renderer DSO hash is unknown.
+No Process 1 files were changed.
