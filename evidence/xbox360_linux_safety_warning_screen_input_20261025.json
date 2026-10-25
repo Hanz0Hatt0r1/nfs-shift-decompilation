@@ -1,0 +1,81 @@
+{
+  "schema": "shift.xbox360.linux-safety-warning-screen-input.v1",
+  "captured_at_local": "2026-10-25T17:45:45+03:00",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b",
+    "gpu_plugin": "shift-native",
+    "gpu_plugin_sha256": "42f338bc48e144e9dbc70dd208f9a169f437b506d1c338832896c1a6b83b7f10",
+    "game_data_root": "/home/pes/work/process2-linux-retail-root-20261024/game",
+    "arguments": [
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation",
+      "--fullscreen=false",
+      "--mnk_mode=true"
+    ],
+    "bounded_seconds": 70.35,
+    "termination": "External SIGINT while the guest remained running; app log shows normal title shutdown and no guest fault, SIGSEGV, or SIGBUS."
+  },
+  "input": {
+    "device": "Linux uinput keyboard",
+    "events_emitted": [
+      { "at_seconds": 10, "key": "Enter", "duration_ms": 500 },
+      { "at_seconds": 20, "key": "Space", "duration_ms": 500 },
+      { "at_seconds": 30, "key": "Enter", "duration_ms": 500 },
+      { "at_seconds": 40, "key": "Space", "duration_ms": 500 },
+      { "at_seconds": 50, "key": "Enter", "duration_ms": 500 },
+      { "at_seconds": 60, "key": "Space", "duration_ms": 500 }
+    ],
+    "same_run_retail_xam_delivery_proven": false,
+    "cross_reference": "A separate exact-XEX trace confirms Enter/Space reach retail sub_82307790 and callbacks 0x822FBC48/0x822FBCD8; see xbox360_linux_keyboard_keystroke_route_20261025.json."
+  },
+  "window_captures": {
+    "game_window": {
+      "title": "nfs_shift [rexglue-v0.10.0-Release]",
+      "width": 879,
+      "height": 579
+    },
+    "before": {
+      "at_seconds": 45,
+      "external_path": "/tmp/nfs-p1-mnk-window-20261025/window-before.png",
+      "sha256": "5fe66dc058ea08a2ccc0633f3eeba387af2dc8e8f4c718cc5b73dd71c19cc4dc"
+    },
+    "after": {
+      "at_seconds": 65,
+      "repository_path": "evidence/screenshots/xbox360_linux_safety_warning_screen_20261025.png",
+      "sha256": "5fe66dc058ea08a2ccc0633f3eeba387af2dc8e8f4c718cc5b73dd71c19cc4dc"
+    },
+    "visible_text": "If you want to race, then take it to your local track. Make sure your car is safety inspected, always wear a helmet and your seatbelt."
+  },
+  "runtime_log": {
+    "external_path": "/tmp/nfs-p1-private-bin-20261025/logs/nfs_shift_012.log",
+    "sha256": "dd94805e2dcc0451773662faff47a753786c2fb93f5b6782bb78c1b81b87d429",
+    "captured_draw_submission_entries": 1047,
+    "captured_copy_convert_entries": 1047,
+    "last_draw_submission": "2026-10-25T17:45:12.055+03:00",
+    "first_menu_background_xml_open_failure": "2026-10-25T17:45:12.119+03:00",
+    "failed_menu_background_xml_open_count": 4,
+    "draw_submissions_after_first_failure": 0
+  },
+  "interpretation": {
+    "supported": [
+      "The exact process window showed byte-identical captures at 45 and 65 seconds, including after the harness emitted Enter/Space pulses.",
+      "Retail draw submission logging stopped immediately before the four menu_background.xml open failures in this run; the temporal ordering does not establish that the missing XML caused the stop.",
+      "This run did not reach a verified main menu or offline race."
+    ],
+    "not_proven": [
+      "That the emitted keyboard events reached the retail XAM poll in this same run.",
+      "That the safety warning is the active frontend scene rather than a static intro/video frame.",
+      "That the XML lookup or renderer caused the unchanged image.",
+      "That draw submission counts establish visible gameplay."
+    ],
+    "next_p1_step": "Correlate a same-run retail input event with the actual frontend scene/action consumer and read-only scene transition state; do not alias menu_background.xml or alter the retail wait predicate based on this timing alone."
+  }
+}
