@@ -37,6 +37,23 @@ assert frontier["last_draw_submission_before_first_missing_xml"]["indexed_packet
 assert frontier["first_missing_xml_local_time"] > frontier["last_draw_submission_before_first_missing_xml"]["local_time"]
 assert frontier["draw_submission_entries_after_last_missing_xml"] == 0
 assert frontier["later_ntcreatefile_hits"] == [72, 73]
+field_probe = evidence["retail_parent_field_probe_20261025"]
+assert field_probe["target_xex_sha256"] == evidence["target"]["xex_sha256"]
+assert field_probe["bounded_seconds"] == 65
+assert field_probe["input_events_sent"] is False
+assert field_probe["guest_memory_modified_by_probe"] is False
+observed = field_probe["observed"]
+assert observed["parent_guest_object"] == "0x831EA280"
+assert observed["caller_lr"] == "0x82E8BDB4"
+assert observed["child_loader_return"] == "0x00000000"
+assert observed["stored_parent_field_offset"] == 1456
+assert observed["stored_field_value"] == "0x00000000"
+assert observed["later_field_access_hits"] == 0
+assert observed["candidate_reader"] == "0x82B84CD8"
+assert observed["candidate_reader_hits_for_parent"] == 0
+assert observed["guest_faults"] == []
+assert observed["draw_submissions_after_xml_misses"] == 0
+assert "does not establish a causal link" in " ".join(field_probe["interpretation"]["supported"])
 instructions = {item["address"]: item["bytes_big_endian"] for item in evidence["instruction_checks"]}
 assert instructions == {
     "0x82F7CB44": "4bfffa1d",
