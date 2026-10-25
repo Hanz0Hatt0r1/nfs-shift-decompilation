@@ -98,11 +98,12 @@ std::string swizzled_vector(const CapturedShaderAluInstruction& instruction,
     return result;
 }
 
-std::string scalar_source(const CapturedShaderAluInstruction& instruction,
-                          CapturedShaderStage stage) {
+std::string scalar_source_component(
+    const CapturedShaderAluInstruction& instruction,
+    CapturedShaderStage stage, uint32_t source_component) {
     const uint32_t source = 2;
-    const uint32_t component =
-        (3u + ((instruction.source_swizzles[source] >> 6) & 3u)) & 3u;
+    const uint32_t component = captured_alu_source_component(
+        instruction.source_swizzles[source], source_component);
     std::string base;
     if (instruction.source_is_temporary[source]) {
         base = "r[" + std::to_string(
@@ -117,6 +118,24 @@ std::string scalar_source(const CapturedShaderAluInstruction& instruction,
     std::string result = base + "." + component_name(component);
     if (instruction.source_negate[source]) result = "(-" + result + ")";
     return result;
+}
+
+std::string scalar_source(const CapturedShaderAluInstruction& instruction,
+                          CapturedShaderStage stage) {
+    return scalar_source_component(instruction, stage, 3);
+}
+
+std::string scalar_source_x(const CapturedShaderAluInstruction& instruction,
+                            CapturedShaderStage stage) {
+    return scalar_source_component(instruction, stage, 0);
+}
+
+std::string scalar_multiply(const std::string& a, const std::string& b) {
+    // D3D9 flushes zero and denormal scalar multiply operands to +0.
+    constexpr char kMinNormal[] = "1.1754943508222875e-38";
+    return "((" + a + " == 0.0 || abs(" + a + ") < " + kMinNormal +
+           " || " + b + " == 0.0 || abs(" + b + ") < " + kMinNormal +
+           ") ? 0.0 : (" + a + " * " + b + "))";
 }
 
 std::string scalar_constant(CapturedShaderStage stage, uint32_t reg,
@@ -391,9 +410,30 @@ bool emit_alu(std::ostringstream& glsl,
         }
     }
 
-    if (scalar_result_mask != 0) {
-        std::string scalar;
-        switch (instruction.scalar_opcode) {
+    std::string scalar;
+    switch (instruction.scalar_opcode) {
+            case 3:
+                scalar = scalar_multiply(scalar_source(instruction, stage),
+                                         "previous_scalar");
+                break;
+            case 5:
+                scalar = "(" + scalar_source(instruction, stage) + " >= " +
+                         scalar_source_x(instruction, stage) + " ? " +
+                         scalar_source(instruction, stage) + " : " +
+                         scalar_source_x(instruction, stage) + ")";
+                break;
+            case 6:
+                scalar = "(" + scalar_source(instruction, stage) + " < " +
+                         scalar_source_x(instruction, stage) + " ? " +
+                         scalar_source(instruction, stage) + " : " +
+                         scalar_source_x(instruction, stage) + ")";
+                break;
+            case 23:
+                scalar = "(" + scalar_source(instruction, stage) + " >= " +
+                         scalar_source_x(instruction, stage) + " ? " +
+                         scalar_source(instruction, stage) + " : " +
+                         scalar_source_x(instruction, stage) + ")";
+                break;
             case 12:
                 scalar = "trunc(" + scalar_source(instruction, stage) + ")";
                 break;
@@ -404,11 +444,15 @@ bool emit_alu(std::ostringstream& glsl,
                 if (instruction.source_is_temporary[2]) {
                     return fail("captured MULSC0 constant operand is not a constant", error);
                 }
-                scalar = scalar_constant(stage, instruction.source_registers[2],
-                                         instruction.scalar_constant_component,
-                                         constant_relative(instruction, 2)) +
-                         " * r[" + std::to_string(instruction.scalar_temporary_register) +
-                         "]." + component_name(instruction.scalar_temporary_component);
+                scalar = scalar_multiply(
+                    scalar_constant(stage, instruction.source_registers[2],
+                                    instruction.scalar_constant_component,
+                                    constant_relative(instruction, 2)),
+                    "r[" + std::to_string(instruction.scalar_temporary_register) +
+                        "]." + component_name(instruction.scalar_temporary_component));
+                break;
+            case 50:
+                scalar = "previous_scalar";
                 break;
             default: {
                 std::ostringstream message;
@@ -416,8 +460,15 @@ bool emit_alu(std::ostringstream& glsl,
                         << " writes an unsupported result";
                 return fail_at_slot(message.str());
             }
-        }
-        if (instruction.scalar_clamp) scalar = "clamp(" + scalar + ", 0.0, 1.0)";
+    }
+    if (instruction.scalar_opcode != 50) {
+        // Every scalar opcode except RETAIN_PREV replaces ps, even when its
+        // scalar destination mask is empty.
+        glsl << "  previous_scalar = " << scalar << ";\n";
+    }
+    if (scalar_result_mask != 0) {
+        const std::string scalar_output = instruction.scalar_clamp ?
+            "clamp(previous_scalar, 0.0, 1.0)" : "previous_scalar";
         std::string target;
         if (instruction.export_data) {
             target = export_target;
@@ -430,16 +481,14 @@ bool emit_alu(std::ostringstream& glsl,
         for (uint32_t lane = 0; lane < 4; ++lane) {
             if (scalar_result_mask & (1u << lane)) {
                 glsl << "  " << target << "." << component_name(lane)
-                     << " = " << scalar << ";\n";
+                     << " = " << scalar_output << ";\n";
             }
         }
-    } else if (instruction.scalar_opcode == 23) {
+    }
+    if (instruction.scalar_opcode == 23) {
         const std::string address_value = scalar_source(instruction, stage);
         glsl << "  a0 = clamp(int(floor(" << address_value
              << " + 0.5)), -256, 255);\n";
-    } else if (!(instruction.export_data && instruction.scalar_write_mask != 0) &&
-               instruction.scalar_opcode != 50 && instruction.scalar_opcode != 5) {
-        return fail("captured ALU scalar opcode is unsupported", error);
     }
     for (uint32_t lane = 0; lane < 4; ++lane) {
         if (constant_one_mask & (1u << lane)) {
@@ -647,7 +696,7 @@ bool translate_captured_shader_glsl(
     }
     glsl << "void main() {\n  vec4 r[64];\n"
          << "  for (int i=0; i<64; ++i) r[i]=vec4(0.0);\n"
-         << "  int a0=0;\n";
+         << "  int a0=0;\n  float previous_scalar=0.0;\n";
     if (stage == CapturedShaderStage::Vertex) {
         glsl << "  r[0].x=float(gl_VertexIndex);\n  gl_Position=vec4(0.0);\n"
              << "  gl_PointSize=1.0;\n"
@@ -733,7 +782,7 @@ bool translate_captured_shader_glsl(
                         if (!record_constant_source(alu, sources[i], error)) return false;
                     }
                 }
-                if (scalar_result_mask != 0 || alu.scalar_opcode == 23) {
+                if (alu.scalar_opcode != 50) {
                     if (!record_constant_source(alu, 2, error)) return false;
                 }
                 if (!emit_alu(glsl, stage, instruction.address, alu,
