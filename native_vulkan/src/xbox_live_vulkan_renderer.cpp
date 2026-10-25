@@ -40,6 +40,7 @@ struct DrawTextureResources {
   VkSampler sampler = VK_NULL_HANDLE;
   VkImageLayout upload_old_layout = VK_IMAGE_LAYOUT_UNDEFINED;
   bool cached = false;
+  bool cached_sampler = false;
 };
 
 struct DrawResources {
@@ -94,6 +95,37 @@ struct CachedR8Texture {
 constexpr uint64_t kR8TextureCacheBudgetBytes = 16u * 1024u * 1024u;
 constexpr uint64_t kR8TextureCacheLifetimeFrames = 120;
 constexpr size_t kGraphicsPipelineCacheEntryLimit = 128;
+constexpr size_t kSamplerCacheEntryLimit = 64;
+
+struct SamplerCacheKey {
+  std::array<uint32_t, 9> values{};
+
+  bool operator==(const SamplerCacheKey& other) const {
+    return values == other.values;
+  }
+};
+
+struct SamplerCacheKeyHash {
+  size_t operator()(const SamplerCacheKey& key) const noexcept {
+    size_t hash = 2166136261u;
+    for (uint32_t value : key.values) hash = hash * 16777619u ^ value;
+    return hash;
+  }
+};
+
+SamplerCacheKey make_sampler_cache_key(const VkSamplerCreateInfo& info) {
+  SamplerCacheKey key{};
+  std::memcpy(&key.values[7], &info.maxAnisotropy, sizeof(info.maxAnisotropy));
+  key.values[0] = static_cast<uint32_t>(info.magFilter);
+  key.values[1] = static_cast<uint32_t>(info.minFilter);
+  key.values[2] = static_cast<uint32_t>(info.mipmapMode);
+  key.values[3] = static_cast<uint32_t>(info.addressModeU);
+  key.values[4] = static_cast<uint32_t>(info.addressModeV);
+  key.values[5] = static_cast<uint32_t>(info.addressModeW);
+  key.values[6] = info.anisotropyEnable;
+  key.values[8] = static_cast<uint32_t>(info.borderColor);
+  return key;
+}
 
 struct CachedGraphicsPipeline {
   VkPipeline pipeline = VK_NULL_HANDLE;
@@ -168,7 +200,7 @@ struct FrameResources {
       if (draw.pixel_shader)
         vkDestroyShaderModule(device, draw.pixel_shader, nullptr);
       for (DrawTextureResources &texture : draw.textures) {
-        if (texture.sampler)
+        if (texture.sampler && !texture.cached_sampler)
           vkDestroySampler(device, texture.sampler, nullptr);
         if (!texture.cached) {
           destroy_image(texture.image);
@@ -248,6 +280,7 @@ struct TextureCacheState {
   std::unordered_map<GraphicsPipelineKey, CachedGraphicsPipeline,
                      GraphicsPipelineKeyHash>
       graphics_pipelines;
+  std::unordered_map<SamplerCacheKey, VkSampler, SamplerCacheKeyHash> samplers;
   std::deque<std::unique_ptr<FrameResources>> in_flight;
 };
 
@@ -488,8 +521,8 @@ bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
     if (!cache) return true;
     if (cache->device && cache->device != device &&
         (!cache->textures.empty() || !cache->graphics_pipelines.empty() ||
-         !cache->in_flight.empty())) {
-        return fail("captured R8 texture cache cannot be shared across Vulkan devices", error);
+         !cache->samplers.empty() || !cache->in_flight.empty())) {
+        return fail("captured Vulkan resource cache cannot be shared across devices", error);
     }
     cache->device = device;
     ++cache->frame;
@@ -608,6 +641,10 @@ void clear_texture_cache(TextureCacheState* cache) {
         destroy_cached_graphics_pipeline(cache->device, pipeline);
     }
     cache->graphics_pipelines.clear();
+    for (auto& [key, sampler] : cache->samplers) {
+        if (sampler) vkDestroySampler(cache->device, sampler, nullptr);
+    }
+    cache->samplers.clear();
     for (auto& [key, texture] : cache->textures) {
         destroy_cached_r8_texture(cache->device, texture);
     }
@@ -1021,10 +1058,25 @@ bool create_draw_resources(
           "captured sampler state is outside the Vulkan 1.1 live-draw subset",
           error);
     }
-    const VkResult sampler_result =
-        vkCreateSampler(device, &sampler_info, nullptr, &texture.sampler);
-    if (sampler_result != VK_SUCCESS)
-      return vk_fail("vkCreateSampler", sampler_result, error);
+    const SamplerCacheKey sampler_key = make_sampler_cache_key(sampler_info);
+    if (texture_cache) {
+      const auto cached_sampler = texture_cache->samplers.find(sampler_key);
+      if (cached_sampler != texture_cache->samplers.end()) {
+        texture.sampler = cached_sampler->second;
+        texture.cached_sampler = true;
+      }
+    }
+    if (!texture.sampler) {
+      const VkResult sampler_result =
+          vkCreateSampler(device, &sampler_info, nullptr, &texture.sampler);
+      if (sampler_result != VK_SUCCESS)
+        return vk_fail("vkCreateSampler", sampler_result, error);
+      if (texture_cache &&
+          texture_cache->samplers.size() < kSamplerCacheEntryLimit) {
+        texture_cache->samplers.emplace(sampler_key, texture.sampler);
+        texture.cached_sampler = true;
+      }
+    }
   }
 
   VkResult result = VK_SUCCESS;
@@ -2416,6 +2468,10 @@ size_t CapturedVulkanTextureCache::size() const {
 
 size_t CapturedVulkanTextureCache::cached_pipeline_count() const {
     return impl_ ? impl_->state.graphics_pipelines.size() : 0;
+}
+
+size_t CapturedVulkanTextureCache::cached_sampler_count() const {
+    return impl_ ? impl_->state.samplers.size() : 0;
 }
 
 bool submit_captured_vulkan_frame(

@@ -1,0 +1,121 @@
+{
+  "schema": "shift.process2.redmi_bink_sampler_cache_replay.v1",
+  "date": "2026-10-25",
+  "task": "Compare the Android Mali replay of one captured retail Bink draw before and after adding a bounded VkSampler object cache.",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "gpu": "Mali-G76 MC4",
+    "android_version": "13",
+    "vulkan_api": "1.1",
+    "validation_layer_available": false,
+    "game_app": {
+      "package": "com.hanz0hatt0r.nfsshift",
+      "pid_before_and_after": 24808,
+      "activity_remained_resumed": true,
+      "screenshot_sha256_before": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+      "screenshot_sha256_after": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+      "install_restart_or_input_sent": false
+    }
+  },
+  "retail_capture": {
+    "asset": "Franchise_Ident.bik",
+    "asset_sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+    "draw_index": 2614,
+    "vertex_shader_spirv_sha256": "6513c3af8972e760ebf88201197fc65bcabf87a6ccdab3c27aed57a5b658269f",
+    "pixel_shader_spirv_sha256": "77a4e4ea038010370ef61f327d49ee4230375c2eeee278032a3d23566188129b",
+    "geometry_shader_spirv_sha256": "c3bfd622a80f01d038d6b250e2fd2e666704f40f0b1350ddb1025f864acc61b0",
+    "r8_planes_sha256": [
+      "228cff2ce890f70ddfa4456231a75c2640c875ee25c46409779cf821d6136e2a",
+      "a81bcb8aca6abfc5ea1a79d915c851923ddc0a20b985f8b3a360067f053408d5",
+      "f1953394e4d76212565e5dbf7e08f03b3fe196e88160d4648be497c9a6ac56b3"
+    ],
+    "scope": "Offscreen replay of one captured retail Bink draw with translated retail shaders, captured constants, fullscreen rectangle geometry, and three R8 planes. It bypasses guest Bink decoding and does not replay the mixed-sample presenter frame or the full game."
+  },
+  "builds": {
+    "baseline": {
+      "description": "The prior bounded-inflight and graphics-pipeline-cache ARM64 replay, without the new P2 sampler-object cache.",
+      "source_renderer_commit": "99cdd93a92a580d562ca3f0c4c88e2e4a9d3b537",
+      "replay_binary_sha256": "038477749f57bf556466e701523a13c1e0728d98af80175aa4bd3f02d9d707f7"
+    },
+    "sampler_cache_candidate": {
+      "source_base_commit": "bc1076f8c54de5214660f35d668ccb2a3005d837",
+      "renderer_static_archive_sha256": "c4d06c8d2b8f837f6da81e34ad197770f39835b8d326c33d9ad1eda17f1fbcd0",
+      "replay_binary_sha256": "81d52ffb50b717af5353c19d5455a3b9afae15eb2198287d624df29348669e34",
+      "final_renderer_static_archive_sha256": "ab01805669fe5b1edc59b1be02fd22396b660baf0a8431896f78a46fc59296e5",
+      "final_replay_binary_sha256": "bddb67400d447b89c8827e0186ffd3987b6348babd3345e9f166e1885909a545",
+      "ndk": "28.2.13676358",
+      "android_api_target": 26,
+      "cache_capacity": 64,
+      "lifetime": "Owned by the existing per-device renderer resource cache and destroyed after its in-flight frames are waited during clear().",
+      "key_fields": [
+        "mag filter",
+        "min filter",
+        "mip filter",
+        "U/V/W address modes",
+        "anisotropy enable and value",
+        "border color"
+      ]
+    }
+  },
+  "method": {
+    "pairs": [
+      ["baseline", "sampler_cache_candidate"],
+      ["sampler_cache_candidate", "baseline"],
+      ["baseline", "sampler_cache_candidate"]
+    ],
+    "per_process": "One initial readback, two warmup submissions, eight timed asynchronous cached submissions, and a final output-equality readback.",
+    "timed_mean_wall_ms_per_call": {
+      "baseline": [8.1163, 8.11718, 7.76605],
+      "sampler_cache_candidate": [7.83288, 8.08751, 7.92859]
+    },
+    "timed_mean_replay_thread_cpu_ms_per_call": {
+      "baseline": [1.50138, 1.45481, 1.4426],
+      "sampler_cache_candidate": [1.35773, 1.49928, 1.42491]
+    }
+  },
+  "results": {
+    "average_wall_ms": {
+      "baseline": 7.999843,
+      "sampler_cache_candidate": 7.94966,
+      "candidate_change_percent": -0.63
+    },
+    "average_replay_thread_cpu_ms": {
+      "baseline": 1.466263,
+      "sampler_cache_candidate": 1.427307,
+      "candidate_change_percent": -2.66
+    },
+    "readback": {
+      "extent": [1280, 720],
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "raw_bytes": 3686400,
+      "baseline_sha256": "8295d56ab66664365991ad06a6fb1f018dc3db37ba07afccdad91b2555f41ca1",
+      "candidate_sha256": "8295d56ab66664365991ad06a6fb1f018dc3db37ba07afccdad91b2555f41ca1",
+      "byte_identical": true,
+      "fnv1a64": "0x1E43A3A8C1C044EB",
+      "nonblack_rgb_pixels": 921528,
+      "file": "process2_redmi_bink_sampler_cache_frame2614_20261025.bin.gz",
+      "compressed_file_sha256": "3d5aeb14052ddf657330911bdd21674a53f4b446bc89f63d6d0dda39bacec270"
+    }
+  },
+  "final_source_replay": {
+    "first_submit_wall_ms": 200.283,
+    "first_submit_thread_cpu_ms": 156.593,
+    "steady_replay_mean_wall_ms": 7.60166,
+    "steady_replay_mean_thread_cpu_ms": 1.23007,
+    "final_output_matches_initial": true,
+    "readback_sha256": "8295d56ab66664365991ad06a6fb1f018dc3db37ba07afccdad91b2555f41ca1"
+  },
+  "verification": {
+    "native_vulkan_ctest": "4/4 passed with VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation.",
+    "rexglue_plugin_ctest": "4/4 passed with VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation.",
+    "linux_plugin": {
+      "target": "rexgpu-shift-native",
+      "sha256": "bf7034cc1b9343c7dff4555eda3dcf07a8302da3e04d4e0fd8ce23c3080370e5",
+      "build_id": "09039493638f0a9b1b13b822317bb26eb5fb0e6f"
+    },
+    "android_arm64_release_renderer_archive": "Built successfully; the retail Bink replay completed on Mali Vulkan 1.1.",
+    "android_validation": "No Khronos validation layer is available on this device.",
+    "interpretation": "The sampler cache preserves the captured retail draw output. The measured 0.63% lower wall time and 2.66% lower replay-thread CPU time are too small to claim a material performance improvement in this sample. The test does not establish full-game or sustained cutscene performance."
+  },
+  "process1_files_modified": false
+}

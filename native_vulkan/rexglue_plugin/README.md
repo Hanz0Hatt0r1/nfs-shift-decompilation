@@ -810,3 +810,24 @@ not show a wall-time gain. It bypasses guest video decode and does not establish
 full-game or sustained cutscene performance. The app remained foreground and
 unchanged. See the [full A/B evidence](../../evidence/process2_redmi_bink_pipeline_cache_20261026.json)
 and the [captured retail draw preview](../../evidence/process2_redmi_bink_retail_draw_replay_20261025.png).
+
+## Bounded Vulkan sampler-object cache (2026-10-25)
+
+The per-device renderer resource cache now reuses identical `VkSampler` states
+across captured draws, with a 64-entry bound. Cache clearing waits for
+in-flight frames before destroying cached samplers. The native regression
+checks reuse, keeps distinct point/linear filter states separate, compares
+cached and uncached readbacks, and clears the cache after asynchronous submits.
+
+On the Redmi Note 8 Pro, an ARM64 Release replay of retail Bink draw #2614
+returned a byte-identical 1280x720 readback to the prior pipeline-cache build
+(SHA-256 `8295d56a…55f41ca1`). Across three alternating pairs, mean wall time
+was 7.950 ms vs. 8.000 ms and replay-thread CPU was 1.427 ms vs. 1.466 ms; the
+differences are too small to claim a material speedup. Android has no Vulkan
+validation layer. The host native Vulkan and P2 plugin suites each pass 4/4
+with `VK_LAYER_KHRONOS_validation`; the ARM64 Release renderer archive builds
+and the captured retail replay runs on Mali Vulkan 1.1. The active game stayed
+resumed with an unchanged screenshot; no APK install, restart, or input was
+sent. This is still one offscreen retail draw, not full cutscene or game
+performance. See the [Mali A/B evidence](../../evidence/process2_redmi_bink_sampler_cache_20261025.json)
+and [matching readback](../../evidence/process2_redmi_bink_sampler_cache_frame2614_20261025.bin.gz).

@@ -388,10 +388,12 @@ int main(int argc, char** argv) {
       std::cerr << "captured Vulkan draw submission failed: " << error << '\n';
       return 1;
     }
+    const size_t cached_sampler_count = texture_cache.cached_sampler_count();
     if (texture_cache.size() != draws.size() ||
-        texture_cache.cached_pipeline_count() != draws.size()) {
+        texture_cache.cached_pipeline_count() != draws.size() ||
+        cached_sampler_count == 0) {
       std::cerr << "captured texture or graphics pipeline cache did not retain "
-                   "each draw resource\n";
+                   "each draw resource and its sampler state\n";
       return 1;
     }
     const std::vector<uint32_t> cached_output = output_readback;
@@ -402,7 +404,8 @@ int main(int argc, char** argv) {
             &repeated_cached_output, enabled_features.geometryShader, &copy,
             false, {}, pipeline_cache, &texture_cache) ||
         repeated_cached_output != cached_output ||
-        texture_cache.cached_pipeline_count() != draws.size()) {
+        texture_cache.cached_pipeline_count() != draws.size() ||
+        texture_cache.cached_sampler_count() != cached_sampler_count) {
       std::cerr << "reused Vulkan pipeline cache changed captured draw output: "
                 << error << '\n';
       return 1;
@@ -438,6 +441,36 @@ int main(int argc, char** argv) {
       return 1;
     }
 
+    auto point_sample_draw = changed_texture_draw.front();
+    for (auto& texture : point_sample_draw.textures) {
+      texture.sampling.mag_filter = shift::xbox::TextureFilter::Point;
+      texture.sampling.min_filter = shift::xbox::TextureFilter::Point;
+    }
+    const std::vector<shift::xbox::CapturedVulkanDraw> point_sample_draws{
+        point_sample_draw};
+    std::vector<uint32_t> cached_point_sample_output;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, point_sample_draws, &error,
+            &cached_point_sample_output, enabled_features.geometryShader,
+            &copy, false, {}, pipeline_cache, &texture_cache) ||
+        texture_cache.cached_sampler_count() != cached_sampler_count + 1) {
+      std::cerr << "sampler cache merged distinct captured filter states: "
+                << error << '\n';
+      return 1;
+    }
+    std::vector<uint32_t> uncached_point_sample_output;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, point_sample_draws, &error,
+            &uncached_point_sample_output, enabled_features.geometryShader,
+            &copy) ||
+        cached_point_sample_output != uncached_point_sample_output) {
+      std::cerr << "cached captured sampler state changed Vulkan output: "
+                << error << '\n';
+      return 1;
+    }
+
     shift::xbox::CapturedVulkanTextureCache asynchronous_cache;
     for (uint32_t frame = 0; frame < 4; ++frame) {
       if (!shift::xbox::submit_captured_vulkan_frame(
@@ -463,9 +496,10 @@ int main(int argc, char** argv) {
       return 1;
     }
     asynchronous_cache.clear();
-    if (asynchronous_cache.cached_pipeline_count() != 0) {
+    if (asynchronous_cache.cached_pipeline_count() != 0 ||
+        asynchronous_cache.cached_sampler_count() != 0) {
       std::cerr
-          << "clearing in-flight texture cache retained graphics pipelines\n";
+          << "clearing in-flight texture cache retained GPU objects\n";
       return 1;
     }
 
@@ -1041,8 +1075,9 @@ int main(int argc, char** argv) {
           has_source_green = true;
     }
     texture_cache.clear();
-    if (texture_cache.cached_pipeline_count() != 0) {
-      std::cerr << "clearing texture cache retained graphics pipelines\n";
+    if (texture_cache.cached_pipeline_count() != 0 ||
+        texture_cache.cached_sampler_count() != 0) {
+      std::cerr << "clearing texture cache retained GPU objects\n";
       return 1;
     }
     vkDestroyImageView(device, output_view, nullptr);

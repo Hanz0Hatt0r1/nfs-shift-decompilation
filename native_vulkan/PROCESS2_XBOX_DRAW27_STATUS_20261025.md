@@ -283,3 +283,22 @@ end-to-end cutscene speed. The
 includes the old/current replay hashes, shader/plane hashes, all samples, and
 the unchanged live-app state. The game remained resumed and was not reinstalled
 or restarted.
+
+## Redmi retail Bink sampler-cache replay (2026-10-25)
+
+The ARM64 Release renderer now reuses matching `VkSampler` objects in a
+64-entry per-device cache. Cache clearing waits for in-flight frames before
+destroying samplers. The native regression checks same-state reuse, distinct
+filter-state separation, cached/uncached image equality, and safe clear after
+asynchronous submissions.
+
+Three alternating Mali-G76 pairs replayed the actual retail Bink draw #2614.
+Readback SHA-256 matched baseline byte-for-byte (`8295d56a…55f41ca1`). Mean
+wall times were 7.950 ms vs. 8.000 ms and replay-thread CPU was 1.427 ms vs.
+1.466 ms; this does not establish a material speedup. Native Vulkan and plugin
+CTest each pass 4/4 with `VK_LAYER_KHRONOS_validation`; the ARM64 Release core
+build and replay also pass. Android has no validation layer. The game remained
+resumed, its before/after screenshot hash was unchanged, and no APK, input, or
+restart was used. One offscreen draw does not establish full cutscene or game
+performance. See the [A/B record](../evidence/process2_redmi_bink_sampler_cache_20261025.json)
+and [matching raw readback](../evidence/process2_redmi_bink_sampler_cache_frame2614_20261025.bin.gz).
