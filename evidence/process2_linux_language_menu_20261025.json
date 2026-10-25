@@ -45,6 +45,6 @@
   },
   "evidence_scope": {
     "capture_order": "The after image was captured after the interpolator-index fix and before the follow-up geometry-stage pass-through change. In the captured frame, label draws #710-#731 use topology 0; the geometry pass-through change affects the separate topology-2 draws #708-#709. The final code passes both validation-enabled test suites, but a visible language-menu frame has not been recaptured with that final geometry change.",
-    "android": "The ARM64 consumer build is blocked in the existing shared ReXGlue SDK fiber_posix.cpp because Android NDK 28.2 does not declare getcontext, makecontext, or swapcontext. No Process 1 runtime files were changed; the language menu has not been tested on the phone after this fix."
+    "android": "A fresh ARM64 P2 plugin was built and installed on Redmi Note 8 Pro. It rendered the retail loading screen, then the Android provider rejected 24-draw frames because the Android SDK used for this package does not expose the optional depth/stencil resolve capability. The phone turned black before reaching the language selector, so selector labels remain unverified on Android. No Process 1 source files were changed; details and screenshots are in process2_redmi_note8pro_language_menu_android_20261025.json."
   }
 }
