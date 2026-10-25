@@ -1,0 +1,83 @@
+{
+  "schema": "shift.process2.redmi_language_selector_live_android.v1",
+  "capture_time_local": "2026-10-25T17:20:26.477+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "android_version": "13",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 32662
+  },
+  "source": {
+    "process2_branch": "work/process2-xbox-live-ring-20261023",
+    "worktree_head": "ad3c7ea6adcf5c89d6f369954f87085cc6f74b18",
+    "last_renderer_code_commit": "c69de3f2393e32f164ff7cc0581351bf24bfa730",
+    "installed_apk_sha256": "5006ed47a1510a2389d48de9a27ef0f7a4b8a7c8f8719249b14f242963662305",
+    "installed_plugin_sha256": "f84281d8b48cad561f246fa4bf9e58172960ace16193bcd3dcd44d848b9a2f03",
+    "installed_runtime_dso_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "apk_last_update_time_local": "2026-10-25T17:01:05+03:00",
+    "apk_reinstalled_for_capture": false,
+    "app_data_cleared": false,
+    "game_assets_changed": false
+  },
+  "renderer": {
+    "path": "Xbox 360 retail guest draws through the Process 2 native Vulkan plugin and Android Vulkan presenter",
+    "vulkan_instance_api": "1.3.0",
+    "vulkan_device_api": "1.1.131",
+    "enabled_device_extensions": [
+      "VK_KHR_create_renderpass2",
+      "VK_KHR_depth_stencil_resolve",
+      "VK_KHR_driver_properties",
+      "VK_KHR_swapchain"
+    ],
+    "presenter_target": "1280x720",
+    "android_display_capture": "2340x1080",
+    "startup_log": {
+      "first_line_time_local": "2026-10-25T17:18:47.433+03:00",
+      "first_draw_submission_time_local": "2026-10-25T17:18:49.981+03:00",
+      "last_draw_submission_time_local": "2026-10-25T17:19:19.243+03:00",
+      "indexed_draw_submission_events": 578,
+      "indexed_draw_packets_total": 2116,
+      "accepted_copy_convert_operations": 579,
+      "presenter_refresh_failures": 0,
+      "scope_note": "Counts cover the startup log as a whole and are not a selector-only draw trace."
+    }
+  },
+  "language_selector": {
+    "heading_visible": true,
+    "select_prompt_visible": true,
+    "selected_entry": "English",
+    "visible_labels": [
+      "English",
+      "Français",
+      "Italiano",
+      "Deutsch",
+      "Español",
+      "Nederlands"
+    ],
+    "observation": "All six original retail language labels are readable on the captured live Android frame. Non-selected labels are gray and lower contrast than the highlighted English row.",
+    "screenshot": "process2_redmi_language_selector_live_android_20261025.png",
+    "screenshot_sha256": "01ddcca6c471adf1d795fee184489b087626344c88ac406dff5149f538943494",
+    "screenshot_captured_at_local": "2026-10-25T17:20:26.477+03:00"
+  },
+  "process_state": {
+    "activity_remained_focused": true,
+    "suspended_with_signal": "SIGSTOP",
+    "suspended_to_hold_selector_on_screen": true,
+    "resume_command": "adb shell run-as com.hanz0hatt0r.nfsshift kill -s CONT 32662"
+  },
+  "runtime_log": {
+    "file": "process2_redmi_language_selector_live_android_20261025.log.gz",
+    "raw_sha256": "a5523f53b519ce1bbf6685e422b87f044e106aa66689ffbbf74d7793b53102ed",
+    "compressed_sha256": "ffd5c2af6accb783d8592f68a0b5f70236fab9064767e9c352ecd7d98a20504a",
+    "raw_bytes": 415701
+  },
+  "limits": [
+    "This capture confirms one retail language-selector screen on the Redmi Note 8 Pro; it does not establish sustained menu operation or complete retail rendering parity.",
+    "The Android live run did not enable VK_LAYER_KHRONOS_validation; validation coverage remains from the separate host Vulkan tests.",
+    "The process was deliberately suspended after the selector appeared, so this capture does not test later cutscene, menu, or race progression."
+  ]
+}
