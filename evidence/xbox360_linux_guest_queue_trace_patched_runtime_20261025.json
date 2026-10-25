@@ -1,0 +1,130 @@
+{
+  "schema": "shift.xbox360.linux-guest-queue-trace-patched-runtime.v1",
+  "captured_on": "2026-10-25",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "85a519fbac4eedac961ca48fc1108ffa2cd8d045fbb878b5b52f6adac4c773e0",
+    "rexglue_sdk_commit": "58e4d4b973aac482a1fb08a665195a30c7b5e5b9",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+    "runtime_selection": "Temporary LD_LIBRARY_PATH override; no app/plugin file changes.",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-linux-retail-root-20261024/game",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "gdb_script": "tools/xbox360/trace_guest_gpu_queue.gdb",
+    "gdb_script_sha256": "e6393aac10ee4af657a697a55b1d5180060952ae2fb2128c54f6193a22aab38b",
+    "input_events_sent": false,
+    "guest_memory_modified": false
+  },
+  "capture": {
+    "observation_window_seconds": 45,
+    "termination": "timeout sent SIGINT; exit code 124; GDB stopped in VulkanImmediateDrawer::Begin, with no guest SIGBUS or fatal runtime exit observed.",
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-reprobe-20261025/gdb.log",
+      "sha256": "12e32e14727a049c47f6612e8f4b2c96a36baff243ef8171772152827a1d07ba",
+      "bytes": 392392
+    },
+    "runtime_log": {
+      "external_path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_035.log",
+      "sha256": "6c057712e9b5ee4942d0c624a8c97ff0c9dbc985a0a72b2977e5cbd52e6abbde",
+      "bytes": 301505
+    },
+    "gdb_sparse_samples": true,
+    "timing_caveat": "GDB breakpoints pause guest execution and can change scheduler timing."
+  },
+  "observations": {
+    "interrupts": {
+      "source0": {
+        "printed_hit_counter_max": 2044,
+        "logged_state_lines": 278,
+        "object": "0xB7365F00",
+        "deferred_read_index_samples": [
+          0
+        ],
+        "deferred_write_index_samples": [
+          0
+        ],
+        "predicate_values": [
+          "0x00",
+          "0x04",
+          "0x14"
+        ]
+      },
+      "source1": {
+        "printed_hit_counters": [
+          832,
+          1792,
+          1856,
+          1984
+        ],
+        "object": "0xB7365F00"
+      }
+    },
+    "deferred_consumer": {
+      "printed_hit_counter_max": 1773,
+      "logged_state_lines": 334,
+      "read_index_samples": [
+        0
+      ],
+      "write_index_samples": [
+        0
+      ]
+    },
+    "software_ring": {
+      "helper_printed_hit_counter_max": 483,
+      "helper_logged_state_lines": 483,
+      "sampled_head_first": 1,
+      "sampled_head_last": 965,
+      "sampled_tail_first": 3,
+      "sampled_tail_last": 967,
+      "global_0x831B3820_values": [
+        0
+      ],
+      "guard_0x2ABC_values": [
+        "0x00"
+      ],
+      "predicate_0x2ABD_values": [
+        "0x00",
+        "0x04",
+        "0x14"
+      ],
+      "ring_wait_logged_samples": 273,
+      "ring_wait_final_logged_head": 967,
+      "ring_wait_final_logged_tail": 969
+    },
+    "predicate_test": {
+      "printed_hit_counter_max": 2048,
+      "logged_samples": 9
+    },
+    "deferred_producer_0x823A4758_hits": 0,
+    "registered_callback_0x82649B68_hits": 0,
+    "mapped_plugin": "mapped_gpu_plugin pid=39141 path=/home/pes/work/xbox360-wsi-check-20261025/bin/librexgpu-shift-native.so sha256=badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637 segments=7"
+  },
+  "static_artifact_validation": {
+    "unverified_extracted_pe_sha256": "23844dbba0cf72bc11512821b90008ea5d2b06ee886d921f416ca6caae43a628",
+    "exact_live_memory_derived_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c",
+    "address": "0x823A4758",
+    "unverified_pe_bytes_big_endian": "4099fd1c",
+    "exact_live_elf_bytes_big_endian": "7d8802a6",
+    "conclusion": "The local extracted PE is not byte-equivalent at this code address; exact queue semantics must use the live-memory-derived PPC ELF recorded in evidence/xbox360_linux_deferred_queue_producer_probe_20261024.json."
+  },
+  "interpretation": {
+    "supported": [
+      "The patched runtime with the unchanged host executable and hash-identified plugin still dispatches source-0 and source-1 guest interrupts.",
+      "The retail software-ring head and tail advance through the 45-second trace; the wait helper returns on advancing cursor samples.",
+      "The separate deferred record queue remains 0/0 at sampled source-0 and consumer entries; candidate producer and registered callback do not execute in this capture."
+    ],
+    "not_proven": [
+      "This does not identify why the callback producer remains uninvoked, establish a guest scheduler defect, or prove a main menu, visible output, or offline race.",
+      "Sparse printed counters are lower bounds, not final hit totals."
+    ],
+    "next_p1_step": "Keep the observed retail predicates and queues unchanged. Treat this as evidence that the sampled guest wait is progressing; continue tracing the first retail call path that is expected to invoke the deferred producer."
+  }
+}
