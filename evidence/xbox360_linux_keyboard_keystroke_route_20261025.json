@@ -53,22 +53,82 @@
     }
   },
   "observed_keystrokes": [
-    {"poll": 101, "status": "0x00000000", "virtual_key": "0x000D", "event_flags": "KEYDOWN", "user": 0},
-    {"poll": 102, "status": "0x00000000", "virtual_key": "0x000D", "event_flags": "KEYUP", "user": 0},
-    {"poll": 133, "status": "0x00000000", "virtual_key": "0x0020", "event_flags": "KEYDOWN", "user": 0},
-    {"poll": 134, "status": "0x00000000", "virtual_key": "0x0020", "event_flags": "KEYUP", "user": 0}
+    {
+      "poll": 101,
+      "status": "0x00000000",
+      "virtual_key": "0x000D",
+      "event_flags": "KEYDOWN",
+      "user": 0
+    },
+    {
+      "poll": 102,
+      "status": "0x00000000",
+      "virtual_key": "0x000D",
+      "event_flags": "KEYUP",
+      "user": 0
+    },
+    {
+      "poll": 133,
+      "status": "0x00000000",
+      "virtual_key": "0x0020",
+      "event_flags": "KEYDOWN",
+      "user": 0
+    },
+    {
+      "poll": 134,
+      "status": "0x00000000",
+      "virtual_key": "0x0020",
+      "event_flags": "KEYUP",
+      "user": 0
+    }
   ],
   "interpretation": {
     "supported": [
       "The exact retail XAM keystroke import returns success with keyboard events for the observed flags=2 call.",
-      "The returned VirtualKey values and keydown/keyup flags match the synthetic Enter and Space events injected during the Linux run."
+      "The returned VirtualKey values and keydown/keyup flags match the synthetic Enter and Space events injected during the Linux run.",
+      "A follow-up GDB trace observed the retail keyboard event mapper and keydown/keyup callbacks after successful XAM polls."
     ],
     "not_proven": [
       "That a later frontend state consumed these events or reached the main menu.",
       "That a race is playable or renderer output is correct.",
-      "That the distinct physical-gamepad GetState path now advances the frontend; earlier Start/A probes only confirmed state delivery."
+      "That the distinct physical-gamepad GetState path now advances the frontend; earlier Start/A probes only confirmed state delivery.",
+      "That these keyboard callbacks changed the frontend scene; this trace does not establish the main menu or race."
     ],
     "configuration_limit": "The MNK driver is opt-in; this run explicitly used --mnk_mode=true.",
     "next_step": "Trace the consumer after the successful retail key poll and continue the independent gamepad GetState/action-map investigation."
+  },
+  "retail_consumer_trace": {
+    "runtime_host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_rexglue_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-input-consumer-20261025/consumer-route-gdb.log",
+      "sha256": "c6ea13498ca5c53f0071381a6ebe6b39baad031705ecd2669cf5779d82b99359"
+    },
+    "observed_retail_callbacks": [
+      {
+        "virtual_key": "0x000D",
+        "edge": "keydown",
+        "callback": "0x822FBC48"
+      },
+      {
+        "virtual_key": "0x000D",
+        "edge": "keyup",
+        "callback": "0x822FBCD8"
+      },
+      {
+        "virtual_key": "0x0020",
+        "edge": "keydown",
+        "callback": "0x822FBC48"
+      },
+      {
+        "virtual_key": "0x0020",
+        "edge": "keyup",
+        "callback": "0x822FBCD8"
+      }
+    ],
+    "interpretation": {
+      "supported": "The success branch in retail sub_82307790 and the mapper sub_82307AA8 ran for Enter and Space, followed by the retail key-edge callbacks.",
+      "not_proven": "A main-menu scene transition, the identity of the rendered screen, gamepad action consumption, or playable race entry."
+    }
   }
 }
