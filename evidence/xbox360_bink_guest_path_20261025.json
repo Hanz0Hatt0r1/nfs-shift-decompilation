@@ -176,6 +176,47 @@
         "0x83067C20": 1
       },
       "interpretation": "All twelve listed embedded-Bink guest functions executed in this bounded Linux run. This confirms execution of the retail decoder path but does not demonstrate decoded pixels or successful video presentation."
+    },
+    "p1_manager_callback_probe_20261025": {
+      "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "duration_seconds": 40,
+      "stop": "The timeout harness sent SIGINT while the retail process remained live; no SIGSEGV or SIGBUS was recorded before stop.",
+      "input": "No synthetic or physical input was sent.",
+      "instrumentation": "GDB breakpoints at both Bink manager dispatch functions and immediately before their indirect guest calls. PPC context was read through the host ABI because optimized debug info does not expose the ctx parameter by name.",
+      "gdb_script": {
+        "external_path": "/tmp/nfs-p1-bink-manager-20261025/trace.gdb",
+        "sha256": "13c72fc06b4bccc9cdcdeb4c4d27cb553ca94fdb3ea33c0151bf07425676cbed"
+      },
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-bink-manager-20261025/gdb.log",
+        "sha256": "f2a67e32f0ac844fe70600e15fa8eb241dc489f8859cad6baeadc1f965eb9f4a"
+      },
+      "manager": {
+        "guest_object_address": "0xE6795040",
+        "guest_slot_table_address": "0xE67967C0",
+        "slot_count": 4,
+        "dispatch_356_hits": 4,
+        "dispatch_376_hits": 4,
+        "callback_slot_offsets": [356, 376]
+      },
+      "callback_targets": {
+        "0x83068250": {
+          "slot_offset": 356,
+          "indirect_guest_calls": 4,
+          "manager_indices": [0, 1, 2, 3],
+          "manager_entry_r5": ["0x8000", "0x8000", "0x8000", "0x8000"]
+        },
+        "0x83068608": {
+          "slot_offset": 376,
+          "indirect_guest_calls": 4,
+          "manager_indices": [0, 1, 2, 3],
+          "manager_entry_r5": ["0x7018F7B0", "0x7018F7B0", "0x7018F7B0", "0x7018F7B0"]
+        }
+      },
+      "interpretation": "Both retail Bink manager callback slots contain valid guest code pointers and dispatch through the generated PPC runtime for all four manager entries. This rules out an empty/unregistered Bink callback slot in this run; it does not show that callback execution produced pixels or reached the renderer's texture handoff."
     }
   },
   "external_runtime_report": {
@@ -201,7 +242,8 @@
       "The exact retail image contains a substantial PPC Bink code section and game-code call sites into generated Bink functions.",
       "The local generated Linux runtime registers the Bink-section function entries listed above.",
       "The Franchise_Ident.bik file is a Bink-family asset, and the local trace confirms the retail process opened it twice.",
-      "A fresh 40-second P1 GDB trace hit all twelve registered embedded-Bink entry points and called 0x823A0998 656 times; it was manually interrupted without a recorded SIGSEGV or SIGBUS."
+      "A fresh 40-second P1 GDB trace hit all twelve registered embedded-Bink entry points and called 0x823A0998 656 times; it was manually interrupted without a recorded SIGSEGV or SIGBUS.",
+      "A separate 40-second exact-XEX GDB probe observed both Bink manager callback slots dispatching guest targets 0x83068250 and 0x83068608 for each of four entries; the slots were populated and no SIGSEGV/SIGBUS was recorded before manual interruption."
     ],
     "likely_but_not_runtime_proven": [
       "Process 2's reported sustained pread64 activity while the cutscene was active is consistent with guest Bink decoding; the raw read trace was not available in the shared artifacts."
@@ -212,7 +254,7 @@
       "That the black frame is caused by a missing host media callback, by the renderer, or by another part of the Bink texture handoff.",
       "Main-menu entry, offline-race entry, or sustained gameplay."
     ],
-    "working_conclusion": "The title's Bink decoder is guest PPC code inside the XEX, and the fresh P1 trace confirms that its generated entry points execute. There is no evidence that P1 needs a separate host Bink decoder callback. The embedded Bink texture integration points toward a guest-memory/Xenos-texture handoff. The exact surface contract still needs a live pointer/format trace before assigning the black output to guest media setup, texture handoff, or rendering."
+    "working_conclusion": "The title's Bink decoder and both manager callbacks are guest PPC code inside the XEX; fresh P1 traces confirm the decoder entries execute and populated callback slots dispatch to 0x83068250 and 0x83068608. There is no evidence that P1 needs a separate host Bink decoder callback or that the slots are missing. The embedded Bink texture integration points toward a guest-memory/Xenos-texture handoff. The exact surface contract still needs a live pointer/format trace before assigning the black output to guest media setup, texture handoff, or rendering."
   },
   "limitations": [
     "The fresh P1 GDB probe was interrupted after 40 seconds and instrumented execution; it does not establish the natural video end or a scene transition.",

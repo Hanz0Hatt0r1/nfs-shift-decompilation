@@ -39,6 +39,17 @@ assert live_probe["stop"].startswith("The harness sent SIGINT")
 assert set(live_probe["hit_counts"]) == {"0x823A0998", *registered}
 assert all(count > 0 for count in live_probe["hit_counts"].values())
 assert "does not demonstrate decoded pixels" in live_probe["interpretation"]
+manager_probe = evidence["runtime_translation"]["p1_manager_callback_probe_20261025"]
+assert manager_probe["duration_seconds"] == 40
+assert manager_probe["manager"]["slot_count"] == 4
+assert manager_probe["manager"]["dispatch_356_hits"] == 4
+assert manager_probe["manager"]["dispatch_376_hits"] == 4
+targets = manager_probe["callback_targets"]
+assert set(targets) == {"0x83068250", "0x83068608"}
+assert all(target["indirect_guest_calls"] == 4 for target in targets.values())
+assert all(target["manager_indices"] == [0, 1, 2, 3] for target in targets.values())
+assert "rules out an empty/unregistered" in manager_probe["interpretation"]
+assert "does not show that callback execution produced pixels" in manager_probe["interpretation"]
 assert evidence["external_runtime_report"]["raw_pread_trace_or_log_hash_provided"] is False
 assert "not_proven" in evidence["interpretation"]
 
