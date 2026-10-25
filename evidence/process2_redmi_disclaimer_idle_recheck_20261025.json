@@ -17,6 +17,21 @@
     "identical_to_prior_post_selector_capture": true,
     "capture_method": "Read-only adb screencap; no input events sent"
   },
+  "input_probe": {
+    "captured_at_local": "2026-10-25T19:26:31.876+03:00",
+    "events": [
+      {"command": "adb shell input keyevent 96", "android_keycode": "BUTTON_A"},
+      {"command": "adb shell input keyevent 66", "android_keycode": "ENTER"}
+    ],
+    "wait_after_each_event_seconds": 3,
+    "screenshots": [
+      {"after": "BUTTON_A", "sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af"},
+      {"after": "ENTER", "sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af"}
+    ],
+    "process_still_alive": true,
+    "loaded_renderer_sha256": "f84281d8b48cad561f246fa4bf9e58172960ace16193bcd3dcd44d848b9a2f03",
+    "interpretation": "The display did not change after either confirmation event. adb accepted the input commands, but this does not prove the guest consumed them or identify why it produced no new frame."
+  },
   "runtime_log": {
     "file": "files/nfs_shift/user/logs/nfs_shift_010.log",
     "size_bytes": 402951,
@@ -64,7 +79,7 @@
   "interpretation": "The display and renderer log remain unchanged while guest, SDL, controller, and audio threads are CPU-active and the native GPU worker is idle. This locates the current wait beyond new Vulkan submissions but does not establish that the missing XML paths caused it.",
   "limits": [
     "This is a live state snapshot, not a root-cause diagnosis of guest execution.",
-    "No process was stopped or restarted, no APK or renderer library was changed, and no input events were sent.",
+    "The 19:18 snapshot itself sent no inputs. A later A/Enter probe left the process and renderer untouched; the command success does not prove the guest consumed those events.",
     "The purple bands are recorded as observed output; this snapshot does not identify their source draw or establish that retail output should omit them."
   ]
 }

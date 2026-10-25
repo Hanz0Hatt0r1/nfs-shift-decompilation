@@ -129,6 +129,15 @@ GPU worker has no new packets. It does not identify why the guest stopped
 submitting or connect the nearby XML misses to that stop. See
 [`the live recheck record`](../evidence/process2_redmi_disclaimer_idle_recheck_20261025.json).
 
+A follow-up probe at 19:26:31 MSK sent Android `BUTTON_A` and `ENTER`, waiting
+three seconds after each. Both resulting screenshots were byte-identical to the
+19:18 disclaimer capture; PID 7611 remained alive and its mapped ARM64 renderer
+hash was `f84281d8…b9a2f03`, matching the recorded frame-1026 plugin. This
+shows no visible response to those inputs, but does not prove the guest received
+them or explain the missing submissions. The APK was not reinstalled and the
+process was not stopped. The probe is recorded in the same
+[`live recheck record`](../evidence/process2_redmi_disclaimer_idle_recheck_20261025.json).
+
 The last logged submission carried 14 draws at 17:55:35.960 MSK. About 0.4
 seconds later the guest tried both `D:\tracks\_data\instances\scenes\menu_background.xml`
 and `D:\tracks\_data\static\scenes\menu_background.xml`; both returned
