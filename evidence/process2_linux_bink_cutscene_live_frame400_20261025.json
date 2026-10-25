@@ -1,0 +1,64 @@
+{
+  "schema": "shift.process2_bink_cutscene_live_vulkan_readback.v1",
+  "date": "2026-10-25",
+  "launch": {
+    "title_id": "0x454108B4",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+    "runtime_source": "Process 1 runtime binary copied into the isolated P2 test directory; original file was not modified",
+    "gpu_plugin": "shift-native",
+    "gpu_plugin_source_commit": "a71e0e32",
+    "gpu_plugin_sha256": "e232bdc88d8ca6bd56587acab3b5c90ef10d62ca0f9d75aab64f702379a40df5",
+    "plugin_runtime_link_check": "ldd -r resolved the isolated runtime and reported no undefined symbols",
+    "renderer": "Process 2 native Vulkan frontend; rexgpu-xenos was not selected",
+    "host_device": "NVIDIA GeForce GTX 950",
+    "device_vulkan_api": "1.4.312",
+    "presenter_target": [
+      1280,
+      720
+    ],
+    "vulkan_validation_layer_for_live_launch": false,
+    "synthetic_fragment_override": false,
+    "retail_game_data": "external local Xbox retail game root; not committed"
+  },
+  "readback": {
+    "presenter_frame": 400,
+    "matching_prior_capture_draw_index": 2614,
+    "draw_index_source": "The separate frame-400 retail capture identifies draw #2614; the refreshed live launch logs presenter submissions but not a global retail draw index.",
+    "content": "EA intro Bink frame rendered through the live retail draw path",
+    "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "raw_bytes": 3686400,
+    "raw_sha256": "31162c5fd15f2ae47e11b20a4b87634ed9763f869527569ccb7522be507ae9c8",
+    "decoded_png": "process2_linux_bink_cutscene_live_frame400_20261025.png",
+    "decoded_png_sha256": "2ee9cd8e0718f6189f63ce18144759a65facf465389dafa9589467f75fc875a9",
+    "nonblack_rgb_pixels": 921173,
+    "bounding_box": [
+      0,
+      0,
+      1279,
+      719
+    ]
+  },
+  "progress": {
+    "vulkan_frames_submitted": 765,
+    "accepted_copy_convert_operations": 765,
+    "last_submission_local_time": "2026-10-25T11:42:42.676+03:00",
+    "observation_local_time": "2026-10-25T11:45:30+03:00",
+    "seconds_without_new_submission": 167,
+    "process_alive": true,
+    "guest_main_thread_state": "running",
+    "native_gpu_worker_state": "waiting on futex",
+    "interpretation": "Renderer submission went idle after the live cutscene frame. This does not establish why the guest stopped submitting work or prove the cutscene-to-menu transition."
+  },
+  "validation": {
+    "linux_plugin_ctest": "4/4 passed",
+    "captured_data_bink_replay": "Vulkan 1.1, VK_LAYER_KHRONOS_validation enabled, zero validation errors",
+    "live_run_vulkan_validation": "not enabled"
+  },
+  "limits": [
+    "The live readback verifies one captured Bink draw in the original retail stream, not a complete cutscene or menu transition.",
+    "No post-cutscene menu or gameplay frame was captured.",
+    "The guest/runtime cause of the submission stall is not identified by this renderer evidence.",
+    "The live Linux result is not an Android Redmi Note 8 Pro run."
+  ]
+}
