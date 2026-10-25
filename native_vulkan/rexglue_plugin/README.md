@@ -135,6 +135,31 @@ fail closed and point draws remain available. The split `rexui-vulkan` target
 follows the same feature contract. Debug builds stage
 `librexgpu-shift-natived.so`, matching the host plugin loader's debug suffix.
 
+For an external ARM64 build, `SHIFT_REXGLUE_PREBUILT_RUNTIME` can point at the
+matching runtime DSO already packaged by the Android app. The SDK and Vulkan
+provider are still compiled from `SHIFT_REXGLUE_SDK_ROOT`, but the plugin target
+links the imported runtime instead of rebuilding `rexruntime`. Disable the
+plugin CTests for this mode because those host-side tests require the SDK
+runtime target. Use the same SDK revision and runtime DSO that the app will load;
+this option does not make an ABI-mismatched runtime safe.
+
+```sh
+cmake -S native_vulkan/rexglue_plugin -B build/rexgpu-shift-native-android \
+  -DSHIFT_REXGLUE_SDK_ROOT=/path/to/rexglue-sdk \
+  -DSHIFT_REXGLUE_PREBUILT_RUNTIME=/path/to/librexruntimed.so \
+  -DSHIFT_REXGLUE_PLUGIN_OUTPUT_DIR=/path/to/plugin-output \
+  -DSHIFT_REXGLUE_NATIVE_BUILD_TESTS=OFF \
+  -DCMAKE_TOOLCHAIN_FILE=/path/to/ndk/build/cmake/android.toolchain.cmake \
+  -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-26 \
+  -DCMAKE_BUILD_TYPE=Debug
+cmake --build build/rexgpu-shift-native-android --target rexgpu-shift-native
+```
+
+This is a plugin-only build path: it leaves the SDK runtime and Process 1 files
+unchanged. It does not produce a complete APK or validate runtime loading; keep
+the existing packaged runtime and verify the plugin in a separately staged app
+before installation.
+
 Some Android hosts hardcode the loader ID `xenos` in `OnPreSetup`. For those
 hosts, set `SHIFT_NATIVE_ANDROID_XENOS_LOADER_ALIAS=ON`, exclude the SDK's
 `rexgpu-xenos` target from the Android build, and stage a copy of
@@ -958,7 +983,9 @@ SDK because its existing POSIX fiber source calls Bionic-unavailable
 `getcontext`, `makecontext`, and `swapcontext`. This candidate instead packages
 the manually linked current P2 plugin against the unchanged runtime DSO; its
 successful live launch verifies that package combination, but not a full
-runtime rebuild. A later read-only ADB recheck confirmed PID 17268 remained
+runtime rebuild. The plugin-only build path below now links the P2 plugin to an
+existing runtime DSO directly, without trying to build the SDK runtime target.
+A later read-only ADB recheck confirmed PID 17268 remained
 top-resumed on the legal disclaimer; Process 2 sent no more input and did not
 close the app. The [current screen](../../evidence/process2_redmi_language_selector_latest_current_screen_20261026.png)
 is preserved. The phone does not provide `VK_LAYER_KHRONOS_validation`; device
@@ -990,3 +1017,27 @@ recorded in
 The compressed [plugin CTest log](../../evidence/process2_latest_renderer_plugin_ctest_20261026.log.gz)
 and [native Vulkan CTest log](../../evidence/process2_latest_native_vulkan_ctest_20261026.log.gz)
 are preserved alongside it.
+
+## Android ARM64 plugin build with the existing runtime (2026-10-26)
+
+The latest P2 renderer core was linked into a new ARM64 `rexgpu-shift-native`
+plugin using `SHIFT_REXGLUE_PREBUILT_RUNTIME`. The build used the resolve-capable
+SDK at commit `fb151b94b4956d1c74ba5052e8838b0829eb9c99`, Android NDK 28.2, and
+the exact `librexruntimed.so` already present in the previous app candidate.
+`rexui-vulkan`, the current P2 renderer, and the plugin all built successfully;
+the SDK runtime target was not built. The resulting DSO depends on
+`librexruntimed.so`, has the Android ARM64 ABI, and retains the provider's
+`-Bsymbolic` binding.
+
+A signed APK candidate was assembled from the prior Android APK by replacing
+only `librexgpu-shift-natived.so` and its `librexgpu-xenosd.so` loader alias.
+The two new aliases are byte-identical, all other APK entries retain their
+content, the packaged runtime hash is unchanged, the package verifies with the
+existing Android Debug certificate, and uncompressed native libraries are
+16-KiB aligned. The candidate is available at
+`/home/pes/work/process2-latest-renderer-handover-20261026/android-plugin-buffer-cache-20261026/app-process2-vulkan-buffer-cache-20261026.apk`.
+It has not been installed: the Redmi app remains open on its disclaimer. The
+updated plugin has therefore not yet been loaded by the game, and this package
+does not establish new retail output or parity. Exact hashes and the read-only
+device state are recorded in
+[`process2_android_prebuilt_runtime_plugin_20261026.json`](../../evidence/process2_android_prebuilt_runtime_plugin_20261026.json).

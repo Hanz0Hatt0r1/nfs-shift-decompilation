@@ -3,6 +3,8 @@ project(shift_rexglue_native_gpu LANGUAGES CXX)
 option(SHIFT_REXGLUE_NATIVE_BUILD_TESTS "Build the native GPU plugin smoke test" ON)
 set(SHIFT_REXGLUE_PLUGIN_OUTPUT_DIR "" CACHE PATH
     "Optional isolated output directory for the native GPU plugin")
+set(SHIFT_REXGLUE_PREBUILT_RUNTIME "" CACHE FILEPATH
+    "Optional existing ReXGlue runtime shared library used instead of rebuilding it")
 set(SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME "500" CACHE STRING
     "Submitted frame selected for the Android debug Vulkan readback")
 set(SHIFT_NATIVE_VULKAN_DEBUG_READBACK_PATH "" CACHE FILEPATH
@@ -51,6 +53,18 @@ if(SHIFT_REXGLUE_VULKAN_PROVIDER_HEADER MATCHES "bool with_depth_stencil_resolve
 endif()
 find_package(Vulkan REQUIRED)
 get_target_property(SHIFT_REXGLUE_OUTPUT_DIRECTORY rexruntime LIBRARY_OUTPUT_DIRECTORY)
+set(SHIFT_REXGLUE_PLUGIN_RUNTIME_TARGET rexruntime)
+if(SHIFT_REXGLUE_PREBUILT_RUNTIME)
+  if(NOT EXISTS "${SHIFT_REXGLUE_PREBUILT_RUNTIME}")
+    message(FATAL_ERROR
+      "SHIFT_REXGLUE_PREBUILT_RUNTIME does not exist: ${SHIFT_REXGLUE_PREBUILT_RUNTIME}")
+  endif()
+  add_library(shift_rexglue_prebuilt_runtime SHARED IMPORTED GLOBAL)
+  set_target_properties(shift_rexglue_prebuilt_runtime PROPERTIES
+    IMPORTED_LOCATION "${SHIFT_REXGLUE_PREBUILT_RUNTIME}"
+  )
+  set(SHIFT_REXGLUE_PLUGIN_RUNTIME_TARGET shift_rexglue_prebuilt_runtime)
+endif()
 if(SHIFT_REXGLUE_PLUGIN_OUTPUT_DIR)
   set(SHIFT_REXGLUE_OUTPUT_DIRECTORY "${SHIFT_REXGLUE_PLUGIN_OUTPUT_DIR}")
 endif()
@@ -91,7 +105,7 @@ target_include_directories(rexgpu-shift-native PRIVATE
 )
 target_compile_features(rexgpu-shift-native PRIVATE cxx_std_23)
 target_link_libraries(rexgpu-shift-native PRIVATE
-  rexruntime
+  ${SHIFT_REXGLUE_PLUGIN_RUNTIME_TARGET}
   ${SHIFT_REXGLUE_VULKAN_PROVIDER_TARGET}
   shift_guest_ring
   shift_xbox_shader_translate
