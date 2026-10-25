@@ -120,6 +120,15 @@ ENX, and XTX resources but no `menu_background.xml` member. This narrows the
 asset question without establishing an archive fallback or a causal link to
 the stopped ring. See the [device archive check](../evidence/process2_redmi_menu_background_archive_presence_20261025.json).
 
+A fresh read-only phone check at 19:18:52 MSK shows the same disclaimer
+screenshot and no log writes after the final 14-draw submit at 17:55:35.960.
+Over five samples, the guest main thread averaged 94.6% CPU, SDL 81.2%, the two
+controller threads 76.7% and 76.9%, and audio 54.8%; `SHIFT Native GP` stayed
+at 0%. This confirms that the guest process remains CPU-active while the P2
+GPU worker has no new packets. It does not identify why the guest stopped
+submitting or connect the nearby XML misses to that stop. See
+[`the live recheck record`](../evidence/process2_redmi_disclaimer_idle_recheck_20261025.json).
+
 The last logged submission carried 14 draws at 17:55:35.960 MSK. About 0.4
 seconds later the guest tried both `D:\tracks\_data\instances\scenes\menu_background.xml`
 and `D:\tracks\_data\static\scenes\menu_background.xml`; both returned
