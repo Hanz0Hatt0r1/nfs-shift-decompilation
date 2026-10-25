@@ -84,8 +84,9 @@ purple strips' draw/resource source remains unknown.
 ## Verification boundary
 
 - Native Vulkan regressions: 4/4 passed, including Vulkan validation.
-- ReXGlue plugin regressions: 3/3 against the current SDK and 4/4 against the
-  resolve-capability provider branch.
+- ReXGlue plugin regressions: 4/4 against the current SDK, including the
+  `EVENT_WRITE_SHD` physical/virtual alias check and selected-frame geometry
+  dump; the resolve-capability provider branch passes 4/4.
 - ARM64 shader translation regression passed on the Redmi Note 8 Pro. The
   actual frame-10 loading capture and later frame-1,026 disclaimer capture
   exercise the Android retail Vulkan path.
@@ -95,6 +96,16 @@ purple strips' draw/resource source remains unknown.
 - Host Vulkan and plugin regressions pass with Vulkan validation enabled. The
   phone does not provide `VK_LAYER_KHRONOS_validation`; the live readback is
   runtime evidence, not device validation-layer coverage.
+
+The retail Linux log also confirms `EVENT_WRITE_SHD` writes the descriptor's
+physical base `0x17AF4000` (`1 -> 3 -> 5`), while Vd RPTR writeback separately
+updates `0x17AF403C`. A live-ring regression proves the physical store is
+visible through guest virtual alias `0xB7AF4000`. This matches ReXGlue's
+`EVENT_WRITE_SHD` semantics; it does not explain the retail completion bit or
+prove a frontend transition. A same-run P1 probe then confirmed 360 physical
+stores were visible through the guest virtual alias and observed the retail
+descriptor head advance while RPTR advanced separately. See the [P2 regression evidence](../evidence/process2_event_write_shd_virtual_alias_20261025.json) and
+P1's `/home/pes/work/nfs-shift-xbox360-runtime-p1-20261023/evidence/xbox360_linux_guest_ring_physical_virtual_alias_20261025.json`.
 
 This confirms more than the first loading frame, but does not establish
 sustained cutscene playback, the complete menu, a race scene, or retail visual

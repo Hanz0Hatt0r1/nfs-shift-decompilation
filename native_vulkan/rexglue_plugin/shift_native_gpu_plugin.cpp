@@ -1077,6 +1077,33 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         dump << "  normalized_vertex_payload_fnv1a=0x" << std::hex
              << Fnv1a64(prepared.vertices.data(), prepared.vertices.size())
              << std::dec << "\n";
+        const char* geometry_dump_prefix =
+            std::getenv("SHIFT_NATIVE_VULKAN_DUMP_GEOMETRY_PREFIX");
+        if (diagnostic_submitted_frame != 0 && geometry_dump_prefix &&
+            *geometry_dump_prefix) {
+          const auto dump_geometry = [&](const char* kind,
+                                         const std::vector<uint8_t>& bytes) {
+            std::ostringstream path;
+            path << geometry_dump_prefix << ".frame"
+                 << diagnostic_submitted_frame << ".draw" << dump_index << '.'
+                 << kind << ".bin";
+            std::ofstream file(path.str(), std::ios::binary | std::ios::trunc);
+            if (!bytes.empty()) {
+              file.write(reinterpret_cast<const char*>(bytes.data()),
+                         static_cast<std::streamsize>(bytes.size()));
+            }
+            if (file) {
+              dump << "  raw_" << kind << "_dump=" << path.str()
+                   << " bytes=" << bytes.size() << " fnv1a=0x" << std::hex
+                   << Fnv1a64(bytes.data(), bytes.size()) << std::dec << "\n";
+            } else {
+              dump << "  raw_" << kind << "_dump_failed=" << path.str()
+                   << " bytes=" << bytes.size() << "\n";
+            }
+          };
+          dump_geometry("vertices", prepared.vertices);
+          dump_geometry("indices", prepared.indices);
+        }
         if (pixel_translation.uses_texture) {
           for (size_t texture_index = 0; texture_index < resolved_textures.size();
                ++texture_index) {

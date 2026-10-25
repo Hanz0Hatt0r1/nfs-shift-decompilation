@@ -6,12 +6,15 @@
 #include <rex/system/xmemory.h>
 #include <spdlog/sinks/ostream_sink.h>
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -32,6 +35,8 @@ constexpr uint32_t kVertexAddress = 0x0975DFD0u;
 constexpr uint32_t kPixelShaderAddress = 0x09D50460u;
 constexpr uint32_t kVertexShaderAddress = 0x09D568E0u;
 constexpr uint32_t kTextureAddress = 0x09D57000u;
+constexpr uint32_t kQueueDescriptorPhysicalAddress = 0x17AF4000u;
+constexpr uint32_t kQueueDescriptorVirtualAddress = 0xB7AF4000u;
 constexpr uint32_t kFrontbufferAddress = 0x00020000u;
 constexpr uint32_t kTargetWidth = 1280u;
 constexpr uint32_t kTargetHeight = 720u;
@@ -172,6 +177,11 @@ std::vector<uint8_t> make_pm4_stream() {
   append_type3(&stream, 0x36u, {0x00060004u, kIndexAddress, 0x40000006u});
   // The captured AutoIndex rectangle-list form consumes three fetched vertices.
   append_type3(&stream, 0x36u, {0x00030088u});
+  // A retail-shaped EVENT_WRITE_SHD updates descriptor+0 through its physical
+  // address; the consumer reads the same storage through the 0xB... alias.
+  append_type3(&stream, 0x58u,
+               {0x00000003u, kQueueDescriptorPhysicalAddress | 2u,
+                0x00000003u});
   append_type3(&stream, 0x64u,
                {0x53574150u, kFrontbufferAddress, kTargetWidth, kTargetHeight});
   return stream;
@@ -225,6 +235,8 @@ int main(int argc, char** argv) {
   auto* physical_heap = memory.GetPhysicalHeap();
   const bool ranges_reserved =
       reserve_guest_range(physical_heap, kRingAddress, 0x3000u) &&
+      reserve_guest_range(physical_heap, kQueueDescriptorPhysicalAddress,
+                          kPageBytes) &&
       reserve_guest_range(physical_heap, 0x0975D000u, kPageBytes) &&
       reserve_guest_range(physical_heap, 0x09D50000u, kPageBytes) &&
       reserve_guest_range(physical_heap, 0x09D56000u, kPageBytes) &&
@@ -238,6 +250,10 @@ int main(int argc, char** argv) {
   uint8_t* const ring_bytes = memory.TranslatePhysical<uint8_t*>(kRingAddress);
   uint8_t* const writeback_bytes =
       memory.TranslatePhysical<uint8_t*>(kWritebackAddress);
+  uint8_t* const queue_descriptor_physical =
+      memory.TranslatePhysical<uint8_t*>(kQueueDescriptorPhysicalAddress);
+  uint8_t* const queue_descriptor_virtual =
+      memory.TranslateVirtual<uint8_t*>(kQueueDescriptorVirtualAddress);
   uint8_t* const index_bytes =
       memory.TranslatePhysical<uint8_t*>(kIndexAddress);
   uint8_t* const vertex_bytes =
@@ -248,7 +264,8 @@ int main(int argc, char** argv) {
       memory.TranslatePhysical<uint8_t*>(kVertexShaderAddress);
   uint8_t* const texture_bytes =
       memory.TranslatePhysical<uint8_t*>(kTextureAddress);
-  if (!ring_bytes || !writeback_bytes || !index_bytes || !vertex_bytes ||
+  if (!ring_bytes || !writeback_bytes || !queue_descriptor_physical ||
+      !queue_descriptor_virtual || !index_bytes || !vertex_bytes ||
       !pixel_shader_bytes || !vertex_shader_bytes || !texture_bytes) {
     dlclose(library);
     return fail("ReXGlue guest memory translation failed");
@@ -265,6 +282,7 @@ int main(int argc, char** argv) {
   }
   std::memset(ring_bytes, 0, 0x3000u);
   std::memcpy(ring_bytes, pm4_stream.data(), pm4_stream.size());
+  write_be32(queue_descriptor_virtual, 1u);
   std::memcpy(vertex_shader_bytes, vertex_shader.data(), vertex_shader.size());
   std::memcpy(pixel_shader_bytes, pixel_shader.data(), pixel_shader.size());
   constexpr uint8_t captured_indices[] = {
@@ -348,6 +366,9 @@ int main(int argc, char** argv) {
                             stream_dwords * kSubmittedBatches &&
                         mmio->CheckLoad(kReadPointerRegister, &read_pointer) &&
                         read_pointer == stream_dwords * kSubmittedBatches;
+  const bool event_write_visible_through_alias =
+      read_be32(queue_descriptor_physical) == 3u &&
+      read_be32(queue_descriptor_virtual) == 3u;
 
   graphics->Shutdown();
   graphics.reset();
@@ -383,9 +404,44 @@ int main(int argc, char** argv) {
     std::cout << "synthetic live-ring magenta readback: " << non_black_pixels
               << " non-black pixels\n";
   }
+  const char* geometry_dump_prefix =
+      std::getenv("SHIFT_NATIVE_VULKAN_DUMP_GEOMETRY_PREFIX");
+  if (geometry_dump_prefix && *geometry_dump_prefix) {
+    const auto read_dump = [](const std::string& path) {
+      std::ifstream file(path, std::ios::binary);
+      return std::vector<uint8_t>(std::istreambuf_iterator<char>(file), {});
+    };
+    const std::string vertex_dump_path =
+        std::string(geometry_dump_prefix) + ".frame1.draw0.vertices.bin";
+    const std::string index_dump_path =
+        std::string(geometry_dump_prefix) + ".frame1.draw0.indices.bin";
+    const auto dumped_vertices = read_dump(vertex_dump_path);
+    const auto dumped_indices = read_dump(index_dump_path);
+    constexpr uint8_t expected_indices[] = {
+        0x00, 0x00, 0x01, 0x00, 0x02, 0x00,
+        0x02, 0x00, 0x01, 0x00, 0x03, 0x00,
+    };
+    if (dumped_vertices.size() != normalized_vertex_bytes.size() ||
+        !std::equal(dumped_vertices.begin(), dumped_vertices.end(),
+                    normalized_vertex_bytes.begin()) ||
+        dumped_indices.size() != sizeof(expected_indices) ||
+        !std::equal(dumped_indices.begin(), dumped_indices.end(),
+                    std::begin(expected_indices))) {
+      std::cerr << diagnostics << '\n';
+      return fail("selected-frame geometry dump differs from decoded fixture buffers");
+    }
+    std::cout << "selected-frame raw vertex/index dump matches decoded fixture buffers\n";
+  }
   if (!consumed) {
     std::cerr << diagnostics << '\n';
     return fail("PM4 stream was not consumed through live MMIO");
+  }
+  if (!event_write_visible_through_alias ||
+      diagnostics.find("EVENT_WRITE_SHD #0 initiator=00000003 "
+                       "guest=17AF4000 endian=2 packet_value=00000003") ==
+          std::string::npos) {
+    std::cerr << diagnostics << '\n';
+    return fail("EVENT_WRITE_SHD did not update descriptor+0 through its guest alias");
   }
   const char* const submission_marker =
       "submitted 3 captured indexed draw packets to the Vulkan presenter";
@@ -412,5 +468,7 @@ int main(int argc, char** argv) {
   std::cout << "live ReXGlue PM4 ring consumed three successive MMIO batches "
                "and submitted each fixture through Vulkan 1.1; fixture uses "
                "synthetic vertex/resource inputs\n";
+  std::cout << "EVENT_WRITE_SHD physical write was visible through the guest "
+               "descriptor virtual alias\n";
   return 0;
 }

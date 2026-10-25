@@ -624,6 +624,35 @@ The raw readback, decoded image, screenshot, hashes, and run limits are in
 [`the screenshot`](../../evidence/process2_redmi_post_selector_frame1026_device_20261025.png),
 and [`the compressed log`](../../evidence/process2_redmi_post_selector_frame1026_runtime_20261025.log.gz).
 
+## Retail `EVENT_WRITE_SHD` physical/virtual alias check (2026-10-25)
+
+The latest P1 Linux retail log records `EVENT_WRITE_SHD` opcode `0x58` writes
+to physical `0x17AF4000` with endian mode 2: the guest value advances `1 -> 3`
+and then `3 -> 5`. This physical destination aliases the retail descriptor's
+guest virtual base `0xB7AF4000`. The distinct Vd RPTR writeback is at
+`0x17AF403C`; it is not the descriptor `+0` word. The P2 handler decodes the
+three-word event, applies Xenos `GpuSwap`, and stores through
+`TranslatePhysical`, matching ReXGlue 0.10's event handler.
+
+A live-ring regression now seeds the virtual alias with 1, sends a retail-shaped
+event to physical `0x17AF4002`, and verifies the resulting value 3 through both
+physical and virtual mappings. A selected-frame diagnostic can also write the
+normalized vertex and index payloads to `.vertices.bin` and `.indices.bin` via
+`SHIFT_NATIVE_VULKAN_DUMP_GEOMETRY_PREFIX`; its synthetic regression compares
+the files byte-for-byte with the decoded fixture. Plugin CTest passes 4/4.
+
+The retail log records decoded event fields, not the original Type-3 header
+bytes. `0xC0025800` is the canonical unpredicated header derived from opcode
+`0x58` and the three payload dwords, not a raw header capture. In a separate
+same-run exact-XEX probe, P1 watched the physical host alias and read the guest
+virtual alias on every hit: all 360 values matched from `0x5` through `0x2D7`.
+Retail wait snapshots showed the descriptor head advancing through that alias,
+while RPTR at `0x17AF403C` advanced separately. This closes the alias-mismatch
+hypothesis for that run; it does not establish a frontend transition or explain
+the guest completion bit. The P1 evidence is
+`/home/pes/work/nfs-shift-xbox360-runtime-p1-20261023/evidence/xbox360_linux_guest_ring_physical_virtual_alias_20261025.json`.
+See the [P2 implementation regression evidence](../../evidence/process2_event_write_shd_virtual_alias_20261025.json).
+
 ## Redmi guest ring wait after the disclaimer (2026-10-25)
 
 A fresh read-only snapshot at 18:09:48 shows the phone still on the same
