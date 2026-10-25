@@ -1,0 +1,75 @@
+{
+  "schema": "shift.process2.draw_upload_buffer_cache.v1",
+  "date_local": "2026-10-26",
+  "implementation": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "commit": "1134c56899cdf6f6bfa8d05275fdb4d7d4e4daef",
+    "summary": "Reuse per-draw Vulkan upload buffers across fence-safe in-flight slots.",
+    "resources": [
+      "vertex",
+      "index",
+      "vertex uniform",
+      "pixel uniform"
+    ],
+    "slots_per_draw": 2,
+    "memory_cap_bytes": 16777216,
+    "maximum_draw_entries": 128,
+    "eviction_after_submitted_frames": 120,
+    "mapping": "Persistently mapped host-visible buffers; flush noncoherent ranges before submission.",
+    "lifetime": "Frames hold non-owning references; cache entries are destroyed only after their protecting fences retire.",
+    "fallbacks": "Copy-draw and uncached requests continue to use the prior allocation path.",
+    "rendering_semantics_changed": false
+  },
+  "regression": {
+    "source": "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
+    "assertions": [
+      "After both in-flight slots are populated, later frames do not grow the cached draw-buffer count.",
+      "Cached asynchronous frame output is byte-identical to the prior expected readback.",
+      "Clearing the cache releases every cached draw-buffer entry."
+    ],
+    "coverage_limit": "Synthetic renderer fixture; it does not contain a captured retail Bink draw or prove game output."
+  },
+  "host": {
+    "gpu": "NVIDIA GeForce GTX 950",
+    "vulkan_api": "1.4.312",
+    "validation_layer": "VK_LAYER_KHRONOS_validation",
+    "ctest": "4/4 passed with VK_INSTANCE_LAYERS forced to Khronos validation.",
+    "renderer_test": "Synthetic offscreen Vulkan 1.1 point and rectangle-list draws, depth/stencil SAMPLE_ZERO preservation, and captured sample-zero Copy/Convert passed with validation enabled.",
+    "renderer_test_log": "process2_draw_upload_buffer_cache_renderer_test_20261026.log",
+    "renderer_test_log_sha256": "baae73d441aeea88d5bf77dbe3a11403378df6b290a00d71d0a55f515a9d03ce",
+    "static_archive_sha256": "8e901cd62670740bfd6350d01649f4f09f5411818f44f5cf69c7ea19fc35052a",
+    "regression_binary_sha256": "63bfe252fc4e3be8d16e5bed0b1b9f85538ae47049fe895f86133707e8c46203",
+    "ctest_log": "process2_draw_upload_buffer_cache_ctest_20261026.log",
+    "ctest_log_sha256": "cb1761e01b2416c110c636d09ce7851f41d282ac55abd7745e3e7e1bb1c4d21c"
+  },
+  "android_arm64": {
+    "build": "Android NDK 28.2.13676358, arm64-v8a, API 29.",
+    "device": "Redmi Note 8 Pro (begonia), Mali-G76 MC4, Android 13/API 33, Vulkan 1.1.131.",
+    "result": "The offscreen renderer regression passed on the device.",
+    "output": "Synthetic offscreen Vulkan 1.1 AutoIndex point and rectangle-list draw plus 4x-to-1x depth/stencil SAMPLE_ZERO preservation and captured sample-zero Copy/Convert passed on Mali-G76 MC4.",
+    "validation_layer_available": false,
+    "static_archive_sha256": "1d1a3f2a0bd475b1ed7f176b44b728e6e9df8cf98ded25e2c53a7b5398ae7783",
+    "regression_binary_sha256": "c04967d6ad08da0e0fd6937f6e3fd22cfd5adbc08b422ec1b5626f4f58e5d8bc",
+    "redmi_test_log": "process2_draw_upload_buffer_cache_redmi_check_20261026.log",
+    "redmi_test_log_sha256": "99ace0ebfdb94c31f38b4e8d31197085093130c6e590ba0fc51de9705e169bc0"
+  },
+  "live_game_state_after_check": {
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 17268,
+    "activity_top_resumed": true,
+    "screen_sha256_before_and_after": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "guest_log_sha256_before_and_after": "2a579db2788e6505b57bfcdfdabf990102e6b864ea773acd6ca81121809116ca",
+    "input_install_or_restart": false,
+    "observation": "The retail process stayed on the legal disclaimer; the offscreen regression did not alter the game session."
+  },
+  "integration": {
+    "latest_android_plugin_apk_candidate": "process2_android_prebuilt_runtime_plugin_20261026.json",
+    "candidate_contains_this_renderer_core": true,
+    "candidate_installed_or_loaded_by_game": false
+  },
+  "limits": [
+    "No end-to-end frame-time, throughput, or FPS benchmark was run for this cache change.",
+    "The tests are synthetic and do not validate a captured retail draw or full retail parity.",
+    "The game still has no new presenter submissions after its final 14-draw disclaimer batch; menu and race graphics remain unverified."
+  ]
+}

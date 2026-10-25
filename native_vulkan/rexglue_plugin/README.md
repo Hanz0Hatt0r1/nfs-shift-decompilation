@@ -1041,3 +1041,25 @@ updated plugin has therefore not yet been loaded by the game, and this package
 does not establish new retail output or parity. Exact hashes and the read-only
 device state are recorded in
 [`process2_android_prebuilt_runtime_plugin_20261026.json`](../../evidence/process2_android_prebuilt_runtime_plugin_20261026.json).
+
+## Fence-safe per-draw upload buffer reuse (2026-10-26)
+
+The renderer now reuses vertex, index, vertex-uniform, and pixel-uniform upload
+buffers across two fenced in-flight slots per captured draw. Host-visible
+buffers stay mapped; noncoherent writes are flushed before submission. Reuse
+follows the existing frame-fence retirement path, while uncached and copy-draw
+requests keep the prior allocation behavior. The cache is bounded to 16 MiB,
+128 draw entries, and 120 submitted frames of inactivity. It does not alter
+draw state, shader translation, or pixels by design.
+
+The regression checks that the second in-flight slot stabilizes buffer count,
+later output remains byte-identical, and clearing the cache releases all
+entries. Host CTest passes 4/4; the renderer test explicitly reports Vulkan
+validation enabled on GTX 950. The ARM64 offscreen renderer check also passes on
+the Redmi Note 8 Pro Mali-G76 MC4 with Vulkan 1.1.131. Android does not provide
+the Khronos validation layer. These are synthetic/resource-lifetime checks;
+they do not measure end-to-end frame time or prove a performance gain. The
+latest plugin-only APK contains this core but has not been installed; the game
+remains open on the legal disclaimer. See
+[`process2_draw_upload_buffer_cache_20261026.json`](../../evidence/process2_draw_upload_buffer_cache_20261026.json)
+and its [host validation log](../../evidence/process2_draw_upload_buffer_cache_renderer_test_20261026.log).

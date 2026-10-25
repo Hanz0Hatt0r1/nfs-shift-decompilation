@@ -1,0 +1,94 @@
+{
+  "schema": "shift.process2.android_prebuilt_runtime_plugin.v1",
+  "observed_at_local": "2026-10-26T02:18:59+03:00",
+  "purpose": "Build the latest Process 2 ARM64 Vulkan plugin and package it without rebuilding the Android runtime or disturbing the live phone session.",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "build_system_commit": "713a66e58632eea862da54f491ebef9e39f7cda3",
+    "renderer_core_commit": "1134c56899cdf6f6bfa8d05275fdb4d7d4e4daef",
+    "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "ndk": "28.2.13676358",
+    "android_abi": "arm64-v8a",
+    "android_api": 26,
+    "build_type": "Debug"
+  },
+  "build": {
+    "directory": "/tmp/nfs-p2-prebuilt-runtime-build",
+    "target": "rexgpu-shift-native",
+    "result": "success",
+    "prebuilt_runtime_option": "SHIFT_REXGLUE_PREBUILT_RUNTIME",
+    "runtime_rebuilt": false,
+    "sdk_vulkan_provider_built": "rexui-vulkan object target",
+    "optional_depth_stencil_resolve": true,
+    "android_bsymbolic_link_binding": true
+  },
+  "runtime": {
+    "source_apk": "/home/pes/work/process2-latest-android-vulkan-candidate-20261026/app-process2-vulkan-latest-20261026.apk",
+    "dso": "lib/arm64-v8a/librexruntimed.so",
+    "sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "unchanged_in_candidate_apk": true
+  },
+  "plugin": {
+    "unstripped_path": "/tmp/nfs-p2-prebuilt-runtime-build/plugin-output/librexgpu-shift-natived.so",
+    "unstripped_sha256": "b958c2c17852e75131f8bd488873b00947eac7a91b374602dad4c7b90add331d",
+    "build_id": "3135190a1586c34d017c0cbb79bd26aa6a67b5b2",
+    "packaged_alias_sha256": "cc0f374512b4e15e7ab66a3b118a05f392fb7cf7f0e1d3e37b52dc136d519b95",
+    "aliases_identical": true,
+    "elf": "AArch64 Android shared library, API 26, SONAME librexgpu-shift-natived.so",
+    "needed_runtime": "librexruntimed.so",
+    "provider_binding": "DT_FLAGS contains SYMBOLIC; link command used -Bsymbolic",
+    "stripped_for_apk": true
+  },
+  "apk": {
+    "path": "/home/pes/work/process2-latest-renderer-handover-20261026/android-plugin-buffer-cache-20261026/app-process2-vulkan-buffer-cache-20261026.apk",
+    "sha256": "3aa064b7da0c08d515db81ecb53fbd67290c0132132aa8c889d175b24ccecb77",
+    "base_apk_sha256": "e9185d08d8391589e567abaff4f84629fb5cc89d68bc53c2269c4df9136c10c9",
+    "package_name": "com.hanz0hatt0r.nfsshift",
+    "changed_payload_entries": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "all_other_zip_entries_content_unchanged": true,
+    "runtime_entry_hash_unchanged": true,
+    "signature_scheme": "APK Signature Scheme v3",
+    "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "zipalign": "passed with 16-KiB page alignment for uncompressed native libraries"
+  },
+  "device_state": {
+    "device": "Redmi Note 8 Pro (begonia)",
+    "gpu": "Mali-G76 MC4",
+    "vulkan": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615",
+    "package_process_id": 17268,
+    "activity_top_resumed": true,
+    "screen": "Original legal disclaimer with thin purple horizontal strips",
+    "screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "guest_log_sha256": "2a579db2788e6505b57bfcdfdabf990102e6b864ea773acd6ca81121809116ca",
+    "candidate_installed_or_launched": false,
+    "app_input_or_restart_sent": false,
+    "candidate_plugin_loaded_by_game": false
+  },
+  "verification": {
+    "cmake_android_plugin_target": "passed",
+    "elf_and_runtime_dependency_inspection": "passed",
+    "apk_signature_and_certificate_check": "passed",
+    "apk_zipalign_check": "passed",
+    "apk_payload_comparison": "passed; only the two Process 2 plugin aliases changed",
+    "renderer_core_host_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation forced; see process2_draw_upload_buffer_cache_ctest_20261026.log.",
+    "renderer_core_redmi_test": "passed on Mali-G76 MC4 with Vulkan 1.1.131; see process2_draw_upload_buffer_cache_redmi_check_20261026.log. This is an offscreen regression binary, not this APK.",
+    "retail_plugin_runtime_test": "not run; candidate was not installed"
+  },
+  "limits": [
+    "This is not a full Android application/runtime rebuild; it intentionally reuses the packaged runtime DSO.",
+    "The packaged P2 plugin has not been loaded in the game on the phone.",
+    "No new retail scene parity or performance claim follows from the build/package checks.",
+    "The live guest remains at the disclaimer after its final captured submission; this scene-transition frontier is separate from the plugin build path.",
+    "The project working tree and all Process 1 source/runtime files remain unmodified by the build; the existing game package was not installed or changed."
+  ],
+  "references": {
+    "renderer_core_cache_evidence": "process2_draw_upload_buffer_cache_20261026.json",
+    "host_ctest_log": "process2_draw_upload_buffer_cache_ctest_20261026.log",
+    "redmi_regression_log": "process2_draw_upload_buffer_cache_redmi_check_20261026.log"
+  }
+}
