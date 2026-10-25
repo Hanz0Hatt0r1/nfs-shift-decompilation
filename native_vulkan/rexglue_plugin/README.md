@@ -638,3 +638,7 @@ guest stopped producing packets or connect that stop to the earlier file
 probes. Details and hashes are in
 [`the evidence record`](../../evidence/process2_redmi_guest_ring_wait_android_20261025.json)
 and [the compressed thread sample](../../evidence/process2_redmi_guest_ring_wait_threads_20261025.log.gz).
+
+A read-only check of the game's Android data directory confirms that
+`PakFiles/Menu_Background.bff` is present and byte-identical to both host
+retail copies (751,727 bytes; SHA-256 `38346e13ff13f8e3b1fa47afee12fb67ae2b43ab1256476dc6178add55fe8a63`). The checked Xbox PAK index contains `gui/menu_background/menu_background.sgx`, `.enx`, and `tracks/textures/menu_background/menu_background_01.xtx`, with no member named `menu_background.xml`. The guest's loose XML failures therefore do not mean the BFF is absent; this does not prove that an archive fallback is implemented or that the XML failures caused the ring stall. See [`the device archive evidence`](../../evidence/process2_redmi_menu_background_archive_presence_20261025.json) and the validated [historical index record](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/5b913e2875f095b92a02e13fd393f73148889801/evidence/xbox360_menu_background_pak_index_20261024.json).

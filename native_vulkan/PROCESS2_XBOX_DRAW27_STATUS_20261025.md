@@ -67,6 +67,12 @@ available for Vulkan submission at that time, but does not identify why the
 guest stopped producing them. See the [live thread-state evidence](../evidence/process2_redmi_guest_ring_wait_android_20261025.json)
 and [raw sample](../evidence/process2_redmi_guest_ring_wait_threads_20261025.log.gz).
 
+The phone's `PakFiles/Menu_Background.bff` is present and matches both host
+retail copies by SHA-256. Its validated Xbox PAK index contains the menu SGX,
+ENX, and XTX resources but no `menu_background.xml` member. This narrows the
+asset question without establishing an archive fallback or a causal link to
+the stopped ring. See the [device archive check](../evidence/process2_redmi_menu_background_archive_presence_20261025.json).
+
 The last logged submission carried 14 draws at 17:55:35.960 MSK. About 0.4
 seconds later the guest tried both `D:\tracks\_data\instances\scenes\menu_background.xml`
 and `D:\tracks\_data\static\scenes\menu_background.xml`; both returned

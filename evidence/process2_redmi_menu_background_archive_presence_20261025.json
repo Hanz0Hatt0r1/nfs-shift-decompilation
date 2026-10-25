@@ -1,0 +1,73 @@
+{
+  "schema": "shift.process2.redmi_menu_background_archive_presence.v1",
+  "captured_at_local": "2026-10-25T18:19:12+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": "13",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 7611,
+    "activity_top_resumed": true,
+    "screen_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af"
+  },
+  "archive": {
+    "device_path": "/sdcard/Android/data/com.hanz0hatt0r.nfsshift/files/game/PakFiles/Menu_Background.bff",
+    "bytes": 751727,
+    "sha256": "38346e13ff13f8e3b1fa47afee12fb67ae2b43ab1256476dc6178add55fe8a63",
+    "host_copies": [
+      {
+        "path": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data/PakFiles/Menu_Background.bff",
+        "bytes": 751727,
+        "sha256": "38346e13ff13f8e3b1fa47afee12fb67ae2b43ab1256476dc6178add55fe8a63"
+      },
+      {
+        "path": "/home/pes/work/process2-linux-retail-root-20261024/game/PakFiles/Menu_Background.bff",
+        "bytes": 751727,
+        "sha256": "38346e13ff13f8e3b1fa47afee12fb67ae2b43ab1256476dc6178add55fe8a63"
+      }
+    ],
+    "index": {
+      "format": "Xbox big-endian PAK",
+      "entries": 57,
+      "record_table_bytes": 2394,
+      "name_table_bytes": 3437,
+      "validated_ranges_and_names": true,
+      "evidence_revision": "5b913e2875f095b92a02e13fd393f73148889801",
+      "evidence_json_sha256": "f58187e24243187af398821c1332600f0fa79083417b6eb962bab976594b9872"
+    },
+    "scene_related_members": [
+      {
+        "path": "gui/menu_background/menu_background.sgx",
+        "compression_type": 2,
+        "compressed_bytes": 1528,
+        "uncompressed_bytes": 10716
+      },
+      {
+        "path": "gui/menu_background/menu_background.enx",
+        "compression_type": 0,
+        "compressed_bytes": 111,
+        "uncompressed_bytes": 111
+      },
+      {
+        "path": "tracks/textures/menu_background/menu_background_01.xtx",
+        "compression_type": 2,
+        "compressed_bytes": 418,
+        "uncompressed_bytes": 16436
+      }
+    ],
+    "exact_menu_background_xml_member_matches": []
+  },
+  "runtime_context": {
+    "recent_guest_open_failures_from": "process2_redmi_post_selector_frame1026_20261025.json",
+    "paths": [
+      "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+      "D:\\tracks\\_data\\static\\scenes\\menu_background.xml"
+    ],
+    "process1_informed": true
+  },
+  "interpretation": "The phone contains the exact retail Menu_Background.bff archive found in both host copies, including related SGX/ENX/texture resources. Its Xbox PAK index has no member named menu_background.xml. This establishes archive presence and the exact XML-member absence, but does not establish which path the game should open, whether runtime has an archive fallback, or whether the failed loose-file probes caused the stalled guest ring.",
+  "limits": [
+    "The archive is evidence about retail packaged resources, not a captured draw contract or proof of rendered menu output.",
+    "No game assets, Process 1 runtime files, or app data were modified."
+  ]
+}
