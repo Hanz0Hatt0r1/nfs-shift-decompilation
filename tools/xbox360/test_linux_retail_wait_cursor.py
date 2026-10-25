@@ -22,6 +22,10 @@ assert evidence["capture"]["gdb_script"]["sha256"] == hashlib.sha256(
 ).hexdigest()
 
 guest = evidence["guest_observation"]
+provenance = guest["expected_cursor_provenance"]
+assert provenance["copy_instruction_address"] == "0x823B34B8"
+assert provenance["copy_instruction"] == "mr r30,r4"
+assert "before 0x823A0310 executes its body" in guest["capture_phase"]
 assert guest["expected_cursor_decimal"] == int(guest["expected_cursor_from_guest_r30"], 16)
 assert guest["software_ring_head"] < guest["expected_cursor_decimal"] <= guest["software_ring_tail"]
 assert guest["wait_record_snapshot_head"] == guest["software_ring_head"]
