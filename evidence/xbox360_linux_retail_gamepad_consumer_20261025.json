@@ -109,12 +109,30 @@
         }
       ],
       "interpretation": "The retail input edge accumulator updates entries for both non-neutral button masks. This does not identify the later frontend action handler."
+    },
+    "child_update_dispatch": {
+      "retail_caller": "0x8230CD00",
+      "indirect_target": "0x8230A2D8",
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-input-consumer-20261025/button-callback-results-gdb.log",
+        "sha256": "196c9a9e9840e4c6f62bd0b33df26c2af6a8b5b2a9e4e6cbb5db0e4af0e41b26"
+      },
+      "observed_for_masks": ["0x0010", "0x1000"],
+      "child_slots": {
+        "total": 10,
+        "enabled_parent_relative_offsets": [296, 388, 480, 572],
+        "disabled_parent_relative_offsets": [664, 756, 848, 940, 1032, 1124],
+        "enabled_return": "0xffffffff",
+        "disabled_return": "0x00000000",
+        "basis": "The leaf at 0x8230A2D8 returns the sign bit of child+84."
+      },
+      "interpretation": "The retail input update also enters four enabled child-state paths. These are not yet tied to a named frontend command or scene transition."
     }
   },
   "interpretation": {
     "supported": [
       "The original retail consumer reaches XamInputGetState repeatedly and receives successful non-neutral button states for user 0.",
-      "The retail capability matcher accepts the connected controller and the title updates its per-button edge state for non-neutral masks.",
+      "The retail capability matcher accepts the connected controller, the title updates per-button edge state, and four enabled child-state paths run for non-neutral masks.",
       "The Linux input path is not blocked before the retail state consumer."
     ],
     "not_proven": [
