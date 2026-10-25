@@ -1,0 +1,94 @@
+{
+  "schema": "shift.process2.redmi_resolve_candidate_live_startup.v1",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "adb_endpoint": "192.168.1.32:38615",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift"
+  },
+  "source": {
+    "process2_branch": "work/process2-xbox-live-ring-20261023",
+    "process2_head_at_recording": "f29afa672326cec4f48c1987302e4dcd0b154a5e",
+    "candidate_source_tree_head": "c534eb00af5d80dfd0fdbdcace809309a5fae711",
+    "renderer_plugin_source_commit": "c69de3f2393e32f164ff7cc0581351bf24bfa730",
+    "current_head_difference": "Optional raw geometry diagnostics only; Vulkan render core is the same."
+  },
+  "apk": {
+    "path": "/home/pes/work/process2-current-resolve-android-plugin-20261025/app-current-resolve-candidate.apk",
+    "sha256": "03ae4aef3b02e6f6b3a3ae05a8bab157f8b4c1b0d67988a17c2e3384c26b089f",
+    "install_method": "adb incremental install after normal replacement failed with INSTALL_FAILED_INSUFFICIENT_STORAGE",
+    "installed_at": "2026-10-25T20:36:27+03:00",
+    "app_data_cleared": false,
+    "installed_apk_sha256_verified": true,
+    "apk_signature_v3_verified": true,
+    "same_signer_as_installed_base": true
+  },
+  "renderer_plugin": {
+    "abi": "arm64-v8a",
+    "packaged_paths": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "sha256": "6ddffab3c34d96e5fb7c78aad3cb90ecffa3edbb2ecb6e5bbff6a23201f788be",
+    "elf_build_id": "b1cf142d9cf83bf3bccd832053ed4a678d196a13",
+    "aliases_byte_identical": true,
+    "runtime_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "in_app_mapping_verified": true
+  },
+  "live_run": {
+    "screen_sequence": ["Loading", "EA intro", "legal disclaimer"],
+    "language_selector": "Not shown in this run because English was already selected in preserved app data; earlier device capture showed the labels readable.",
+    "menu_or_race_reached": false,
+    "cutscene_playback_sustained": false,
+    "app_left_open": true,
+    "gpu_worker_observation": "At the later snapshot the native GPU worker was waiting in futex_wait_queue_me; this is consistent with waiting for new guest ring packets but does not establish why packet production stopped."
+  },
+  "captures": {
+    "loading": {
+      "path": "process2_redmi_resolve_candidate_loading_20261025.png",
+      "sha256": "36ece6a72c35cf260e3765351b33168bf5634e83b19e1e1681a75621cb479ca8",
+      "dimensions": "2340x1080",
+      "observation": "Loading text is complete; filled bar is yellow-orange."
+    },
+    "ea_intro": {
+      "path": "process2_redmi_resolve_candidate_ea_intro_20261025.png",
+      "sha256": "b95c77f1d9596fdc984bb1cf74e8c793b8b578dea8771afc237f3c74e829575a",
+      "dimensions": "2340x1080"
+    },
+    "disclaimer": {
+      "path": "process2_redmi_resolve_candidate_disclaimer_20261025.png",
+      "sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+      "dimensions": "2340x1080",
+      "observation": "Thin purple bars remain."
+    },
+    "frame_1026_readback": {
+      "device_path": "/sdcard/Android/data/com.hanz0hatt0r.nfsshift/files/process2-frame1026-readback.a2b10g10r10",
+      "captured_at": "2026-10-25T20:38:13.846746097+03:00",
+      "evidence_path": "process2_redmi_resolve_candidate_frame1026_readback_20261025.bin",
+      "sha256": "c11f996797463001d90ebe646a929c64b40fc1dde8f190b8b86a86d22b2c9eda",
+      "size_bytes": 3686400,
+      "format": "A2B10G10R10",
+      "decoded_png": {
+        "path": "process2_redmi_resolve_candidate_frame1026_readback_decoded_20261025.png",
+        "sha256": "7fa71f44ebf459182c1fd1d5589bfb33e3dc9cfafe2783615bf07136ce753524",
+        "dimensions": "1280x720"
+      },
+      "screen_comparison": {
+        "method": "Center crop 1920x1080 from the 2340x1080 screenshot, then bilinear resize to 1280x720.",
+        "exact_rgb_pixel_matches": 894091,
+        "total_rgb_pixels": 921600,
+        "mae_rgb": [0.3777767, 0.3489703, 0.4093631],
+        "rms_rgb": [2.957926, 2.887703, 3.153431]
+      },
+      "independence_limit": "Screen capture and GPU readback are two views of the same live output, not an independent retail reference. The raw readback hash matches the prior frame-1026 disclaimer readback."
+    }
+  },
+  "limits": [
+    "This confirms the candidate renderer loaded in the application and repeatedly produced startup/disclaimer output on the Redmi Mali Vulkan path; it does not establish complete retail parity.",
+    "The language selector was skipped in this run because the previous English selection persisted.",
+    "Menus beyond the disclaimer, race scenes, and sustained cutscene playback remain unverified.",
+    "Purple disclaimer bars remain, and the phone does not provide VK_LAYER_KHRONOS_validation.",
+    "The worker wait is an observation only; no causal claim is made about missing menu XML probes or the guest stopping its ring submissions."
+  ]
+}

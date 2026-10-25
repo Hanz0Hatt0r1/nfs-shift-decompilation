@@ -199,18 +199,28 @@ and [screen capture](../evidence/process2_redmi_current_disclaimer_20261025.png)
 
 ## Current resolve-enabled Android candidate (2026-10-25)
 
-A fresh ARM64 DSO was built from the current P2 source against the resolve SDK
-branch and linked with the unchanged runtime DSO extracted from the installed
-APK. The generated link passed `--no-undefined`. Both packaged aliases are
-identical, and an APK candidate built from the installed base passes zip
-alignment and APK v3 signature verification with the same debug signer. It
-selects presenter frame 1026 for readback. The candidate has not been installed;
-PID 7611 was left untouched. Standalone shell-process probes could not validate
-the provider or plugin: the capability check aborted with `std::bad_cast`, and
-a minimal `dlopen` probe faulted inside the extracted runtime before returning.
-Those failures happened outside the app Activity/JVM context and are
-inconclusive about an in-app load. The candidate needs an application-context
-retail run before it can be treated as usable. See the [candidate build record](../evidence/process2_current_resolve_android_plugin_candidate_20261025.json).
+The candidate described in the [build record](../evidence/process2_current_resolve_android_plugin_candidate_20261025.json)
+was subsequently installed with ADB incremental install (the regular replace
+failed for insufficient storage), preserving app data. The installed APK hash
+and the mapped ARM64 plugin were verified in the app process. On the Redmi Note
+8 Pro it displayed Loading, the EA intro, and the legal disclaimer; its frame
+1026 Vulkan readback matches the screen capture after accounting for the
+device-to-readback scaling. The run left the app open on the disclaimer. This
+supersedes the earlier “not installed” status for that exact candidate; the
+prior standalone shell probes remain inconclusive because they ran outside the
+app Activity/JVM context. See the [live startup record](../evidence/process2_redmi_resolve_candidate_live_startup_20261025.json)
+and its [Loading](../evidence/process2_redmi_resolve_candidate_loading_20261025.png),
+[EA intro](../evidence/process2_redmi_resolve_candidate_ea_intro_20261025.png),
+[disclaimer](../evidence/process2_redmi_resolve_candidate_disclaimer_20261025.png),
+and [decoded frame 1026](../evidence/process2_redmi_resolve_candidate_frame1026_readback_decoded_20261025.png).
+
+The language selector did not appear in this run because the earlier English
+choice remained in preserved app data. The earlier device capture established
+that its labels were readable. Thin purple bars still show on the disclaimer;
+the menu after the disclaimer, race scenes, and sustained cutscene playback are
+not yet verified. The GPU worker later waited in `futex_wait_queue_me`, which is
+consistent with the renderer waiting for more ring packets but does not prove
+why the guest stopped submitting them.
 
 The retail Linux log also confirms `EVENT_WRITE_SHD` writes the descriptor's
 physical base `0x17AF4000` (`1 -> 3 -> 5`), while Vd RPTR writeback separately
@@ -222,9 +232,8 @@ stores were visible through the guest virtual alias and observed the retail
 descriptor head advance while RPTR advanced separately. See the [P2 regression evidence](../evidence/process2_event_write_shd_virtual_alias_20261025.json) and
 P1's `/home/pes/work/nfs-shift-xbox360-runtime-p1-20261023/evidence/xbox360_linux_guest_ring_physical_virtual_alias_20261025.json`.
 
-This confirms more than the first loading frame, but does not establish
-sustained cutscene playback, the complete menu, a race scene, or retail visual
-parity.
+These host and device observations do not establish sustained cutscene
+playback, the complete menu, a race scene, or retail visual parity.
 
 No Process 1 files were changed. Both pre-existing desktop NFS Shift windows
 were left open.
