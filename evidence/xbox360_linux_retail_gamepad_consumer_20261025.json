@@ -78,11 +78,43 @@
       "external_path": "/tmp/nfs-p1-input-consumer-20261025/getstate-calls-gdb.log",
       "sha256": "61290550854f4ded4d840a1236de0c200647cc57d175118eeace9999a8658efe",
       "observation": "Repeated calls to this XAM wrapper used guest return address 0x82308EA8 for user indices 0 through 3."
+    },
+    "device_capability_match": {
+      "retail_function": "0x823053C8",
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-input-consumer-20261025/capability-match-gdb.log",
+        "sha256": "ed238f47ea741a12a9e1724371eb25baa5fc1707964eac448b7dd3d9eb819d5e"
+      },
+      "observed_capability_bytes": "01 01 00 00 f3 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff",
+      "comparison_result": "0x00000000",
+      "interpretation": "The retail device-capability comparison returned its match value; it did not reject the connected controller."
+    },
+    "button_edge_tracking": {
+      "retail_function": "0x8230CD00",
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-input-consumer-20261025/button-edge-dispatch-gdb.log",
+        "sha256": "d00d71491a61291e27d3d42252a1839c0db9b43543aeb25af67567e73a6f99df"
+      },
+      "configured_button_count": 25,
+      "observed_edges": [
+        {
+          "xinput_mask": "0x0010",
+          "edge_byte_offset": 140,
+          "values": ["0x00", "0x80", "0xc0", "0xe0"]
+        },
+        {
+          "xinput_mask": "0x1000",
+          "edge_byte_offset": 148,
+          "values": ["0x00", "0x80", "0xc0", "0xe0", "0xf0", "0xf8", "0xfc", "0xfe"]
+        }
+      ],
+      "interpretation": "The retail input edge accumulator updates entries for both non-neutral button masks. This does not identify the later frontend action handler."
     }
   },
   "interpretation": {
     "supported": [
       "The original retail consumer reaches XamInputGetState repeatedly and receives successful non-neutral button states for user 0.",
+      "The retail capability matcher accepts the connected controller and the title updates its per-button edge state for non-neutral masks.",
       "The Linux input path is not blocked before the retail state consumer."
     ],
     "not_proven": [
