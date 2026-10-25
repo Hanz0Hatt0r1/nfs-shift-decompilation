@@ -68,6 +68,8 @@ A 120-second direct Linux run of the exact retail XEX used the P1 executable (SH
 
 A 75-second run without GDB or breakpoints repeated the retail safety warning in pixel-identical game-window captures at about 41, 54, and 68 seconds. Read-only `/proc/<pid>/mem` samples saw the guest ring head stop at `4329` with tail `4339` and predicate byte `0x04` for 38 samples spanning 40 seconds; the tested completion mask `0x02` remained clear. The host log records 105 indexed-draw submissions and 940 Copy/Convert accepts, followed by four `menu_background.xml` misses and no later draw submissions; there were no guest faults or Vulkan frame-refresh failures. This confirms the pending queue state persists without debugger breakpoints, but does not identify which component should advance it or prove the XML misses caused the stall. Keep the original queue predicate and file lookup semantics unchanged. See the [GDB-free queue evidence](../evidence/xbox360_linux_retail_queue_nogdb_20261025.json).
 
+A one-time GDB stack sample with no breakpoints found the retail `Core 0/0: Main` thread in `0x823A0310`, called from the original `0x823B34A0` queue wait. The same read-only snapshot had software-ring head/tail `4937/4947` and predicate `0x04`; the host `SHIFT Native GP` thread was asleep in `RingWorkerLoop`'s condition-variable wait. This narrows the next investigation to the queue-to-worker wake/consume contract, but does not prove the queue state is invalid or assign the cause to P1 or P2. The retail predicate and guest queue semantics remain unchanged. See the [wait-stack evidence](../evidence/xbox360_linux_retail_wait_stack_20261025.json).
+
 ## Proposed pipeline
 
 ```text
