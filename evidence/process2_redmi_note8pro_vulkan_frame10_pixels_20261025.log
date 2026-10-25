@@ -1,0 +1,3280 @@
+[2026-10-25 03:26:49.026] [info] [core] [t20777] Vulkan instance API version 1.3.0. Enabled layers and extensions:
+[2026-10-25 03:26:49.026] [info] [core] [t20777] * VK_KHR_surface
+[2026-10-25 03:26:49.026] [info] [core] [t20777] * VK_KHR_android_surface
+[2026-10-25 03:26:49.026] [warning] [core] [t20777] Available Vulkan physical devices (use the 'vulkan_device' configuration variable to force a specific device):
+[2026-10-25 03:26:49.026] [warning] [core] [t20777] * 0: Mali-G76 MC4
+[2026-10-25 03:26:49.027] [info] [core] [t20777] Vulkan device 'Mali-G76 MC4': API 1.1.131, vendor 0x13B5, device 0x72110000, driver version 0x6800000
+[2026-10-25 03:26:49.027] [info] [core] [t20777] Enabled Vulkan device extensions:
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * VK_KHR_driver_properties
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * VK_KHR_swapchain
+[2026-10-25 03:26:49.027] [info] [core] [t20777] Vulkan device properties and enabled features:
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * driverID: ArmProprietary
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * driverName: Mali-G76 MC4
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * driverInfo: v1.r26p0-01eac0.66a08f2668d757b36371f0062427ea04
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * conformanceVersion: 1.2.2.0
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * maxImageDimension2D: 16383
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * maxImageDimension3D: 16383
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * maxImageDimensionCube: 16383
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * maxImageArrayLayers: 1024
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * maxStorageBufferRange: 268435456
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * maxSamplerAllocationCount: 4294967295
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * maxPerStageDescriptorSamplers: 128
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * maxPerStageDescriptorStorageBuffers: 35
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * maxPerStageDescriptorSampledImages: 256
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * maxPerStageResources: 365
+[2026-10-25 03:26:49.027] [info] [core] [t20777] * maxVertexOutputComponents: 128
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * maxTessellationEvaluationOutputComponents: 128
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * maxGeometryInputComponents: 64
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * maxGeometryOutputComponents: 128
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * maxFragmentInputComponents: 128
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * maxFragmentCombinedOutputResources: 64
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * maxSamplerAnisotropy: 16
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * maxViewportDimensions[0]: 16383
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * maxViewportDimensions[1]: 16383
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * minUniformBufferOffsetAlignment: 16
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * minStorageBufferOffsetAlignment: 64
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * maxFramebufferWidth: 16383
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * maxFramebufferHeight: 16383
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * framebufferColorSampleCounts: { 1 | 4 | 8 }
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * framebufferDepthSampleCounts: { 1 | 4 | 8 }
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * framebufferStencilSampleCounts: { 1 | 4 | 8 }
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * framebufferNoAttachmentsSampleCounts: { 1 | 4 | 8 | 16 }
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * sampledImageColorSampleCounts: { 1 | 4 | 8 }
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * sampledImageIntegerSampleCounts: { 1 | 4 | 8 }
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * sampledImageDepthSampleCounts: { 1 | 4 | 8 }
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * sampledImageStencilSampleCounts: { 1 | 4 | 8 }
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * standardSampleLocations: 1
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * optimalBufferCopyOffsetAlignment: 64
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * optimalBufferCopyRowPitchAlignment: 64
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * nonCoherentAtomSize: 64
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * geometryShader
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * constantAlphaColorBlendFactors
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * imageViewFormatReinterpretation
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * imageViewFormatSwizzle
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * pointPolygons
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * separateStencilMaskRef
+[2026-10-25 03:26:49.028] [info] [core] [t20777] * shaderSampleRateInterpolationFunctions
+[2026-10-25 03:26:49.610] [info] [core] [t20777] VulkanPresenter: Created 2264x952 swapchain with format 37, color space 0, presentation mode 1
+[2026-10-25 03:26:49.622] [info] [sys] [t20777] Guest memory arena mapped: virtual base 0x0000000100000000, physical base 0x0000000200000000
+[2026-10-25 03:26:49.835] [info] [core] [t20777] shift-native: guest vblank worker started
+[2026-10-25 03:26:49.835] [info] [core] [t20777] shift-native: installed emulator-free Vulkan frontend; waiting for guest PM4
+[2026-10-25 03:26:49.851] [info] [core] [t20777] Function table initialized for module: code=821A0000-83073F54, image=82000000-83270000
+[2026-10-25 03:26:49.952] [warning] [core] [t20777] SDL GameControllerDB: file 'gamecontrollerdb.txt' does not exist.
+[2026-10-25 03:26:49.952] [info] [core] [t20777] SDL input driver initialized successfully
+[2026-10-25 03:26:50.316] [info] [core] [t20777] VulkanPresenter: Created 2340x1080 swapchain with format 37, color space 0, presentation mode 1
+[2026-10-25 03:26:50.322] [info] [core] [t20777] Initializing shader storage for title 454108B4...
+[2026-10-25 03:26:50.836] [warning] [krnl] [t20800] IoDismountVolumeByFileHandle(0xf800003c) - stub
+[2026-10-25 03:26:50.836] [warning] [krnl] [t20800] IoDismountVolumeByFileHandle(0xf800003c) - stub
+[2026-10-25 03:26:50.838] [warning] [krnl] [t20800] [NtCreateFile] FAILED: path='d:\devmodeconfig.xml' -> 0xc000000f
+[2026-10-25 03:26:51.172] [info] [core] [t20800] shift-native: guest GPU interrupt callback set to 823B37B8
+[2026-10-25 03:26:51.173] [info] [core] [t20800] shift-native: guest PM4 ring at 09752580, 32768 bytes
+[2026-10-25 03:26:51.173] [info] [core] [t20800] shift-native: RPTR writeback enabled guest=17AF403C, block_log2=6, physical_valid=true, translated=0x217af403c, initial=00000000
+[2026-10-25 03:26:51.182] [warning] [fs] [t20800] VFS: 'ShaderDumpxe:\CompareBackEnds' -> [no device]
+[2026-10-25 03:26:51.183] [info] [core] [t20797] shift-native: unresolved captured draw #0 topology=1 autoindex=true count=1 raster=false inputs=false translated=false: incomplete captured raster register state valid_mask=0x17038
+[2026-10-25 03:26:51.184] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #0 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95D00E4 swap_counter=0 guest_value=A95CFFFC->A95D00E4
+[2026-10-25 03:26:51.184] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #1 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000003 swap_counter=0 guest_value=00000001->00000003
+[2026-10-25 03:26:51.184] [info] [core] [t20797] shift-native: RPTR writeback #0 guest=17AF403C, translated=0x217af403c, value=00000019, memory=00000000->00000019
+[2026-10-25 03:26:51.188] [info] [core] [t20798] shift-native: dispatched guest vblank callback 1 at 60.000 Hz
+[2026-10-25 03:26:51.205] [info] [core] [t20798] shift-native: dispatched guest vblank callback 2 at 60.000 Hz
+[2026-10-25 03:26:51.221] [info] [core] [t20798] shift-native: dispatched guest vblank callback 3 at 60.000 Hz
+[2026-10-25 03:26:52.266] [info] [core] [t20797] shift-native: resolved captured retail draw #0 (startup sample) elapsed_ms=0
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001 setup=0x10000 cull=0 front_ccw=1
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x95dc07c descriptor={0x95dc07f,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=0 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:26:52.287] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:26:52.287] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #2 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95D0870 swap_counter=0 guest_value=A95D00E4->A95D0870
+[2026-10-25 03:26:52.287] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #3 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000005 swap_counter=0 guest_value=00000003->00000005
+[2026-10-25 03:26:52.288] [info] [core] [t20797] shift-native: RPTR writeback #1 guest=17AF403C, translated=0x217af403c, value=0000001F, memory=00000019->0000001F
+[2026-10-25 03:26:52.288] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #4 initiator=80000003 guest=17AF4040 endian=0 packet_value=DEADBEEF swap_counter=0 guest_value=00000000->00000000
+[2026-10-25 03:26:52.398] [info] [core] [t20797] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:26:52.399] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #5 initiator=80000003 guest=17AF4044 endian=0 packet_value=DEADBEEF swap_counter=1 guest_value=00000000->01000000
+[2026-10-25 03:26:52.399] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #6 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95D09DC swap_counter=1 guest_value=A95D0870->A95D09DC
+[2026-10-25 03:26:52.399] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #7 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000007 swap_counter=1 guest_value=00000005->00000007
+[2026-10-25 03:26:52.399] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #8 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95D0D7C swap_counter=1 guest_value=A95D09DC->A95D0D7C
+[2026-10-25 03:26:52.399] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #9 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000009 swap_counter=1 guest_value=00000007->00000009
+[2026-10-25 03:26:52.399] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #10 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95D3218 swap_counter=1 guest_value=A95D0D7C->A95D3218
+[2026-10-25 03:26:52.399] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #11 initiator=00000003 guest=17AF4000 endian=2 packet_value=0000000B swap_counter=1 guest_value=00000009->0000000B
+[2026-10-25 03:26:52.399] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #12 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95D326C swap_counter=1 guest_value=A95D3218->A95D326C
+[2026-10-25 03:26:52.399] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #13 initiator=00000003 guest=17AF4000 endian=2 packet_value=0000000D swap_counter=1 guest_value=0000000B->0000000D
+[2026-10-25 03:26:52.400] [info] [core] [t20797] shift-native: resolved captured retail draw #1 (startup sample) elapsed_ms=133
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001 setup=0x10000 cull=0 front_ccw=1
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x95e8278 descriptor={0x95e827b,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=0 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:26:52.400] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:26:52.400] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #14 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95DC96C swap_counter=1 guest_value=A95D326C->A95DC96C
+[2026-10-25 03:26:52.401] [info] [core] [t20797] shift-native: EVENT_WRITE_SHD #15 initiator=00000003 guest=17AF4000 endian=2 packet_value=0000000F swap_counter=1 guest_value=0000000D->0000000F
+[2026-10-25 03:26:52.470] [info] [core] [t20797] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:26:52.470] [info] [core] [t20797] shift-native: RPTR writeback #2 guest=17AF403C, translated=0x217af403c, value=00000049, memory=0000001F->00000049
+[2026-10-25 03:26:52.472] [info] [core] [t20797] shift-native: resolved captured retail draw #2 (startup sample) elapsed_ms=205
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001 setup=0x10000 cull=0 front_ccw=1
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x95f43f8 descriptor={0x95f43fb,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=0 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:26:52.472] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:26:52.502] [warning] [fs] [t20800] VFS: 'render\shaders' -> [no device]
+[2026-10-25 03:26:52.502] [error] [fs] [t20800] ResolvePath(render\shaders) failed - device not found
+[2026-10-25 03:26:52.502] [warning] [krnl] [t20800] [NtCreateFile] FAILED: path='render\shaders\cache\' -> 0xc000000f
+[2026-10-25 03:26:52.502] [warning] [fs] [t20800] VFS: 'render\shaders' -> [no device]
+[2026-10-25 03:26:52.502] [error] [fs] [t20800] ResolvePath(render\shaders) failed - device not found
+[2026-10-25 03:26:52.502] [warning] [krnl] [t20800] [NtCreateFile] FAILED: path='render\shaders\cache\' -> 0xc000000f
+[2026-10-25 03:26:52.546] [info] [core] [t20797] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:26:52.546] [info] [core] [t20797] shift-native: RPTR writeback #3 guest=17AF403C, translated=0x217af403c, value=00000055, memory=00000049->00000055
+[2026-10-25 03:26:52.747] [info] [core] [t20797] shift-native: resolved captured retail draw #3 (startup sample) elapsed_ms=480
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001 setup=0x10000 cull=0 front_ccw=1
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x9600538 descriptor={0x960053b,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=0 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:26:52.964] [info] [core] [t20797] shift-native: resolved captured retail draw #4 (startup sample) elapsed_ms=680
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture fetch=0 guest=0x9d57000 descriptor={0x8800d8fe,0x9d57086,0x1fe3ff,0x1280c14,0x3,0xa10} extent=1024x256 format=6 byte_length=1048576 sampler={clamp:6,6,0,filter:1/1/2,aniso:0,border:0,border_alpha_known:0} rgba8_bytes=1048576 rgba8_fnv1a=0x1fb4ad3d482be2bb
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3f800000(1)
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+layout(set=1,binding=0) uniform sampler2D shift_sampler_0;
+float shift_pwl_gamma_to_linear(float gamma) {
+  gamma=clamp(gamma,0.0,1.0);
+  float scale=gamma>=192.0/255.0 ? 8.0/1024.0 : gamma>=96.0/255.0 ? 4.0/1024.0 : gamma>=64.0/255.0 ? 2.0/1024.0 : 1.0/1024.0;
+  float offset=gamma>=192.0/255.0 ? -1024.0 : gamma>=96.0/255.0 ? -256.0 : gamma>=64.0/255.0 ? -64.0 : 0.0;
+  float linear=gamma*(255.0*1024.0)*scale+offset;
+  return (linear+trunc(linear*scale))/1023.0;
+}
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 sampled_0 = texture(shift_sampler_0, r[0].xy);
+  sampled_0.x=shift_pwl_gamma_to_linear(sampled_0.x);
+  sampled_0.y=shift_pwl_gamma_to_linear(sampled_0.y);
+  sampled_0.z=shift_pwl_gamma_to_linear(sampled_0.z);
+  vec4 fetched_0 = vec4(sampled_0.z, sampled_0.y, sampled_0.x, sampled_0.w);
+  r[0].x = fetched_0.x;
+  r[0].y = fetched_0.y;
+  r[0].z = fetched_0.z;
+  r[0].w = fetched_0.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:26:52.985] [info] [core] [t20797] shift-native: resolved captured retail draw #5 (startup sample) elapsed_ms=718
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture: unused
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3d70f0f1(0.0588235)
+  c[255]=3f800000(1), 0(0), 0(0), 0(0)
+  pixel boolean constants valid=1 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_7 = max(shift_pixel_constants.c[255].xxxx, shift_pixel_constants.c[255].xxxx);
+  r[0].x = alu_7.x;
+  r[0].y = alu_7.y;
+  r[0].z = alu_7.z;
+  r[0].w = alu_7.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:26:53.020] [info] [core] [t20797] shift-native: resolved captured retail draw #6 (startup sample) elapsed_ms=746
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[392,478,888,486] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture fetch=0 guest=0x9d57000 descriptor={0x8800d8fe,0x9d57086,0x1fe3ff,0x1280c14,0x3,0xa10} extent=1024x256 format=6 byte_length=1048576 sampler={clamp:6,6,0,filter:1/1/2,aniso:0,border:0,border_alpha_known:0} rgba8_bytes=1048576 rgba8_fnv1a=0x1fb4ad3d482be2bb
+vertex constants:
+  c[64]=40010842(2.01613), 0(0), 0(0), c4a14a52(-1290.32)
+  c[65]=0(0), 42f9ffff(125), 0(0), c76b59ff(-60250)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3f800000(1)
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+layout(set=1,binding=0) uniform sampler2D shift_sampler_0;
+float shift_pwl_gamma_to_linear(float gamma) {
+  gamma=clamp(gamma,0.0,1.0);
+  float scale=gamma>=192.0/255.0 ? 8.0/1024.0 : gamma>=96.0/255.0 ? 4.0/1024.0 : gamma>=64.0/255.0 ? 2.0/1024.0 : 1.0/1024.0;
+  float offset=gamma>=192.0/255.0 ? -1024.0 : gamma>=96.0/255.0 ? -256.0 : gamma>=64.0/255.0 ? -64.0 : 0.0;
+  float linear=gamma*(255.0*1024.0)*scale+offset;
+  return (linear+trunc(linear*scale))/1023.0;
+}
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 sampled_0 = texture(shift_sampler_0, r[0].xy);
+  sampled_0.x=shift_pwl_gamma_to_linear(sampled_0.x);
+  sampled_0.y=shift_pwl_gamma_to_linear(sampled_0.y);
+  sampled_0.z=shift_pwl_gamma_to_linear(sampled_0.z);
+  vec4 fetched_0 = vec4(sampled_0.z, sampled_0.y, sampled_0.x, sampled_0.w);
+  r[0].x = fetched_0.x;
+  r[0].y = fetched_0.y;
+  r[0].z = fetched_0.z;
+  r[0].w = fetched_0.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:26:53.135] [info] [core] [t20797] shift-native: resolved captured retail draw #7 (startup sample) elapsed_ms=854
+  topology=0 autoindex=0 index_count=60 index_guest=0x9d55170 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x9d551f0 descriptor={0x9d551f3,0x100001e2} endian=2 stride=12 payload_bytes=480 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x153f1696ea76ba45
+  texture fetch=0 guest=0x9e57000 descriptor={0x8800d8fe,0x9e57053,0x3fe3ff,0x1280d10,0x3,0xa10} extent=1024x512 format=19 byte_length=524288 sampler={clamp:6,6,0,filter:1/1/2,aniso:0,border:0,border_alpha_known:0} rgba8_bytes=2097152 rgba8_fnv1a=0xba2c615b7802006b
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3e60c9c8(0.21952), 3e60c9c8(0.21952), 3e60c9c8(0.21952), 3f800000(1)
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+layout(set=1,binding=0) uniform sampler2D shift_sampler_0;
+float shift_pwl_gamma_to_linear(float gamma) {
+  gamma=clamp(gamma,0.0,1.0);
+  float scale=gamma>=192.0/255.0 ? 8.0/1024.0 : gamma>=96.0/255.0 ? 4.0/1024.0 : gamma>=64.0/255.0 ? 2.0/1024.0 : 1.0/1024.0;
+  float offset=gamma>=192.0/255.0 ? -1024.0 : gamma>=96.0/255.0 ? -256.0 : gamma>=64.0/255.0 ? -64.0 : 0.0;
+  float linear=gamma*(255.0*1024.0)*scale+offset;
+  return (linear+trunc(linear*scale))/1023.0;
+}
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 sampled_0 = texture(shift_sampler_0, r[0].xy);
+  sampled_0.x=shift_pwl_gamma_to_linear(sampled_0.x);
+  sampled_0.y=shift_pwl_gamma_to_linear(sampled_0.y);
+  sampled_0.z=shift_pwl_gamma_to_linear(sampled_0.z);
+  vec4 fetched_0 = vec4(sampled_0.x, sampled_0.y, sampled_0.z, sampled_0.w);
+  r[0].x = fetched_0.x;
+  r[0].y = fetched_0.y;
+  r[0].z = fetched_0.z;
+  r[0].w = fetched_0.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:26:53.135] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:26:53.136] [info] [core] [t20797] shift-native: RPTR writeback #4 guest=17AF403C, translated=0x217af403c, value=0000005B, memory=00000055->0000005B
+[2026-10-25 03:26:53.779] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:26:54.151] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:26:54.665] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:26:54.907] [info] [core] [t20797] shift-native: RPTR writeback #5 guest=17AF403C, translated=0x217af403c, value=0000006D, memory=0000005B->0000006D
+[2026-10-25 03:26:55.255] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:26:56.079] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:26:56.171] [info] [core] [t20797] shift-native: RPTR writeback #6 guest=17AF403C, translated=0x217af403c, value=00000079, memory=0000006D->00000079
+[2026-10-25 03:26:56.313] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:26:56.759] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:26:56.976] [info] [core] [t20797] shift-native: RPTR writeback #7 guest=17AF403C, translated=0x217af403c, value=00000085, memory=00000079->00000085
+[2026-10-25 03:26:57.221] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:26:57.909] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:26:58.221] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:26:58.967] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:26:59.210] [info] [core] [t20797] shift-native: resolved captured retail draw #33 (late sample #0) (Vulkan readback target frame 10) elapsed_ms=6943
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001 setup=0x10000 cull=0 front_ccw=1
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x9648cb8 descriptor={0x9648cbb,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:26:59.265] [info] [core] [t20797] shift-native: resolved captured retail draw #34 (late sample #0) (Vulkan readback target frame 10) elapsed_ms=6992
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture fetch=0 guest=0x9d57000 descriptor={0x8800d8fe,0x9d57086,0x1fe3ff,0x1280c14,0x3,0xa10} extent=1024x256 format=6 byte_length=1048576 sampler={clamp:6,6,0,filter:1/1/2,aniso:0,border:0,border_alpha_known:0} rgba8_bytes=1048576 rgba8_fnv1a=0x1fb4ad3d482be2bb
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3f800000(1)
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+layout(set=1,binding=0) uniform sampler2D shift_sampler_0;
+float shift_pwl_gamma_to_linear(float gamma) {
+  gamma=clamp(gamma,0.0,1.0);
+  float scale=gamma>=192.0/255.0 ? 8.0/1024.0 : gamma>=96.0/255.0 ? 4.0/1024.0 : gamma>=64.0/255.0 ? 2.0/1024.0 : 1.0/1024.0;
+  float offset=gamma>=192.0/255.0 ? -1024.0 : gamma>=96.0/255.0 ? -256.0 : gamma>=64.0/255.0 ? -64.0 : 0.0;
+  float linear=gamma*(255.0*1024.0)*scale+offset;
+  return (linear+trunc(linear*scale))/1023.0;
+}
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 sampled_0 = texture(shift_sampler_0, r[0].xy);
+  sampled_0.x=shift_pwl_gamma_to_linear(sampled_0.x);
+  sampled_0.y=shift_pwl_gamma_to_linear(sampled_0.y);
+  sampled_0.z=shift_pwl_gamma_to_linear(sampled_0.z);
+  vec4 fetched_0 = vec4(sampled_0.z, sampled_0.y, sampled_0.x, sampled_0.w);
+  r[0].x = fetched_0.x;
+  r[0].y = fetched_0.y;
+  r[0].z = fetched_0.z;
+  r[0].w = fetched_0.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:26:59.267] [info] [core] [t20797] shift-native: resolved captured retail draw #35 (late sample #0) (Vulkan readback target frame 10) elapsed_ms=7000
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture: unused
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3d70f0f1(0.0588235)
+  c[255]=3f800000(1), 0(0), 0(0), 0(0)
+  pixel boolean constants valid=1 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_7 = max(shift_pixel_constants.c[255].xxxx, shift_pixel_constants.c[255].xxxx);
+  r[0].x = alu_7.x;
+  r[0].y = alu_7.y;
+  r[0].z = alu_7.z;
+  r[0].w = alu_7.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:26:59.301] [info] [core] [t20797] shift-native: resolved captured retail draw #36 (late sample #0) (Vulkan readback target frame 10) elapsed_ms=7027
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[392,478,888,486] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture fetch=0 guest=0x9d57000 descriptor={0x8800d8fe,0x9d57086,0x1fe3ff,0x1280c14,0x3,0xa10} extent=1024x256 format=6 byte_length=1048576 sampler={clamp:6,6,0,filter:1/1/2,aniso:0,border:0,border_alpha_known:0} rgba8_bytes=1048576 rgba8_fnv1a=0x1fb4ad3d482be2bb
+vertex constants:
+  c[64]=40010842(2.01613), 0(0), 0(0), c4a14a52(-1290.32)
+  c[65]=0(0), 42f9ffff(125), 0(0), c76b59ff(-60250)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3f800000(1)
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+layout(set=1,binding=0) uniform sampler2D shift_sampler_0;
+float shift_pwl_gamma_to_linear(float gamma) {
+  gamma=clamp(gamma,0.0,1.0);
+  float scale=gamma>=192.0/255.0 ? 8.0/1024.0 : gamma>=96.0/255.0 ? 4.0/1024.0 : gamma>=64.0/255.0 ? 2.0/1024.0 : 1.0/1024.0;
+  float offset=gamma>=192.0/255.0 ? -1024.0 : gamma>=96.0/255.0 ? -256.0 : gamma>=64.0/255.0 ? -64.0 : 0.0;
+  float linear=gamma*(255.0*1024.0)*scale+offset;
+  return (linear+trunc(linear*scale))/1023.0;
+}
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 sampled_0 = texture(shift_sampler_0, r[0].xy);
+  sampled_0.x=shift_pwl_gamma_to_linear(sampled_0.x);
+  sampled_0.y=shift_pwl_gamma_to_linear(sampled_0.y);
+  sampled_0.z=shift_pwl_gamma_to_linear(sampled_0.z);
+  vec4 fetched_0 = vec4(sampled_0.z, sampled_0.y, sampled_0.x, sampled_0.w);
+  r[0].x = fetched_0.x;
+  r[0].y = fetched_0.y;
+  r[0].z = fetched_0.z;
+  r[0].w = fetched_0.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:26:59.403] [info] [core] [t20797] shift-native: resolved captured retail draw #37 (late sample #0) (Vulkan readback target frame 10) elapsed_ms=7122
+  topology=0 autoindex=0 index_count=60 index_guest=0x9d55170 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x9d551f0 descriptor={0x9d551f3,0x100001e2} endian=2 stride=12 payload_bytes=480 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x153f1696ea76ba45
+  texture fetch=0 guest=0x9e57000 descriptor={0x8800d8fe,0x9e57053,0x3fe3ff,0x1280d10,0x3,0xa10} extent=1024x512 format=19 byte_length=524288 sampler={clamp:6,6,0,filter:1/1/2,aniso:0,border:0,border_alpha_known:0} rgba8_bytes=2097152 rgba8_fnv1a=0xba2c615b7802006b
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3e60c9c8(0.21952), 3e60c9c8(0.21952), 3e60c9c8(0.21952), 3f800000(1)
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+layout(set=1,binding=0) uniform sampler2D shift_sampler_0;
+float shift_pwl_gamma_to_linear(float gamma) {
+  gamma=clamp(gamma,0.0,1.0);
+  float scale=gamma>=192.0/255.0 ? 8.0/1024.0 : gamma>=96.0/255.0 ? 4.0/1024.0 : gamma>=64.0/255.0 ? 2.0/1024.0 : 1.0/1024.0;
+  float offset=gamma>=192.0/255.0 ? -1024.0 : gamma>=96.0/255.0 ? -256.0 : gamma>=64.0/255.0 ? -64.0 : 0.0;
+  float linear=gamma*(255.0*1024.0)*scale+offset;
+  return (linear+trunc(linear*scale))/1023.0;
+}
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 sampled_0 = texture(shift_sampler_0, r[0].xy);
+  sampled_0.x=shift_pwl_gamma_to_linear(sampled_0.x);
+  sampled_0.y=shift_pwl_gamma_to_linear(sampled_0.y);
+  sampled_0.z=shift_pwl_gamma_to_linear(sampled_0.z);
+  vec4 fetched_0 = vec4(sampled_0.x, sampled_0.y, sampled_0.z, sampled_0.w);
+  r[0].x = fetched_0.x;
+  r[0].y = fetched_0.y;
+  r[0].z = fetched_0.z;
+  r[0].w = fetched_0.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:26:59.403] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:00.145] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:00.252] [info] [core] [t20797] shift-native: saved Vulkan guest output 1280x720 as VK_FORMAT_A2B10G10R10_UNORM_PACK32 to file /sdcard/Android/data/com.hanz0hatt0r.nfsshift/files/process2-frame10-readback.a2b10g10r10; non-black pixels 59103, FNV-1a 0FED7AEE9AE4656E at submitted frame 10
+[2026-10-25 03:27:00.649] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:01.476] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:01.915] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:02.662] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:03.215] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:03.736] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:04.186] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:04.965] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:05.334] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:05.979] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:06.388] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:06.952] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:07.239] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:07.752] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:08.326] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:08.962] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:09.362] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:10.179] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:10.525] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:11.131] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:11.331] [warning] [krnl] [t20800] [NtCreateFile] FAILED: path='d:\pakfiles\dir\audio.bff' -> 0xc000000f
+[2026-10-25 03:27:12.363] [warning] [krnl] [t20800] [NtCreateFile] FAILED: path='d:\characters\drivers2.lod' -> 0xc000000f
+[2026-10-25 03:27:14.060] [warning] [krnl] [t20800] [NtCreateFile] FAILED: path='d:\tracks\cameraconfig.xml' -> 0xc000000f
+[2026-10-25 03:27:23.476] [info] [core] [t20797] shift-native: resolved captured retail draw #88 (late sample #0) elapsed_ms=31209
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001 setup=0x10000 cull=0 front_ccw=1
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x96a88b8 descriptor={0x96a88bb,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:27:23.559] [info] [core] [t20797] shift-native: resolved captured retail draw #89 (late sample #1) elapsed_ms=31279
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture fetch=0 guest=0x9d57000 descriptor={0x8800d8fe,0x9d57086,0x1fe3ff,0x1280c14,0x3,0xa10} extent=1024x256 format=6 byte_length=1048576 sampler={clamp:6,6,0,filter:1/1/2,aniso:0,border:0,border_alpha_known:0} rgba8_bytes=1048576 rgba8_fnv1a=0x1fb4ad3d482be2bb
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3f800000(1)
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+layout(set=1,binding=0) uniform sampler2D shift_sampler_0;
+float shift_pwl_gamma_to_linear(float gamma) {
+  gamma=clamp(gamma,0.0,1.0);
+  float scale=gamma>=192.0/255.0 ? 8.0/1024.0 : gamma>=96.0/255.0 ? 4.0/1024.0 : gamma>=64.0/255.0 ? 2.0/1024.0 : 1.0/1024.0;
+  float offset=gamma>=192.0/255.0 ? -1024.0 : gamma>=96.0/255.0 ? -256.0 : gamma>=64.0/255.0 ? -64.0 : 0.0;
+  float linear=gamma*(255.0*1024.0)*scale+offset;
+  return (linear+trunc(linear*scale))/1023.0;
+}
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 sampled_0 = texture(shift_sampler_0, r[0].xy);
+  sampled_0.x=shift_pwl_gamma_to_linear(sampled_0.x);
+  sampled_0.y=shift_pwl_gamma_to_linear(sampled_0.y);
+  sampled_0.z=shift_pwl_gamma_to_linear(sampled_0.z);
+  vec4 fetched_0 = vec4(sampled_0.z, sampled_0.y, sampled_0.x, sampled_0.w);
+  r[0].x = fetched_0.x;
+  r[0].y = fetched_0.y;
+  r[0].z = fetched_0.z;
+  r[0].w = fetched_0.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:27:23.562] [info] [core] [t20797] shift-native: resolved captured retail draw #90 (late sample #2) elapsed_ms=31295
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture: unused
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3d70f0f1(0.0588235)
+  c[255]=3f800000(1), 0(0), 0(0), 0(0)
+  pixel boolean constants valid=1 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_7 = max(shift_pixel_constants.c[255].xxxx, shift_pixel_constants.c[255].xxxx);
+  r[0].x = alu_7.x;
+  r[0].y = alu_7.y;
+  r[0].z = alu_7.z;
+  r[0].w = alu_7.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:27:23.643] [info] [core] [t20797] shift-native: resolved captured retail draw #91 (late sample #3) elapsed_ms=31363
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[392,478,888,486] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture fetch=0 guest=0x9d57000 descriptor={0x8800d8fe,0x9d57086,0x1fe3ff,0x1280c14,0x3,0xa10} extent=1024x256 format=6 byte_length=1048576 sampler={clamp:6,6,0,filter:1/1/2,aniso:0,border:0,border_alpha_known:0} rgba8_bytes=1048576 rgba8_fnv1a=0x1fb4ad3d482be2bb
+vertex constants:
+  c[64]=40010842(2.01613), 0(0), 0(0), c4a14a52(-1290.32)
+  c[65]=0(0), 42f9ffff(125), 0(0), c76b59ff(-60250)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3f800000(1)
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+layout(set=1,binding=0) uniform sampler2D shift_sampler_0;
+float shift_pwl_gamma_to_linear(float gamma) {
+  gamma=clamp(gamma,0.0,1.0);
+  float scale=gamma>=192.0/255.0 ? 8.0/1024.0 : gamma>=96.0/255.0 ? 4.0/1024.0 : gamma>=64.0/255.0 ? 2.0/1024.0 : 1.0/1024.0;
+  float offset=gamma>=192.0/255.0 ? -1024.0 : gamma>=96.0/255.0 ? -256.0 : gamma>=64.0/255.0 ? -64.0 : 0.0;
+  float linear=gamma*(255.0*1024.0)*scale+offset;
+  return (linear+trunc(linear*scale))/1023.0;
+}
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 sampled_0 = texture(shift_sampler_0, r[0].xy);
+  sampled_0.x=shift_pwl_gamma_to_linear(sampled_0.x);
+  sampled_0.y=shift_pwl_gamma_to_linear(sampled_0.y);
+  sampled_0.z=shift_pwl_gamma_to_linear(sampled_0.z);
+  vec4 fetched_0 = vec4(sampled_0.z, sampled_0.y, sampled_0.x, sampled_0.w);
+  r[0].x = fetched_0.x;
+  r[0].y = fetched_0.y;
+  r[0].z = fetched_0.z;
+  r[0].w = fetched_0.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:27:23.872] [info] [core] [t20797] shift-native: resolved captured retail draw #92 (late sample #4) elapsed_ms=31578
+  topology=0 autoindex=0 index_count=60 index_guest=0x9d55170 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x9d551f0 descriptor={0x9d551f3,0x100001e2} endian=2 stride=12 payload_bytes=480 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x153f1696ea76ba45
+  texture fetch=0 guest=0x9e57000 descriptor={0x8800d8fe,0x9e57053,0x3fe3ff,0x1280d10,0x3,0xa10} extent=1024x512 format=19 byte_length=524288 sampler={clamp:6,6,0,filter:1/1/2,aniso:0,border:0,border_alpha_known:0} rgba8_bytes=2097152 rgba8_fnv1a=0xba2c615b7802006b
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3e60c9c8(0.21952), 3e60c9c8(0.21952), 3e60c9c8(0.21952), 3f800000(1)
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+layout(set=1,binding=0) uniform sampler2D shift_sampler_0;
+float shift_pwl_gamma_to_linear(float gamma) {
+  gamma=clamp(gamma,0.0,1.0);
+  float scale=gamma>=192.0/255.0 ? 8.0/1024.0 : gamma>=96.0/255.0 ? 4.0/1024.0 : gamma>=64.0/255.0 ? 2.0/1024.0 : 1.0/1024.0;
+  float offset=gamma>=192.0/255.0 ? -1024.0 : gamma>=96.0/255.0 ? -256.0 : gamma>=64.0/255.0 ? -64.0 : 0.0;
+  float linear=gamma*(255.0*1024.0)*scale+offset;
+  return (linear+trunc(linear*scale))/1023.0;
+}
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 sampled_0 = texture(shift_sampler_0, r[0].xy);
+  sampled_0.x=shift_pwl_gamma_to_linear(sampled_0.x);
+  sampled_0.y=shift_pwl_gamma_to_linear(sampled_0.y);
+  sampled_0.z=shift_pwl_gamma_to_linear(sampled_0.z);
+  vec4 fetched_0 = vec4(sampled_0.x, sampled_0.y, sampled_0.z, sampled_0.w);
+  r[0].x = fetched_0.x;
+  r[0].y = fetched_0.y;
+  r[0].z = fetched_0.z;
+  r[0].w = fetched_0.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:27:23.873] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:24.730] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:24.867] [info] [core] [t20797] shift-native: resolved captured retail draw #93 (late sample #5) elapsed_ms=32601
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001 setup=0x10000 cull=0 front_ccw=1
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x96b49f8 descriptor={0x96b49fb,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:27:24.935] [info] [core] [t20797] shift-native: resolved captured retail draw #94 (late sample #6) elapsed_ms=32654
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture fetch=0 guest=0x9d57000 descriptor={0x8800d8fe,0x9d57086,0x1fe3ff,0x1280c14,0x3,0xa10} extent=1024x256 format=6 byte_length=1048576 sampler={clamp:6,6,0,filter:1/1/2,aniso:0,border:0,border_alpha_known:0} rgba8_bytes=1048576 rgba8_fnv1a=0x1fb4ad3d482be2bb
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3f800000(1)
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+layout(set=1,binding=0) uniform sampler2D shift_sampler_0;
+float shift_pwl_gamma_to_linear(float gamma) {
+  gamma=clamp(gamma,0.0,1.0);
+  float scale=gamma>=192.0/255.0 ? 8.0/1024.0 : gamma>=96.0/255.0 ? 4.0/1024.0 : gamma>=64.0/255.0 ? 2.0/1024.0 : 1.0/1024.0;
+  float offset=gamma>=192.0/255.0 ? -1024.0 : gamma>=96.0/255.0 ? -256.0 : gamma>=64.0/255.0 ? -64.0 : 0.0;
+  float linear=gamma*(255.0*1024.0)*scale+offset;
+  return (linear+trunc(linear*scale))/1023.0;
+}
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 sampled_0 = texture(shift_sampler_0, r[0].xy);
+  sampled_0.x=shift_pwl_gamma_to_linear(sampled_0.x);
+  sampled_0.y=shift_pwl_gamma_to_linear(sampled_0.y);
+  sampled_0.z=shift_pwl_gamma_to_linear(sampled_0.z);
+  vec4 fetched_0 = vec4(sampled_0.z, sampled_0.y, sampled_0.x, sampled_0.w);
+  r[0].x = fetched_0.x;
+  r[0].y = fetched_0.y;
+  r[0].z = fetched_0.z;
+  r[0].w = fetched_0.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:27:24.938] [info] [core] [t20797] shift-native: resolved captured retail draw #95 (late sample #7) elapsed_ms=32671
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706 setup=0x218006 cull=2 front_ccw=0
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture: unused
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3d70f0f1(0.0588235)
+  c[255]=3f800000(1), 0(0), 0(0), 0(0)
+  pixel boolean constants valid=1 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68 + a0].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69 + a0].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_7 = max(shift_pixel_constants.c[255].xxxx, shift_pixel_constants.c[255].xxxx);
+  r[0].x = alu_7.x;
+  r[0].y = alu_7.y;
+  r[0].z = alu_7.z;
+  r[0].w = alu_7.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-25 03:27:25.073] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:25.634] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:26.116] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:26.816] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:27.103] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:27.628] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:27.863] [info] [apu] [t20800] audio endpoint 'System audio playback device': 6 ch, 48000 Hz, format 0x8120; submitting 6 ch
+[2026-10-25 03:27:27.936] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:28.453] [info] [core] [t20797] shift-native: submitted 5 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:28.720] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:29.259] [info] [core] [t20797] shift-native: submitted 6 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:29.484] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:29.670] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:29.672] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:29.793] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:29.797] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:29.902] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:29.905] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:30.058] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:30.061] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:30.262] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:30.265] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:30.384] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:30.388] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:30.535] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:30.539] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:30.732] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:30.736] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:30.927] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:30.928] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:31.120] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:31.123] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:31.238] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:31.240] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:31.351] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:32.326] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:32.503] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:32.587] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:32.796] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:32.799] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:32.990] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:32.993] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:33.203] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:33.206] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:33.332] [info] [core] [t20797] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-25 03:27:33.944] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:33.945] [warning] [core] [t20797] shift-native: Vulkan frame refresh failed for 1280x720 with 24 captured draws (failure 1): mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability
+[2026-10-25 03:27:34.506] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:34.506] [warning] [core] [t20797] shift-native: Vulkan frame refresh failed for 1280x720 with 24 captured draws (failure 2): mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability
+[2026-10-25 03:27:35.125] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:35.125] [warning] [core] [t20797] shift-native: Vulkan frame refresh failed for 1280x720 with 24 captured draws (failure 3): mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability
+[2026-10-25 03:27:35.794] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:35.795] [warning] [core] [t20797] shift-native: Vulkan frame refresh failed for 1280x720 with 24 captured draws (failure 4): mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability
+[2026-10-25 03:27:36.411] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:36.412] [warning] [core] [t20797] shift-native: Vulkan frame refresh failed for 1280x720 with 24 captured draws (failure 5): mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability
+[2026-10-25 03:27:36.975] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:36.975] [warning] [core] [t20797] shift-native: Vulkan frame refresh failed for 1280x720 with 24 captured draws (failure 6): mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability
+[2026-10-25 03:27:37.530] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:37.530] [warning] [core] [t20797] shift-native: Vulkan frame refresh failed for 1280x720 with 24 captured draws (failure 7): mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability
+[2026-10-25 03:27:38.085] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:38.085] [warning] [core] [t20797] shift-native: Vulkan frame refresh failed for 1280x720 with 24 captured draws (failure 8): mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability
+[2026-10-25 03:27:38.637] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:39.337] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-25 03:27:40.040] [info] [core] [t20797] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true

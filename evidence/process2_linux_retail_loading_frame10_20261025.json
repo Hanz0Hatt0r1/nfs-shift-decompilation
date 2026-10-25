@@ -1,0 +1,41 @@
+{
+  "format": "SHIFT.Process2LinuxRetailVulkanFrame10/1",
+  "observed_at": "2026-10-25T01:03:16+03:00",
+  "renderer": {
+    "backend": "project-owned native Vulkan live-ring renderer",
+    "vulkan_device": "NVIDIA GeForce GTX 950",
+    "device_api": "1.4.312",
+    "plugin_sha256": "ec245fc8529d2f1d676f3220e2c33345eb6e03dd608375c529d5e586f0dd2d5c",
+    "runtime_sha256": "cf17186a0c37d296107b7d6b401f474469272fdef2f171b720d6a8bb26d84232",
+    "app_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702"
+  },
+  "retail_output": {
+    "scene": "NFS SHIFT loading screen",
+    "readback_frame": 10,
+    "extent": "1280x720",
+    "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "file": "process2_linux_retail_loading_frame10_20261025.bin",
+    "bytes": 3686400,
+    "sha256": "7b542506da938f4a2c3c1ee43b0356c6840ae7d4e50bedfe65baf5f6b8a0b9f8",
+    "non_black_pixels": 59101,
+    "fnv1a": "26C9600EEF8AB16F",
+    "decoded_png": "process2_linux_retail_loading_frame10_20261025.png",
+    "decoded_png_sha256": "c46700330e22268bd1efa229ad02ba88ad0d249dbf31ed18af295fde8c19c951",
+    "runtime_log_gzip": "process2_linux_retail_loading_frame10_20261025.log.gz",
+    "runtime_log_gzip_sha256": "7837f656398539ae76d9ae83de66b7274b5410c4d7adfb0fd7a117c08562793e"
+  },
+  "runtime_observations": {
+    "accepted_copy_convert_operations": 97,
+    "submitted_draw_batches": 97,
+    "submitted_indexed_draw_packets": 739,
+    "batches_with_24_draws": 19,
+    "renderer_refresh_failures": 0,
+    "first_unresolved_draw": "draw #0: incomplete captured raster register state, valid_mask=0x17038",
+    "terminal_presenter_event": "swapchain or surface became outdated"
+  },
+  "visual_observation": "The actual retail loading screen shows the complete Loading text, a yellow-orange filled progress segment, a dark-gray empty segment, and the grayscale SHIFT logo. This is a retail Vulkan readback, not a synthetic render.",
+  "limitations": [
+    "The readback and screenshot show the loading scene only; menu, race, and sustained gameplay parity remain unverified.",
+    "This evidence confirms packet submission through 24-draw batches without a logged renderer refresh failure, but does not establish correct output for every 24-draw scene."
+  ]
+}
