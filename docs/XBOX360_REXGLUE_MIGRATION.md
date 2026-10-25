@@ -26,6 +26,8 @@ A fresh 40-second exact-XEX GDB probe hit all twelve generated entry points in t
 
 A separate 40-second exact-XEX GDB probe confirmed that both Bink manager callback slots dispatch guest functions `0x83068250` and `0x83068608` for all four manager entries. The callbacks are registered and execute as guest PPC code; this rules out an empty Bink callback slot in that run, while leaving the decoded-pixel and texture handoff unverified. See the same [Bink guest-path evidence](../evidence/xbox360_bink_guest_path_20261025.json).
 
+A 38-second follow-up found four distinct downstream guest objects sharing vtable `0x820A8D28`. The Bink callbacks use its offsets 56 and 64, which point to guest functions `0x82B9C9F0` and `0x82B9DC78`; the latter forwards to `0x82BA9258`. This narrows the retail boundary after Bink, but the probe did not establish a texture upload, GPU command, or visible pixels. See the same [Bink guest-path evidence](../evidence/xbox360_bink_guest_path_20261025.json).
+
 A 75.33-second follow-up emitted six A/Start pulses and placed conditional breakpoints on the retail raw-mask getter `0x828B22B8` and changed-mask dispatcher `0x8230D398`. Neither observed an A/Start state under the probe conditions. This run did not capture the scene, so it narrows the next trace to frontend/boot progress without proving a title input failure or main-menu state. See [the frontend consumer probe](../evidence/xbox360_linux_gamepad_frontend_consumer_probe_20261025.json).
 
 ## Proposed pipeline
