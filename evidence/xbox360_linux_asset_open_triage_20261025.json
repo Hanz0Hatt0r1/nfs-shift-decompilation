@@ -1,0 +1,129 @@
+{
+  "schema": "shift.xbox360.linux.asset-open-triage.v1",
+  "captured_at_utc": "2026-10-25T03:25:18Z",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "bounded_seconds": 20,
+    "input_events_sent": false,
+    "guest_memory_modified": false,
+    "runtime_log": {
+      "external_path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_006.log",
+      "sha256": "27cb57049824dc0abb65b0559334be8b6a0252744adbcd09f8dcd5a96384035e"
+    },
+    "game_data_root": "User-provided Xbox files outside Git; no asset contents copied into this repository"
+  },
+  "asset_observation": {
+    "archive_index_audit": {
+      "tool": "tools/xbox360/audit_xbox_bff_index.py",
+      "tool_sha256": "27a3613b6a25e4521120bdfa11ac33205e672a9c0ccd90dfb1f104e8d0d17372",
+      "external_output_sha256": "15dd4bc09c8562cfa17b819867685a15fb9c4373481e2a69630d492abd3c8f4b",
+      "archives_seen": 1845,
+      "archives_parsed": 1845,
+      "structural_failures": 0,
+      "index_endianness": "1844 PAK big-endian indexes and one KAP little-endian index",
+      "matching_members": [
+        {
+          "archive": "PakFiles/BOOTPERSISTENT.bff",
+          "member": "cameras/cameraconfig.xml",
+          "index": 71,
+          "compression_type": 2,
+          "compressed_bytes": 2702,
+          "uncompressed_bytes": 59936
+        },
+        {
+          "archive": "PakFiles/Tracks/AmbushCanyon.bff",
+          "member": "tracks/ambushcanyon/cameraconfig.xml",
+          "index": 2083,
+          "compression_type": 2,
+          "compressed_bytes": 2538,
+          "uncompressed_bytes": 46828
+        },
+        {
+          "archive": "PakFiles/Tracks/Spa_Drift.bff",
+          "member": "tracks/spa_drift/cameraconfig.xml",
+          "index": 2077,
+          "compression_type": 2,
+          "compressed_bytes": 2538,
+          "uncompressed_bytes": 46828
+        },
+        {
+          "archive": "PakFiles/Tracks/Spa_Era3.bff",
+          "member": "tracks/spa_era3/cameraconfig.xml",
+          "index": 4008,
+          "compression_type": 2,
+          "compressed_bytes": 2538,
+          "uncompressed_bytes": 46828
+        }
+      ],
+      "exact_member_matches_absent": [
+        "menu_background.xml",
+        "drivers2.lod",
+        "audio.bff"
+      ],
+      "payloads_read_or_copied": false
+    },
+    "failed_ntcreatefile_opens": 6,
+    "paths": [
+      {
+        "guest_path": "d:\\pakfiles\\dir\\audio.bff",
+        "status": "0xc000000f",
+        "host_relative_path_absent": "PakFiles/Dir/audio.bff",
+        "related_files_present_but_not_proven_equivalent": [
+          "PakFiles/BOOTUPAUDIO.bff",
+          "PakFiles/IGPHASELEVELSOUNDS.bff",
+          "PakFiles/IGPHASEVEHICLEAUDIO.bff"
+        ]
+      },
+      {
+        "guest_path": "d:\\characters\\drivers2.lod",
+        "status": "0xc000000f",
+        "host_relative_path_absent": "Characters/drivers2.lod",
+        "related_files_present_but_not_proven_equivalent": [
+          "PakFiles/Drivers"
+        ]
+      },
+      {
+        "guest_path": "d:\\tracks\\cameraconfig.xml",
+        "status": "0xc000000f",
+        "host_relative_path_absent": "Tracks/cameraconfig.xml",
+        "related_files_present_but_not_proven_equivalent": [
+          "PakFiles/Dir/CAMERAS.bff",
+          "PakFiles/Tracks"
+        ]
+      }
+    ],
+    "later_runtime_activity": {
+      "audio_system_initialized": true,
+      "audio_endpoint_submissions": 40,
+      "retail_gpu_presenter_submission_log_entries": 168,
+      "evidence_lines": {
+        "audio_system_initialized": 136,
+        "audio_endpoint_first_observed": 1247,
+        "last_failed_open": 889
+      }
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The selected external game-data root lacks the three exact loose paths named above.",
+      "The audio system and host endpoint run after the failed audio.bff open; the missing path is not evidence that the audio worker failed to start.",
+      "Retail execution continues to later GPU submissions after these open failures.",
+      "The three listed failed opens enter retail helper 0x826EF1A0 at guest LR 0x826EF304; the camera-config caller stack was captured in a second bounded run."
+    ],
+    "not_proven": [
+      "Whether any failed open is optional for the main menu or an offline race.",
+      "Whether the retail caller that probes d:\\tracks\\cameraconfig.xml falls back to the indexed cameras/cameraconfig.xml member.",
+      "That this asset root is complete or representative of every retail disc layout.",
+      "A causal link between these opens and black output or the frontend frontier.",
+      "Whether the traced camera-config caller performs an archive lookup later or whether the missing file is required for the main menu or offline race."
+    ],
+    "next_step": "Continue the retail caller path through its parent return-value handling and any archive lookup; these open failures alone do not justify changing VFS behavior."
+  },
+  "caller_trace_evidence": "evidence/xbox360_linux_ntcreatefile_guest_callers_20261025.json"
+}
