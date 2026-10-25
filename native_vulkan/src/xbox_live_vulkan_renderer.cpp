@@ -19,7 +19,10 @@ struct BufferResource {
     VkDeviceMemory memory = VK_NULL_HANDLE;
     VkMemoryPropertyFlags memory_flags = 0;
     void* mapped = nullptr;
+    VkDeviceSize buffer_size = 0;
     VkDeviceSize allocation_size = 0;
+    VkBufferUsageFlags usage = 0;
+    bool owns_resources = true;
 };
 
 struct ImageResource {
@@ -84,6 +87,14 @@ struct TextureCacheKeyHash {
 
 constexpr uint32_t kFramesInFlight = 2;
 
+struct CachedDrawBuffers {
+  std::array<BufferResource, kFramesInFlight> vertices;
+  std::array<BufferResource, kFramesInFlight> indices;
+  std::array<BufferResource, kFramesInFlight> vertex_constants;
+  std::array<BufferResource, kFramesInFlight> pixel_constants;
+  uint64_t last_used_frame = 0;
+};
+
 struct CachedR8Texture {
   std::array<BufferResource, kFramesInFlight> uploads;
   ImageResource image;
@@ -94,6 +105,8 @@ struct CachedR8Texture {
 
 constexpr uint64_t kR8TextureCacheBudgetBytes = 16u * 1024u * 1024u;
 constexpr uint64_t kR8TextureCacheLifetimeFrames = 120;
+constexpr uint64_t kDrawBufferCacheBudgetBytes = 16u * 1024u * 1024u;
+constexpr size_t kDrawBufferCacheEntryLimit = 128;
 constexpr size_t kGraphicsPipelineCacheEntryLimit = 128;
 constexpr size_t kSamplerCacheEntryLimit = 64;
 
@@ -249,6 +262,10 @@ struct FrameResources {
   }
 
   void destroy_buffer(BufferResource &resource) const {
+    if (!resource.owns_resources) {
+      resource = {};
+      return;
+    }
     if (resource.mapped && resource.memory) {
       vkUnmapMemory(device, resource.memory);
     }
@@ -274,7 +291,9 @@ struct TextureCacheState {
   VkDevice device = VK_NULL_HANDLE;
   uint64_t frame = 0;
   uint64_t estimated_bytes = 0;
+  uint64_t draw_buffers_bytes = 0;
   uint32_t upload_slot = 0;
+  std::unordered_map<size_t, CachedDrawBuffers> draw_buffers;
   std::unordered_map<TextureCacheKey, CachedR8Texture, TextureCacheKeyHash>
       textures;
   std::unordered_map<GraphicsPipelineKey, CachedGraphicsPipeline,
@@ -334,6 +353,8 @@ bool create_buffer(
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     VkResult result = vkCreateBuffer(device, &create_info, nullptr, &output->buffer);
     if (result != VK_SUCCESS) return vk_fail("vkCreateBuffer", result, error);
+    output->buffer_size = size;
+    output->usage = usage;
 
     VkMemoryRequirements requirements{};
     vkGetBufferMemoryRequirements(device, output->buffer, &requirements);
@@ -371,6 +392,92 @@ bool create_buffer(
         }
         vkUnmapMemory(device, output->memory);
     }
+    return true;
+}
+
+void destroy_cached_buffer(VkDevice device, BufferResource& buffer) {
+    if (buffer.mapped && buffer.memory) vkUnmapMemory(device, buffer.memory);
+    if (buffer.buffer) vkDestroyBuffer(device, buffer.buffer, nullptr);
+    if (buffer.memory) vkFreeMemory(device, buffer.memory, nullptr);
+    buffer = {};
+}
+
+void destroy_cached_draw_buffers(VkDevice device, CachedDrawBuffers& buffers,
+                                 uint64_t* total_bytes) {
+    for (auto* slots : {&buffers.vertices, &buffers.indices,
+                        &buffers.vertex_constants, &buffers.pixel_constants}) {
+        for (BufferResource& buffer : *slots) {
+            if (total_bytes && buffer.allocation_size <= *total_bytes) {
+                *total_bytes -= buffer.allocation_size;
+            }
+            destroy_cached_buffer(device, buffer);
+        }
+    }
+    buffers = {};
+}
+
+bool upload_draw_buffer(
+    const VkPhysicalDeviceMemoryProperties& memory_properties,
+    VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage,
+    const void* data, TextureCacheState* cache,
+    std::array<BufferResource, kFramesInFlight>* cached_slots,
+    BufferResource* output, std::string* error) {
+    if (!cache || !cached_slots) {
+        return create_buffer(memory_properties, device, size, usage, data,
+                             output, error);
+    }
+
+    BufferResource& buffer = (*cached_slots)[cache->upload_slot];
+    if (buffer.buffer &&
+        (buffer.buffer_size < size || buffer.usage != usage)) {
+        if (buffer.allocation_size <= cache->draw_buffers_bytes) {
+            cache->draw_buffers_bytes -= buffer.allocation_size;
+        }
+        destroy_cached_buffer(device, buffer);
+    }
+    if (!buffer.buffer) {
+        if (cache->draw_buffers_bytes >= kDrawBufferCacheBudgetBytes ||
+            size > kDrawBufferCacheBudgetBytes - cache->draw_buffers_bytes) {
+            return create_buffer(memory_properties, device, size, usage, data,
+                                 output, error);
+        }
+        BufferResource created{};
+        if (!create_buffer(memory_properties, device, size, usage, nullptr,
+                           &created, error)) {
+            destroy_cached_buffer(device, created);
+            return false;
+        }
+        if (cache->draw_buffers_bytes >= kDrawBufferCacheBudgetBytes ||
+            created.allocation_size >
+            kDrawBufferCacheBudgetBytes - cache->draw_buffers_bytes) {
+            destroy_cached_buffer(device, created);
+            return create_buffer(memory_properties, device, size, usage, data,
+                                 output, error);
+        }
+        const VkResult result = vkMapMemory(
+            device, created.memory, 0, VK_WHOLE_SIZE, 0, &created.mapped);
+        if (result != VK_SUCCESS) {
+            destroy_cached_buffer(device, created);
+            return vk_fail("vkMapMemory(cached draw buffer)", result, error);
+        }
+        cache->draw_buffers_bytes += created.allocation_size;
+        buffer = created;
+    }
+
+    std::memcpy(buffer.mapped, data, static_cast<size_t>(size));
+    if ((buffer.memory_flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+        VkMappedMemoryRange range{};
+        range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        range.memory = buffer.memory;
+        range.size = VK_WHOLE_SIZE;
+        const VkResult result = vkFlushMappedMemoryRanges(device, 1, &range);
+        if (result != VK_SUCCESS) {
+            return vk_fail("vkFlushMappedMemoryRanges(cached draw buffer)",
+                           result, error);
+        }
+    }
+    *output = buffer;
+    output->owns_resources = false;
     return true;
 }
 
@@ -520,7 +627,8 @@ bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
                                std::string* error) {
     if (!cache) return true;
     if (cache->device && cache->device != device &&
-        (!cache->textures.empty() || !cache->graphics_pipelines.empty() ||
+        (!cache->draw_buffers.empty() || !cache->textures.empty() ||
+         !cache->graphics_pipelines.empty() ||
          !cache->samplers.empty() || !cache->in_flight.empty())) {
         return fail("captured Vulkan resource cache cannot be shared across devices", error);
     }
@@ -534,12 +642,32 @@ bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
             return cache->frame - entry.second.last_used_frame >
                    kR8TextureCacheLifetimeFrames;
         });
-    if (evicting && !wait_for_all_frames(cache, error)) return false;
+    const bool evicting_draw_buffers = std::any_of(
+        cache->draw_buffers.begin(), cache->draw_buffers.end(),
+        [&](const auto& entry) {
+            return cache->frame - entry.second.last_used_frame >
+                   kR8TextureCacheLifetimeFrames;
+        });
+    if ((evicting || evicting_draw_buffers) &&
+        !wait_for_all_frames(cache, error)) {
+        return false;
+    }
     for (auto it = cache->textures.begin(); it != cache->textures.end();) {
         if (cache->frame - it->second.last_used_frame > kR8TextureCacheLifetimeFrames) {
             cache->estimated_bytes -= it->second.estimated_bytes;
             destroy_cached_r8_texture(device, it->second);
             it = cache->textures.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    for (auto it = cache->draw_buffers.begin();
+         it != cache->draw_buffers.end();) {
+        if (cache->frame - it->second.last_used_frame >
+            kR8TextureCacheLifetimeFrames) {
+            destroy_cached_draw_buffers(device, it->second,
+                                        &cache->draw_buffers_bytes);
+            it = cache->draw_buffers.erase(it);
         } else {
             ++it;
         }
@@ -649,6 +777,12 @@ void clear_texture_cache(TextureCacheState* cache) {
         destroy_cached_r8_texture(cache->device, texture);
     }
     cache->textures.clear();
+    for (auto& [draw_index, buffers] : cache->draw_buffers) {
+        destroy_cached_draw_buffers(cache->device, buffers,
+                                    &cache->draw_buffers_bytes);
+    }
+    cache->draw_buffers.clear();
+    cache->draw_buffers_bytes = 0;
     cache->estimated_bytes = 0;
     cache->device = VK_NULL_HANDLE;
     cache->frame = 0;
@@ -949,22 +1083,45 @@ bool create_draw_resources(
     }
   }
 
+  CachedDrawBuffers* cached_draw_buffers = nullptr;
+  if (texture_cache && draw_index != std::numeric_limits<size_t>::max()) {
+    auto found = texture_cache->draw_buffers.find(draw_index);
+    if (found == texture_cache->draw_buffers.end() &&
+        texture_cache->draw_buffers.size() < kDrawBufferCacheEntryLimit) {
+      found = texture_cache->draw_buffers.emplace(
+          draw_index, CachedDrawBuffers{}).first;
+    }
+    if (found != texture_cache->draw_buffers.end()) {
+      cached_draw_buffers = &found->second;
+      cached_draw_buffers->last_used_frame = texture_cache->frame;
+    }
+  }
   if ((has_vertex_inputs &&
-       !create_buffer(memory_properties, device, source.vertices.size(),
-                      VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, source.vertices.data(),
-                      &output->vertices, error)) ||
+       !upload_draw_buffer(
+           memory_properties, device, source.vertices.size(),
+           VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, source.vertices.data(),
+           texture_cache,
+           cached_draw_buffers ? &cached_draw_buffers->vertices : nullptr,
+           &output->vertices, error)) ||
       (!source.auto_index &&
-       !create_buffer(memory_properties, device, source.indices.size(),
-                      VK_BUFFER_USAGE_INDEX_BUFFER_BIT, source.indices.data(),
-                      &output->indices, error)) ||
-      !create_buffer(memory_properties, device, vertex_constants_size,
-                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                     source.constants.vertex_float_constants.data(),
-                     &output->vertex_constants, error) ||
-      !create_buffer(memory_properties, device, pixel_constants_size,
-                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                     source.constants.pixel_float_constants.data(),
-                     &output->pixel_constants, error)) {
+       !upload_draw_buffer(
+           memory_properties, device, source.indices.size(),
+           VK_BUFFER_USAGE_INDEX_BUFFER_BIT, source.indices.data(),
+           texture_cache,
+           cached_draw_buffers ? &cached_draw_buffers->indices : nullptr,
+           &output->indices, error)) ||
+      !upload_draw_buffer(
+          memory_properties, device, vertex_constants_size,
+          VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+          source.constants.vertex_float_constants.data(), texture_cache,
+          cached_draw_buffers ? &cached_draw_buffers->vertex_constants : nullptr,
+          &output->vertex_constants, error) ||
+      !upload_draw_buffer(
+          memory_properties, device, pixel_constants_size,
+          VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+          source.constants.pixel_float_constants.data(), texture_cache,
+          cached_draw_buffers ? &cached_draw_buffers->pixel_constants : nullptr,
+          &output->pixel_constants, error)) {
     return false;
   }
 
@@ -2472,6 +2629,22 @@ size_t CapturedVulkanTextureCache::cached_pipeline_count() const {
 
 size_t CapturedVulkanTextureCache::cached_sampler_count() const {
     return impl_ ? impl_->state.samplers.size() : 0;
+}
+
+size_t CapturedVulkanTextureCache::cached_draw_buffer_count() const {
+    if (!impl_) return 0;
+    size_t count = 0;
+    for (const auto& entry : impl_->state.draw_buffers) {
+        const CachedDrawBuffers& buffers = entry.second;
+        for (const auto* slots : {&buffers.vertices, &buffers.indices,
+                                  &buffers.vertex_constants,
+                                  &buffers.pixel_constants}) {
+            for (const BufferResource& buffer : *slots) {
+                if (buffer.buffer) ++count;
+            }
+        }
+    }
+    return count;
 }
 
 bool submit_captured_vulkan_frame(

@@ -61,10 +61,10 @@ struct CapturedVulkanSamplerCapabilities {
     float max_anisotropy = 1.0f;
 };
 
-// Reuses live R8 plane resources, compatible graphics pipelines, and sampler
-// states across frames. Keep this object alive for one Vulkan device and clear
-// it before destroying that device. Calls that share it must be externally
-// synchronized.
+// Reuses live R8 planes, per-draw vertex/index/uniform upload buffers,
+// compatible graphics pipelines, and sampler states across frames. Keep this
+// object alive for one Vulkan device and clear it before destroying that
+// device. Calls that share it must be externally synchronized.
 class CapturedVulkanTextureCache {
  public:
     CapturedVulkanTextureCache();
@@ -76,6 +76,7 @@ class CapturedVulkanTextureCache {
     size_t size() const;
     size_t cached_pipeline_count() const;
     size_t cached_sampler_count() const;
+    size_t cached_draw_buffer_count() const;
 
  private:
     struct Impl;

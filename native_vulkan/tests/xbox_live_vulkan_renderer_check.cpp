@@ -472,6 +472,7 @@ int main(int argc, char** argv) {
     }
 
     shift::xbox::CapturedVulkanTextureCache asynchronous_cache;
+    size_t reusable_draw_buffer_count = 0;
     for (uint32_t frame = 0; frame < 4; ++frame) {
       if (!shift::xbox::submit_captured_vulkan_frame(
               physical_device, device, queue, queue_family, output_image,
@@ -480,6 +481,20 @@ int main(int argc, char** argv) {
               &asynchronous_cache)) {
         std::cerr << "asynchronous cached Vulkan frame " << frame
                   << " failed: " << error << '\n';
+        return 1;
+      }
+      const size_t draw_buffer_count =
+          asynchronous_cache.cached_draw_buffer_count();
+      if (frame == 1) {
+        reusable_draw_buffer_count = draw_buffer_count;
+        if (reusable_draw_buffer_count == 0) {
+          std::cerr << "cached asynchronous draws retained no upload buffers\n";
+          return 1;
+        }
+      } else if (frame >= 2 &&
+                 draw_buffer_count != reusable_draw_buffer_count) {
+        std::cerr << "draw upload buffers were not reused after their frame "
+                     "slot retired\n";
         return 1;
       }
     }
@@ -497,7 +512,8 @@ int main(int argc, char** argv) {
     }
     asynchronous_cache.clear();
     if (asynchronous_cache.cached_pipeline_count() != 0 ||
-        asynchronous_cache.cached_sampler_count() != 0) {
+        asynchronous_cache.cached_sampler_count() != 0 ||
+        asynchronous_cache.cached_draw_buffer_count() != 0) {
       std::cerr
           << "clearing in-flight texture cache retained GPU objects\n";
       return 1;
