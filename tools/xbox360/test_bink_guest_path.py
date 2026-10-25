@@ -60,6 +60,18 @@ assert sink_probe["vtable_method_targets"] == {
 }
 assert len(sink_probe["downstream_guest_objects"]) == 4
 assert "does not prove a texture upload" in sink_probe["interpretation"]
+downstream_probe = evidence["runtime_translation"]["p1_guest_sink_downstream_probe_20261025"]
+assert downstream_probe["dynamic_hits"] == {
+    "0x82B9C9F0": 4,
+    "0x82B9DC78": 4,
+    "0x82BA9258": 4,
+}
+assert downstream_probe["sink_call_arguments"]["0x82B9DC78"]["r7_guest_stack_array"] == "0x7018F6F0"
+transform_probe = evidence["runtime_translation"]["p1_guest_sink_transform_probe_20261025"]
+assert transform_probe["sink_compare_entries"] == 4
+assert transform_probe["transform_entries"] == 3
+assert transform_probe["transform_vtable_offset_12_target"] == "0x82BB50E8"
+assert "did not set a breakpoint on that target" in transform_probe["interpretation"]
 assert evidence["external_runtime_report"]["raw_pread_trace_or_log_hash_provided"] is False
 assert "not_proven" in evidence["interpretation"]
 

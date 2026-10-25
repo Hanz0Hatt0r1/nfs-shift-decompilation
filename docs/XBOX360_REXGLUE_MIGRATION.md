@@ -28,6 +28,8 @@ A separate 40-second exact-XEX GDB probe confirmed that both Bink manager callba
 
 A 38-second follow-up found four distinct downstream guest objects sharing vtable `0x820A8D28`. The Bink callbacks use its offsets 56 and 64, which point to guest functions `0x82B9C9F0` and `0x82B9DC78`; the latter forwards to `0x82BA9258`. This narrows the retail boundary after Bink, but the probe did not establish a texture upload, GPU command, or visible pixels. See the same [Bink guest-path evidence](../evidence/xbox360_bink_guest_path_20261025.json).
 
+Follow-up probes dynamically entered `0x82B9C9F0`, `0x82B9DC78`, and `0x82BA9258` four times each. The sink compared a six-element array at guest stack address `0x7018F6F0`; three of four comparisons entered a transform callback whose vtable target at offset 12 is `0x82BB50E8`. This confirms the retail guest-side data path continues beyond Bink, while the array contents and GPU/pixel transfer remain unverified. See the same [Bink guest-path evidence](../evidence/xbox360_bink_guest_path_20261025.json).
+
 A 75.33-second follow-up emitted six A/Start pulses and placed conditional breakpoints on the retail raw-mask getter `0x828B22B8` and changed-mask dispatcher `0x8230D398`. Neither observed an A/Start state under the probe conditions. This run did not capture the scene, so it narrows the next trace to frontend/boot progress without proving a title input failure or main-menu state. See [the frontend consumer probe](../evidence/xbox360_linux_gamepad_frontend_consumer_probe_20261025.json).
 
 ## Proposed pipeline
