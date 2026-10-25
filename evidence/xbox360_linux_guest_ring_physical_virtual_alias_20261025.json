@@ -1,0 +1,93 @@
+{
+  "schema": "shift.xbox360.linux-guest-ring-physical-virtual-alias.v1",
+  "captured_at_local": "2026-10-25T18:37:50+03:00",
+  "input": {
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "host_platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b",
+    "gpu_plugin_sha256": "42f338bc48e144e9dbc70dd208f9a169f437b506d1c338832896c1a6b83b7f10",
+    "arguments": [
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation",
+      "--fullscreen=false"
+    ],
+    "game_data_root": "/home/pes/work/process2-linux-retail-root-20261024/game"
+  },
+  "capture": {
+    "inferior_observation_seconds": 32,
+    "harness_duration_seconds": 40.08,
+    "input_events": [
+      {"at_seconds": 8, "button": "A", "duration_ms": 500},
+      {"at_seconds": 16, "button": "Start", "duration_ms": 500},
+      {"at_seconds": 24, "button": "A", "duration_ms": 500}
+    ],
+    "guest_memory_modified_by_probe": false,
+    "termination": "Harness sent SIGINT to GDB. GDB stopped the inferior but remained alive; after the 8-second shutdown grace period the harness terminated GDB. No nfs_shift or GDB process remained afterward.",
+    "gdb_script": {
+      "external_path": "/tmp/nfs-p1-ring-alias-20261026/trace.gdb",
+      "sha256": "760060a61999474bd00a3d08e09fe64437fe85607704b54a8b3815413a79a06a"
+    },
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-ring-alias-20261026/gdb.log",
+      "sha256": "ab3c5e36d952a876c6864b784b392b3c20a423faecff3bbb895ad417f0021c46",
+      "bytes": 47110
+    },
+    "runtime_log": {
+      "external_path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_120.log",
+      "sha256": "449248b82f75e4b34735337ff6414bf811f60c7a78a75f175fe6a33e6880a1ad",
+      "initial_event_write": "EVENT_WRITE_SHD to guest GPA 0x17AF4000, endian=2, value 0x00000001 -> 0x00000003",
+      "initial_rptr_writeback": "guest GPA 0x17AF403C, translated host address 0x217AF403C"
+    }
+  },
+  "mapping_observation": {
+    "guest_virtual_base_host": "0x100000000",
+    "guest_physical_base_host": "0x200000000",
+    "descriptor_guest_virtual": "0xB7AF4000",
+    "descriptor_guest_physical": "0x17AF4000",
+    "descriptor_virtual_host": "0x1B7AF4000",
+    "descriptor_physical_host": "0x217AF4000",
+    "method": "GDB hardware watchpoint on the physical host alias 0x217AF4000; on every hit, read the guest virtual mapping at guest_base + 0xB7AF4000.",
+    "physical_alias_writes_observed": 360,
+    "write_sequence": {
+      "first_value": "0x00000005",
+      "last_value": "0x000002D7",
+      "step": "0x2",
+      "values_monotonic": true,
+      "virtual_alias_equal_on_every_watchpoint_hit": true
+    },
+    "retail_wait_samples": [
+      {"wait_hit": 1, "descriptor_virtual": "0x00000003", "descriptor_physical": "0x00000003", "rptr": "0x0000001C", "tail": 21, "predicate": "0x14"},
+      {"wait_hit": 256, "descriptor_virtual": "0x00000049", "descriptor_physical": "0x00000049", "rptr": "0x000000E5", "tail": 81, "predicate": "0x14"},
+      {"wait_hit": 512, "descriptor_virtual": "0x00000099", "descriptor_physical": "0x00000099", "rptr": "0x000001D5", "tail": 161, "predicate": "0x14"},
+      {"wait_hit": 768, "descriptor_virtual": "0x000002AF", "descriptor_physical": "0x000002AF", "rptr": "0x00000817", "tail": 695, "predicate": "0x14"}
+    ]
+  },
+  "adjudication": {
+    "supported": [
+      "The exact-XEX retail wait reads the descriptor head through the guest virtual mapping while the PM4 worker writes the corresponding physical mapping.",
+      "All 360 watchpoint writes from 0x5 through 0x2D7 were visible with the same value through the guest virtual alias.",
+      "The descriptor head and retail queue tail advanced during repeated 0x823A0310 wait samples.",
+      "The earlier virtual-host-alias hardware watchpoint did not observe writes through the separate physical-host alias and therefore cannot support the claim that the descriptor stayed at 1."
+    ],
+    "not_proven": [
+      "A visible menu, frontend transition, or offline race.",
+      "That the 0x02 predicate bit must be set in this path; it remained 0x14 while the queue continued advancing.",
+      "Correct Vulkan rendering or sustained output."
+    ],
+    "p1_conclusion": "No P1 guest-wait, event-write alias, or scheduler defect is demonstrated by this trace. The descriptor alias mismatch hypothesis is closed for this run; rendering/frontend progress remains unverified."
+  },
+  "supersedes": [
+    "evidence/xbox360_ring_writeback_progress_20261024.json: descriptor-base watchpoint conclusion",
+    "evidence/xbox360_linux_retail_wait_cursor_20261025.json: bounded cursor sample interpreted without accounting for the separate physical host mapping"
+  ],
+  "limits": [
+    "GDB hardware watchpoints perturb scheduling.",
+    "This run has no retained pixel readback and proves no main-menu or race state.",
+    "The hardware watchpoint covered the descriptor word; it did not prove all GPU commands or all guest queue paths correct."
+  ]
+}
