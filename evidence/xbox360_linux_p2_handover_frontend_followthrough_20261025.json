@@ -1,0 +1,86 @@
+{
+  "schema": "shift.xbox360.linux.p2-handover-frontend-followthrough.v1",
+  "captured_on": "2026-10-25",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "host": {
+      "path": "/tmp/nfs-p1-retail-frontier-p2-isolated-20261026/bin/nfs_shift",
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "rexglue_runtime": {
+      "path": "/tmp/nfs-p1-shm-runtime-clang-20261025/librexruntime.so",
+      "sha256": "d0516220e6e3db828d4d016a517f5f870705628fa7016409067b7e6c94f4c740"
+    },
+    "p2_renderer_plugin": {
+      "path": "/home/pes/work/process2-renderer-handover-pipeline-cache/librexgpu-shift-native-linux-x86_64.so",
+      "source_commit": "99cdd93a92a580d562ca3f0c4c88e2e4a9d3b537",
+      "sha256": "e2679a4ca54178a312af3f6cc7cc2ba0eb8dd562a8e730a32131068d46736bf4",
+      "elf_build_id": "173c8c62e2dea1cf2b5a8161003e6e63e294fb8d",
+      "loaded_mapping_verified": true
+    }
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "duration_seconds": 120.027,
+    "termination": "Harness sent SIGINT at 120 seconds while the guest process remained live; process exit status was 0.",
+    "instrumentation": "No GDB; guest memory was not modified.",
+    "controller": {
+      "device": "Linux uinput Microsoft X-Box 360 pad, VID:PID 045e:028e",
+      "press_release_edges": 34,
+      "buttons": ["A", "Start"]
+    },
+    "window_capture": {
+      "method": "Hyprland target-window geometry plus grim; captures target the nfs_shift window.",
+      "pixels_committed": false,
+      "captures": [
+        {"elapsed_seconds": 38.135, "sha256": "11d16ba74b0847c0070ed8defaa72cf0f61a0e154584511889a6d48b1832e26e", "observation": "retail driving-safety warning"},
+        {"elapsed_seconds": 54.207, "sha256": "655a4d5cfc5c9ef1d351daaaf6fcce2138350abe986ceaf8bc4c2ad406c1c386", "observation": "black game viewport"},
+        {"elapsed_seconds": 65.093, "sha256": "8535ef91cd6b429bafba5200a9b9bb6f89d7ce8eb503e346b9882075de6b725c", "observation": "black game viewport"},
+        {"elapsed_seconds": 75.130, "sha256": "2fba36fdcf2f1218946ef600f02fbec700b3da369fcf1a7f2b9a46255a75c47f", "observation": "retail driving-safety warning"},
+        {"elapsed_seconds": 85.118, "sha256": "2f8de474af97c82e1dd309163b39275093f02961860b0b2c65e8c44f092854db", "observation": "black game viewport"},
+        {"elapsed_seconds": 95.126, "sha256": "9b72b75a921580866ee574d6851e4a1d314b6ba177ebe68b522c12b07efc30c8", "observation": "black game viewport"},
+        {"elapsed_seconds": 105.115, "sha256": "8d37f6114dd8aebca4b23be5f575a51c501ed0cab8303e833deadaf838e007b9", "observation": "retail driving-safety warning"},
+        {"elapsed_seconds": 115.184, "sha256": "4c8d26ed7c46b255445bdb050fcdd935cbb87bd6fd30638901c7c87786e8a7c4", "observation": "black game viewport"},
+        {"elapsed_seconds": 119.170, "sha256": "c26c61eac0d6e9a19bf84397c2c7078ce91c25ae0be1eb5f39fdf57f815b8853", "observation": "black game viewport"}
+      ]
+    },
+    "runtime_log": {
+      "path": "/tmp/nfs-p1-retail-frontier-p2-isolated-20261026/bin/logs/nfs_shift_001.log",
+      "bytes": 1233149,
+      "sha256": "dfaee1a8b2ee3c2a1a1a1f9415df682643e7f6ee617c06b0901601fb21e67bb9",
+      "accepted_copy_convert_entries": 1103,
+      "first_copy_convert_local_time": "2026-10-25 21:11:32.837",
+      "last_copy_convert_local_time": "2026-10-25 21:12:02.491",
+      "cameraconfig_xml_open_failures": 1,
+      "menu_background_xml_open_failures": 4,
+      "first_menu_background_xml_open_failure_local_time": "2026-10-25 21:12:02.571",
+      "vulkan_frame_refresh_failures": 0,
+      "guest_faults": 0,
+      "sigsegv": 0,
+      "sigbus": 0
+    }
+  },
+  "interpretation": {
+    "observed": [
+      "The exact retail XEX remained live until the harness stopped it.",
+      "The P2 handover plugin with the recorded hash and build ID was mapped in the process.",
+      "The window alternated between the retail safety warning and a black game viewport in the sampled captures.",
+      "The last accepted Copy/Convert log entry preceded the first menu_background.xml miss by about 80 ms."
+    ],
+    "not_proven": [
+      "The main menu or an offline race was reached.",
+      "The menu_background.xml misses caused the black viewport or stopped submissions.",
+      "Whether the black viewport is caused by guest scene progression or renderer behavior.",
+      "Natural completion of the retail video or the scene transition following it."
+    ]
+  },
+  "artifacts": {
+    "run_manifest": "/tmp/nfs-p1-retail-frontier-p2-isolated-20261026/run.json",
+    "capture_directory": "/tmp/nfs-p1-retail-frontier-p2-isolated-20261026/captures"
+  }
+}
