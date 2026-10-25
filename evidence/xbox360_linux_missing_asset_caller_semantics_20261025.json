@@ -52,6 +52,18 @@
     "config_probe_wrapper": {
       "function": "0x822CA0F8",
       "normalizes_probe_result_to": [0, 1]
+    },
+    "initializer": {
+      "function": "0x82625158",
+      "calls_config_path_at": "0x8262519C",
+      "false_result_cleanup_call": "0x822C6120",
+      "false_return": "0"
+    },
+    "outer_initializer": {
+      "function": "0x82625278",
+      "calls_initializer_at": "0x826252A0",
+      "false_result_cleanup_calls": ["0x82624A28", "0x82623EE0"],
+      "continues_initialization_at": "0x826252C0"
     }
   },
   "instruction_checks": [
@@ -66,18 +78,27 @@
     {"address": "0x822CA26C", "bytes_big_endian": "38600000", "meaning": "return false for nonzero resource result"},
     {"address": "0x822CA134", "bytes_big_endian": "480000c5", "meaning": "call 0x822CA1F8"},
     {"address": "0x822CA14C", "bytes_big_endian": "38600001", "meaning": "return true when probe result is nonzero"},
-    {"address": "0x822CA15C", "bytes_big_endian": "38600000", "meaning": "return false when probe result is zero"}
+    {"address": "0x822CA15C", "bytes_big_endian": "38600000", "meaning": "return false when probe result is zero"},
+    {"address": "0x8262519C", "bytes_big_endian": "4bca120d", "meaning": "call 0x822C63A8"},
+    {"address": "0x826251A0", "bytes_big_endian": "2f030000", "meaning": "test initializer result"},
+    {"address": "0x826251AC", "bytes_big_endian": "4bca0f75", "meaning": "cleanup when initializer returns false"},
+    {"address": "0x826251B0", "bytes_big_endian": "38600000", "meaning": "return false after cleanup"},
+    {"address": "0x826252A0", "bytes_big_endian": "4bfffeb9", "meaning": "call 0x82625158"},
+    {"address": "0x826252A4", "bytes_big_endian": "2f030000", "meaning": "test initializer result"},
+    {"address": "0x826252AC", "bytes_big_endian": "4bfff779", "meaning": "cleanup first object after false result"},
+    {"address": "0x826252BC", "bytes_big_endian": "4bffec25", "meaning": "cleanup second object after false result"},
+    {"address": "0x826252C0", "bytes_big_endian": "38610060", "meaning": "continue with following initialization"}
   ],
   "interpretation": {
     "supported": [
-      "The traced cameraconfig.xml miss is converted by the retail caller chain into a false result, not an observed fatal initialization exit.",
+      "The traced cameraconfig.xml miss is converted by the retail caller chain into false; the outer initializer cleans up two associated objects and then continues into later initialization.",
       "This exact path is not evidence that the Linux VFS should fabricate the missing file or change NTSTATUS behavior."
     ],
     "not_proven": [
-      "Whether a higher caller uses the false result for fallback, skips camera setup, or needs the file in a later state.",
+      "Whether this config is needed in a later frontend or race state.",
       "Whether the separate audio.bff and drivers2.lod misses follow the same caller chain.",
       "A main menu, offline race, or causal connection between this optional-style probe and the black frame."
     ],
-    "next_step": "Keep VFS semantics unchanged; trace the higher caller's handling of the false result and pursue a blocker tied to the guest's actual menu or race transition."
+    "next_step": "Keep VFS semantics unchanged and pursue a blocker tied to the guest's actual menu or race transition."
   }
 }

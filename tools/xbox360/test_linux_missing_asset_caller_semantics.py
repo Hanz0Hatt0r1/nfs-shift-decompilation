@@ -29,6 +29,12 @@ assert flow["file_reader"]["maps_open_failure_to"] == "0xfffffffb"
 assert flow["resource_reader"]["cleanup_return"] == "0xfffffffb"
 assert flow["config_probe"]["nonzero_resource_result_return"] == "0"
 assert flow["config_probe_wrapper"]["normalizes_probe_result_to"] == [0, 1]
+assert flow["initializer"]["false_return"] == "0"
+assert flow["outer_initializer"]["false_result_cleanup_calls"] == [
+    "0x82624A28",
+    "0x82623EE0",
+]
+assert flow["outer_initializer"]["continues_initialization_at"] == "0x826252C0"
 
 instructions = {item["address"]: item["bytes_big_endian"] for item in evidence["instruction_checks"]}
 assert instructions["0x822DD704"] == "48411a9d"
@@ -37,6 +43,9 @@ assert instructions["0x822DC5C0"] == "3860fffb"
 assert instructions["0x822CA26C"] == "38600000"
 assert instructions["0x822CA14C"] == "38600001"
 assert instructions["0x822CA15C"] == "38600000"
+assert instructions["0x826251B0"] == "38600000"
+assert instructions["0x826252AC"] == "4bfff779"
+assert instructions["0x826252BC"] == "4bffec25"
 
 not_proven = " ".join(evidence["interpretation"]["not_proven"])
 assert "offline race" in not_proven
