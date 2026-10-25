@@ -339,6 +339,9 @@ struct CapturedRasterRegisters {
     uint32_t copy_dest_info = 0;
     uint32_t copy_valid_mask = 0;
     uint32_t setup_mode_control = 0;
+    uint32_t clip_control = 0;
+    uint32_t viewport_transform_control = 0;
+    uint32_t viewport_transform_valid_mask = 0;
 };
 
 // Retains only the raster registers used by the captured Xbox draw contract.
@@ -352,6 +355,7 @@ struct GuestRasterRegisterState {
 private:
     CapturedRasterRegisters registers_{};
     uint32_t valid_mask_ = 0;
+    uint32_t viewport_transform_valid_mask_ = 0;
 };
 
 struct CapturedRasterState {
@@ -384,6 +388,11 @@ struct CapturedRasterState {
     } cull_mode = CullMode::None;
     bool front_face_ccw = true;
     uint32_t setup_mode_control = 0;
+    bool clip_control_valid = false;
+    bool viewport_transform_control_valid = false;
+    bool clip_disabled = false;
+    uint32_t viewport_transform_control = 0;
+    bool clip_disabled_window_coordinates = false;
     float viewport_x = 0.0f;
     float viewport_y = 0.0f;
     float viewport_width = 0.0f;

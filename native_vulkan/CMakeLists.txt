@@ -84,6 +84,24 @@ if(GLSLANG_VALIDATOR)
     VERBATIM
   )
   add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/clip_disabled_window.vert.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/clip_disabled_window.vert
+            -o ${SHIFT_VULKAN_SHADER_DIR}/clip_disabled_window.vert.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/clip_disabled_window.vert
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/clip_disabled_window.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/clip_disabled_window.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/clip_disabled_window.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/clip_disabled_window.frag
+    VERBATIM
+  )
+  add_custom_command(
     OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.vert.spv
     COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
     COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
@@ -118,6 +136,8 @@ if(GLSLANG_VALIDATOR)
       ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.vert.spv
       ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/live_draw_rectlist.geom.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/clip_disabled_window.vert.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/clip_disabled_window.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.vert.spv
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_single.frag.spv
@@ -132,6 +152,8 @@ if(GLSLANG_VALIDATOR)
             ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.vert.spv
             ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.frag.spv
             ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_single.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/clip_disabled_window.vert.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/clip_disabled_window.frag.spv
   )
   set_tests_properties(xbox_live_vulkan_renderer_check PROPERTIES SKIP_RETURN_CODE 77)
 

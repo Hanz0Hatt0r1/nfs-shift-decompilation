@@ -1,0 +1,86 @@
+{
+  "schema": "shift.process2.bink_cutscene_vulkan_replay.v1",
+  "date": "2026-10-25",
+  "retail_capture": {
+    "source_log": "local nfs_shift_015.log; not committed",
+    "presenter_frame": 400,
+    "draw_index": 2614,
+    "topology": "RectangleList",
+    "auto_index": true,
+    "index_count": 4,
+    "raster": {
+      "width": 1280,
+      "height": 720,
+      "clip_disabled": true,
+      "viewport_transform_control": "0x400",
+      "window_coordinates_before_fix": false,
+      "window_coordinates_after_fix": true
+    },
+    "vertex_shader": {
+      "byte_length": 96,
+      "fnv1a64": "0x6b6846221d758944"
+    },
+    "pixel_shader": {
+      "byte_length": 144,
+      "fnv1a64": "0xae0dde2bd729877d"
+    },
+    "texture_planes": [
+      {
+        "role": "luma",
+        "extent": [1280, 720],
+        "format": "R8_UNORM",
+        "rgba8_sha256": "543a7784be92379dadd6750e64c99030783d2cf95c55cb955678d49bc1dec5d2"
+      },
+      {
+        "role": "chroma V",
+        "extent": [640, 360],
+        "format": "R8_UNORM",
+        "rgba8_sha256": "08f5015988bd2139f9c5f06819524b0c848f43922512aaed76652da1d557ab18"
+      },
+      {
+        "role": "chroma U",
+        "extent": [640, 360],
+        "format": "R8_UNORM",
+        "rgba8_sha256": "e544658c9601a09e4c9ae744f510191606b3bc3cd6fa9ac71a40b718935e3984"
+      }
+    ],
+    "input_assets_committed": false
+  },
+  "pre_fix_live_readback": {
+    "presenter_frame": 400,
+    "nonzero_rgb_pixels": 230400,
+    "bounding_box": [640, 0, 1279, 359],
+    "rgb_channel_max_10bit": [4, 0, 4],
+    "classification": "effectively black and clipped to one quarter of the target"
+  },
+  "captured_draw_vulkan_replay": {
+    "method": "Compiled the Bink translated GLSL recorded for draw 2614, added the production clip-disabled window-to-NDC vertex transform, and submitted the logged draw topology, vertices, constants, raster state, and saved retail texture planes through submit_captured_vulkan_frame in a temporary copy of the renderer test harness.",
+    "temporary_harness_committed": false,
+    "api_target": "Vulkan 1.1",
+    "device": "NVIDIA GeForce GTX 950",
+    "validation_layer_enabled": true,
+    "validation_errors": 0,
+    "output_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "nonzero_rgb_pixels": 921528,
+    "bounding_box": [0, 0, 1279, 719],
+    "output_sha256": "1fdfee5d3962ae66c8dd9f5f987ff96f8818aa0693cd27ef4afc4046438486b6",
+    "yuv_formula_comparison": {
+      "mean_absolute_error_10bit_per_rgb_channel": [0.09, 0.05, 0.09],
+      "maximum_absolute_error_10bit_per_rgb_channel": [17, 8, 23],
+      "formula_sampling": "nearest 2x chroma expansion; renderer uses captured linear filtering"
+    }
+  },
+  "post_fix_live_launch": {
+    "source_log": "local nfs_shift_019.log; not committed",
+    "presenter_frames_submitted": 352,
+    "last_submission_time": "2026-10-25T06:27:28.710+03:00",
+    "readback_frame_400_captured": false,
+    "outcome": "session ended without another Vulkan draw submission",
+    "stack_sample": "guest main was executing generated game code; native GPU ring worker was waiting for work"
+  },
+  "limitations": [
+    "The full-screen Bink output is a replay of one real captured draw, not a live post-fix retail frame.",
+    "The current run did not verify cutscene transition, continued frontend rendering, or race-scene output.",
+    "The offline YUV formula is a diagnostic reference, not an independent console screenshot."
+  ]
+}

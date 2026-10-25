@@ -156,7 +156,10 @@ bool CapturedDrawDumpEnabled() {
 #else
   static const bool enabled = [] {
     const char *value = std::getenv("SHIFT_NATIVE_VULKAN_DUMP_FIRST_DRAW");
-    return value && std::string(value) == "1";
+    if (value && std::string(value) == "1") return true;
+    const char* frame = std::getenv("SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME");
+    uint32_t parsed_frame = 0;
+    return parse_positive_environment_frame(frame, &parsed_frame);
   }();
   return enabled;
 #endif
@@ -579,6 +582,20 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     options.gamma_color_target =
         raster_state.color_format ==
         shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
+    if (raster_state.clip_disabled_window_coordinates) {
+      const uint32_t vte = raster_state.viewport_transform_control;
+      const float captured_x_scale = raster_state.viewport_width * 0.5f;
+      const float captured_y_scale = raster_state.viewport_height * 0.5f;
+      options.clip_disabled_window_coordinates = true;
+      options.window_coordinate_width = raster_state.width;
+      options.window_coordinate_height = raster_state.height;
+      options.window_coordinate_x_scale = (vte & 0x1u) ? captured_x_scale : 1.0f;
+      options.window_coordinate_y_scale = (vte & 0x4u) ? captured_y_scale : 1.0f;
+      options.window_coordinate_x_offset = (vte & 0x2u)
+          ? raster_state.viewport_x + captured_x_scale : 0.0f;
+      options.window_coordinate_y_offset = (vte & 0x8u)
+          ? raster_state.viewport_y + captured_y_scale : 0.0f;
+    }
     shift::xbox::CapturedShaderTranslation vertex_translation{};
     shift::xbox::CapturedShaderTranslation pixel_translation{};
     if (!shift::xbox::translate_captured_shader_glsl(
@@ -932,7 +949,14 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
              << raster_state.blend_control_0 << " setup=0x"
              << raster_state.setup_mode_control << std::dec
              << " cull=" << static_cast<uint32_t>(raster_state.cull_mode)
-             << " front_ccw=" << raster_state.front_face_ccw << "\n"
+             << " front_ccw=" << raster_state.front_face_ccw
+             << " clip={valid:" << raster_state.clip_control_valid
+             << ",disabled:" << raster_state.clip_disabled
+             << ",vte_valid:" << raster_state.viewport_transform_control_valid
+             << ",vte:0x" << std::hex
+             << raster_state.viewport_transform_control << std::dec
+             << ",window_xy:" << raster_state.clip_disabled_window_coordinates
+             << "}\n"
              << "  shaders: VS=" << vertex_program.size() << " bytes FNV-1a=0x"
              << std::hex
              << Fnv1a64(vertex_program.data(), vertex_program.size())
@@ -1044,6 +1068,27 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                  << " rgba8_fnv1a=0x" << std::hex
                  << Fnv1a64(texture.rgba8.data(), texture.rgba8.size())
                  << std::dec << "\n";
+            const char* texture_dump_prefix =
+                std::getenv("SHIFT_NATIVE_VULKAN_DUMP_TEXTURES_PREFIX");
+            if (diagnostic_submitted_frame != 0 && texture_dump_prefix &&
+                *texture_dump_prefix) {
+              std::ostringstream texture_path;
+              texture_path << texture_dump_prefix << ".frame"
+                           << diagnostic_submitted_frame << ".draw"
+                           << dump_index << ".texture" << texture_index
+                           << ".rgba8";
+              std::ofstream texture_file(texture_path.str(),
+                                        std::ios::binary | std::ios::trunc);
+              texture_file.write(
+                  reinterpret_cast<const char*>(texture.rgba8.data()),
+                  static_cast<std::streamsize>(texture.rgba8.size()));
+              if (texture_file) {
+                dump << "    raw_texture_dump=" << texture_path.str() << "\n";
+              } else {
+                dump << "    raw_texture_dump_failed=" << texture_path.str()
+                     << "\n";
+              }
+            }
           }
         } else {
           dump << "  texture: unused\n";
@@ -1172,6 +1217,16 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 #else
     constexpr uint32_t kAndroidDebugReadbackFrame = 0u;
 #endif
+    uint32_t selected_draw_dump_frame = 0;
+    if (const char* frame_text =
+            std::getenv("SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME");
+        frame_text && *frame_text &&
+        !parse_positive_environment_frame(frame_text,
+                                          &selected_draw_dump_frame)) {
+      REXLOG_WARN("shift-native: ignoring invalid "
+                  "SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME value '{}'",
+                  frame_text);
+    }
     for (;;) {
       uint32_t read_pointer = 0;
       uint32_t write_pointer = 0;
@@ -1733,8 +1788,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 shift::xbox::CapturedVulkanDraw prepared_draw{};
                 const uint32_t upcoming_submitted_frame = readback_frame_counter + 1u;
                 const uint32_t diagnostic_submitted_frame =
-                    kAndroidDebugReadbackFrame != 0u &&
-                            upcoming_submitted_frame == kAndroidDebugReadbackFrame
+                    (kAndroidDebugReadbackFrame != 0u &&
+                     upcoming_submitted_frame == kAndroidDebugReadbackFrame) ||
+                            (selected_draw_dump_frame != 0u &&
+                             upcoming_submitted_frame == selected_draw_dump_frame)
                         ? upcoming_submitted_frame
                         : 0u;
                 const bool resources_resolved =

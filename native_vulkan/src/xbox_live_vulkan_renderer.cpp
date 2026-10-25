@@ -1600,7 +1600,12 @@ bool submit_mixed_sample_copy_frame(
         if (resource_index == std::numeric_limits<size_t>::max()) return;
         const DrawResources& draw = resources.draws[resource_index];
         VkViewport viewport{};
-        if (source.raster.viewport_width != 0.0f &&
+        if (source.raster.clip_disabled_window_coordinates) {
+            viewport.x = 0.0f;
+            viewport.y = 0.0f;
+            viewport.width = static_cast<float>(target.width);
+            viewport.height = static_cast<float>(target.height);
+        } else if (source.raster.viewport_width != 0.0f &&
             source.raster.viewport_height != 0.0f && source.raster.width &&
             source.raster.height) {
             const float scale_x = static_cast<float>(target.width) /
@@ -2338,7 +2343,12 @@ bool submit_captured_vulkan_frame(
         const CapturedVulkanDraw& source = draws[i];
         const DrawResources& draw = resources.draws[i];
         VkViewport viewport{};
-        if (source.raster.viewport_width != 0.0f &&
+        if (source.raster.clip_disabled_window_coordinates) {
+            viewport.x = 0.0f;
+            viewport.y = 0.0f;
+            viewport.width = static_cast<float>(raster_width);
+            viewport.height = static_cast<float>(raster_height);
+        } else if (source.raster.viewport_width != 0.0f &&
             source.raster.viewport_height != 0.0f && source.raster.width &&
             source.raster.height) {
             const float scale_x = static_cast<float>(raster_width) /

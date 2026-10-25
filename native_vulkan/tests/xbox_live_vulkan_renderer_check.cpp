@@ -99,10 +99,10 @@ bool read_spirv(const char* path, std::vector<uint32_t>* output) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 7) {
+    if (argc != 9) {
         std::cerr << "usage: xbox_live_vulkan_renderer_check vertex.spv fragment.spv "
                      "geometry.spv copy-vertex.spv copy-fragment.spv "
-                     "copy-single-fragment.spv\n";
+                     "copy-single-fragment.spv window-vertex.spv window-fragment.spv\n";
         return 2;
     }
 
@@ -296,6 +296,13 @@ int main(int argc, char** argv) {
         std::cerr << "could not read valid Vulkan 1.1 sample-zero Copy/Convert shaders\n";
         return 1;
     }
+    std::vector<uint32_t> window_vertex_spirv;
+    std::vector<uint32_t> window_fragment_spirv;
+    if (!read_spirv(argv[7], &window_vertex_spirv) ||
+        !read_spirv(argv[8], &window_fragment_spirv)) {
+        std::cerr << "could not read clip-disabled window-coordinate SPIR-V shaders\n";
+        return 1;
+    }
     draw.texture_rgba8 = {255, 0, 0, 255};
     draw.vertex_stride_bytes = 0;
     // Mirror the captured retail point path: one AutoIndex point, 4x MSAA,
@@ -365,6 +372,54 @@ int main(int argc, char** argv) {
         enabled_features.geometryShader, &copy);
     if (!submitted) {
         std::cerr << "captured Vulkan draw submission failed: " << error << '\n';
+        return 1;
+    }
+
+    auto window_coordinates = draw;
+    window_coordinates.vertex_shader_spirv = std::move(window_vertex_spirv);
+    window_coordinates.geometry_shader_spirv = rectangle_geometry_spirv;
+    window_coordinates.pixel_shader_spirv = std::move(window_fragment_spirv);
+    window_coordinates.topology = shift::xbox::PrimitiveTopology::RectangleList;
+    window_coordinates.index_count = 3;
+    window_coordinates.auto_index = true;
+    window_coordinates.vertex_stride_bytes = 0;
+    window_coordinates.vertices.clear();
+    window_coordinates.vertex_input_attributes.clear();
+    window_coordinates.raster.sample_count = 1;
+    window_coordinates.raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
+    window_coordinates.raster.depth_test_enabled = false;
+    window_coordinates.raster.depth_write_enabled = false;
+    window_coordinates.raster.stencil_test_enabled = false;
+    window_coordinates.raster.depth_control = 0;
+    window_coordinates.raster.viewport_y_flipped = true;
+    window_coordinates.raster.clip_disabled_window_coordinates = true;
+    window_coordinates.raster.blend_control_0 = 0x00010001u;
+    window_coordinates.textures = {draw.textures.front()};
+    std::vector<uint32_t> window_output;
+    std::string window_error;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, {window_coordinates}, &window_error, &window_output,
+            enabled_features.geometryShader)) {
+        std::cerr << "clip-disabled window-coordinate Vulkan draw failed: "
+                  << window_error << '\n';
+        return 1;
+    }
+    if (window_output.size() != 1280u * 720u) {
+        std::cerr << "clip-disabled window-coordinate readback has the wrong size\n";
+        return 1;
+    }
+    const auto channel = [&window_output](uint32_t x, uint32_t y, uint32_t shift) {
+        return ((window_output[static_cast<size_t>(y) * 1280u + x] >> shift) & 1023u) /
+               1023.0f;
+    };
+    if (channel(64, 64, 0) > 0.12f || channel(64, 64, 10) > 0.15f ||
+        channel(1216, 656, 0) < 0.88f || channel(1216, 656, 10) < 0.82f) {
+        std::cerr << "clip-disabled window coordinates were clipped or Y-flipped: "
+                  << "top-left=" << channel(64, 64, 0) << ','
+                  << channel(64, 64, 10) << " bottom-right="
+                  << channel(1216, 656, 0) << ',' << channel(1216, 656, 10) << '\n';
         return 1;
     }
 

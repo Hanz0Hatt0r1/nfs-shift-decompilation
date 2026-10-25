@@ -452,3 +452,11 @@ still arrives without surface, viewport, or blend registers (`valid_mask`
 `0x17038`), so it remains fail-closed. A bounded retail readback of submitted
 frame 100 with the current plugin is pending; sustained menu/race output
 remains unverified.
+
+## Bink cutscene draw follow-up (2026-10-25)
+
+Retail presenter frame 400 captured draw #2614 as a full-screen Bink YUV rectangle: four vertices spanning `(0,0)` to `(1280,720)`, three R8 planes (1280x720 luma and two 640x360 chroma planes), `clip_disabled=1`, and `PA_CL_VTE_CNTL=0x400`. The old window-coordinate classifier also required `VTE_XY_FMT`, so it left `window_xy=0`; the readback consequently covered only `[640,0]..[1279,359]` and its RGB channels peaked at 4/1023. The parser now derives window-coordinate mode from clip-disable itself, while VTE scale and offset flags still independently select the captured viewport terms. The Vulkan vertex path maps those window coordinates into NDC and uses the complete positive viewport.
+
+A captured-data replay compiled the logged Bink shader translations for Vulkan 1.1, applied the same window-to-NDC transform, and submitted the captured constants, raster state, geometry, and raw texture planes to the project Vulkan renderer. On the GTX 950 with validation enabled it covered the full 1280x720 frame (921,528 nonzero pixels; bounding box `[0,0]..[1279,719]`) with zero validation errors. Compared with the captured YUV conversion formula, mean absolute error was 0.09/0.05/0.09 per 10-bit channel; differences are from linear chroma filtering. The replay shows the EA intro mark and validates this captured draw path, not a live post-fix game launch. Inputs and output binaries remain outside Git; hashes and the replay method are in [`process2_linux_bink_cutscene_replay_20261025.json`](../../evidence/process2_linux_bink_cutscene_replay_20261025.json).
+
+The latest headless launch after the fix stopped submitting draws after presenter frame 352 and did not produce a new live Bink readback. A guest-main stack sample was in generated game code while the native GPU ring worker waited for work, so this run provides no evidence of Vulkan queue backpressure. Live cutscene transition and sustained frontend/gameplay rendering remain unverified.

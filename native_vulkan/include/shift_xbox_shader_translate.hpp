@@ -26,6 +26,13 @@ struct CapturedShaderTranslationOptions {
     bool pixel_b128 = false;
     bool pixel_b129 = false;
     bool gamma_color_target = false;
+    bool clip_disabled_window_coordinates = false;
+    uint32_t window_coordinate_width = 0;
+    uint32_t window_coordinate_height = 0;
+    float window_coordinate_x_scale = 1.0f;
+    float window_coordinate_y_scale = 1.0f;
+    float window_coordinate_x_offset = 0.0f;
+    float window_coordinate_y_offset = 0.0f;
     std::array<CapturedShaderTextureOptions, 32> textures{};
 };
 

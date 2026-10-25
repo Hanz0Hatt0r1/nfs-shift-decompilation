@@ -969,14 +969,17 @@ bool decode_captured_texture_fetch(
     const uint32_t mip_address =
         ((descriptor_words[5] >> 12) & 0xFFFFFu) << 12;
 
+    const bool r8 = format == 2 && endian_mode == 0;
     const bool rgba8 = format == 6 && endian_mode == 2;
     const bool dxt = (format == 19 || format == 20) && endian_mode == 1;
     const bool dxt5a = format == 59 && endian_mode == 1;
     const bool compressed = dxt || dxt5a;
-    const bool valid_texture_layout = rgba8
-        ? tiled && pitch >= width && pitch % 32u == 0
-        : compressed && width % 4u == 0 && height % 4u == 0 && pitch >= width &&
-              pitch % 4u == 0 && (!tiled || pitch % 128u == 0);
+    const bool valid_texture_layout = r8
+        ? !tiled && pitch >= width
+        : rgba8 ? tiled && pitch >= width && pitch % 32u == 0
+                : compressed && width % 4u == 0 && height % 4u == 0 &&
+                      pitch >= width && pitch % 4u == 0 &&
+                      (!tiled || pitch % 128u == 0);
     // A mip range with the same nonzero base and mip page has no separate
     // mip payload. Preserve the one captured base level; distinct mip pages
     // and packed tails with separate storage need subresource upload support.
@@ -987,9 +990,11 @@ bool decode_captured_texture_fetch(
         return fail("unsupported captured texture-fetch descriptor", error);
     }
 
-    const uint64_t byte_length = rgba8 ? tiled_rgba8_storage_bytes(pitch, height)
-        : compressed_texture_storage_bytes(pitch, height, dxt5a ? 8u : 16u,
-                                           tiled != 0);
+    const uint64_t byte_length = r8
+        ? static_cast<uint64_t>(pitch) * height
+        : rgba8 ? tiled_rgba8_storage_bytes(pitch, height)
+                : compressed_texture_storage_bytes(
+                      pitch, height, dxt5a ? 8u : 16u, tiled != 0);
     if (!width || !height || byte_length > std::numeric_limits<uint32_t>::max()) {
         return fail("captured texture dimensions are out of range", error);
     }
@@ -1102,6 +1107,7 @@ bool decode_captured_texture_sampling(
 void GuestRasterRegisterState::reset() noexcept {
     registers_ = {};
     valid_mask_ = 0;
+    viewport_transform_valid_mask_ = 0;
 }
 
 void GuestRasterRegisterState::apply(const GuestRegisterWrite& write) noexcept {
@@ -1131,6 +1137,18 @@ void GuestRasterRegisterState::apply(const GuestRegisterWrite& write) noexcept {
     }
     uint32_t bit = 0;
     uint32_t* destination = nullptr;
+    if (write.register_index == 0x2204u) {
+        registers_.clip_control = write.value;
+        viewport_transform_valid_mask_ |= 1u;
+        registers_.viewport_transform_valid_mask = viewport_transform_valid_mask_;
+        return;
+    }
+    if (write.register_index == 0x2206u) {
+        registers_.viewport_transform_control = write.value;
+        viewport_transform_valid_mask_ |= 2u;
+        registers_.viewport_transform_valid_mask = viewport_transform_valid_mask_;
+        return;
+    }
     switch (write.register_index) {
         case 0x2000: bit = 1u << 0; destination = &registers_.surface_info; break;
         case 0x2001: bit = 1u << 1; destination = &registers_.color_info; break;
@@ -1458,6 +1476,14 @@ bool decode_captured_raster_state(
     output->viewport_y = viewport_y;
     output->viewport_width = viewport_width_pixels;
     output->viewport_height = viewport_height_pixels;
+    output->clip_control_valid =
+        (registers.viewport_transform_valid_mask & 1u) != 0;
+    output->viewport_transform_control_valid =
+        (registers.viewport_transform_valid_mask & 2u) != 0;
+    output->clip_disabled = output->clip_control_valid &&
+        ((registers.clip_control >> 16) & 1u) != 0;
+    output->viewport_transform_control = registers.viewport_transform_control;
+    output->clip_disabled_window_coordinates = output->clip_disabled;
     if (error) {
         error->clear();
     }
@@ -1580,6 +1606,7 @@ bool untile_captured_texture_2d(
     size_t byte_length,
     std::vector<uint8_t>* vulkan_bytes,
     std::string* error) {
+    const bool r8 = texture.format == 2 && texture.endian_mode == 0;
     const bool rgba8 = texture.format == 6 && texture.endian_mode == 2;
     const bool dxt2_3 = texture.format == 19 && texture.endian_mode == 1;
     const bool dxt4_5 = texture.format == 20 && texture.endian_mode == 1;
@@ -1587,13 +1614,15 @@ bool untile_captured_texture_2d(
     const bool dxt5a = texture.format == 59 && texture.endian_mode == 1;
     const bool compressed = dxt || dxt5a;
     const uint32_t bytes_per_block = dxt5a ? 8u : 16u;
-    const bool valid_texture_layout = rgba8
-        ? texture.tiled && texture.pitch >= texture.width &&
-              texture.pitch % 32u == 0
-        : compressed && texture.width % 4u == 0 && texture.height % 4u == 0 &&
-              texture.pitch >= texture.width && texture.pitch % 4u == 0 &&
-              (!texture.tiled || texture.pitch % 128u == 0);
-    if (!guest_bytes || !vulkan_bytes || (!rgba8 && !compressed) ||
+    const bool valid_texture_layout = r8
+        ? !texture.tiled && texture.pitch >= texture.width
+        : rgba8 ? texture.tiled && texture.pitch >= texture.width &&
+                      texture.pitch % 32u == 0
+                : compressed && texture.width % 4u == 0 &&
+                      texture.height % 4u == 0 &&
+                      texture.pitch >= texture.width && texture.pitch % 4u == 0 &&
+                      (!texture.tiled || texture.pitch % 128u == 0);
+    if (!guest_bytes || !vulkan_bytes || (!r8 && !rgba8 && !compressed) ||
         texture.dimension != 1 || !texture.width || !texture.height ||
         !valid_texture_layout) {
         return fail("unsupported captured texture layout", error);
@@ -1605,15 +1634,36 @@ bool untile_captured_texture_2d(
                                   texture.height * 4u;
     const uint64_t linear_block_bytes =
         static_cast<uint64_t>(blocks_wide) * blocks_high * bytes_per_block;
-    const uint64_t source_bytes = rgba8
-        ? tiled_rgba8_storage_bytes(texture.pitch, texture.height)
-        : compressed_texture_storage_bytes(texture.pitch, texture.height,
-                                           bytes_per_block, texture.tiled);
+    const uint64_t source_bytes = r8
+        ? static_cast<uint64_t>(texture.pitch) * texture.height
+        : rgba8 ? tiled_rgba8_storage_bytes(texture.pitch, texture.height)
+                : compressed_texture_storage_bytes(
+                      texture.pitch, texture.height, bytes_per_block,
+                      texture.tiled);
     if (output_bytes > std::numeric_limits<uint32_t>::max() ||
         linear_block_bytes > std::numeric_limits<uint32_t>::max() ||
         source_bytes > std::numeric_limits<uint32_t>::max() ||
         texture.byte_length != source_bytes || byte_length != source_bytes) {
         return fail("captured texture byte range does not match its dimensions", error);
+    }
+
+    if (r8) {
+        std::vector<uint8_t> rgba(static_cast<size_t>(output_bytes));
+        for (uint32_t y = 0; y < texture.height; ++y) {
+            for (uint32_t x = 0; x < texture.width; ++x) {
+                const uint8_t component =
+                    guest_bytes[static_cast<size_t>(y) * texture.pitch + x];
+                const size_t destination =
+                    (static_cast<size_t>(y) * texture.width + x) * 4u;
+                rgba[destination] = component;
+                rgba[destination + 1u] = component;
+                rgba[destination + 2u] = component;
+                rgba[destination + 3u] = component;
+            }
+        }
+        *vulkan_bytes = std::move(rgba);
+        if (error) error->clear();
+        return true;
     }
 
     if (compressed) {

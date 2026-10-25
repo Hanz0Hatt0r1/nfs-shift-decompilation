@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
+#include <iomanip>
+#include <limits>
 #include <sstream>
 #include <utility>
 
@@ -11,6 +14,14 @@ namespace {
 bool fail(const char* message, std::string* error) {
     if (error) *error = message;
     return false;
+}
+
+std::string glsl_float(float value) {
+    std::ostringstream result;
+    result << std::setprecision(std::numeric_limits<float>::max_digits10) << value;
+    std::string literal = result.str();
+    if (literal.find_first_of(".eE") == std::string::npos) literal += ".0";
+    return literal;
 }
 
 char component_name(uint32_t component) {
@@ -371,6 +382,7 @@ bool emit_alu(std::ostringstream& glsl,
     if (vector_result_mask != 0) {
         std::string operation;
         switch (instruction.vector_opcode) {
+            case 0: operation = "(" + a + " + " + b + ")"; break;
             case 1: operation = "(" + a + " * " + b + ")"; break;
             case 2: operation = "max(" + a + ", " + b + ")"; break;
             case 6:
@@ -510,6 +522,15 @@ bool translate_captured_shader_glsl(
     CapturedShaderTranslation* output,
     std::string* error) {
     if (!shader_bytes || !output) return fail("invalid captured shader translation input", error);
+    if (stage == CapturedShaderStage::Vertex &&
+        options.clip_disabled_window_coordinates &&
+        (!options.window_coordinate_width || !options.window_coordinate_height ||
+         !std::isfinite(options.window_coordinate_x_scale) ||
+         !std::isfinite(options.window_coordinate_y_scale) ||
+         !std::isfinite(options.window_coordinate_x_offset) ||
+         !std::isfinite(options.window_coordinate_y_offset))) {
+        return fail("captured clip-disabled window transform is invalid", error);
+    }
 
     std::vector<CapturedShaderControlFlow> control_flow;
     std::vector<CapturedShaderInstructionSchedule> schedule;
@@ -808,6 +829,20 @@ bool translate_captured_shader_glsl(
                 "step(vec3(512.0/1023.0),linear_rgb));\n"
              << "  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)"
                 "/255.0;\n";
+    }
+    if (stage == CapturedShaderStage::Vertex &&
+        options.clip_disabled_window_coordinates) {
+        const float width = static_cast<float>(options.window_coordinate_width);
+        const float height = static_cast<float>(options.window_coordinate_height);
+        glsl << "  gl_Position = vec4("
+             << "((gl_Position.x * " << glsl_float(options.window_coordinate_x_scale)
+             << " + " << glsl_float(options.window_coordinate_x_offset)
+             << " - " << glsl_float(width * 0.5f) << ") * "
+             << glsl_float(2.0f / width) << "), "
+             << "((gl_Position.y * " << glsl_float(options.window_coordinate_y_scale)
+             << " + " << glsl_float(options.window_coordinate_y_offset)
+             << " - " << glsl_float(height * 0.5f) << ") * "
+             << glsl_float(2.0f / height) << "), gl_Position.z, 1.0);\n";
     }
     glsl << "}\n";
 

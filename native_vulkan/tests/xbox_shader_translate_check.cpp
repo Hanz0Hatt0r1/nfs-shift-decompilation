@@ -113,6 +113,33 @@ int main() {
                     std::string::npos,
             "full/mini fetch translation lost the captured vertex layout");
 
+    vertex_options.clip_disabled_window_coordinates = true;
+    vertex_options.window_coordinate_width = 1280;
+    vertex_options.window_coordinate_height = 720;
+    const bool translated_window_coordinates =
+        shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Vertex,
+                vertex_shader.data(), vertex_shader.size(), vertex_options,
+                &vertex_translated, &vertex_error);
+    require(translated_window_coordinates &&
+                vertex_translated.glsl.find(
+                    "gl_Position = vec4(((gl_Position.x * 1.0 + 0.0 - 640.0) * 0.00156250002)") !=
+                    std::string::npos &&
+                vertex_translated.glsl.find(
+                    "((gl_Position.y * 1.0 + 0.0 - 360.0) * 0.00277777785)") !=
+                    std::string::npos &&
+                vertex_translated.glsl.find("gl_Position.z, 1.0);") !=
+                    std::string::npos,
+            "clip-disabled Xenos window coordinates were not mapped to Vulkan clip space");
+    vertex_options.window_coordinate_width = 0;
+    require(!shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Vertex,
+                vertex_shader.data(), vertex_shader.size(), vertex_options,
+                &vertex_translated, &vertex_error),
+            "invalid clip-disabled window transform was silently translated");
+    vertex_options.clip_disabled_window_coordinates = false;
+    vertex_options.window_coordinate_width = 1280;
+
     std::vector<uint8_t> unsupported_vertex_format = vertex_shader;
     write_be32(unsupported_vertex_format.data() + 2 * 12 + 4,
                (5u << 16) | 2696u);
@@ -330,6 +357,22 @@ int main() {
                 translated.glsl.find("r[0].y = alu_7.y") !=
                     std::string::npos,
             "captured Xenos vector opcode 16 DP3 did not replicate XYZ dot output");
+
+    std::vector<uint8_t> retail_vector_add_shader = shader;
+    write_be32(retail_vector_add_shader.data() + 7 * 12,
+               (50u << 26) | (0xFu << 16));
+    write_be32(retail_vector_add_shader.data() + 7 * 12 + 4,
+               (1u << 31) | (1u << 29));
+    write_be32(retail_vector_add_shader.data() + 7 * 12 + 8,
+               (1u << 31) | (1u << 30) | (1u << 16) | (2u << 8) | 68u);
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                retail_vector_add_shader.data(), retail_vector_add_shader.size(),
+                options, &translated, &error) &&
+                translated.glsl.find("vec4 alu_7 = (") != std::string::npos &&
+                translated.glsl.find(" + ") != std::string::npos &&
+                translated.glsl.find("r[0].x = alu_7.x") != std::string::npos,
+            "captured Xenos vector opcode 0 ADD did not translate component-wise");
 
     std::vector<uint8_t> retail_scalar_floor_shader = shader;
     write_be32(retail_scalar_floor_shader.data() + 7 * 12,

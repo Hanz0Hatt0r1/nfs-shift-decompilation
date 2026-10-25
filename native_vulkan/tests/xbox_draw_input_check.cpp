@@ -665,6 +665,49 @@ int main() {
                 texture_fetch.border_color == 0 && !texture_fetch.border_size,
             "captured texture channel or clamp state changed");
 
+    const uint32_t captured_movie_r8_descriptor[] = {
+        0x0A024802u, 0x05F60002u, 0x0059E4FFu,
+        0x00A81400u, 0x00000003u, 0x00000210u,
+    };
+    shift::xbox::CapturedTextureFetch movie_r8_fetch{};
+    require(shift::xbox::decode_captured_texture_fetch(
+                captured_movie_r8_descriptor, &movie_r8_fetch, &error) &&
+                movie_r8_fetch.guest_address == 0x05F60000u &&
+                movie_r8_fetch.format == 2 && movie_r8_fetch.endian_mode == 0 &&
+                movie_r8_fetch.width == 1280 && movie_r8_fetch.height == 720 &&
+                movie_r8_fetch.pitch == 1280 &&
+                movie_r8_fetch.byte_length == 1280u * 720u &&
+                !movie_r8_fetch.tiled && movie_r8_fetch.swizzle == 0xA00u,
+            "captured retail Bink R8 plane descriptor was rejected or misdecoded");
+    uint32_t small_movie_r8_descriptor[6];
+    std::copy(std::begin(captured_movie_r8_descriptor),
+              std::end(captured_movie_r8_descriptor),
+              std::begin(small_movie_r8_descriptor));
+    small_movie_r8_descriptor[0] =
+        (small_movie_r8_descriptor[0] & ~(0x1FFu << 22)) | (1u << 22);
+    small_movie_r8_descriptor[2] = 1u | (1u << 13);
+    shift::xbox::CapturedTextureFetch small_movie_r8_fetch{};
+    require(shift::xbox::decode_captured_texture_fetch(
+                small_movie_r8_descriptor, &small_movie_r8_fetch, &error) &&
+                small_movie_r8_fetch.width == 2 &&
+                small_movie_r8_fetch.height == 2 &&
+                small_movie_r8_fetch.pitch == 32 &&
+                small_movie_r8_fetch.byte_length == 64,
+            "captured linear R8 texture did not retain its padded row pitch");
+    std::vector<uint8_t> movie_r8_bytes(64, 0);
+    movie_r8_bytes[0] = 0x20;
+    movie_r8_bytes[1] = 0x40;
+    movie_r8_bytes[32] = 0x60;
+    movie_r8_bytes[33] = 0x80;
+    std::vector<uint8_t> movie_r8_rgba;
+    require(shift::xbox::untile_captured_texture_2d(
+                small_movie_r8_fetch, movie_r8_bytes.data(), movie_r8_bytes.size(),
+                &movie_r8_rgba, &error) &&
+                movie_r8_rgba == std::vector<uint8_t>{
+                    0x20,0x20,0x20,0x20, 0x40,0x40,0x40,0x40,
+                    0x60,0x60,0x60,0x60, 0x80,0x80,0x80,0x80},
+            "captured linear R8 texture did not expand replicated Xenos channels");
+
     const uint32_t retail_narrow_rgba8_descriptor[] = {
         0x804048FEu, 0x0A079086u, 0x0007E003u,
         0x06A80C14u, 0x00000C03u, 0x00000A10u,
@@ -984,7 +1027,7 @@ int main() {
     require(raster_register_state.observed_register_mask() == 1u,
             "partial raster register state lost its observed register mask");
     raster_register_state.reset();
-    const std::array<shift::xbox::GuestRegisterWrite, 21> raster_writes{{
+    const std::array<shift::xbox::GuestRegisterWrite, 23> raster_writes{{
         {0x2000, captured_raster_registers.surface_info},
         {0x2001, captured_raster_registers.color_info},
         {0x2002, captured_raster_registers.depth_info},
@@ -1002,6 +1045,8 @@ int main() {
         {0x2082, captured_raster_registers.window_scissor_br},
         {0x2201, captured_raster_registers.blend_control_0},
         {0x2205, captured_raster_registers.setup_mode_control},
+        {0x2204, 1u << 16},
+        {0x2206, 1u << 8},
         {0x2318, 0x00100004u},
         {0x2319, 0x0975E000u},
         {0x231A, 0x02D00500u},
@@ -1017,6 +1062,32 @@ int main() {
                 tracked_raster_registers.copy_dest_pitch == 0x02D00500u &&
                 tracked_raster_registers.copy_dest_info == 0x00000306u,
             "captured Xenos EDRAM copy registers changed");
+    shift::xbox::CapturedRasterState tracked_window_coordinates{};
+    require(shift::xbox::decode_captured_raster_state(
+                tracked_raster_registers, &tracked_window_coordinates, &error,
+                1280, 720) &&
+                tracked_window_coordinates.clip_control_valid &&
+                tracked_window_coordinates.clip_disabled &&
+                tracked_window_coordinates.viewport_transform_control_valid &&
+                tracked_window_coordinates.clip_disabled_window_coordinates &&
+                tracked_window_coordinates.viewport_transform_control == (1u << 8),
+            "captured clip-disabled Xenos window-coordinate state was lost");
+    auto bink_raster_registers = tracked_raster_registers;
+    bink_raster_registers.viewport_transform_control = 1u << 10;
+    require(shift::xbox::decode_captured_raster_state(
+                bink_raster_registers, &tracked_window_coordinates, &error,
+                1280, 720) &&
+                tracked_window_coordinates.clip_disabled &&
+                tracked_window_coordinates.clip_disabled_window_coordinates &&
+                tracked_window_coordinates.viewport_transform_control == (1u << 10),
+            "Bink clip-disabled draw with VTE_W0 did not select window-coordinate handling");
+    bink_raster_registers.clip_control = 0;
+    require(shift::xbox::decode_captured_raster_state(
+                bink_raster_registers, &tracked_window_coordinates, &error,
+                1280, 720) &&
+                !tracked_window_coordinates.clip_disabled &&
+                !tracked_window_coordinates.clip_disabled_window_coordinates,
+            "clip-enabled draw incorrectly selected window-coordinate handling");
     shift::xbox::CapturedRasterRegisters phone_copy_registers{};
     phone_copy_registers.copy_valid_mask = 0xFu;
     phone_copy_registers.copy_control = 0x00100000u;
