@@ -1,0 +1,1767 @@
+{
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+  "runtime_sha256": "544154e1705686d8be06852a16cda2c670f95b0852e38b290f6e0144b3830732",
+  "plugin_sha256": "dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1",
+  "environment": {
+    "SHIFT_NATIVE_VULKAN_TRACE_RING": "1"
+  },
+  "inputs": [
+    {
+      "at": 8.031,
+      "button": "A",
+      "edge": "press"
+    },
+    {
+      "at": 8.682,
+      "button": "A",
+      "edge": "release"
+    },
+    {
+      "at": 15.017,
+      "button": "Start",
+      "edge": "press"
+    },
+    {
+      "at": 15.668,
+      "button": "Start",
+      "edge": "release"
+    },
+    {
+      "at": 24.003,
+      "button": "A",
+      "edge": "press"
+    },
+    {
+      "at": 24.653,
+      "button": "A",
+      "edge": "release"
+    },
+    {
+      "at": 35.001,
+      "button": "Start",
+      "edge": "press"
+    },
+    {
+      "at": 35.651,
+      "button": "Start",
+      "edge": "release"
+    }
+  ],
+  "captures": [],
+  "pid": 571833,
+  "mapped_plugin": true,
+  "mapped_runtime": true,
+  "queue_samples": [
+    {
+      "at": 0.401,
+      "error": "[Errno 5] Input/output error"
+    },
+    {
+      "at": 0.903,
+      "error": "[Errno 5] Input/output error"
+    },
+    {
+      "at": 1.404,
+      "error": "[Errno 5] Input/output error"
+    },
+    {
+      "at": 1.905,
+      "error": "[Errno 5] Input/output error"
+    },
+    {
+      "at": 2.406,
+      "head_pointer": "0x00000000",
+      "head": null,
+      "tail": 0,
+      "predicate": "0x00",
+      "pending_words": [],
+      "after_tail_words": [],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 2.907,
+      "head_pointer": "0x00000000",
+      "head": null,
+      "tail": 0,
+      "predicate": "0x00",
+      "pending_words": [],
+      "after_tail_words": [],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 3.408,
+      "head_pointer": "0x00000000",
+      "head": null,
+      "tail": 0,
+      "predicate": "0x00",
+      "pending_words": [],
+      "after_tail_words": [],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 3.909,
+      "head_pointer": "0xB7AF4000",
+      "head": 5,
+      "tail": 21,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x00000080",
+        "0x00000100",
+        "0x00000180",
+        "0x00000200",
+        "0x00000280",
+        "0x00000300",
+        "0x00000380",
+        "0x00010800",
+        "0x00000007",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0xC0013F00",
+        "0x095DC040"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x095D0000"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 4.41,
+      "head_pointer": "0xB7AF4000",
+      "head": 157,
+      "tail": 165,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x09648D40",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x0963CC80",
+        "0x000001D6",
+        "0xC0013F00",
+        "0x09648D80"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x0963D3E0"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 4.913,
+      "head_pointer": "0xB7AF4000",
+      "head": 525,
+      "tail": 533,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09631160",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x09648C00",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x0963CB40",
+        "0x000001D6",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 5.419,
+      "head_pointer": "0xB7AF4000",
+      "head": 665,
+      "tail": 673,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x096C1900",
+        "0x000001D6",
+        "0xC0013F00",
+        "0x096CDA00",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096C2060",
+        "0x0000005A"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x096D9B00",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 5.921,
+      "head_pointer": "0xB7AF4000",
+      "head": 717,
+      "tail": 725,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096F2560",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x0970A000",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x096FDF40",
+        "0x000001D6",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 6.425,
+      "head_pointer": "0xB7AF4000",
+      "head": 773,
+      "tail": 781,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0972E440",
+        "0x000001D6",
+        "0xC0013F00",
+        "0x0973A540",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x0972EBA0",
+        "0x0000005A"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x09746640",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 6.927,
+      "head_pointer": "0xB7AF4000",
+      "head": 835,
+      "tail": 845,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x096004C0",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x095F4B20",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x0960C5C0",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x09600500",
+        "0x000001D6",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 7.429,
+      "head_pointer": "0xB7AF4000",
+      "head": 889,
+      "tail": 897,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x0963CAC0",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09630A00",
+        "0x000001D6",
+        "0xC0013F00",
+        "0x0963CB00"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09631160"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 7.931,
+      "head_pointer": "0xB7AF4000",
+      "head": 931,
+      "tail": 933,
+      "predicate": "0x04",
+      "pending_words": [
+        "0xC0013F00",
+        "0x09660EC0"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09655520"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 8.732,
+      "head_pointer": "0xB7AF4000",
+      "head": 981,
+      "tail": 983,
+      "predicate": "0x04",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x09685A20",
+        "0x0000005A",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 9.238,
+      "head_pointer": "0xB7AF4000",
+      "head": 1013,
+      "tail": 1015,
+      "predicate": "0x04",
+      "pending_words": [
+        "0x096A9680",
+        "0x000001D6"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x096B5780",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 9.741,
+      "head_pointer": "0xB7AF4000",
+      "head": 1043,
+      "tail": 1045,
+      "predicate": "0x04",
+      "pending_words": [
+        "0x096C2060",
+        "0x0000005A"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x096D9B00",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 10.242,
+      "head_pointer": "0xB7AF4000",
+      "head": 1073,
+      "tail": 1075,
+      "predicate": "0x04",
+      "pending_words": [
+        "0x096E5CC0",
+        "0x000001D6"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x096F1DC0",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 10.747,
+      "head_pointer": "0xB7AF4000",
+      "head": 1105,
+      "tail": 1107,
+      "predicate": "0x04",
+      "pending_words": [
+        "0xC0013F00",
+        "0x09716140"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x0970A080"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 11.25,
+      "head_pointer": "0xB7AF4000",
+      "head": 1137,
+      "tail": 1139,
+      "predicate": "0x04",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x09722A60",
+        "0x0000005A",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 11.754,
+      "head_pointer": "0xB7AF4000",
+      "head": 1167,
+      "tail": 1169,
+      "predicate": "0x04",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x095D0000",
+        "0x000001D6",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 12.256,
+      "head_pointer": "0xB7AF4000",
+      "head": 1211,
+      "tail": 1219,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x095F4B20",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x0960C5C0",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09600500",
+        "0x000001D6"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x0960C600",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 12.758,
+      "head_pointer": "0xB7AF4000",
+      "head": 1269,
+      "tail": 1279,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09631160",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x09648C00",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x0963CB40",
+        "0x000001D6"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x09648C40",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 13.259,
+      "head_pointer": "0xB7AF4000",
+      "head": 1285,
+      "tail": 1287,
+      "predicate": "0x04",
+      "pending_words": [
+        "0xC0013F00",
+        "0x09654D40"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09648C80"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 13.761,
+      "head_pointer": "0xB7AF4000",
+      "head": 1285,
+      "tail": 1295,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x09654D40",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09648C80",
+        "0x000001D6",
+        "0xC0013F00",
+        "0x09654D80",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x096493E0",
+        "0x0000005A",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 14.264,
+      "head_pointer": "0xB7AF4000",
+      "head": 1403,
+      "tail": 1411,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x096B5F20",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x096CD9C0",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096C1900",
+        "0x000001D6"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x096CDA00",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 14.766,
+      "head_pointer": "0xB7AF4000",
+      "head": 1635,
+      "tail": 1643,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09630A00",
+        "0x000001D6",
+        "0xC0013F00",
+        "0x0963CB00",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x09631160",
+        "0x0000005A",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 15.718,
+      "head_pointer": "0xB7AF4000",
+      "head": 1947,
+      "tail": 1955,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x095F43C0",
+        "0x00001282",
+        "0xC0013F00",
+        "0x096004C0",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x095F8DE0",
+        "0x0000005A",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 16.22,
+      "head_pointer": "0xB7AF4000",
+      "head": 2091,
+      "tail": 2099,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096852C0",
+        "0x00001282",
+        "0xC0013F00",
+        "0x096913C0",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x09689CE0",
+        "0x0000005A",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 16.722,
+      "head_pointer": "0xB7AF4000",
+      "head": 2141,
+      "tail": 2151,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x096B57C0",
+        "0x00001282",
+        "0xC0013F00",
+        "0x096C18C0",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096BA1E0",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x096CD9C0"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096C1900"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 17.223,
+      "head_pointer": "0xB7AF4000",
+      "head": 2163,
+      "tail": 2171,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096CDA40",
+        "0x00001282",
+        "0xC0013F00",
+        "0x096D9B40",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x096D2460",
+        "0x0000005A",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 17.724,
+      "head_pointer": "0xB7AF4000",
+      "head": 2187,
+      "tail": 2195,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096E5CC0",
+        "0x00001282",
+        "0xC0013F00",
+        "0x096F1DC0",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x096EA6E0",
+        "0x0000005A",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 18.225,
+      "head_pointer": "0xB7AF4000",
+      "head": 2211,
+      "tail": 2219,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096FDF40",
+        "0x00001282",
+        "0xC0013F00",
+        "0x0970A040",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x09702960",
+        "0x0000005A",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 18.726,
+      "head_pointer": "0xB7AF4000",
+      "head": 2237,
+      "tail": 2247,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x097161C0",
+        "0x00001282",
+        "0xC0013F00",
+        "0x097222C0",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x0971ABE0",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x0972E3C0"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09722300"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 19.229,
+      "head_pointer": "0xB7AF4000",
+      "head": 2263,
+      "tail": 2271,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x0973A540",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09732E60",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x09746640"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x0973A580"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 19.732,
+      "head_pointer": "0xB7AF4000",
+      "head": 2289,
+      "tail": 2299,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x095D4A20",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x095E8200",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x095DC140",
+        "0x00001282"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x095E8240",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 20.235,
+      "head_pointer": "0xB7AF4000",
+      "head": 2315,
+      "tail": 2323,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x095ECCA0",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x09600480",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x095F43C0",
+        "0x00001282"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x096004C0",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 20.736,
+      "head_pointer": "0xB7AF4000",
+      "head": 2337,
+      "tail": 2347,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09604F20",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x09618700",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x0960C640",
+        "0x00001282"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x09618740",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 21.239,
+      "head_pointer": "0xB7AF4000",
+      "head": 2359,
+      "tail": 2367,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x09624880",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x0961D1A0",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x09630980"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096248C0"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 21.742,
+      "head_pointer": "0xB7AF4000",
+      "head": 2377,
+      "tail": 2387,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x0963CAC0",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09630A00",
+        "0x00001282",
+        "0xC0013F00",
+        "0x0963CB00",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x09635420",
+        "0x0000005A",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 22.244,
+      "head_pointer": "0xB7AF4000",
+      "head": 2399,
+      "tail": 2407,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x09641560",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x09654D40",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09648C80",
+        "0x00001282"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x09654D80",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 22.747,
+      "head_pointer": "0xB7AF4000",
+      "head": 2423,
+      "tail": 2431,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x096597E0",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x0966CFC0",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09660F00",
+        "0x00001282"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x0966D000",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 23.25,
+      "head_pointer": "0xB7AF4000",
+      "head": 2443,
+      "tail": 2451,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x09679140",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09671A60",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x09685240"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09679180"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 23.751,
+      "head_pointer": "0xB7AF4000",
+      "head": 2467,
+      "tail": 2475,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x096913C0",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09689CE0",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x0969D4C0"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09691400"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 24.703,
+      "head_pointer": "0xB7AF4000",
+      "head": 2509,
+      "tail": 2511,
+      "predicate": "0x04",
+      "pending_words": [
+        "0xC0013F00",
+        "0x096C1880"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096B57C0"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 25.206,
+      "head_pointer": "0xB7AF4000",
+      "head": 2509,
+      "tail": 2511,
+      "predicate": "0x04",
+      "pending_words": [
+        "0xC0013F00",
+        "0x096C1880"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096B57C0"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 25.707,
+      "head_pointer": "0xB7AF4000",
+      "head": 2509,
+      "tail": 2511,
+      "predicate": "0x04",
+      "pending_words": [
+        "0xC0013F00",
+        "0x096C1880"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096B57C0"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 26.209,
+      "head_pointer": "0xB7AF4000",
+      "head": 2509,
+      "tail": 2511,
+      "predicate": "0x04",
+      "pending_words": [
+        "0xC0013F00",
+        "0x096C1880"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096B57C0"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 26.713,
+      "head_pointer": "0xB7AF4000",
+      "head": 2511,
+      "tail": 2521,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096B57C0",
+        "0x00001282",
+        "0xC0013F00",
+        "0x096C18C0",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096BA1E0",
+        "0x0000005A"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x096CD9C0",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 27.216,
+      "head_pointer": "0xB7AF4000",
+      "head": 2605,
+      "tail": 2609,
+      "predicate": "0x04",
+      "pending_words": [
+        "0xC0013F00",
+        "0x09722280",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x097161C0",
+        "0x00001282",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 27.717,
+      "head_pointer": "0xB7AF4000",
+      "head": 2737,
+      "tail": 2741,
+      "predicate": "0x04",
+      "pending_words": [
+        "0xC0013F00",
+        "0x09630980",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x096248C0",
+        "0x00001282",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 28.221,
+      "head_pointer": "0xB7AF4000",
+      "head": 2853,
+      "tail": 2857,
+      "predicate": "0x04",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096E5280",
+        "0x00000097"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x096FD340",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 28.722,
+      "head_pointer": "0xB7AF4000",
+      "head": 2977,
+      "tail": 2985,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x096786C0",
+        "0x00000016",
+        "0xC0013F00",
+        "0x0966C680",
+        "0x00000097",
+        "0xC0013F00",
+        "0x09684780"
+      ],
+      "after_tail_words": [
+        "0x00000016",
+        "0xC0013F00",
+        "0x09678740"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 29.223,
+      "head_pointer": "0xB7AF4000",
+      "head": 3077,
+      "tail": 3081,
+      "predicate": "0x04",
+      "pending_words": [
+        "0x0972CF80",
+        "0x00000097",
+        "0xC0013F00",
+        "0x09745040"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09739000"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 29.725,
+      "head_pointer": "0xB7AF4000",
+      "head": 3211,
+      "tail": 3217,
+      "predicate": "0x04",
+      "pending_words": [
+        "0xC0013F00",
+        "0x096D8AC0",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096CCA80",
+        "0x00000097"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x096E4B40",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 30.228,
+      "head_pointer": "0xB7AF4000",
+      "head": 3325,
+      "tail": 3329,
+      "predicate": "0x04",
+      "pending_words": [
+        "0xC0013F00",
+        "0x096484C0",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x0963C480",
+        "0x00000097",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 30.729,
+      "head_pointer": "0xB7AF4000",
+      "head": 3457,
+      "tail": 3465,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x095DC040",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x095D0000",
+        "0x00000097",
+        "0xC0013F00",
+        "0x095E80C0"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x095DC080"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 31.231,
+      "head_pointer": "0xB7AF4000",
+      "head": 3569,
+      "tail": 3577,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x096A8900",
+        "0x00000097",
+        "0xC0013F00",
+        "0x096C0A40",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096B4980",
+        "0x00001282"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x096C0A80",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 31.735,
+      "head_pointer": "0xB7AF4000",
+      "head": 3697,
+      "tail": 3705,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x09739700",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09732020",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x09745800"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09739740"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 32.237,
+      "head_pointer": "0xB7AF4000",
+      "head": 3813,
+      "tail": 3821,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09630A00",
+        "0x00001282",
+        "0xC0013F00",
+        "0x0963CB00",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x09635420",
+        "0x0000005A",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 32.74,
+      "head_pointer": "0xB7AF4000",
+      "head": 3937,
+      "tail": 3945,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x096B5900",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096AA120",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x096C1A40"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096B5940"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 33.243,
+      "head_pointer": "0xB7AF4000",
+      "head": 4037,
+      "tail": 4041,
+      "predicate": "0x04",
+      "pending_words": [
+        "0x0970AD20",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x09722640"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09716540"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 33.745,
+      "head_pointer": "0xB7AF4000",
+      "head": 4149,
+      "tail": 4157,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x09723F00",
+        "0x00000C3B",
+        "0xC0013F00",
+        "0x09730100",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09727000",
+        "0x0000005A"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x0973C300",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 34.249,
+      "head_pointer": "0xB7AF4000",
+      "head": 4265,
+      "tail": 4273,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x09631180",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09624FC0",
+        "0x00000C3B",
+        "0xC0013F00",
+        "0x096311C0"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096280C0"
+      ],
+      "event_write_count": null,
+      "ib_dumps": [
+        {
+          "queue_index": 4265,
+          "guest_physical_address": "0x09631180",
+          "guest_virtual_alias": "0xA9631180",
+          "dword_count": 11,
+          "physical_bytes": 44,
+          "virtual_bytes": 44,
+          "aliases_equal": true,
+          "physical_sha256": "598f4cef8e585055bad823031db3ada2b52a6519b6395edf139cbdaeafc0eaba",
+          "virtual_sha256": "598f4cef8e585055bad823031db3ada2b52a6519b6395edf139cbdaeafc0eaba",
+          "dump_dwords_prefix": [
+            "0x00000A31",
+            "0x01000000",
+            "0x00010A2F",
+            "0x00180000",
+            "0x095D0000",
+            "0xC0043C00",
+            "0x00000003",
+            "0x00000A31",
+            "0x00000000",
+            "0x80000000",
+            "0x00000008"
+          ]
+        },
+        {
+          "queue_index": 4268,
+          "guest_physical_address": "0x09624FC0",
+          "guest_virtual_alias": "0xA9624FC0",
+          "dword_count": 3131,
+          "physical_bytes": 12524,
+          "virtual_bytes": 12524,
+          "aliases_equal": true,
+          "physical_sha256": "d5d3405eb903322e26b1620fe23fcda5398dfd59146fe62c2c656d9ea556ec13",
+          "virtual_sha256": "d5d3405eb903322e26b1620fe23fcda5398dfd59146fe62c2c656d9ea556ec13",
+          "dump_dwords_prefix": [
+            "0xC0006000",
+            "0xFFFFFFFF",
+            "0xC0006200",
+            "0xFFFFFFFF",
+            "0xC0006100",
+            "0x00000000",
+            "0xC0006300",
+            "0x00000000",
+            "0x00022080",
+            "0x00000000",
+            "0x00000000",
+            "0x02D00500",
+            "0x000005C8",
+            "0x00020000",
+            "0x00000F01",
+            "0x0000200E",
+            "0xC0013F00",
+            "0x0975B660",
+            "0x0000004A",
+            "0xC0013F00",
+            "0x0975BBA0",
+            "0x0000000D",
+            "0xC0013F00",
+            "0x0975CFE0",
+            "0x00000030",
+            "0x00022080",
+            "0x00000000",
+            "0x00000000",
+            "0x02D00500",
+            "0x00022080",
+            "0x00000000",
+            "0x00000000",
+            "0x02D00500",
+            "0x000B2200",
+            "0x00700770",
+            "0x00010001",
+            "0x87000007",
+            "0x00000001",
+            "0x00080000",
+            "0x00218000",
+            "0x0000043F",
+            "0x00000000",
+            "0x00000004",
+            "0x00010001",
+            "0x00010001",
+            "0x00010001",
+            "0x00042180",
+            "0x10010101",
+            "0x00000004",
+            "0x00010001",
+            "0x00000000",
+            "0x00000000",
+            "0x000F2000",
+            "0x14000500",
+            "0x00010000",
+            "0x000002D0",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x20002000",
+            "0x00142100",
+            "0x00FFFFFF",
+            "0x00000000",
+            "0x00000000",
+            "0x0000FFFF",
+            "0x0000000F",
+            "0x3F800000",
+            "0x3F800000",
+            "0x3F800000",
+            "0x3F800000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00FFFF00",
+            "0x00FFFF00",
+            "0x00000000",
+            "0x44200000",
+            "0x44200000",
+            "0xC3B40000",
+            "0x43B40000",
+            "0x3F800000",
+            "0x00000000",
+            "0x00142280",
+            "0x00080008",
+            "0x04000010",
+            "0x00000008",
+            "0x00000000",
+            "0x00000000",
+            "0x00000001",
+            "0x3F800000",
+            "0x3F800000",
+            "0x0000000E",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00252300",
+            "0x00000400",
+            "0x00000000",
+            "0x00000004",
+            "0x40000000",
+            "0x3F800000",
+            "0x40000000",
+            "0x3F800000",
+            "0x000FF000",
+            "0x000FF100",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000",
+            "0x00000000"
+          ]
+        }
+      ]
+    },
+    {
+      "at": 34.751,
+      "head_pointer": "0xB7AF4000",
+      "head": 4417,
+      "tail": 4421,
+      "predicate": "0x04",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096B9BC0",
+        "0x0000005A"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x096CEEC0",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 35.702,
+      "head_pointer": "0xB7AF4000",
+      "head": 4669,
+      "tail": 4677,
+      "predicate": "0x14",
+      "pending_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x09640540",
+        "0x0000005A",
+        "0xC0013F00",
+        "0x09655840",
+        "0x0000000B",
+        "0xC0013F00"
+      ],
+      "after_tail_words": [
+        "0x09649680",
+        "0x00000C55",
+        "0xC0013F00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 36.207,
+      "head_pointer": "0xB7AF4000",
+      "head": 4793,
+      "tail": 4801,
+      "predicate": "0x14",
+      "pending_words": [
+        "0xC0013F00",
+        "0x096CEEC0",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096C2D00",
+        "0x00000C3B",
+        "0xC0013F00",
+        "0x096CEF00"
+      ],
+      "after_tail_words": [
+        "0x0000000B",
+        "0xC0013F00",
+        "0x096C5E00"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 36.708,
+      "head_pointer": "0xB7AF4000",
+      "head": 4815,
+      "tail": 4817,
+      "predicate": "0x04",
+      "pending_words": [
+        "0x096D2040",
+        "0x0000005A"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x096E7340",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 37.211,
+      "head_pointer": "0xB7AF4000",
+      "head": 4815,
+      "tail": 4817,
+      "predicate": "0x04",
+      "pending_words": [
+        "0x096D2040",
+        "0x0000005A"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x096E7340",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    },
+    {
+      "at": 37.712,
+      "head_pointer": "0xB7AF4000",
+      "head": 4869,
+      "tail": 4877,
+      "predicate": "0x04",
+      "pending_words": [
+        "0x0970BA80",
+        "0x00000C3B",
+        "0xC0013F00",
+        "0x09717C80",
+        "0x0000000B",
+        "0xC0013F00",
+        "0x0970EB80",
+        "0x0000005A"
+      ],
+      "after_tail_words": [
+        "0xC0013F00",
+        "0x09723E80",
+        "0x0000000B"
+      ],
+      "event_write_count": null,
+      "ib_dumps": []
+    }
+  ],
+  "duration": 38.014,
+  "returncode": 0,
+  "runtime_log": {
+    "path": "/dev/shm/nfs-p1-ring-trace-retail-20261026l/bin/logs/nfs_shift_001.log",
+    "bytes": 2399790,
+    "sha256": "5308fbb81491577eb8de43f3637d94e8ae677f0d9d3a5fa953cee64ff986e850"
+  },
+  "artifacts": {
+    "bin/librexgpu-shift-native.so": {
+      "bytes": 4096248,
+      "sha256": "dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1"
+    },
+    "bin/librexruntime.so": {
+      "bytes": 15442352,
+      "sha256": "544154e1705686d8be06852a16cda2c670f95b0852e38b290f6e0144b3830732"
+    },
+    "bin/logs/nfs_shift_001.log": {
+      "bytes": 2399790,
+      "sha256": "5308fbb81491577eb8de43f3637d94e8ae677f0d9d3a5fa953cee64ff986e850"
+    },
+    "bin/nfs_shift": {
+      "bytes": 141934192,
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "console.log": {
+      "bytes": 40,
+      "sha256": "c848530a35e0d41b82034e1221ea6ce931b239251fb36b13b8769e6ed8776aea"
+    }
+  }
+}

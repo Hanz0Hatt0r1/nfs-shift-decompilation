@@ -1,0 +1,106 @@
+{
+  "schema": "shift.process2.retail_nested_completion_event.v1",
+  "date": "2026-10-25",
+  "source": {
+    "kind": "P1-provided retail queue and indirect-buffer capture",
+    "default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40c9a0c2c58",
+    "loaded_p2_plugin_sha256": "dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1",
+    "loaded_runtime_sha256": "544154e1705686d8be06852a16cda2c670f95b0852e38b290f6e0144b3830732"
+  },
+  "software_queue_snapshot": {
+    "head_decimal": 4519,
+    "tail_decimal": 4529,
+    "predicate_byte": "0x04",
+    "tested_mask": "0x02",
+    "expected_cursor_expression": "tail - 2",
+    "expected_cursor_decimal": 4527,
+    "expected_cursor_hex": "0x11AF"
+  },
+  "indirect_buffer": {
+    "guest_physical_address": "0x09692CE0",
+    "dword_count": 28,
+    "dwords": [
+      "C0006000", "FFFFFFFF", "C0006200", "FFFFFFFF",
+      "C0006100", "00000000", "C0006300", "00000000",
+      "00022080", "00000000", "00000000", "02D00500",
+      "000005C8", "00020000", "00000F01", "0000200E",
+      "000005C8", "00020000", "C0003B00", "00007FFF",
+      "C0025800", "00000003", "17AF4006", "A9692D24",
+      "C0025800", "00000003", "17AF4002", "00001089"
+    ]
+  },
+  "event_write_shd_packets": [
+    {
+      "header": "0xC0025800",
+      "initiator": "0x00000003",
+      "encoded_address": "0x17AF4006",
+      "guest_physical_address": "0x17AF4004",
+      "endian_mode": 2,
+      "immediate_value": "0xA9692D24"
+    },
+    {
+      "header": "0xC0025800",
+      "initiator": "0x00000003",
+      "encoded_address": "0x17AF4002",
+      "guest_physical_address": "0x17AF4000",
+      "endian_mode": 2,
+      "immediate_value": "0x00001089",
+      "immediate_value_decimal": 4233,
+      "difference_from_expected_cursor": -294
+    }
+  ],
+  "p2_dispatch_audit": {
+    "indirect_expansion": "native_vulkan/src/xbox_guest_ring.cpp: GuestIndirectBufferExpander::append_stream recursively expands PM4_INDIRECT_BUFFER and preserves source address/nesting depth.",
+    "event_decode": "native_vulkan/src/xbox_guest_ring.cpp: decode_guest_event_write_shd validates Type-3 opcode 0x58 and three payload dwords, aligns the guest address, and preserves its low-bit endian mode.",
+    "renderer_handler": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp: the expanded-packet loop dispatches opcode 0x58 to EVENT_WRITE_SHD, selects the immediate value when initiator bit 31 is clear, applies Xenos GpuSwap, and stores via TranslatePhysical.",
+    "interrupt_path": "PM4_INTERRUPT opcode 0x54 is dispatched separately; this IB contains two opcode 0x58 event writes and no opcode 0x54 interrupt packet.",
+    "upstream_semantics": "Matches ReXGlue CommandProcessor::ExecutePacketType3_EVENT_WRITE_SHD: initiator/address/value, optional counter selection, GpuSwap, then TranslatePhysical store.",
+    "prior_alias_evidence": "evidence/process2_event_write_shd_virtual_alias_20261025.json records retail physical/virtual alias visibility and a live-ring alias regression."
+  },
+  "regression": {
+    "test_source": "native_vulkan/tests/xbox_guest_ring_check.cpp",
+    "target": "shift_xbox_guest_ring_check",
+    "assertions": "Expands the exact 28-dword IB and checks both nested EVENT_WRITE_SHD addresses, endian modes, initiators, and immediate values.",
+    "command": "/usr/bin/ctest --test-dir /home/pes/work/process2-current-native-renderer-build-20261026 -R '^shift_xbox_guest_ring_check$' --output-on-failure",
+    "result": "1/1 passed"
+  },
+  "corroborating_renderer_trace": {
+    "run_directory": "/dev/shm/nfs-p1-ring-trace-retail-20261026l",
+    "preserved_run_json": "evidence/process2_nested_completion_retail_run_20261025.json",
+    "run_json_sha256": "7d061f2f46e37a6c153cbe9e7fc750fe5987c7dd7edf23db20999420e4f65302",
+    "preserved_compressed_log": "evidence/process2_nested_completion_retail_run_20261025.log.gz",
+    "compressed_log_sha256": "ab02c396a4a9e17d085839373635e60c6840fd816dbc1056c724f7127238b8ec",
+    "runtime_log_sha256": "5308fbb81491577eb8de43f3637d94e8ae677f0d9d3a5fa953cee64ff986e850",
+    "default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "mapped_plugin_sha256": "dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1",
+    "mapped_runtime_sha256": "544154e1705686d8be06852a16cda2c670f95b0852e38b290f6e0144b3830732",
+    "trace": [
+      {
+        "time_local": "2026-10-25T23:24:03.200",
+        "event": "snapshot",
+        "rptr": 4517,
+        "wptr": 4529,
+        "batch_bytes": 48,
+        "expanded_packets": 362,
+        "expanded_ok": true
+      },
+      {
+        "time_local": "2026-10-25T23:24:03.230",
+        "event": "complete",
+        "consumed": [4517, 4529],
+        "current_rptr": 4529,
+        "current_wptr": 4541,
+        "separate_rptr_writeback_guest": "0x17AF403C",
+        "separate_rptr_writeback_guest_value": ["0x11A5", "0x11B1"],
+        "indexed_draw_packets_submitted": 4
+      }
+    ],
+    "correlation_limit": "This trace proves the loaded P2 renderer expanded and consumed a 12-dword ring batch at the adjacent pointer range. It does not log indirect-buffer guest addresses, so it cannot independently tie the supplied 0x09692CE0 IB to this specific snapshot."
+  },
+  "conclusion": {
+    "p2_fix": "None justified by this packet. The current P2 parser expands and decodes it, and the write semantics match the upstream command processor.",
+    "verified_alternative": "The second packet carries 0x1089, not the waiter's hypothesized tail-2 value 0x11AF. Executing it literally cannot advance that cursor or set the independent 0x02 predicate mask. This capture therefore shows an older/different completion value in this IB, not a renderer-side decode error.",
+    "not_established": "This isolated IB does not prove it is the last completion packet for that wait sample, whether later IBs carry a newer event, or which Process 1 producer/wait transition left predicate bit 0x02 clear. The corroborating ring trace is adjacent evidence, not an exact IB-address match."
+  }
+}

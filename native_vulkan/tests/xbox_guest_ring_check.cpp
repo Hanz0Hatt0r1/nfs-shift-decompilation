@@ -206,5 +206,75 @@ int main() {
                 unchanged_expansion.indirect_buffer_count == 9u &&
                 unchanged_expansion.packets.empty(),
             "cyclic indirect buffer was accepted or partially changed output");
+
+    constexpr std::array<uint8_t, 12> retail_completion_ib_call = {
+        0xC0, 0x01, 0x3F, 0x00, 0x09, 0x69, 0x2C, 0xE0,
+        0x00, 0x00, 0x00, 0x1C,
+    };
+    constexpr std::array<uint32_t, 28> retail_completion_ib_dwords = {
+        0xC0006000, 0xFFFFFFFF, 0xC0006200, 0xFFFFFFFF,
+        0xC0006100, 0x00000000, 0xC0006300, 0x00000000,
+        0x00022080, 0x00000000, 0x00000000, 0x02D00500,
+        0x000005C8, 0x00020000, 0x00000F01, 0x0000200E,
+        0x000005C8, 0x00020000, 0xC0003B00, 0x00007FFF,
+        0xC0025800, 0x00000003, 0x17AF4006, 0xA9692D24,
+        0xC0025800, 0x00000003, 0x17AF4002, 0x00001089,
+    };
+    shift::xbox::GuestRingBatch retail_completion_root{};
+    retail_completion_root.bytes.assign(retail_completion_ib_call.begin(),
+                                         retail_completion_ib_call.end());
+    GuestMemoryFixture retail_completion_memory{};
+    retail_completion_memory.guest_address = 0x09692CE0u;
+    retail_completion_memory.bytes.reserve(
+        retail_completion_ib_dwords.size() * sizeof(uint32_t));
+    for (const uint32_t dword : retail_completion_ib_dwords) {
+        retail_completion_memory.bytes.push_back(static_cast<uint8_t>(dword >> 24));
+        retail_completion_memory.bytes.push_back(static_cast<uint8_t>(dword >> 16));
+        retail_completion_memory.bytes.push_back(static_cast<uint8_t>(dword >> 8));
+        retail_completion_memory.bytes.push_back(static_cast<uint8_t>(dword));
+    }
+    retail_completion_memory.available_bytes =
+        retail_completion_memory.bytes.size();
+    shift::xbox::ExpandedGuestCommandStream retail_completion{};
+    require(shift::xbox::expand_guest_indirect_buffers(
+                retail_completion_root, read_guest_memory,
+                &retail_completion_memory, &retail_completion, &error) &&
+                retail_completion.indirect_buffer_count == 1u &&
+                retail_completion.packets.size() == 12u,
+            "captured retail completion IB was not expanded into PM4 packets");
+    constexpr std::array<uint32_t, 2> retail_completion_addresses = {
+        0x17AF4004u, 0x17AF4000u,
+    };
+    constexpr std::array<uint32_t, 2> retail_completion_values = {
+        0xA9692D24u, 0x00001089u,
+    };
+    size_t retail_completion_event_index = 0;
+    for (const shift::xbox::ResolvedGuestPacket& resolved :
+         retail_completion.packets) {
+        if (resolved.packet.type != shift::xbox::PacketType::Type3 ||
+            resolved.packet.opcode != 0x58u) {
+            continue;
+        }
+        require(resolved.source_guest_address == 0x09692CE0u &&
+                    resolved.nesting_depth == 1u &&
+                    retail_completion_event_index <
+                        retail_completion_addresses.size(),
+                "retail EVENT_WRITE_SHD lost its indirect-buffer provenance");
+        shift::xbox::DecodedEventWriteShd completion_event{};
+        require(shift::xbox::decode_guest_event_write_shd(
+                    retail_completion_memory.bytes.data() +
+                        resolved.packet.byte_offset,
+                    resolved.packet.byte_length, &completion_event, &error) &&
+                    completion_event.initiator == 3u &&
+                    completion_event.guest_address ==
+                        retail_completion_addresses[retail_completion_event_index] &&
+                    completion_event.endian_mode == 2u &&
+                    shift::xbox::event_write_shd_value(completion_event, 0x1234u) ==
+                        retail_completion_values[retail_completion_event_index],
+                "retail nested EVENT_WRITE_SHD address, endian mode, or value changed");
+        ++retail_completion_event_index;
+    }
+    require(retail_completion_event_index == retail_completion_addresses.size(),
+            "retail completion IB did not expose both nested EVENT_WRITE_SHD packets");
     return 0;
 }

@@ -884,3 +884,44 @@ resumed with an unchanged screenshot; no APK install, restart, or input was
 sent. This is still one offscreen retail draw, not full cutscene or game
 performance. See the [Mali A/B evidence](../../evidence/process2_redmi_bink_sampler_cache_20261025.json)
 and [matching readback](../../evidence/process2_redmi_bink_sampler_cache_frame2614_20261025.bin.gz).
+
+## Nested retail completion packet audit (2026-10-25)
+
+P1 supplied a retail queue snapshot with `head=4519`, `tail=4529`, predicate
+`0x04` (mask `0x02` clear), and a 28-dword indirect buffer at `0x09692CE0`.
+The P2 root stream expands `PM4_INDIRECT_BUFFER` packets recursively and the
+same dispatcher processes nested packets; opcode `0x58` is handled by
+`decode_guest_event_write_shd` and the `EVENT_WRITE_SHD` branch. The exact IB
+contains two such packets. The first decodes `0x17AF4006` as physical
+`0x17AF4004`, endian mode 2, value `0xA9692D24`; the second decodes
+`0x17AF4002` as physical `0x17AF4000`, endian mode 2, value `0x1089`.
+
+That second immediate value is 4233, while P1's hypothesized `tail-2` cursor is
+4527 (`0x11AF`). This IB therefore does not publish the hypothesized completion
+cursor. P2 must store the packet's literal value after Xenos `GpuSwap`; it must
+not substitute the queue tail or set predicate bit `0x02`. `EVENT_WRITE_SHD`
+is a guest-memory write and is distinct from the `PM4_INTERRUPT` callback path.
+The address/endian/value semantics match ReXGlue's
+`CommandProcessor::ExecutePacketType3_EVENT_WRITE_SHD` and the earlier
+[physical/virtual alias regression](../../evidence/process2_event_write_shd_virtual_alias_20261025.json).
+
+A focused `shift_xbox_guest_ring_check` fixture now feeds this exact IB through
+the indirect-buffer expander and asserts both nested event destinations,
+endianness, and immediate values. The test passes. It verifies framing and
+decoding; it does not prove that this packet was the final queue completion in
+P1's wait sample or that a later indirect buffer did not contain another event.
+The current evidence points to an event value older than the waiter expects,
+not a renderer-side packet decode failure. The full capture and limits are in
+[`process2_retail_nested_completion_event_20261025.json`](../../evidence/process2_retail_nested_completion_event_20261025.json).
+
+In a corroborating retail run with the same mapped plugin and runtime hashes,
+the renderer snapshotted `[4517,4529)`, expanded 362 packets, then completed
+that range 30 ms later and wrote its separate Vd RPTR at `0x17AF403C` from
+`0x11A5` to `0x11B1`; four captured draws were submitted in that batch. This
+confirms renderer ring progress around the observed cursor values. The log does
+not include indirect-buffer guest addresses, so it does not prove that this
+batch contained the supplied `0x09692CE0` IB. The exact nested-IB regression
+passes, and all five P2 plugin CTests pass.
+The corroborating run metadata and compressed full log are preserved in
+[`process2_nested_completion_retail_run_20261025.json`](../../evidence/process2_nested_completion_retail_run_20261025.json)
+and [`the compressed log`](../../evidence/process2_nested_completion_retail_run_20261025.log.gz).
