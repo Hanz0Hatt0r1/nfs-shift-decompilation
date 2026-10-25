@@ -1,0 +1,132 @@
+{
+  "schema": "shift.xbox360.linux.p1-p2-presenter-frame-evidence.v1",
+  "captured_at_local": "2026-10-25",
+  "target": {
+    "title_id": "454108B4",
+    "default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "platform": "Linux AMD64"
+  },
+  "run_exact": {
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3b66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b",
+    "renderer_source_commit": "b03c9f87",
+    "renderer_plugin_sha256": "512eb2658935c48a3fddcc5abc0e100da948913fad6eb3f42148b12eb278fa98",
+    "renderer_was_verified_in_proc_maps": true,
+    "process_id": 368226,
+    "duration_seconds": 43.34,
+    "termination": "Harness sent SIGINT; runtime returned 0.",
+    "guest_memory_modified_by_probe": false,
+    "synthetic_fragment_override": false
+  },
+  "input": {
+    "device": "Linux uinput Xbox 360 controller, vendor 0x045e product 0x028e",
+    "pulses_seconds_from_launch": [
+      {
+        "button": "A",
+        "at": 8,
+        "duration_ms": 600
+      },
+      {
+        "button": "Start",
+        "at": 15,
+        "duration_ms": 600
+      },
+      {
+        "button": "A",
+        "at": 24,
+        "duration_ms": 600
+      },
+      {
+        "button": "A",
+        "at": 35,
+        "duration_ms": 600
+      }
+    ],
+    "same_run_scene_transition_proven": false
+  },
+  "selected_presenter_frame": {
+    "frame": 551,
+    "readback_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "extent": [
+      1280,
+      720
+    ],
+    "raw_bytes": 3686400,
+    "raw_sha256": "f06d77e9e71d15163166c3af8da1720867b936be0708f598834ffd198f1588d2",
+    "decoded_png": "xbox360_linux_frame551_p2_b03c9f87_retail_ea_20261025.png",
+    "decoded_png_sha256": "2878642b5812f0e5193bb28a5c84bfbc54edea70c316d3b9ff1fdbb30d387c10",
+    "non_black_rgb_pixels": 920723,
+    "content": "A live EA intro mark from the retail Bink video path; this is not a menu or race frame.",
+    "rendered_draw_indices": [
+      5377,
+      5378,
+      5379,
+      5380
+    ],
+    "geometry_dump_sizes_bytes": {
+      "draw_5377": {
+        "vertices": 84,
+        "indices": 0
+      },
+      "draw_5378": {
+        "vertices": 84,
+        "indices": 0
+      },
+      "draw_5379": {
+        "vertices": 84,
+        "indices": 0
+      },
+      "draw_5380": {
+        "vertices": 80,
+        "indices": 0
+      }
+    },
+    "draw_5380_texture_planes_bytes": [
+      921600,
+      230400,
+      230400
+    ],
+    "texture_size_interpretation": "The sizes match 1280x720 and two 640x360 R8 planes; consistent with the Bink YUV path, not a proof of shader/sample correctness."
+  },
+  "window_observation": {
+    "capture_scope": "Only the nfs_shift X11 window was captured.",
+    "same_dump_run": {
+      "captures_seconds": [
+        32,
+        40
+      ],
+      "sha256_at_both_times": "bfab665b1a87ee24204163ac64183ba56e3a036b4d8ff10287888c1a301d10b9",
+      "non_black_pixels_at_both_times": 0
+    },
+    "separate_no_dump_run_with_same_plugin": {
+      "plugin_sha256": "512eb2658935c48a3fddcc5abc0e100da948913fad6eb3f42148b12eb278fa98",
+      "black_window_captures_seconds": [
+        32,
+        46,
+        62,
+        76
+      ],
+      "all_four_captures_byte_identical": true,
+      "sha256": "bfab665b1a87ee24204163ac64183ba56e3a036b4d8ff10287888c1a301d10b9"
+    },
+    "interpretation": "Frame 551 is a valid retail readback, while later OS-window captures in the same dump run are black. They are not simultaneous captures of the same frame; this establishes one live video render plus no sustained visible output, not a same-frame Vulkan WSI failure."
+  },
+  "runtime_frontier": {
+    "last_logged_draw_submission_local": "2026-10-25T18:50:27.718",
+    "last_logged_copy_convert_local": "2026-10-25T18:50:33.646",
+    "first_menu_background_xml_misses_local": "2026-10-25T18:50:33.678",
+    "menu_background_xml_miss_count": 4,
+    "interpretation": "The XML open failures follow the last draw-submission records by about six seconds. The timing does not prove the file misses caused the black window or guest frontend stall."
+  },
+  "artifacts": {
+    "log_sha256": "685ed7281dfc934fbd994e9e4d375218648c293ac69d83005e25cfe9e32bb37c",
+    "bundle": "xbox360_linux_frame551_p2_b03c9f87_artifacts_20261025.tar.gz",
+    "bundle_bytes": 357416,
+    "bundle_sha256": "7e54f34afea23f837c6b60e0ac813f5692e4e950d9d8c2bb82a1a624c2dd4f19"
+  },
+  "limits": [
+    "This verifies one Bink/intro readback, not sustained cutscene playback, the language selector, main menu, an offline race, or full visual parity.",
+    "The exact runtime reports missing menu_background.xml paths after later draw activity; no VFS alias or guest-state override was applied.",
+    "Process 2 owns Vulkan rendering and window presentation; no renderer source was changed here."
+  ]
+}
