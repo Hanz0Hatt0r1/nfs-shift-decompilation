@@ -1,0 +1,185 @@
+{
+  "schema": "shift.xbox360.bink-guest-path.v1",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "live_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c"
+  },
+  "static_image": {
+    "pe_image_base": "0x82000000",
+    "sections": [
+      {
+        "name": "BINKCONS",
+        "virtual_address": "0x82196600",
+        "virtual_size": "0x2908"
+      },
+      {
+        "name": "BINK",
+        "virtual_address": "0x83064C00",
+        "virtual_size": "0xF354",
+        "interpretation": "Embedded PPC Bink code section"
+      },
+      {
+        "name": "BINKBSS",
+        "virtual_address": "0x83080000",
+        "virtual_size": "0x3B8"
+      },
+      {
+        "name": ".XBMOVIE",
+        "virtual_address": "0x83203C00",
+        "virtual_size": "0x8"
+      },
+      {
+        "name": "BINKDATA",
+        "virtual_address": "0x83203E00",
+        "virtual_size": "0x3D48"
+      }
+    ],
+    "code_call_sites": [
+      {
+        "call_site": "0x82678FEC",
+        "instruction_big_endian": "0x489EE0C5",
+        "target": "0x830670B0"
+      },
+      {
+        "call_site": "0x82678FF4",
+        "instruction_big_endian": "0x489EE0C5",
+        "target": "0x830670B8"
+      },
+      {
+        "call_site": "0x826790FC",
+        "instruction_big_endian": "0x489EE825",
+        "target": "0x83067920"
+      },
+      {
+        "call_site": "0x82679174",
+        "instruction_big_endian": "0x489EE845",
+        "target": "0x830679B8"
+      },
+      {
+        "call_site": "0x82679CF0",
+        "instruction_big_endian": "0x489EDF31",
+        "target": "0x83067C20"
+      },
+      {
+        "call_site": "0x82679D64",
+        "instruction_big_endian": "0x489EB425",
+        "target": "0x83065188"
+      },
+      {
+        "call_site": "0x82679DC0",
+        "instruction_big_endian": "0x489EB839",
+        "target": "0x830655F8"
+      },
+      {
+        "call_site": "0x82679DF4",
+        "instruction_big_endian": "0x489EB805",
+        "target": "0x830655F8"
+      }
+    ],
+    "embedded_strings": [
+      {
+        "virtual_address": "0x82147182",
+        "text": "cached memory for the Bink texture pointers - see BinkTextures.cpp",
+        "interpretation": "Bink texture integration is present in the retail image; this string alone does not identify its surface address or format."
+      },
+      {
+        "virtual_address": "0x821471EC",
+        "text": "Not a Bink file."
+      },
+      {
+        "virtual_address": "0x82147264",
+        "text": "Error reading Bink header."
+      }
+    ],
+    "media_file": {
+      "path_relative_to_game_root": "Movies/Franchise_Ident.bik",
+      "byte_length": 14672084,
+      "first_four_bytes_ascii": "BIKi",
+      "format_interpretation": "Bink-family file header"
+    }
+  },
+  "runtime_translation": {
+    "platform": "Linux AMD64",
+    "host_executable_sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a",
+    "generated_and_registered_guest_functions": [
+      "0x83065188",
+      "0x830654D0",
+      "0x830655A8",
+      "0x830655F8",
+      "0x830670B0",
+      "0x830670B8",
+      "0x83067118",
+      "0x83067310",
+      "0x830675F0",
+      "0x83067920",
+      "0x830679B8",
+      "0x83067C20"
+    ],
+    "host_side_media_hle_search": {
+      "scope": "nfs_shift/src, nfs_shift_manifest.toml, nfs_shift_overrides.toml",
+      "terms": ["Bink", "XBMovie", "Movie", "XMV", "video"],
+      "matches": 0,
+      "interpretation": "No title-specific host-side Bink/XBMOVIE decoder callback was found in these app sources; the retail executable contains its own Bink PPC code. This does not claim the generic runtime has no video-related kernel exports."
+    },
+    "p1_breakpoint_probe": {
+      "breakpoints": [
+        "0x83065188",
+        "0x830654D0",
+        "0x830655A8",
+        "0x830655F8",
+        "0x830670B0",
+        "0x830670B8",
+        "0x83067118",
+        "0x83067310",
+        "0x830675F0",
+        "0x83067920",
+        "0x830679B8",
+        "0x83067C20"
+      ],
+      "bink_entry_hits": 0,
+      "termination": "The GDB-instrumented run faulted before any listed Bink entry, at guest function 0x823A0998 (SIGSEGV).",
+      "log_sha256": "8870c9757b1c459b06ac5748cb7d8409f6fc75aac105d276d8e66b6f4fd705fa"
+    }
+  },
+  "external_runtime_report": {
+    "source": "Process 2 report relayed in the task conversation",
+    "reported": [
+      "The retail process opened and read Movies/Franchise_Ident.bik using pread64; reported total reads were 22010824 bytes across a 14672084-byte file.",
+      "At Vulkan submit 130, the readback was black and the only three guest draws were fullscreen untextured zero-color triangles, followed by an accepted 4x-to-1x Copy/Convert."
+    ],
+    "raw_pread_trace_or_log_hash_provided": false,
+    "local_path_filtered_trace": {
+      "path": "/home/pes/work/process2-linux-muls-prev-retail-20261025/cutscene-trace/openat-frame130.log.83146",
+      "observed": "Two openat calls for Franchise_Ident.bik; this path-filtered trace contains no pread64/read calls.",
+      "sha256": "56aa89c0ef341d1c605532355535ccf3851e57659eae8d3d6b58076ead9cfff6"
+    },
+    "readback": {
+      "path": "/home/pes/work/process2-linux-muls-prev-retail-20261025/cutscene-trace/franchise_ident_frame130_after_add.a2b10g10r10",
+      "sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+      "non_black_rgb_pixels": 0
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail image contains a substantial PPC Bink code section and game-code call sites into generated Bink functions.",
+      "The local generated Linux runtime registers the Bink-section function entries listed above.",
+      "The Franchise_Ident.bik file is a Bink-family asset, and the local trace confirms the retail process opened it twice."
+    ],
+    "likely_but_not_runtime_proven": [
+      "Process 2's reported sustained pread64 activity while the cutscene was active is consistent with guest Bink decoding; the raw read trace was not available in the shared artifacts."
+    ],
+    "not_proven": [
+      "A P1 live breakpoint hit in the Bink decode/update functions.",
+      "The exact guest RAM address, texture format, or EDRAM destination for decoded pixels.",
+      "That the black frame is caused by a missing host media callback or by the renderer."
+    ],
+    "working_conclusion": "The title's Bink decoder is guest PPC code inside the XEX; there is no evidence that P1 needs a separate host Bink decoder callback. The embedded Bink texture integration points toward a guest-memory/Xenos-texture handoff. The exact surface contract still needs a live pointer/format trace before assigning the black output to either guest media setup or renderer behavior."
+  },
+  "limitations": [
+    "The P1 GDB probe did not reach the Bink entries and is not evidence that they are never called.",
+    "The P2 pread64 totals and draw summary were relayed without their raw log or hash.",
+    "The black readback is evidence of output state only; it does not identify the missing stage."
+  ]
+}

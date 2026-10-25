@@ -1,0 +1,64 @@
+{
+  "schema": "shift.xbox360.linux-retail-frame.v1",
+  "retail_image": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "host_runtime": {
+    "executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+    "sdk_fix_commit": "ede359f8a93cd26cb95531a0b39ed8584aa93bb7",
+    "gpu_plugin": "shift-native",
+    "runtime_log_sha256": "a74f3205f1fe1b25b620e86d569131f15f658758a0f0349d8985141ed4bb2942"
+  },
+  "input": {
+    "device": {
+      "name": "Microsoft X-Box 360 pad",
+      "vendor": "0x045e",
+      "product": "0x028e",
+      "linux_event_node": "/dev/input/event21"
+    },
+    "events_sent": ["Start press/release", "A press/release"],
+    "retail_xaminput_state_trace_in_this_run": false
+  },
+  "readback": {
+    "frame": 400,
+    "width": 1280,
+    "height": 720,
+    "format": "A2B10G10R10 packed guest scanout; little-endian host words",
+    "raw": {
+      "path": "/tmp/nfs-shift-p1-input-20261025/input-frame400.a2b10g10r10",
+      "sha256": "e38b23fb409c8bd995d32c188e34079953fa55def609d38d06c01bd5fb1f8689",
+      "length_bytes": 3686400
+    },
+    "decoded_png": {
+      "path": "/tmp/nfs-shift-p1-input-20261025/input-frame400.png",
+      "sha256": "9273ca05906aaa24e426ad73d41ac6eb544fc23f320f2d2693667c4b9cd737aa",
+      "decoder": "Python standard library; unpacked R=bits 0..9, G=10..19, B=20..29, scaled 10-bit channels to 8-bit RGB",
+      "non_black_rgb_pixels": 119808,
+      "distinct_rgb_values": 7,
+      "visual_observation": "A small right-side list-shaped panel has color; the rest of the frame is black. Text and screen identity are not established."
+    }
+  },
+  "runtime_observations": {
+    "indexed_draw_packets": 24,
+    "resolution": "1280x720",
+    "termination": "The harness sent SIGINT, waited eight seconds, then used SIGKILL because the runtime had not exited.",
+    "supported": [
+      "The exact retail XEX ran with this matched Linux runtime and GPU-plugin trio through frame 400.",
+      "The harness emitted Start and A events through a Linux uinput gamepad.",
+      "The captured frame contains a non-black, list-shaped region."
+    ],
+    "not_proven": [
+      "That this run's guest XamInputGetState returned the injected button states.",
+      "That the panel is the retail main menu or that Start/A caused it to appear.",
+      "Offline race execution or correct full-frame rendering."
+    ]
+  },
+  "limitations": [
+    "The raw readback and decoded PNG are retained outside the repository; this record stores their hashes and derived counts.",
+    "Only the decoded frame and host draw-submission logs are available for this run; they do not identify the game screen."
+  ]
+}
