@@ -25,7 +25,16 @@
       "result": "3/3 passed",
       "plugin_sha256": "7a7147280035c899393690fd7b4fd4143bf28405e697189f40f557060f11d804"
     },
-    "android_arm64_renderer": "xbox_live_vulkan_renderer_check target cross-compiled successfully; not executed on device"
+    "android_arm64": {
+      "abi": "arm64-v8a",
+      "api_level": 26,
+      "sdk_branch": "work/process2-vulkan-resolve-capability-20261024",
+      "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+      "plugin_translation_unit": "compiled successfully with optional depth/stencil resolve provider API enabled",
+      "renderer_check_target": "cross-compiled successfully; not executed on device",
+      "full_plugin_or_application_link": "not run",
+      "device_install_or_run": "not run; the existing game process was left running"
+    }
   },
   "device_performance": {
     "status": "not measured after this change",
