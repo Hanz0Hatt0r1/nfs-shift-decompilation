@@ -32,6 +32,8 @@ Follow-up probes dynamically entered `0x82B9C9F0`, `0x82B9DC78`, and `0x82BA9258
 
 A 75.33-second follow-up emitted six A/Start pulses and placed conditional breakpoints on the retail raw-mask getter `0x828B22B8` and changed-mask dispatcher `0x8230D398`. Neither observed an A/Start state under the probe conditions. This run did not capture the scene, so it narrows the next trace to frontend/boot progress without proving a title input failure or main-menu state. See [the frontend consumer probe](../evidence/xbox360_linux_gamepad_frontend_consumer_probe_20261025.json).
 
+A separate exact-XEX vtable read ties those entries to the same observed controller object: slot `+0x98` is the per-frame `XamInputGetState`/edge-update path `0x82308E60`, slot `+0xBC` is raw-mask getter `0x828B22B8`, and slot `+0x54` is changed-button dispatcher `0x8230D398`. The retail update and edge accumulator were reached, but the bounded scene probe did not observe the action-dispatch slots consuming A/Start. This does not identify the active frontend scene or justify changing Linux input semantics. The exact vtable and probe hashes are recorded in the same [frontend consumer evidence](../evidence/xbox360_linux_gamepad_frontend_consumer_probe_20261025.json).
+
 ## Proposed pipeline
 
 ```text

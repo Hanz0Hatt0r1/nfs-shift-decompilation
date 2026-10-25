@@ -69,6 +69,38 @@
       "static_behavior": "Compares controller+128 and controller+132, then routes nonzero changed bits through the controller's registered mapping/dispatch path."
     }
   },
+  "controller_vtable_probe": {
+    "target_object": "0xBCAEB260",
+    "vtable_address": "0x8212E5B8",
+    "runtime": {
+      "executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637"
+    },
+    "observed_slots": {
+      "0x54": "0x8230D398",
+      "0x98": "0x82308E60",
+      "0xBC": "0x828B22B8"
+    },
+    "external_probe": {
+      "runner_script": "/tmp/nfs-p1-input-consumer-20261025/run-controller-parent-vtable.py",
+      "runner_script_sha256": "6324367f818b7b633cd3cc15455a6abb63a4816edbe0867e7a7992c62f70eaf4",
+      "gdb_script": "/tmp/nfs-p1-input-consumer-20261025/controller-parent-vtable.gdb",
+      "gdb_script_sha256": "94b702dc180f088e817c668219078a1ec2696455d65cf57b7b1885046f6ffc24",
+      "gdb_log": "/tmp/nfs-p1-input-consumer-20261025/controller-parent-vtable-console.log",
+      "gdb_log_sha256": "9a79f141d0eefc7cefb3e566dfd68b0feeb217a18a66d65a50eca82595a0c79c"
+    },
+    "interpretation": {
+      "supported": [
+        "The observed controller object's retail vtable has a separate input-state update slot at +0x98, a changed-button dispatch slot at +0x54, and a raw-mask getter at +0xBC.",
+        "The bounded input traces reached the update path and changed button-edge state for Start/A; the 75.33-second conditional probe observed no A/Start state in either candidate dispatch method."
+      ],
+      "not_proven": [
+        "That the dispatch slot is the only route to frontend actions or that it should run before a frontend scene is active.",
+        "That Linux XInput state delivery is defective or that the frontend/race is reachable in this run."
+      ]
+    }
+  },
   "observed": {
     "run_duration_seconds": 75.33,
     "process_state_at_stop": "Still running when the harness sent SIGINT.",
