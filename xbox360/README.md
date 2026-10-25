@@ -2,7 +2,7 @@
 
 This directory is reserved for **Need for Speed: SHIFT Xbox 360 retail** work via [ReXGlue](https://github.com/rexglue/rexglue-sdk).
 
-**Current state: the original loading splash reproduces at submission 10; the game is not playable yet.** The hash-locked XEX produces the logo/loading bar with the current renderer build. A separate run using the same host/runtime/plugin/XEX hashes read back opaque black at submission 200; the captures are not one continuous run. The main menu, offline race, Vulkan 1.1-only compatibility and Android execution remain open. Evidence: [current splash](../evidence/xbox360_linux_retail_frame10_current_plugin_20261025.json), [submission 200](../evidence/xbox360_linux_retail_frame200_black_20261025.json). Game files and captured pixels stay outside Git.
+**Current state: the exact retail title reaches Language Select and the safety-warning presentation, then renders a black viewport; the game is not playable yet.** A 75-second Linux AMD64 run using the latest P2 plugin reached those states but did not show the main menu or a race. It logged 1,111 accepted Copy/Convert operations, no guest faults, and no Vulkan frame-refresh failures. A separate instrumented run observed 280 retail Bink update calls for a 281-frame video before the harness interrupted it; natural video completion and the following scene transition remain unproven. The main menu, offline race, Vulkan 1.1-only compatibility and Android execution remain open. Evidence: [post-video frontend probe](../evidence/xbox360_linux_post_video_frontend_probe_20261025.json), [earlier retail splash](../evidence/xbox360_linux_retail_frame10_current_plugin_20261025.json), [submission 200](../evidence/xbox360_linux_retail_frame200_black_20261025.json). Game files and captured pixels stay outside Git.
 
 ## Work areas
 
@@ -20,4 +20,4 @@ The PC `SHIFT.exe` supplied for the legacy workstream is **not** a substitute fo
 
 ## Next proof
 
-Move the exact retail title from the captured loading splash into the real frontend, then verify an offline race. The current Linux AMD64 runtime/build is external to Git; the evidence records executable, runtime, plugin and XEX hashes. Vulkan 1.1-only and Android ARM64 compatibility still need separate exact-XEX runs.
+Trace the retail scene-manager path after the safety/Bink presentation and verify an offline race. Do not infer a fatal blocker from the missing `menu_background.xml` opens: the observed retail parent stores the child result and returns success. The current Linux AMD64 runtime/build is external to Git; evidence records executable, runtime, plugin and XEX hashes. Vulkan 1.1-only and Android ARM64 compatibility still need separate exact-XEX runs.
