@@ -57,6 +57,15 @@
   "guest_observation": {
     "predicate_function": "0x823A0310",
     "caller_return_address": "0x823B3560",
+    "capture_phase": "Predicate-entry breakpoint, before 0x823A0310 executes its body.",
+    "expected_cursor_provenance": {
+      "retail_function": "0x823B34A0",
+      "copy_instruction_address": "0x823B34B8",
+      "copy_instruction": "mr r30,r4",
+      "predicate_call_address": "0x823B355C",
+      "static_source": "Exact-XEX generated PPC at generated/default/nfs_shift_recomp.134.cpp and generated/default/nfs_shift_recomp.99.cpp.",
+      "meaning": "At the predicate-entry breakpoint, r30 still contains the wait target copied from r4. The predicate body later reuses r30 for timebase bookkeeping; that later value is not sampled by this entry breakpoint."
+    },
     "gdb_thread_id": 31,
     "wait_object": "0xB7365F00",
     "wait_record_count": 4,
