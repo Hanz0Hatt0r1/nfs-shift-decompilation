@@ -37,7 +37,9 @@ later APK built with the resolve-capable provider. On the Redmi Note 8 Pro, the
 live run reached 1,182 successful Vulkan submissions (10,471 captured draw
 packets) and accepted 1,182 Copy/Convert operations, with no presenter refresh
 failures. A separate live selector capture shows all six language labels
-readable on the device.
+readable on the device; it supersedes the earlier missing-label observation.
+The heading, select prompt, and dimmer non-selected rows are visible in the
+[Redmi selector screenshot](../evidence/process2_redmi_language_selector_live_android_20261025.png).
 
 At submitted frame 1,026, an actual Vulkan output readback contains 17,951
 non-black pixels (`AA8BC55196A29A73`). After scaling the centered 16:9 Android
@@ -48,6 +50,12 @@ original safety disclaimer and thin purple strips. See the [readback metadata](.
 [raw Vulkan output](../evidence/process2_redmi_post_selector_frame1026_readback_20261025.bin),
 [device screenshot](../evidence/process2_redmi_post_selector_frame1026_device_20261025.png),
 and [compressed runtime log](../evidence/process2_redmi_post_selector_frame1026_runtime_20261025.log.gz).
+
+A five-sample Android thread snapshot at 18:04:37 shows the guest main thread
+at 101% CPU on average, SDL at 87.8%, the two controller threads at 88.8% and
+87.2%, while `SHIFT Native GP` stayed at 0%. No later Vulkan submissions
+appeared. This points to active guest/runtime work while the renderer worker
+was idle, but does not identify the cause. See the [captured thread sample](../evidence/process2_redmi_post_selector_frame1026_threads_20261025.log.gz).
 
 The last logged submission carried 14 draws at 17:55:35.960 MSK. About 0.4
 seconds later the guest tried both `D:\tracks\_data\instances\scenes\menu_background.xml`

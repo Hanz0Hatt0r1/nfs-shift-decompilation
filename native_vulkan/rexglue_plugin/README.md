@@ -611,6 +611,12 @@ The run submitted 1,182 frames / 10,471 captured draw packets and accepted
 1,182 Copy/Convert operations without presenter refresh failures. Its final
 14-draw submit precedes the same missing `menu_background.xml` probes; no later
 submit appeared. The log proximity does not identify the cause of the stop.
+At 18:04:37, five Android thread samples show the guest main thread at 101% CPU
+on average, SDL at 87.8%, two controller threads at 88.8% and 87.2%, and the
+audio worker at 57.7%; `SHIFT Native GP` stayed at 0%. The process remained
+alive and the screenshot stayed byte-identical. This is evidence that guest
+threads remained active while the renderer worker was idle, not a diagnosis of
+why submissions stopped. See the [thread sample](../../evidence/process2_redmi_post_selector_frame1026_threads_20261025.log.gz).
 The raw readback, decoded image, screenshot, hashes, and run limits are in
 [`process2_redmi_post_selector_frame1026_20261025.json`](../../evidence/process2_redmi_post_selector_frame1026_20261025.json),
 [`the raw readback`](../../evidence/process2_redmi_post_selector_frame1026_readback_20261025.bin),

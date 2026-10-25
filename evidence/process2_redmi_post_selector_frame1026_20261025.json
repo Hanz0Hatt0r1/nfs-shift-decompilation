@@ -95,6 +95,28 @@
     ],
     "interpretation": "A separate live Redmi capture confirms the original selector labels are readable on this renderer build. This frame-1026 readback is from the later safety disclaimer, after the language choice had already been retained."
   },
+  "thread_cpu_snapshot": {
+    "captured_at_local": "2026-10-25T18:04:37+03:00",
+    "process_id": 7611,
+    "sampling_command": "adb shell top -b -H -d 1 -n 5 -p 7611",
+    "samples": 5,
+    "artifact_file": "process2_redmi_post_selector_frame1026_threads_20261025.log.gz",
+    "raw_log_bytes": 41822,
+    "raw_log_sha256": "cbea50e5f6f9079d1d395db4330e480ea0922a3414047a2b90c3cfa54c8604f9",
+    "compressed_log_sha256": "998f7d8e15285d7047b5d52eb1fe5f642a26aff9f56e19446d30d07398107576",
+    "threads": [
+      {"tid": 7911, "name": "Core 0/0: Main", "mean_cpu_percent": 101.0, "range_cpu_percent": [96.0, 117.0]},
+      {"tid": 7880, "name": "SDLThread", "mean_cpu_percent": 87.8, "range_cpu_percent": [83.0, 100.0]},
+      {"tid": 7931, "name": "Core 2/1: Controller", "mean_cpu_percent": 88.8, "range_cpu_percent": [82.0, 106.0]},
+      {"tid": 7932, "name": "Core 2/1: Controller", "mean_cpu_percent": 87.2, "range_cpu_percent": [80.0, 103.0]},
+      {"tid": 7902, "name": "Audio Worker", "mean_cpu_percent": 57.7, "range_cpu_percent": [54.0, 65.5]},
+      {"tid": 7884, "name": "Android RenderThread", "mean_cpu_percent": 32.6, "range_cpu_percent": [30.0, 37.9]},
+      {"tid": 7904, "name": "SHIFT Native GP", "mean_cpu_percent": 0.0, "range_cpu_percent": [0.0, 0.0]},
+      {"tid": 7905, "name": "SHIFT Native VS", "mean_cpu_percent": 2.5, "range_cpu_percent": [2.0, 3.4]}
+    ],
+    "interpretation": "The guest main, SDL, controller, and audio threads remained CPU-active while the native GPU worker was idle and no later Vulkan submissions were logged. This correlated snapshot does not identify the cause of the stopped submissions or prove that the nearby guest file probes caused it.",
+    "contemporaneous_screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af"
+  },
   "limitations": [
     "This verifies one real post-selector retail guest frame on Mali through the Vulkan presenter; it does not establish race-scene output or complete visual parity.",
     "The purple strips are visible in both the device screenshot and the renderer readback; their source draw, texture, or video-plane contract has not yet been isolated.",
