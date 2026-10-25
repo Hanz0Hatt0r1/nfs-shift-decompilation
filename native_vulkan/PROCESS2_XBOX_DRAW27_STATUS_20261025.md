@@ -371,3 +371,55 @@ observed 1280x720 Copy/Convert path is exercised live, but this does not prove
 other EDRAM resolve forms or full retail parity. The Android process map is
 restricted, so the loaded renderer DSO hash is unknown. No Process 1 files were
 changed.
+
+## Latest Android selector verification (2026-10-26)
+
+The latest P2 candidate was installed on the Redmi Note 8 Pro with incremental
+ADB install. Its language-selector screenshot clearly shows the heading,
+selection prompt, and all six labels. After one A-button event, the game
+rendered its original NFS SHIFT title sequence and reached the legal
+disclaimer. This confirms the language-label issue on the current Android
+candidate; the selector capture is a live retail frame, not synthetic output.
+
+The guest log contains 1,233 presenter submissions with 11,267 captured
+indexed packets and 1,233 accepted Copy/Convert operations; no presenter
+refresh failures were reported. Draw #0 still fails closed with incomplete
+raster state (`0x17038`). `menu_background.xml` lookups fail shortly after the
+last submissions, but the timing does not show causality. The app was left
+open. Evidence and hashes are in
+[`the latest Android selector record`](../evidence/process2_redmi_language_selector_latest_android_20261026.json),
+[selector screenshot](../evidence/process2_redmi_language_selector_latest_android_20261026.png),
+[title screenshot](../evidence/process2_redmi_language_selector_title_latest_android_20261026.png),
+and [compressed guest log](../evidence/process2_redmi_language_selector_latest_android_20261026.log.gz).
+
+A read-only ADB recheck later confirmed PID 17268 remained top-resumed on the
+legal disclaimer. Process 2 sent no further input and did not stop the app;
+the [current screen](../evidence/process2_redmi_language_selector_latest_current_screen_20261026.png)
+and status are recorded in the same evidence JSON.
+
+This candidate packages the current P2 ARM64 plugin against the unchanged
+Android runtime DSO because the SDK's full application target still fails in
+its POSIX fiber source on Bionic's missing `getcontext`, `makecontext`, and
+`swapcontext`. The live launch verifies that plugin/runtime combination, not
+a full runtime rebuild. Android Vulkan validation-layer coverage is
+unavailable. The post-disclaimer menu, racing scenes, and complete retail
+parity remain unverified.
+
+## Latest renderer handoff for Process 1 (2026-10-26)
+
+Built the current P2 source as an x86_64 plugin against the resolve-capable
+ReXGlue SDK already used by Process 1. The plugin and its matching
+`librexruntime.so` are staged together at
+`/home/pes/work/process2-latest-renderer-handover-20261026/linux-amd64/`.
+Plugin CTests pass 5/5 and native Vulkan CTests pass 4/4 with
+`VK_LAYER_KHRONOS_validation` forced through the loader. The native shader
+regression covers preservation of nonzero interpolator locations, including
+the location needed by the language font shader. This does not replace a fresh
+P1 retail run with this exact Linux build.
+
+The matching Android candidate is installed on the Redmi Note 8 Pro; the
+installed APK hash matches the packaged file. All six language labels are
+visible, the original title sequence rendered, and the app remains resumed on
+the disclaimer. APK, plugin/runtime hashes, test commands, screenshots, and
+limits are recorded in
+[`the handoff evidence`](../evidence/process2_latest_renderer_handoff_20261026.json).

@@ -925,3 +925,68 @@ passes, and all five P2 plugin CTests pass.
 The corroborating run metadata and compressed full log are preserved in
 [`process2_nested_completion_retail_run_20261025.json`](../../evidence/process2_nested_completion_retail_run_20261025.json)
 and [`the compressed log`](../../evidence/process2_nested_completion_retail_run_20261025.log.gz).
+
+## Current Android language selector and title sequence (2026-10-26)
+
+The current signed candidate APK (`e9185d08…9136c10c9`) was installed on the
+Redmi Note 8 Pro with incremental ADB install, preserving app data and retail
+assets. Its P2 ARM64 plugin aliases are identical (SHA-256
+`53eda9ca…6da5e13b`); the packaged runtime DSO is the unchanged
+`724978a1…6c888a`. In the live selector screenshot, `LANGUAGE SELECT`, `SELECT
+A`, and all six entries—`English`, `Français`, `Italiano`, `Deutsch`,
+`Español`, and `Nederlands`—are visible. The highlighted English row is
+orange, and the unselected rows remain readable in gray. This directly
+confirms the reported missing-label symptom is fixed in this candidate on the
+Mali device; the screenshot is retail output, not a synthetic render.
+
+After one Android A-button event, the app rendered the original NFS SHIFT
+title sequence and then reached the legal disclaimer. The saved guest log
+contains 1,233 presenter submission events carrying 11,267 indexed draw
+packets and 1,233 accepted captured Copy/Convert operations, with no presenter
+refresh failures. Draw #0 remains fail-closed because its captured raster
+register state is incomplete (`valid_mask=0x17038`). The last submissions are
+followed by failed `menu_background.xml` opens with status `0xc000000f`; timing
+does not establish that these misses caused the subsequent disclaimer stall.
+The complete package, screenshot, and log hashes are in
+[`the device evidence`](../../evidence/process2_redmi_language_selector_latest_android_20261026.json),
+[the language selector](../../evidence/process2_redmi_language_selector_latest_android_20261026.png),
+[the title sequence](../../evidence/process2_redmi_language_selector_title_latest_android_20261026.png),
+and [the compressed guest log](../../evidence/process2_redmi_language_selector_latest_android_20261026.log.gz).
+
+The full Android application target still cannot be rebuilt with the current
+SDK because its existing POSIX fiber source calls Bionic-unavailable
+`getcontext`, `makecontext`, and `swapcontext`. This candidate instead packages
+the manually linked current P2 plugin against the unchanged runtime DSO; its
+successful live launch verifies that package combination, but not a full
+runtime rebuild. A later read-only ADB recheck confirmed PID 17268 remained
+top-resumed on the legal disclaimer; Process 2 sent no more input and did not
+close the app. The [current screen](../../evidence/process2_redmi_language_selector_latest_current_screen_20261026.png)
+is preserved. The phone does not provide `VK_LAYER_KHRONOS_validation`; device
+validation-layer coverage remains absent. The post-disclaimer menu, race, and
+complete retail parity are still unverified.
+
+## Current P1-compatible Linux renderer handoff (2026-10-26)
+
+The current P2 source was rebuilt as an x86_64 ReXGlue plugin against SDK
+commit `fb151b94b4956d1c74ba5052e8838b0829eb9c99`, which matches the runtime
+used for Process 1's resolve-capable retail work. The plugin is
+`/home/pes/work/process2-latest-renderer-handover-20261026/linux-amd64/librexgpu-shift-native.so`
+(SHA-256 `dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1`,
+Build ID `60e3a7549235b97386d145ada68592df8de1590e`). It is paired with the
+same directory's `librexruntime.so` (SHA-256
+`127181adbfb99b65e9d1a8f1d6aed12308e1cf320b86067588ad421f17eda68e`). `ldd
+-r` reports no unresolved symbols.
+
+All five plugin CTests pass with `VK_LAYER_KHRONOS_validation` forced through
+the loader, and all four native Vulkan CTests pass with the layer forced. The
+shader translator regression checks that a nonzero Xenos interpolator remains
+at Vulkan location 1 and the pixel shader reads `r[1]`; this covers the
+language-label failure mechanism. These host tests exercise synthetic ring,
+shader, and resource fixtures. Process 1 still needs a fresh retail Linux run
+with this exact plugin/runtime pair before the build can be called validated
+against its current retail session. Plugin/runtime hashes and test logs are
+recorded in
+[`the renderer handoff evidence`](../../evidence/process2_latest_renderer_handoff_20261026.json).
+The compressed [plugin CTest log](../../evidence/process2_latest_renderer_plugin_ctest_20261026.log.gz)
+and [native Vulkan CTest log](../../evidence/process2_latest_native_vulkan_ctest_20261026.log.gz)
+are preserved alongside it.
