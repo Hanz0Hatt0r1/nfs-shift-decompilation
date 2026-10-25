@@ -481,6 +481,15 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       ring_host_worker_.reset();
     }
     if (ring_worker_.joinable()) ring_worker_.join();
+    if (pipeline_cache_ && provider_) {
+      if (auto* device = provider_->vulkan_device(); device) {
+        if (destroy_pipeline_cache_) {
+          destroy_pipeline_cache_(device->device(), pipeline_cache_, nullptr);
+        }
+      }
+      pipeline_cache_ = VK_NULL_HANDLE;
+      destroy_pipeline_cache_ = nullptr;
+    }
     if (presenter_ && app_context_) {
       app_context_->CallInUIThreadSynchronous([this]() { presenter_.reset(); });
     } else {
@@ -1974,6 +1983,36 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                         render_error = "Vulkan provider has no device during guest refresh";
                         return false;
                       }
+                      if (!pipeline_cache_) {
+                        const auto get_device_proc_addr =
+                            device->vulkan_instance()->functions().vkGetDeviceProcAddr;
+                        const auto create_pipeline_cache =
+                            get_device_proc_addr
+                                ? reinterpret_cast<PFN_vkCreatePipelineCache>(
+                                      get_device_proc_addr(device->device(),
+                                                           "vkCreatePipelineCache"))
+                                : nullptr;
+                        destroy_pipeline_cache_ =
+                            get_device_proc_addr
+                                ? reinterpret_cast<PFN_vkDestroyPipelineCache>(
+                                      get_device_proc_addr(device->device(),
+                                                           "vkDestroyPipelineCache"))
+                                : nullptr;
+                        if (!create_pipeline_cache || !destroy_pipeline_cache_) {
+                          render_error = "Vulkan pipeline cache entry points are unavailable";
+                          return false;
+                        }
+                        VkPipelineCacheCreateInfo cache_info{};
+                        cache_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+                        const VkResult cache_result = create_pipeline_cache(
+                            device->device(), &cache_info, nullptr, &pipeline_cache_);
+                        if (cache_result != VK_SUCCESS) {
+                          render_error = "vkCreatePipelineCache failed with VkResult " +
+                                         std::to_string(cache_result);
+                          destroy_pipeline_cache_ = nullptr;
+                          return false;
+                        }
+                      }
                       const uint32_t family = device->queue_family_graphics_compute();
                       const auto queue = device->AcquireQueue(family, 0);
                   // Older ReXGlue SDKs do not expose the optional resolve
@@ -1993,7 +2032,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                           device->properties().geometryShader, copy_for_swap,
                           depth_stencil_resolve_enabled,
                           {device->properties().samplerAnisotropy,
-                           device->properties().maxSamplerAnisotropy});
+                           device->properties().maxSamplerAnisotropy},
+                          pipeline_cache_);
                     });
                 if (refreshed) {
                   ++submitted_frames;
@@ -2216,6 +2256,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
   std::unique_ptr<rex::ui::vulkan::VulkanProvider> provider_;
   std::unique_ptr<rex::ui::Presenter> presenter_;
+  VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
+  PFN_vkDestroyPipelineCache destroy_pipeline_cache_ = nullptr;
   rex::ui::WindowedAppContext* app_context_ = nullptr;
   rex::memory::Memory* memory_ = nullptr;
   rex::runtime::FunctionDispatcher* function_dispatcher_ = nullptr;

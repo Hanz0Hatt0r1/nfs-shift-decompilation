@@ -366,12 +366,32 @@ int main(int argc, char** argv) {
 
     std::string error;
     std::vector<uint32_t> output_readback;
+    VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
+    VkPipelineCacheCreateInfo pipeline_cache_info{};
+    pipeline_cache_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    result = vkCreatePipelineCache(device, &pipeline_cache_info, nullptr,
+                                   &pipeline_cache);
+    if (result != VK_SUCCESS) {
+        std::cerr << "vkCreatePipelineCache failed: " << result << '\n';
+        return 1;
+    }
     const bool submitted = shift::xbox::submit_captured_vulkan_frame(
         physical_device, device, queue, queue_family, output_image, output_view, false,
         1280, 720, draws, &error, &output_readback,
-        enabled_features.geometryShader, &copy);
+        enabled_features.geometryShader, &copy, false, {}, pipeline_cache);
     if (!submitted) {
         std::cerr << "captured Vulkan draw submission failed: " << error << '\n';
+        return 1;
+    }
+    const std::vector<uint32_t> cached_output = output_readback;
+    std::vector<uint32_t> repeated_cached_output;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, draws, &error, &repeated_cached_output,
+            enabled_features.geometryShader, &copy, false, {}, pipeline_cache) ||
+        repeated_cached_output != cached_output) {
+        std::cerr << "reused Vulkan pipeline cache changed captured draw output: "
+                  << error << '\n';
         return 1;
     }
 
@@ -947,6 +967,7 @@ int main(int argc, char** argv) {
     vkDestroyImageView(device, output_view, nullptr);
     vkDestroyImage(device, output_image, nullptr);
     vkFreeMemory(device, output_memory, nullptr);
+    vkDestroyPipelineCache(device, pipeline_cache, nullptr);
     vkDestroyDevice(device, nullptr);
     if (messenger) {
         auto destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(

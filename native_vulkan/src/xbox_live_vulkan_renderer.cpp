@@ -409,6 +409,7 @@ bool create_draw_resources(
     const VkPhysicalDeviceMemoryProperties& memory_properties,
     VkDevice device,
     VkRenderPass render_pass,
+    VkPipelineCache pipeline_cache,
     bool geometry_shader_enabled,
     CapturedVulkanSamplerCapabilities sampler_capabilities,
     DrawResources* output,
@@ -845,7 +846,6 @@ bool create_draw_resources(
     pipeline_info.pDynamicState = &dynamic;
     pipeline_info.layout = output->pipeline_layout;
     pipeline_info.renderPass = render_pass;
-    VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
     result = vkCreateGraphicsPipelines(device, pipeline_cache, 1, &pipeline_info, nullptr,
                                        &output->pipeline);
     if (result != VK_SUCCESS) return vk_fail("vkCreateGraphicsPipelines", result, error);
@@ -1079,7 +1079,8 @@ bool submit_mixed_sample_copy_frame(
     bool geometry_shader_enabled,
     const CapturedVulkanCopy& copy,
     bool depth_stencil_resolve_enabled,
-    CapturedVulkanSamplerCapabilities sampler_capabilities) {
+    CapturedVulkanSamplerCapabilities sampler_capabilities,
+    VkPipelineCache pipeline_cache) {
     if (draws.empty() || draws.front().raster.sample_count != 4 ||
         copy.single_sample_pixel_shader_spirv.empty()) {
         return fail("mixed captured frame requires 4x-MSAA followed by 1x and a single-sample Copy/Convert shader",
@@ -1434,6 +1435,7 @@ bool submit_mixed_sample_copy_frame(
             : resources.mixed_single_render_pass;
         draw_resource_indices[draw_index] = resource_index;
         if (!create_draw_resources(resource_draw, memory_properties, device, pass,
+                                   pipeline_cache,
                                    geometry_shader_enabled, sampler_capabilities,
                                    &resources.draws[resource_index], error)) {
             return false;
@@ -1467,7 +1469,7 @@ bool submit_mixed_sample_copy_frame(
     copy_draw.texture_sampling.border_color = TextureBorderColor::AbgrBlack;
     copy_draw.texture_sampling.border_alpha_known = true;
     if (!create_draw_resources(copy_draw, memory_properties, device,
-                               resources.mixed_copy_render_pass, false,
+                               resources.mixed_copy_render_pass, pipeline_cache, false,
                                sampler_capabilities, &resources.copy_draw, error)) {
         return false;
     }
@@ -1862,7 +1864,8 @@ bool submit_captured_vulkan_frame(
     bool geometry_shader_enabled,
     const CapturedVulkanCopy* copy,
     bool depth_stencil_resolve_enabled,
-    CapturedVulkanSamplerCapabilities sampler_capabilities) {
+    CapturedVulkanSamplerCapabilities sampler_capabilities,
+    VkPipelineCache pipeline_cache) {
     if (output_readback) output_readback->clear();
     if (!physical_device || !device || !queue || !output_image || !output_view ||
         !output_width || !output_height || draws.empty() || queue_family_index == UINT32_MAX) {
@@ -1908,7 +1911,7 @@ bool submit_captured_vulkan_frame(
             physical_device, device, queue, queue_family_index, output_image,
             output_view, output_written_before, output_width, output_height,
             draws, error, output_readback, geometry_shader_enabled, *copy,
-            depth_stencil_resolve_enabled, sampler_capabilities);
+            depth_stencil_resolve_enabled, sampler_capabilities, pipeline_cache);
     }
     const CapturedRasterState& frame_target = draws.front().raster;
     const uint32_t source_width = copy && copy->source_width
@@ -2181,7 +2184,7 @@ bool submit_captured_vulkan_frame(
         copy_draw.texture_sampling.border_color = TextureBorderColor::AbgrBlack;
         copy_draw.texture_sampling.border_alpha_known = true;
         if (!create_draw_resources(copy_draw, memory_properties, device,
-                                   resources.copy_render_pass, false,
+                                   resources.copy_render_pass, pipeline_cache, false,
                                    sampler_capabilities, &resources.copy_draw, error)) {
             return false;
         }
@@ -2206,6 +2209,7 @@ bool submit_captured_vulkan_frame(
         DrawResources& draw = resources.draws[i];
         // Recreate just the graphics pipeline with this frame's render pass.
         if (!create_draw_resources(draws[i], memory_properties, device, resources.render_pass,
+                                   pipeline_cache,
                                    geometry_shader_enabled, sampler_capabilities,
                                    &draw, error)) {
             return false;

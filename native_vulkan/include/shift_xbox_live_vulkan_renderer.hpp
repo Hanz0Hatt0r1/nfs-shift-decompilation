@@ -55,7 +55,9 @@ struct CapturedVulkanSamplerCapabilities {
 
 // Records and submits the captured game draws into the ReXGlue presenter image.
 // The caller must externally synchronize the supplied graphics queue. The
-// renderer uses only Vulkan 1.1 and has no window-system dependency. Set
+// optional pipeline cache must belong to device and be externally synchronized
+// across calls; its lifetime remains owned by the caller. The renderer uses
+// only Vulkan 1.1 and has no window-system dependency. Set
 // depth_stencil_resolve_enabled only from an affirmative provider capability
 // that includes enabled Vulkan entry points and SAMPLE_ZERO support for both
 // depth and stencil, not from extension enumeration alone.
@@ -75,6 +77,7 @@ bool submit_captured_vulkan_frame(
     bool geometry_shader_enabled = false,
     const CapturedVulkanCopy* copy = nullptr,
     bool depth_stencil_resolve_enabled = false,
-    CapturedVulkanSamplerCapabilities sampler_capabilities = {});
+    CapturedVulkanSamplerCapabilities sampler_capabilities = {},
+    VkPipelineCache pipeline_cache = VK_NULL_HANDLE);
 
 }  // namespace shift::xbox

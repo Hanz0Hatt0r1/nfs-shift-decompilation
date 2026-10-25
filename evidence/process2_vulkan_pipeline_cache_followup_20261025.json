@@ -1,0 +1,41 @@
+{
+  "schema": "shift.process2_vulkan_pipeline_cache_followup.v1",
+  "date": "2026-10-25",
+  "change": {
+    "renderer_api": "submit_captured_vulkan_frame accepts an optional caller-owned VkPipelineCache",
+    "plugin_lifetime": "one cache per Vulkan device; destroyed after the guest GPU worker stops and before provider release",
+    "goal": "reuse Vulkan driver's pipeline compilation cache across repeated retail frame submissions",
+    "remaining_per_frame_costs": [
+      "draw buffers, images, descriptors, shader modules, and pipelines are still recreated per frame",
+      "FrameResources still waits for vkQueueWaitIdle before releasing those resources"
+    ]
+  },
+  "verification": {
+    "native_host": {
+      "device": "NVIDIA GeForce GTX 950",
+      "command": "cmake --build /tmp/p2-vulkan-build -j4 && /usr/bin/ctest --test-dir /tmp/p2-vulkan-build --output-on-failure",
+      "result": "4/4 passed",
+      "renderer_validation_layer": "VK_LAYER_KHRONOS_validation enabled; zero validation errors",
+      "cache_regression": "same captured-data test frame submitted twice through one cache; full readbacks matched byte-for-byte"
+    },
+    "process2_plugin_host": {
+      "sdk_branch": "process2/rexui-vulkan",
+      "sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-rexglue-plugin --output-on-failure",
+      "result": "3/3 passed",
+      "plugin_sha256": "7a7147280035c899393690fd7b4fd4143bf28405e697189f40f557060f11d804"
+    },
+    "android_arm64_renderer": "xbox_live_vulkan_renderer_check target cross-compiled successfully; not executed on device"
+  },
+  "device_performance": {
+    "status": "not measured after this change",
+    "reason": "the cache-enabled plugin was not installed into the running Redmi package, and the phone game was left running",
+    "previous_measured_rate": "about 0.95 Vulkan submissions per second on Redmi Note 8 Pro",
+    "claim": "no speedup or retail cutscene completion is claimed"
+  },
+  "limitations": [
+    "The renderer cache regression uses a synthetic offscreen fixture and does not prove retail parity.",
+    "The Vulkan pipeline cache is an in-memory driver cache; no disk serialization is implemented.",
+    "Per-frame allocations and queue-idle waits remain likely costs and need persistent resources plus explicit in-flight synchronization to remove."
+  ]
+}
