@@ -18,6 +18,8 @@ The exact live-memory-derived PPC ELF also narrows the `cameraconfig.xml` miss: 
 
 A 90-second exact-XEX trace also followed both loose `menu_background.xml` misses through the retail resource loader. The parent stores the child loader result at offset `1456`, sets its own return value to `1`, and returns on the observed path, so the miss does not directly fail that parent initializer. The last 14-packet draw submission precedes the first miss by about 0.75 seconds; no later draw submission appears before the run ends. That timing makes this a useful transition to trace, but does not establish causality or that the XML is irrelevant to later visuals. No VFS alias is justified. See [the menu-background return-flow evidence](../evidence/xbox360_linux_menu_background_missing_flow_20261025.json).
 
+A separate input trace followed the retail `XamInputGetKeystrokeEx` poll at `0x823077D4`, which requests device flag `2`. The SDK previously rejected that query before consulting input drivers, and the MNK event queue was never populated. The SDK fix accepts keyboard-selected queries, filters SDL gamepad events by device type, and forwards MNK raw keydown/up/repeat events. In a bounded exact-XEX run with `--mnk_mode=true`, Enter and Space keydown/up records returned success through the retail import. This verifies delivery to the guest poll, not frontend consumption, main-menu entry, or race progress. The distinct gamepad `GetState` path remains under investigation. See [the retail keyboard keystroke trace](../evidence/xbox360_linux_keyboard_keystroke_route_20261025.json) and [SDK PR #5](https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/5), stacked on [SDK PR #4](https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/4).
+
 ## Proposed pipeline
 
 ```text
