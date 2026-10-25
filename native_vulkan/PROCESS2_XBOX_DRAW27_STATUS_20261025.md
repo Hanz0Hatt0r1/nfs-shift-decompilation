@@ -321,3 +321,30 @@ EA intro content on the current renderer build. It is one captured-draw replay,
 not evidence of sustained live cutscene playback or a complete game scene.
 Raw movie and plane bytes were not added to the repo. See the
 [Bink frame comparison record](../evidence/process2_redmi_bink_frame244_reference_20261026.json).
+
+## Redmi retail Bink sequence replay (2026-10-25)
+
+To check frame-to-frame texture updates, I decoded the original 281-frame
+`Franchise_Ident.bik` with FFmpeg and submitted every YUV420 frame through the
+captured retail Bink draw #2614 and its Vulkan 1.1 shaders on the Redmi Mali-G76.
+The renderer reused its R8 upload/image cache while replacing all three video
+planes before each draw. All 281 submissions completed; mean submit time was
+1.684 ms, p95 was 3.238 ms, and mean submit-thread CPU time was 1.207 ms.
+
+Readbacks for frames 0, 140, and 280 were compared against independent FFmpeg
+decodes. Frames 0 and 280 produced identical renderer PNGs and each differed
+from the source by at most one RGB level. Frame 140 had per-channel MAE
+1.723/0.454/2.100 and max difference 19/6/38. The [stream evidence](../evidence/process2_redmi_bink_stream_replay_20261025.json)
+records hashes, timings, and limitations; [frame 0](../evidence/process2_redmi_bink_stream_frame000_20261025.png)
+and [frame 140](../evidence/process2_redmi_bink_stream_frame140_20261025.png)
+are decoded Vulkan readbacks. The existing renderer regression also verifies
+that changing an R8 video plane updates cached output and matches an uncached
+render.
+
+This is an offscreen renderer replay using FFmpeg-decoded frames from the retail
+movie. It verifies repeated plane uploads and captured-draw submissions on the
+device; it does not exercise the guest Bink decoder, the live presenter, or the
+game's cutscene scheduling. The app stayed resumed at the disclaimer; its
+before/after screenshot hashes match, and no input, reinstall, or restart was
+used. Android has no Vulkan validation layer, so validation coverage remains
+from host CTest. No Process 1 files were changed.
