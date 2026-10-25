@@ -1,0 +1,64 @@
+{
+  "schema": "shift.xbox360.linux.ntcreatefile-root-directory.v1",
+  "captured_at_utc": "2026-10-25T01:06:13Z",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-linux-retail-root-20261024/game",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "input_events_sent": false,
+    "guest_memory_modified_by_probe": false,
+    "gdb_script": "tools/xbox360/trace_ntcreatefile_root_directory.gdb",
+    "gdb_script_sha256": "c0206bfdf94ab08648d11d1d83e88c0ce69c21ea81a3e059ca76370f3c1c7ca4",
+    "gdb_log_external_path": "/tmp/xbox360_ntcreatefile_root_probe.log",
+    "gdb_log_sha256": "cb63ff35d3dd96607730554f7718ac13dc67195f4e819e187df560dd162969bf",
+    "runtime_log_external_path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_025.log",
+    "runtime_log_sha256": "db206db3bb79f50d1b7c47f130f842f234425aba9bf92d04e6fc9784f1a1b61c",
+    "termination_requested_after_ntcreatefile_entries": 20,
+    "runtime_log_scope_note": "The runtime log continues into later plugin submissions after the GDB script requested kill at entry 20; the relationship to the debugger inferior is unresolved, so the GDB hit cap is not a process-lifetime bound."
+  },
+  "observations": [
+    {
+      "ntcreatefile_hit": 12,
+      "guest_lr": "0x826EF304",
+      "root_directory": "0xFFFFFFFD",
+      "root_directory_name": "ObDosDevices",
+      "guest_path": "render\\shaders\\cache\\"
+    },
+    {
+      "ntcreatefile_hit": 13,
+      "guest_lr": "0x82D32558",
+      "root_directory": "0xFFFFFFFD",
+      "root_directory_name": "ObDosDevices",
+      "guest_path": "render\\shaders\\cache\\"
+    }
+  ],
+  "source_path": {
+    "ntcreatefile_entry": "/home/pes/work/rexglue-sdk-android-vulkan11-begonia-20261022/src/kernel/xboxkrnl/xboxkrnl_io.cpp",
+    "vfs_open_file": "/home/pes/work/rexglue-sdk-android-vulkan11-begonia-20261022/src/filesystem/virtual_file_system.cpp"
+  },
+  "interpretation": {
+    "supported": [
+      "The retail guest makes two relative shader-cache directory opens rooted at the ObDosDevices sentinel.",
+      "NtCreateFile_entry intentionally does not resolve ObDosDevices to a filesystem Entry; VFS therefore receives a relative path without a mounted device and reports no device.",
+      "The GDB trace captured later retail PakFiles NtCreateFile calls after the two shader-cache attempts."
+    ],
+    "not_proven": [
+      "That the failed shader-cache directory opens block retail initialization, the main menu, or a race.",
+      "That changing the ObDosDevices handling is semantically correct for this relative path.",
+      "That this cache miss explains the rendering or frontend frontier.",
+      "That the subsequent presenter log entries represent guest frontend progress; the test plugin log is not a main-menu or race validation."
+    ],
+    "decision": "Do not change VFS path semantics from this observation alone; the cache miss is not linked to a required retail caller behavior or the menu/race frontier."
+  }
+}
