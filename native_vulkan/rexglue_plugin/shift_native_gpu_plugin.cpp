@@ -90,7 +90,7 @@ uint32_t NextGuestRingTraceRecord() {
   return record.fetch_add(1, std::memory_order_relaxed);
 }
 
-constexpr uint32_t kMaxGuestRingTraceRecords = 8192;
+constexpr uint32_t kMaxGuestRingTraceRecords = 32768;
 
 const std::string kDebugFragmentColorShader =
     "#version 450\n"

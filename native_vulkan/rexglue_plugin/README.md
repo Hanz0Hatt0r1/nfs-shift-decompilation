@@ -7,7 +7,7 @@ through `InitializeRingBuffer` and `CP_RB_WPTR`.
 
 Set `SHIFT_NATIVE_VULKAN_TRACE_RING=1` to emit a bounded ring-contract trace:
 each accepted `CP_RB_WPTR`, the worker's `[RPTR, WPTR)` snapshot, and its
-consumption plus guest RPTR writeback. The trace stops after 8,192 records and
+consumption plus guest RPTR writeback. The trace stops after 32,768 records and
 is disabled by default; it does not change packet parsing or pointer updates.
 Use it to correlate a retail guest queue snapshot with the plugin's actual
 write-pointer notification and worker state.
