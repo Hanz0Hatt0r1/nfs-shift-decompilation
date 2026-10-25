@@ -784,3 +784,17 @@ This verifies cache reuse and output preservation in synthetic regressions. It
 does not measure a retail frame-time gain or establish retail image parity. No
 Android APK was rebuilt or installed for this cache change, and the current
 phone session was left untouched.
+
+## Disclaimer strip source isolation (2026-10-26)
+
+An exact-XEX Linux replay with the pipeline-cache plugin captured retail submit
+907 with per-draw geometry, decoded textures, translated shaders, and Vulkan
+readback. Four draws (#5058-#5061) place the thin upper/lower strips and sample
+the same 512x8 Xenos format-20 texture at `0x0A24B000`. A current read-only
+Redmi Note 8 Pro screenshot shows the same disclaimer and strips. The two
+outputs are closely aligned after viewport scaling, but the app's mapped DSO
+could not be verified from Android, and neither output is an independent Xenos
+reference. The capture isolates which draws and texture produce the strips; it
+does not determine whether their pixels are intentional or a decode/blend bug.
+See the [draw-level record](../../evidence/process2_disclaimer_draw_isolation_20261026.json)
+and [Linux Vulkan readback](../../evidence/process2_linux_disclaimer_frame907_readback_20261026.png).

@@ -163,8 +163,9 @@ seconds later the guest tried both `D:\tracks\_data\instances\scenes\menu_backgr
 and `D:\tracks\_data\static\scenes\menu_background.xml`; both returned
 `0xc000000f`. No later submission appeared and the activity remained resumed.
 The timing does not establish that these file misses caused the stop. The
-renderer still has no verified menu-background or race-scene frame, and the
-purple strips' draw/resource source remains unknown.
+renderer still has no verified menu-background or race-scene frame. A later
+targeted disclaimer capture isolated the purple strips to four real draws and
+one sampled texture; it did not establish whether those pixels are expected.
 
 ## Current Redmi screen and installed package (2026-10-25)
 
@@ -237,3 +238,33 @@ playback, the complete menu, a race scene, or retail visual parity.
 
 No Process 1 files were changed. Both pre-existing desktop NFS Shift windows
 were left open.
+
+## Disclaimer strip draw isolation (2026-10-26)
+
+A fresh exact-XEX Linux replay using the Process 2 pipeline-cache plugin captured
+submit 907 with readback and per-draw geometry/texture dumps. Four draws
+(#5058-#5061) form the upper and lower left/right strips. All four sample the
+same 512x8 Xenos format-20 (`DXT4/5`) texture at guest address `0x0A24B000`;
+the renderer's normalized RGBA8 bytes match across the four draws. Their
+captured vertex bounds align with the visible strip segments. The
+[decoded Vulkan frame](../evidence/process2_linux_disclaimer_frame907_readback_20261026.png)
+shows the original safety text and the same four strips, while the
+[draw-level evidence record](../evidence/process2_disclaimer_draw_isolation_20261026.json)
+preserves the exact host, runtime, XEX, plugin, readback, geometry, texture,
+and shader hashes.
+
+A read-only Redmi Note 8 Pro capture taken on 2026-10-26 also shows the same
+disclaimer and strips. After cropping its centered 16:9 viewport and bilinear
+scaling to the Linux readback, 893,861 of 921,600 RGB pixels match exactly;
+mean absolute channel difference is 0.379. The phone's mapped DSO could not be
+verified because Android denied access to `/proc/24808/maps`, so this is a
+same-screen comparison, not proof that the identical plugin binary produced
+both outputs or that they match an independent Xenos render.
+
+The strips' draw and texture source is now isolated, but their expectedness is
+not. No texture or blend-state change was made without an independent retail
+reference. The selector-label issue is separately verified: the live Redmi
+selector capture shows all six labels after the interpolator-location shader
+fix. Gameplay, post-disclaimer menu rendering, and sustained cutscene playback
+remain unverified. The phone app was left resumed, and no Process 1 source was
+changed.
