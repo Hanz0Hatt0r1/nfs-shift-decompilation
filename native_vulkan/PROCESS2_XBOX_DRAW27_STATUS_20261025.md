@@ -98,6 +98,26 @@ still needs recapture with this DSO before claiming those frames now render.
 Build metadata is in
 [`resolve provider build record`](../evidence/process2_linux_resolve_provider_build_20261026.json).
 
+## Resolve-enabled window output transition (2026-10-25)
+
+A P1 exact-XEX run loaded that resolve-capable P2 DSO (`1fa623fe…45042c`) and
+recorded 103 successful presenter submissions, each with 14 retail draws. The
+last was at 19:29:40.082 MSK; four `menu_background.xml` opens failed 65 ms
+later. The window capture at 19:29:47.507 showed the disclaimer text and purple
+strips, while the capture at 19:30:02.501 showed only the strips on black. Those
+captures were 7.425 and 22.419 seconds after the last submission, respectively.
+This establishes a visible window change after guest draw submissions stopped,
+but without a paired Vulkan readback it does not identify whether the change is
+in the guest output, presenter/WSI lifetime, compositor, or another layer. The
+run also emitted A/Start pulses without a same-run retail input-consumer trace,
+so their effect is unknown. See the [preserved screenshots, log, and record](../evidence/process2_resolve_blackframe_window_transition_20261025.json).
+
+The next discriminating run should select presenter frame 103 with both
+`SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME` and
+`SHIFT_NATIVE_VULKAN_READBACK_FRAME`, save geometry and texture payloads, and
+pair the readback with window captures. This will establish whether frame 103's
+Vulkan output still contains the disclaimer when the window becomes strips-only.
+
 A five-sample Android thread snapshot at 18:04:37 shows the guest main thread
 at 101% CPU on average, SDL at 87.8%, the two controller threads at 88.8% and
 87.2%, while `SHIFT Native GP` stayed at 0%. No later Vulkan submissions
