@@ -57,6 +57,16 @@ at 101% CPU on average, SDL at 87.8%, the two controller threads at 88.8% and
 appeared. This points to active guest/runtime work while the renderer worker
 was idle, but does not identify the cause. See the [captured thread sample](../evidence/process2_redmi_post_selector_frame1026_threads_20261025.log.gz).
 
+A fresh sample at 18:09:48 shows the same screen and an unchanged screenshot
+hash. The guest main thread averaged 98.2% CPU, SDL 84.3%, and the two
+controller threads 87.5% and 85.2%; `SHIFT Native GP` remained at 0%. Its
+`/proc/.../wchan` was `futex_wait_queue_me`, matching the plugin's wait for the
+guest ring to advance at `ring_changed_.wait`; the guest main and controller
+threads remained runnable. This supports that no new guest packets were
+available for Vulkan submission at that time, but does not identify why the
+guest stopped producing them. See the [live thread-state evidence](../evidence/process2_redmi_guest_ring_wait_android_20261025.json)
+and [raw sample](../evidence/process2_redmi_guest_ring_wait_threads_20261025.log.gz).
+
 The last logged submission carried 14 draws at 17:55:35.960 MSK. About 0.4
 seconds later the guest tried both `D:\tracks\_data\instances\scenes\menu_background.xml`
 and `D:\tracks\_data\static\scenes\menu_background.xml`; both returned

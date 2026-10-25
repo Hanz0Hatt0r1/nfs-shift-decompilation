@@ -1,0 +1,60 @@
+{
+  "schema": "shift.process2.redmi_guest_ring_wait_android.v1",
+  "captured_at_local": "2026-10-25T18:09:48+03:00",
+  "followup_observation_at_local": "2026-10-25T18:10:06+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": "13",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 7611,
+    "activity_top_resumed": true
+  },
+  "renderer": {
+    "path": "Xbox retail guest commands through Process 2 native Vulkan plugin",
+    "plugin_sha256": "f84281d8b48cad561f246fa4bf9e58172960ace16193bcd3dcd44d848b9a2f03",
+    "source_commit": "c69de3f2393e32f164ff7cc0581351bf24bfa730"
+  },
+  "screen": {
+    "description": "The same English safety disclaimer shown in the previous Vulkan readback remains on screen.",
+    "screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "matches_previous_capture": "process2_redmi_post_selector_frame1026_device_20261025.png"
+  },
+  "thread_sample": {
+    "command": "adb shell top -b -H -d 1 -n 5 -p 7611",
+    "samples": 5,
+    "raw_bytes": 41822,
+    "raw_sha256": "0bac04aac1b94e143da8ef1912c836bfc4cce7b1782bb9564d9c8a2da8e723f0",
+    "compressed_file": "process2_redmi_guest_ring_wait_threads_20261025.log.gz",
+    "compressed_sha256": "ef9bd94da72c6054067e1e58bd9bba34cbe20789d385e2be05c874aa00de0903",
+    "cpu_percent": [
+      {"tid": 7911, "name": "Core 0/0: Main", "mean": 98.2, "range": [94.0, 105.0]},
+      {"tid": 7880, "name": "SDLThread", "mean": 84.3, "range": [82.0, 86.4]},
+      {"tid": 7931, "name": "Core 2/1: Controller", "mean": 87.5, "range": [83.7, 90.0]},
+      {"tid": 7932, "name": "Core 2/1: Controller", "mean": 85.2, "range": [81.0, 89.0]},
+      {"tid": 7904, "name": "SHIFT Native GP", "mean": 0.0, "range": [0.0, 0.0]},
+      {"tid": 7905, "name": "SHIFT Native VS", "mean": 2.3, "range": [2.0, 3.0]}
+    ],
+    "proc_wchan": [
+      {"tid": 7911, "name": "Core 0/0: Main", "value": "0"},
+      {"tid": 7880, "name": "SDLThread", "value": "0"},
+      {"tid": 7931, "name": "Core 2/1: Controller", "value": "0"},
+      {"tid": 7932, "name": "Core 2/1: Controller", "value": "0"},
+      {"tid": 7904, "name": "SHIFT Native GP", "value": "futex_wait_queue_me"},
+      {"tid": 7905, "name": "SHIFT Native VS", "value": "SyS_nanosleep"}
+    ]
+  },
+  "source_correlation": {
+    "file": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+    "lines": "1283-1288",
+    "wait_predicate": "ring_worker_shutdown_ || (ring_initialized_ && ring_read_pointer_ != ring_write_pointer_)",
+    "interpretation": "The native GPU worker's futex wait matches the condition-variable wait used while no guest ring packets are pending. Main, SDL, and controller threads remain runnable, and the visible Vulkan output is unchanged. This supports an upstream guest-ring production stall at this observation; wchan is not a native stack trace and does not prove the exact callsite or why the guest stopped advancing the ring."
+  },
+  "limitations": [
+    "No renderer code, Process 1 runtime, scheduler, or asset files were changed.",
+    "No new Vulkan frame was submitted during the sample, so this does not test a new renderer draw contract.",
+    "The adjacent menu_background.xml probes are not proven to cause the guest-ring stall."
+  ]
+}

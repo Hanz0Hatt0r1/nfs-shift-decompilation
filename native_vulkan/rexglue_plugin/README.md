@@ -623,3 +623,18 @@ The raw readback, decoded image, screenshot, hashes, and run limits are in
 [`the decoded readback`](../../evidence/process2_redmi_post_selector_frame1026_readback_decoded_20261025.png),
 [`the screenshot`](../../evidence/process2_redmi_post_selector_frame1026_device_20261025.png),
 and [`the compressed log`](../../evidence/process2_redmi_post_selector_frame1026_runtime_20261025.log.gz).
+
+## Redmi guest ring wait after the disclaimer (2026-10-25)
+
+A fresh read-only snapshot at 18:09:48 shows the phone still on the same
+disclaimer screenshot, with no new Vulkan output. Over five samples, the guest
+main thread averaged 98.2% CPU, SDL 84.3%, and the two controller threads
+87.5% / 85.2%; `SHIFT Native GP` stayed at 0%. The GPU worker's
+`/proc/.../wchan` was `futex_wait_queue_me`, consistent with the plugin's
+`ring_changed_.wait` predicate for new guest ring packets. The main and
+controller threads remained runnable. This narrows the current stall to the
+guest ring not advancing while the renderer waits; it does not prove why the
+guest stopped producing packets or connect that stop to the earlier file
+probes. Details and hashes are in
+[`the evidence record`](../../evidence/process2_redmi_guest_ring_wait_android_20261025.json)
+and [the compressed thread sample](../../evidence/process2_redmi_guest_ring_wait_threads_20261025.log.gz).
