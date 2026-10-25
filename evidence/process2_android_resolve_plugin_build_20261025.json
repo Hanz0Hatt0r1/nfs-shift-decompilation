@@ -1,0 +1,61 @@
+{
+  "schema": "shift.process2.android_resolve_plugin_build_boundary.v1",
+  "date": "2026-10-25",
+  "process2_source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "renderer_code_commit": "f07ebff9c30243b6990e6f0da1fe9e279477f485",
+    "provider_capability_sdk_commit": "fb151b9",
+    "sdk_path": "/home/pes/work/rexglue-sdk-process2-resolve-20261024"
+  },
+  "build": {
+    "command": "cmake --build /home/pes/work/process2-plugin-resolve-android-build --target rexgpu-shift-native -j4",
+    "build_directory": "/home/pes/work/process2-plugin-resolve-android-build",
+    "abi": "arm64-v8a",
+    "android_platform": 26,
+    "ndk": "28.2.13676358 (r28c)",
+    "completed_targets_before_failure": [
+      "rexui-vulkan",
+      "shift_xbox_live_vulkan_renderer"
+    ],
+    "plugin_translation_unit": {
+      "path": "/home/pes/work/process2-plugin-resolve-android-build/CMakeFiles/rexgpu-shift-native.dir/shift_native_gpu_plugin.cpp.o",
+      "sha256": "d419f2fe22bc2f8e2dd7cce78b4d43ac339732a1532a38d94e5285477e33f8de",
+      "compile_definitions_confirmed": [
+        "SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER=1",
+        "SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER=1"
+      ],
+      "meaning": "The P2 source selects the SDK overload that requests depth/stencil resolve and consumes the provider's affirmative SAMPLE_ZERO capability."
+    },
+    "renderer_static_library_sha256": "1f20b8f9c3d902258871b5d3ab7c04e2a66f2bdcbc6b20fca1c79efd09de91ca",
+    "final_shared_plugin_produced": false,
+    "diagnostics": [
+      {
+        "file": "src/core/fiber_posix.cpp",
+        "errors": [
+          "use of undeclared identifier getcontext",
+          "use of undeclared identifier makecontext",
+          "use of undeclared identifier swapcontext"
+        ]
+      },
+      {
+        "file": "src/core/memory_posix.cpp",
+        "error": "no member named GetAndroidApiLevel in namespace rex"
+      }
+    ],
+    "failure_boundary": "SDK rexruntime dependency, after the standalone Vulkan UI provider and P2 renderer targets built."
+  },
+  "device_capability_confirmed_separately": {
+    "model": "Redmi Note 8 Pro",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "depth_resolve_sample_zero": true,
+    "stencil_resolve_sample_zero": true,
+    "current_renderer_on_device_test": "Passed 4x-to-1x depth/stencil SAMPLE_ZERO and async submit/readback regression with a test-created VkDevice enabling the extensions. See process2_redmi_resolve_async_renderer_check_20261025.json."
+  },
+  "scope": [
+    "No Process 1 source or scheduler files were modified.",
+    "No APK was produced from the resolve-enabled SDK branch.",
+    "The installed app and running phone process were not changed.",
+    "This build result does not establish language-selector retail parity."
+  ]
+}
