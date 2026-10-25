@@ -1799,6 +1799,36 @@ bool untile_captured_texture_2d(
     return true;
 }
 
+bool copy_captured_r8_texture_2d(
+    const CapturedTextureFetch& texture,
+    const uint8_t* guest_bytes,
+    size_t byte_length,
+    std::vector<uint8_t>* vulkan_bytes,
+    std::string* error) {
+    if (!guest_bytes || !vulkan_bytes || texture.format != 2 ||
+        texture.endian_mode != 0 || texture.tiled || texture.dimension != 1 ||
+        !texture.width || !texture.height || texture.pitch < texture.width) {
+        return fail("unsupported captured R8 texture layout", error);
+    }
+    const uint64_t source_bytes = static_cast<uint64_t>(texture.pitch) * texture.height;
+    const uint64_t output_bytes = static_cast<uint64_t>(texture.width) * texture.height;
+    if (source_bytes > std::numeric_limits<uint32_t>::max() ||
+        output_bytes > std::numeric_limits<uint32_t>::max() ||
+        texture.byte_length != source_bytes || byte_length != source_bytes) {
+        return fail("captured R8 texture byte range does not match its dimensions", error);
+    }
+
+    std::vector<uint8_t> linear;
+    linear.reserve(static_cast<size_t>(output_bytes));
+    for (uint32_t y = 0; y < texture.height; ++y) {
+        const uint8_t* row = guest_bytes + static_cast<size_t>(y) * texture.pitch;
+        linear.insert(linear.end(), row, row + texture.width);
+    }
+    *vulkan_bytes = std::move(linear);
+    if (error) error->clear();
+    return true;
+}
+
 bool normalize_captured_buffer_bytes(
     uint32_t endian_mode,
     const uint8_t* guest_bytes,

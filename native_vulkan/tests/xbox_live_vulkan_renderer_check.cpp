@@ -345,16 +345,19 @@ int main(int argc, char** argv) {
     draw.texture_sampling.anisotropy = shift::xbox::TextureAnisotropy::Disabled;
     draw.texture_sampling.border_color = shift::xbox::TextureBorderColor::AbgrBlack;
     draw.textures = {
-        {0, draw.texture_sampling, 1, 1, {255, 0, 0, 255}},
-        {1, draw.texture_sampling, 1, 1, {0, 255, 0, 255}},
+        {0, draw.texture_sampling, 1, 1,
+         shift::xbox::CapturedVulkanTexture::Format::R8, {255}},
+        {1, draw.texture_sampling, 1, 1,
+         shift::xbox::CapturedVulkanTexture::Format::Rgba8,
+         {0, 255, 0, 255}},
     };
 
     std::vector<shift::xbox::CapturedVulkanDraw> draws;
     draws.push_back(draw);
     auto captured_alpha_blend = draw;
     captured_alpha_blend.raster.blend_control_0 = 0x07060706u;
-    captured_alpha_blend.textures[0].rgba8 = {255, 0, 0, 255};
-    captured_alpha_blend.textures[1].rgba8 = {0, 255, 0, 255};
+    captured_alpha_blend.textures[0].pixels = {255};
+    captured_alpha_blend.textures[1].pixels = {0, 255, 0, 255};
     draws.push_back(std::move(captured_alpha_blend));
     if (!rectangle_geometry_spirv.empty()) {
         auto rectangle = draw;
@@ -738,14 +741,14 @@ int main(int argc, char** argv) {
     depth_preserve_draws[0].raster.depth_write_enabled = true;
     depth_preserve_draws[0].raster.stencil_test_enabled = false;
     depth_preserve_draws[0].raster.depth_control = 7u << 4;
-    depth_preserve_draws[0].textures[0].rgba8 = {255, 0, 0, 255};
-    depth_preserve_draws[0].textures[1].rgba8 = {0, 0, 0, 255};
+    depth_preserve_draws[0].textures[0].pixels = {255};
+    depth_preserve_draws[0].textures[1].pixels = {0, 0, 0, 255};
     depth_preserve_draws[1].raster.depth_test_enabled = true;
     depth_preserve_draws[1].raster.depth_write_enabled = false;
     depth_preserve_draws[1].raster.stencil_test_enabled = false;
     depth_preserve_draws[1].raster.depth_control = 1u << 4;
-    depth_preserve_draws[1].textures[0].rgba8 = {0, 0, 0, 255};
-    depth_preserve_draws[1].textures[1].rgba8 = {0, 255, 0, 255};
+    depth_preserve_draws[1].textures[0].pixels = {0};
+    depth_preserve_draws[1].textures[1].pixels = {0, 255, 0, 255};
     std::string depth_preserve_error;
     std::vector<uint32_t> depth_preserve_output;
     const bool depth_preserve_submitted =
@@ -802,15 +805,15 @@ int main(int argc, char** argv) {
     stencil_preserve_draws[0].raster.stencil_test_enabled = true;
     stencil_preserve_draws[0].raster.depth_control = (7u << 8) | (2u << 14);
     stencil_preserve_draws[0].raster.stencil_refmask = 0x00FFFF55u;
-    stencil_preserve_draws[0].textures[0].rgba8 = {255, 0, 0, 255};
-    stencil_preserve_draws[0].textures[1].rgba8 = {0, 0, 0, 255};
+    stencil_preserve_draws[0].textures[0].pixels = {255};
+    stencil_preserve_draws[0].textures[1].pixels = {0, 0, 0, 255};
     stencil_preserve_draws[1].raster.depth_test_enabled = false;
     stencil_preserve_draws[1].raster.depth_write_enabled = false;
     stencil_preserve_draws[1].raster.stencil_test_enabled = true;
     stencil_preserve_draws[1].raster.depth_control = 2u << 8;
     stencil_preserve_draws[1].raster.stencil_refmask = 0x0000FF55u;
-    stencil_preserve_draws[1].textures[0].rgba8 = {0, 0, 0, 255};
-    stencil_preserve_draws[1].textures[1].rgba8 = {0, 255, 0, 255};
+    stencil_preserve_draws[1].textures[0].pixels = {0};
+    stencil_preserve_draws[1].textures[1].pixels = {0, 255, 0, 255};
     std::string stencil_preserve_error;
     std::vector<uint32_t> stencil_preserve_output;
     const bool stencil_preserve_submitted =

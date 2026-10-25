@@ -12,11 +12,17 @@
 namespace shift::xbox {
 
 struct CapturedVulkanTexture {
+    enum class Format : uint8_t {
+        Rgba8,
+        R8,
+    };
+
     uint32_t fetch_constant_index = 0;
     CapturedTextureSampling sampling{};
     uint32_t width = 0;
     uint32_t height = 0;
-    std::vector<uint8_t> rgba8;
+    Format format = Format::Rgba8;
+    std::vector<uint8_t> pixels;
 };
 
 struct CapturedVulkanDraw {

@@ -225,13 +225,14 @@ bool create_texture_image(
     VkDevice device,
     uint32_t width,
     uint32_t height,
+    VkFormat format,
     ImageResource* output,
     std::string* error) {
     VkImageCreateInfo image_info{};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_info.imageType = VK_IMAGE_TYPE_2D;
     // Xenos TextureSign::Gamma is applied after sampling in the guest shader.
-    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.format = format;
     image_info.extent = {width, height, 1};
     image_info.mipLevels = 1;
     image_info.arrayLayers = 1;
@@ -261,7 +262,7 @@ bool create_texture_image(
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view_info.image = output->image;
     view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    view_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    view_info.format = format;
     view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     view_info.subresourceRange.levelCount = 1;
     view_info.subresourceRange.layerCount = 1;
@@ -422,27 +423,37 @@ bool create_draw_resources(
         const CapturedTextureSampling* sampling;
         uint32_t width;
         uint32_t height;
-        const std::vector<uint8_t>* rgba8;
+        CapturedVulkanTexture::Format format;
+        const std::vector<uint8_t>* pixels;
     };
     std::vector<TextureInput> texture_inputs;
     if (source.textures.empty()) {
         texture_inputs.push_back({0, &source.texture_sampling, source.texture_width,
-                                  source.texture_height, &source.texture_rgba8});
+                                  source.texture_height,
+                                  CapturedVulkanTexture::Format::Rgba8,
+                                  &source.texture_rgba8});
     } else {
         texture_inputs.reserve(source.textures.size());
         for (const CapturedVulkanTexture& texture : source.textures) {
             texture_inputs.push_back({texture.fetch_constant_index, &texture.sampling,
-                                      texture.width, texture.height, &texture.rgba8});
+                                      texture.width, texture.height, texture.format,
+                                      &texture.pixels});
         }
     }
     uint64_t total_texture_size = 0;
     for (size_t i = 0; i < texture_inputs.size(); ++i) {
         const TextureInput& texture = texture_inputs[i];
         const uint64_t pixel_count = static_cast<uint64_t>(texture.width) * texture.height;
+        const uint32_t bytes_per_pixel =
+            texture.format == CapturedVulkanTexture::Format::R8 ? 1u : 4u;
+        if (texture.format != CapturedVulkanTexture::Format::R8 &&
+            texture.format != CapturedVulkanTexture::Format::Rgba8) {
+            return fail("captured Vulkan texture format is unsupported", error);
+        }
         if (texture.fetch_constant_index >= 32 || texture.width == 0 || texture.height == 0 ||
             pixel_count > (uint64_t{1} << 24) ||
-            pixel_count * 4u != texture.rgba8->size() ||
-            total_texture_size > (uint64_t{1} << 26) - pixel_count * 4u) {
+            pixel_count * bytes_per_pixel != texture.pixels->size() ||
+            total_texture_size > (uint64_t{1} << 26) - pixel_count * bytes_per_pixel) {
             return fail("captured Vulkan texture resources are incomplete or oversized", error);
         }
         for (size_t j = 0; j < i; ++j) {
@@ -450,7 +461,7 @@ bool create_draw_resources(
                 return fail("captured Vulkan textures use a duplicate fetch constant", error);
             }
         }
-        total_texture_size += pixel_count * 4u;
+        total_texture_size += pixel_count * bytes_per_pixel;
     }
     std::sort(texture_inputs.begin(), texture_inputs.end(),
               [](const TextureInput& left, const TextureInput& right) {
@@ -504,11 +515,15 @@ bool create_draw_resources(
         texture.fetch_constant_index = input.fetch_constant_index;
         texture.width = input.width;
         texture.height = input.height;
-        if (!create_buffer(memory_properties, device, input.rgba8->size(),
-                           VK_BUFFER_USAGE_TRANSFER_SRC_BIT, input.rgba8->data(),
+        const VkFormat image_format =
+            input.format == CapturedVulkanTexture::Format::R8
+                ? VK_FORMAT_R8_UNORM
+                : VK_FORMAT_R8G8B8A8_UNORM;
+        if (!create_buffer(memory_properties, device, input.pixels->size(),
+                           VK_BUFFER_USAGE_TRANSFER_SRC_BIT, input.pixels->data(),
                            &texture.upload, error) ||
             !create_texture_image(memory_properties, device, input.width, input.height,
-                                  &texture.image, error)) {
+                                  image_format, &texture.image, error)) {
             return false;
         }
         bool sampler_supported = true;

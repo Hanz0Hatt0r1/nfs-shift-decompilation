@@ -679,6 +679,16 @@ int main() {
                 movie_r8_fetch.byte_length == 1280u * 720u &&
                 !movie_r8_fetch.tiled && movie_r8_fetch.swizzle == 0xA00u,
             "captured retail Bink R8 plane descriptor was rejected or misdecoded");
+    shift::xbox::CapturedTextureSampling movie_r8_sampling{};
+    require(shift::xbox::decode_captured_texture_sampling(
+                movie_r8_fetch, &movie_r8_sampling, &error) &&
+                movie_r8_sampling.swizzle ==
+                    std::array<shift::xbox::TextureComponent, 4>{
+                        shift::xbox::TextureComponent::X,
+                        shift::xbox::TextureComponent::X,
+                        shift::xbox::TextureComponent::X,
+                        shift::xbox::TextureComponent::One},
+            "captured retail Bink R8 plane does not replicate its red channel to RGB");
     uint32_t small_movie_r8_descriptor[6];
     std::copy(std::begin(captured_movie_r8_descriptor),
               std::end(captured_movie_r8_descriptor),
@@ -707,6 +717,12 @@ int main() {
                     0x20,0x20,0x20,0x20, 0x40,0x40,0x40,0x40,
                     0x60,0x60,0x60,0x60, 0x80,0x80,0x80,0x80},
             "captured linear R8 texture did not expand replicated Xenos channels");
+    std::vector<uint8_t> movie_r8_native;
+    require(shift::xbox::copy_captured_r8_texture_2d(
+                small_movie_r8_fetch, movie_r8_bytes.data(), movie_r8_bytes.size(),
+                &movie_r8_native, &error) &&
+                movie_r8_native == std::vector<uint8_t>{0x20, 0x40, 0x60, 0x80},
+            "captured retail Bink R8 plane did not preserve its native one-byte texels");
 
     const uint32_t retail_narrow_rgba8_descriptor[] = {
         0x804048FEu, 0x0A079086u, 0x0007E003u,

@@ -634,6 +634,15 @@ bool untile_captured_texture_2d(
     std::vector<uint8_t>* vulkan_bytes,
     std::string* error);
 
+// Copies a captured linear R8 plane into tightly packed one-byte texels.
+// This preserves the R8_UNORM sampling format for the observed Bink planes.
+bool copy_captured_r8_texture_2d(
+    const CapturedTextureFetch& texture,
+    const uint8_t* guest_bytes,
+    size_t byte_length,
+    std::vector<uint8_t>* vulkan_bytes,
+    std::string* error);
+
 // Converts only the two guest byte orders observed on this captured draw:
 // 8-in-16 indices and 8-in-32 vertex words. The output byte stream is suitable
 // for the Vulkan index/vertex formats used by the captured resources.

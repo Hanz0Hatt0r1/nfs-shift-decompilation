@@ -1,0 +1,60 @@
+{
+  "schema": "shift.process2.redmi_cutscene_r8_upload_followup.v1",
+  "date": "2026-10-25",
+  "profile": {
+    "device": "Redmi Note 8 Pro (begonia, ARM64, Mali-G76 MC4, Android API 33)",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 6314,
+    "duration_seconds": 8,
+    "command": "/system/bin/simpleperf record -p 6314 -f 200 --duration 8 -g --call-graph dwarf -o files/process2-redmi-cutscene.perf.data",
+    "samples_for_gpu_worker": 1513,
+    "call_graph": {
+      "share_through_submit_mixed_sample_copy_frame_percent": 54.83,
+      "prepare_draw_resources_share_of_ring_worker_percent": 59.4,
+      "untile_share_of_prepare_draw_resources_percent": 96.83,
+      "untile_self_share_of_gpu_worker_percent": 4.1
+    },
+    "profile_sha256": "088e95d6a00fbe163d29d5e631a642fd78b28f5f6e1f6dd1a4934ac5cd5575db",
+    "profile_binary_committed": false,
+    "screen_sha256": "ede973063f6cd1eea47e7bdffe5f1efdee09f95b65d02ac48e405875c4390b5a",
+    "screen_file": "process2_redmi_cutscene_profile_screen_20261025.png",
+    "observation": "The original EA SHIFT intro mark was on screen during this running session. The sampled app used the previously installed Process 2 plugin, before this R8 optimization."
+  },
+  "retail_bink_contract": {
+    "source_evidence": "process2_linux_bink_cutscene_replay_20261025.json",
+    "draw_index": 2614,
+    "planes": [
+      {"role": "luma", "width": 1280, "height": 720, "format": "R8_UNORM"},
+      {"role": "chroma V", "width": 640, "height": 360, "format": "R8_UNORM"},
+      {"role": "chroma U", "width": 640, "height": 360, "format": "R8_UNORM"}
+    ],
+    "captured_descriptor_swizzle": "0xA00",
+    "decoded_swizzle": ["X", "X", "X", "One"],
+    "sample_equivalence": "Sampling R8_UNORM produces (R,0,0,1); the captured [X,X,X,One] descriptor yields (R,R,R,1), matching the prior CPU-expanded RGBA plane."
+  },
+  "change": {
+    "activation_guard": "format 2, endian mode 0, and decoded sampler swizzle exactly [X,X,X,One]",
+    "texture_upload": "Preserve matching untiled linear planes as one-byte R8_UNORM images; all other layouts keep the existing RGBA8 untile/expand path.",
+    "removed_copy": "Do not copy the first texture plane into the legacy texture_rgba8 field when the multi-texture list is populated.",
+    "per_bink_draw_payload_bytes": {
+      "before_rgba8_planes": 5529600,
+      "after_native_r8_planes": 1382400,
+      "reduction_percent": 75,
+      "additional_removed_legacy_luma_copy_bytes": 3686400
+    }
+  },
+  "verification": {
+    "host_native_vulkan": "4/4 CTest cases passed on NVIDIA GeForce GTX 950, including the mixed R8/RGBA8 Vulkan renderer check.",
+    "host_plugin": "3/3 Process 2 plugin CTest cases passed with VK_LAYER_KHRONOS_validation enabled.",
+    "host_plugin_sha256": "1fd4f7d9b75b904e63060c0dd540c74b81c846633aa5aee0e9bc6a0c47467bf5",
+    "native_validation_layer": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation; all 4 CTest cases passed.",
+    "android": "Renderer test target cross-compiled for Android API 26 / arm64-v8a; updated Process 2 plugin translation unit compiled against the resolve-capable SDK branch.",
+    "device_install_or_run": "not performed; the existing phone game process was left running.",
+    "performance_claim": "No before/after speedup measurement is available. The profile is a baseline from the previous installed binary; payload reduction is derived from the captured plane dimensions."
+  },
+  "limitations": [
+    "The optimization covers the captured linear R8 Bink plane layout and matching swizzle only; other video formats still use the existing RGBA8 conversion path.",
+    "This reduces CPU-side texture expansion and Vulkan upload bytes but does not address per-frame Vulkan object creation, queue-idle waits, guest/runtime CPU usage, or the unresolved cutscene-to-menu transition.",
+    "The full Android APK cannot currently be rebuilt with depth/stencil resolve enabled because the shared ReXGlue Android runtime still has the separate Bionic ucontext fiber gap documented in process2_provider_resolve_integration_20261024.json."
+  ]
+}

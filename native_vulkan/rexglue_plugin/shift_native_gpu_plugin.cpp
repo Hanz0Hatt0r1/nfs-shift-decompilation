@@ -904,10 +904,25 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         texture.sampling = resolved.sampling;
         texture.width = fetch.width;
         texture.height = fetch.height;
-        if (!shift::xbox::untile_captured_texture_2d(
-                fetch, guest_bytes, fetch.byte_length, &texture.rgba8, error)) {
+        const std::array<shift::xbox::TextureComponent, 4> r8_plane_swizzle = {
+            shift::xbox::TextureComponent::X,
+            shift::xbox::TextureComponent::X,
+            shift::xbox::TextureComponent::X,
+            shift::xbox::TextureComponent::One,
+        };
+        const bool use_native_r8 = fetch.format == 2 && fetch.endian_mode == 0 &&
+                                   resolved.sampling.swizzle == r8_plane_swizzle;
+        const bool texture_ready = use_native_r8
+            ? shift::xbox::copy_captured_r8_texture_2d(
+                  fetch, guest_bytes, fetch.byte_length, &texture.pixels, error)
+            : shift::xbox::untile_captured_texture_2d(
+                  fetch, guest_bytes, fetch.byte_length, &texture.pixels, error);
+        if (!texture_ready) {
           return false;
         }
+        texture.format = use_native_r8
+            ? shift::xbox::CapturedVulkanTexture::Format::R8
+            : shift::xbox::CapturedVulkanTexture::Format::Rgba8;
         total_texture_bytes += fetch.byte_length;
         prepared.textures.push_back(std::move(texture));
       }
@@ -915,7 +930,6 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         prepared.texture_sampling = prepared.textures.front().sampling;
         prepared.texture_width = prepared.textures.front().width;
         prepared.texture_height = prepared.textures.front().height;
-        prepared.texture_rgba8 = prepared.textures.front().rgba8;
       }
     } else {
       prepared.texture_rgba8 = {255, 255, 255, 255};
@@ -1089,9 +1103,13 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                  << ",border:" << static_cast<uint32_t>(resolved.sampling.border_color)
                  << ",border_alpha_known:" << resolved.sampling.border_alpha_known
                  << "}"
-                 << " rgba8_bytes=" << texture.rgba8.size()
-                 << " rgba8_fnv1a=0x" << std::hex
-                 << Fnv1a64(texture.rgba8.data(), texture.rgba8.size())
+                 << " texel_format="
+                 << (texture.format == shift::xbox::CapturedVulkanTexture::Format::R8
+                         ? "R8_UNORM"
+                         : "RGBA8_UNORM")
+                 << " texel_bytes=" << texture.pixels.size()
+                 << " texel_fnv1a=0x" << std::hex
+                 << Fnv1a64(texture.pixels.data(), texture.pixels.size())
                  << std::dec << "\n";
             const char* texture_dump_prefix =
                 std::getenv("SHIFT_NATIVE_VULKAN_DUMP_TEXTURES_PREFIX");
@@ -1101,12 +1119,15 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               texture_path << texture_dump_prefix << ".frame"
                            << diagnostic_submitted_frame << ".draw"
                            << dump_index << ".texture" << texture_index
-                           << ".rgba8";
+                           << (texture.format ==
+                                       shift::xbox::CapturedVulkanTexture::Format::R8
+                                   ? ".r8"
+                                   : ".rgba8");
               std::ofstream texture_file(texture_path.str(),
                                         std::ios::binary | std::ios::trunc);
               texture_file.write(
-                  reinterpret_cast<const char*>(texture.rgba8.data()),
-                  static_cast<std::streamsize>(texture.rgba8.size()));
+                  reinterpret_cast<const char*>(texture.pixels.data()),
+                  static_cast<std::streamsize>(texture.pixels.size()));
               if (texture_file) {
                 dump << "    raw_texture_dump=" << texture_path.str() << "\n";
               } else {
