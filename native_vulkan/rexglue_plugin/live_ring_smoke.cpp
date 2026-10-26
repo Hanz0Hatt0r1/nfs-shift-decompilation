@@ -588,14 +588,24 @@ int main(int argc, char** argv) {
     std::cerr << diagnostics << '\n';
     return fail("EVENT_WRITE_SHD did not update descriptor+0 through its guest alias");
   }
-  const char* ring_trace_enabled =
+  const char* ring_trace_environment =
       std::getenv("SHIFT_NATIVE_VULKAN_TRACE_RING");
-  if (ring_trace_enabled && std::string(ring_trace_enabled) == "1" &&
+  const bool ring_trace_enabled = ring_trace_environment &&
+                                  std::string(ring_trace_environment) == "1";
+  if (ring_trace_enabled &&
       diagnostics.find(
           "memory-write candidate opcode=58 #0 source=00030000 depth=1") ==
           std::string::npos) {
     std::cerr << diagnostics << '\n';
     return fail("EVENT_WRITE_SHD was missing from the bounded memory-write trace");
+  }
+  if (ring_trace_enabled &&
+      (diagnostics.find("ring trace IB dump #0 source=00030000") ==
+           std::string::npos ||
+       diagnostics.find("ring trace IB data source=00030000 byte-offset=0 "
+                        "raw-dwords=2000,14000500") == std::string::npos)) {
+    std::cerr << diagnostics << '\n';
+    return fail("bounded ring trace did not retain raw guest IB bytes");
   }
   const char* const submission_marker =
       "submitted 3 captured indexed draw packets to the Vulkan presenter";

@@ -1078,6 +1078,26 @@ Redmi capture still finds no observed writer for `0x1B964004` in the scanned
 batches and does not identify the CPU-side producer. See the
 [`wait-owner trace build record`](../../evidence/process2_guest_wait_owner_trace_build_20261026.json).
 
+### Raw nested indirect-buffer snapshot (2026-10-26)
+
+The trace now retains the raw big-endian dwords of up to eight unique nested
+guest indirect buffers per ring-worker session, capped at 4 KiB per buffer.
+This is a read-only diagnostic and does not alter packet dispatch or wait
+behavior. A live Redmi run captured seven buffers; the `WAIT_REG_MEM` packet
+is at byte offset 1180 in `0x095D0120` and polls `0x1B964004` for value 1. The
+preceding outer buffer `0x095D0000` contains two observed `EVENT_WRITE_SHD`
+targets, `0x17AF4004` and `0x17AF4000`; neither matches the wait address. The
+bounded trace does not rule out a CPU producer or writes outside the captured
+buffers. The app remained top-resumed but black at the wait. The saved
+big-endian buffers and log are linked from the
+[`Redmi indirect-buffer trace record`](../../evidence/process2_redmi_ring_indirect_buffers_20261026.json).
+
+The separate disclaimer border replay confirms only the four captured retail
+strip draws: the packed-mip correction produces continuous gray top and
+bottom rules. The latest full live frame cannot be recaptured until the
+startup wait is resolved, and exact color or thickness remains unverified
+against an independent original-console image.
+
 ## Redmi Bink draw replay with the pipeline cache (2026-10-26)
 
 An A/B on Mali-G76 replayed the captured retail Bink draw #2614 with identical

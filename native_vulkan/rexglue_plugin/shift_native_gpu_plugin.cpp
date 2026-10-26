@@ -1582,6 +1582,58 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   "SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME value '{}'",
                   frame_text);
     }
+    std::map<uint32_t, size_t> traced_indirect_buffers;
+    const auto trace_indirect_buffers = [this, &traced_indirect_buffers](
+        const shift::xbox::ExpandedGuestCommandStream& stream) {
+      constexpr size_t kMaxBuffers = 8;
+      constexpr size_t kMaxBytesPerBuffer = 4096;
+      constexpr size_t kDwordsPerLogLine = 16;
+      for (const auto& resolved : stream.packets) {
+        if (resolved.nesting_depth == 0 ||
+            resolved.source_guest_buffer_byte_length == 0 ||
+            traced_indirect_buffers.find(resolved.source_guest_address) !=
+                traced_indirect_buffers.end()) {
+          continue;
+        }
+        if (traced_indirect_buffers.size() >= kMaxBuffers) break;
+        const size_t source_bytes = resolved.source_guest_buffer_byte_length;
+        traced_indirect_buffers.emplace(resolved.source_guest_address,
+                                        source_bytes);
+        const size_t dump_bytes = std::min(source_bytes, kMaxBytesPerBuffer);
+        const uint8_t* bytes = nullptr;
+        size_t available_bytes = 0;
+        if (!ReadGuestMemory(this, resolved.source_guest_address, dump_bytes,
+                             &bytes, &available_bytes) ||
+            available_bytes < dump_bytes) {
+          REXLOG_WARN("shift-native: ring trace IB dump failed source={:08X} "
+                      "source-bytes={} requested-bytes={} available-bytes={}",
+                      resolved.source_guest_address, source_bytes, dump_bytes,
+                      available_bytes);
+          continue;
+        }
+        REXLOG_INFO("shift-native: ring trace IB dump #{} source={:08X} "
+                    "depth={} source-bytes={} dumped-bytes={} truncated={}",
+                    traced_indirect_buffers.size() - 1,
+                    resolved.source_guest_address, resolved.nesting_depth,
+                    source_bytes, dump_bytes, dump_bytes < source_bytes);
+        for (size_t byte_offset = 0; byte_offset < dump_bytes;
+             byte_offset += kDwordsPerLogLine * sizeof(uint32_t)) {
+          std::ostringstream raw_dwords;
+          const size_t dwords = std::min(
+              kDwordsPerLogLine,
+              (dump_bytes - byte_offset) / sizeof(uint32_t));
+          for (size_t dword = 0; dword < dwords; ++dword) {
+            raw_dwords << (dword == 0 ? "" : ",") << std::hex
+                       << ReadGuestDword(bytes + byte_offset +
+                                         dword * sizeof(uint32_t));
+          }
+          REXLOG_INFO("shift-native: ring trace IB data source={:08X} "
+                      "byte-offset={} raw-dwords={}",
+                      resolved.source_guest_address, byte_offset,
+                      raw_dwords.str());
+        }
+      }
+    };
     for (;;) {
       uint32_t read_pointer = 0;
       uint32_t write_pointer = 0;
@@ -1652,6 +1704,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                         expanded_ok, expanded.packets.size(),
                         error.empty() ? "none" : error);
           }
+          if (expanded_ok) trace_indirect_buffers(expanded);
         }
 
         uint32_t decoded_draws = 0;
