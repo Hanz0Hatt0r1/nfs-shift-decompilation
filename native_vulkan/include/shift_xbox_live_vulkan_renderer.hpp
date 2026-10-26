@@ -61,6 +61,23 @@ struct CapturedVulkanSamplerCapabilities {
     float max_anisotropy = 1.0f;
 };
 
+struct CapturedVulkanSourceReadback {
+    enum class Status : uint8_t {
+        NotRequested,
+        Captured,
+        Unsupported,
+    };
+
+    Status status = Status::NotRequested;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    uint32_t sample_count = 0;
+    bool multisample_average_resolve = false;
+    std::string reason;
+    std::vector<uint8_t> bytes;
+};
+
 // Reuses live R8 planes, per-draw vertex/index/uniform upload buffers,
 // compatible graphics pipelines, and sampler states across frames. Keep this
 // object alive for one Vulkan device and clear it before destroying that
@@ -113,6 +130,7 @@ bool submit_captured_vulkan_frame(
     bool depth_stencil_resolve_enabled = false,
     CapturedVulkanSamplerCapabilities sampler_capabilities = {},
     VkPipelineCache pipeline_cache = VK_NULL_HANDLE,
-    CapturedVulkanTextureCache* texture_cache = nullptr);
+    CapturedVulkanTextureCache* texture_cache = nullptr,
+    CapturedVulkanSourceReadback* source_readback = nullptr);
 
 }  // namespace shift::xbox

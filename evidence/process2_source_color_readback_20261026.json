@@ -1,0 +1,97 @@
+{
+  "schema": "shift.process2.source_color_readback.v1",
+  "date_local": "2026-10-26",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "base_commit": "19f95e5b8",
+    "implementation_commit": "pending",
+    "paths": [
+      "native_vulkan/include/shift_xbox_live_vulkan_renderer.hpp",
+      "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
+      "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
+      "native_vulkan/shaders/xenos_copy_black.frag",
+      "native_vulkan/CMakeLists.txt",
+      "native_vulkan/android/CMakeLists.txt",
+      "native_vulkan/rexglue_plugin/README.md"
+    ]
+  },
+  "behavior": {
+    "opt_in_environment_variable": "SHIFT_NATIVE_VULKAN_SOURCE_READBACK_PATH",
+    "frame_selection_environment_variable": "SHIFT_NATIVE_VULKAN_READBACK_FRAME",
+    "default_selected_frame": 1,
+    "captures_final_output_alongside_source": true,
+    "source_metadata": [
+      "width",
+      "height",
+      "VkFormat",
+      "captured sample count",
+      "average resolve indicator",
+      "non-black pixel count",
+      "FNV-1a64",
+      "raw byte size"
+    ],
+    "homogeneous_4x_path": "Resolve into an opt-in sidecar image using VK_RESOLVE_MODE_AVERAGE_BIT; original 4x image returns to shader-read layout for the existing sample-zero Copy/Convert.",
+    "mixed_4x_to_1x_path": "Read the single-sample source after the existing MSAA resolve and the later 1x draws, immediately before Copy/Convert.",
+    "unsupported_readback": "Optional source staging, image usage, and host mapping failures are reported in status/reason while final output submission continues. Frames with no captured Copy/Convert source are reported unsupported."
+  },
+  "checks": {
+    "native_vulkan_ctest": {
+      "passed": 4,
+      "total": 4,
+      "build_directory": "/tmp/nfs-p2-source-readback-build",
+      "renderer_device": "NVIDIA GeForce GTX 950",
+      "renderer_validation": "VK_LAYER_KHRONOS_validation enabled; no validation errors",
+      "targeted_regression": "A colored 4x source with a black Copy shader has non-black source bytes and black final output; a separately rendered black source with the same shader has black source and final output."
+    },
+    "linux_plugin_build": {
+      "target": "rexgpu-shift-native",
+      "result": "passed",
+      "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+      "runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+      "ldd_r": "resolved without undefined symbols",
+      "factory_smoke": "passed"
+    },
+    "linux_plugin_ctest": {
+      "selected_passed": 2,
+      "selected_total": 2,
+      "selected_tests": [
+        "rexgpu_shift_native_factory_check",
+        "rexgpu_vulkan_resolve_capability_check"
+      ],
+      "complete_live_ring_suite": "not run: enabling the full external SDK build failed in unrelated ReXGlue code (SSSE3 target configuration in host memory.cpp; Android getcontext/makecontext/swapcontext declarations)."
+    },
+    "android_arm64_renderer_check": {
+      "result": "passed",
+      "device": "Redmi Note 8 Pro (begonia)",
+      "gpu": "Mali-G76 MC4",
+      "vulkan_api": "1.1.131",
+      "ndk": "28.2.13676358",
+      "android_platform": 29,
+      "test_build_id": "f0dff0a0e1d066cfa15a52278fa1eb6b5204f5dd",
+      "validation_layer_available": false,
+      "result_text": "synthetic offscreen Vulkan 1.1 AutoIndex point and rectangle-list draw plus 4x-to-1x depth/stencil SAMPLE_ZERO preservation and 4:1 anisotropy sampler and captured sample-zero Copy/Convert passed on Mali-G76 MC4"
+    },
+    "git_diff_check": "passed"
+  },
+  "linux_x86_64_plugin": {
+    "path": "/home/pes/work/process2-latest-renderer-handover-20261026/linux-source-color-readback-20261026/librexgpu-shift-native.so",
+    "sha256": "b488dfeb5803f031c4027270b3ab20831a379814145ceda7c052ecd12199a70c",
+    "build_id": "93c34470001d02f86d593819f04784431d3ef9a0",
+    "runtime_path": "/home/pes/work/process2-latest-renderer-handover-20261026/linux-source-color-readback-20261026/librexruntime.so",
+    "runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+    "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99"
+  },
+  "android_device": {
+    "updated_readback_apk_built": false,
+    "plugin_installed": false,
+    "core_regression_run_offscreen": true,
+    "redmi_app_state": "The prior shader-cache APK remains open on the retail disclaimer (PID 31012, top-resumed); no app restart or plugin replacement occurred. Temporary test files were removed."
+  },
+  "limits": [
+    "The homogeneous 4x source dump is an average resolve and therefore is not a byte-for-byte representation of sample zero consumed by the current guest Copy/Convert shader; the log reports the resolve mode explicitly.",
+    "The mixed 4x-to-1x dump reads the final single-sample image after the existing resolve and 1x draws.",
+    "No retail frame has been captured with this diagnostic yet. Synthetic CTest output is not retail parity evidence.",
+    "The full Linux plugin live-ring CTest suite was not rebuilt because an external ReXGlue SDK host configuration failed; the plugin itself, factory smoke, resolve-capability test, and native Vulkan CTest passed."
+  ]
+}

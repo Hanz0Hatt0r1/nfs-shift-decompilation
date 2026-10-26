@@ -11,6 +11,7 @@
 #include <condition_variable>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <exception>
 #include <fstream>
 #include <limits>
@@ -2032,6 +2033,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 const uint32_t upcoming_submitted_frame = readback_frame_counter + 1u;
                 const char* readback_path = std::getenv("SHIFT_NATIVE_VULKAN_READBACK_PATH");
                 const bool explicit_readback_path = readback_path && *readback_path;
+                const char* source_readback_path =
+                    std::getenv("SHIFT_NATIVE_VULKAN_SOURCE_READBACK_PATH");
+                const bool explicit_source_readback_path =
+                    source_readback_path && *source_readback_path;
 #if defined(__ANDROID__) && !defined(NDEBUG)
                 constexpr bool kAndroidDebugReadback = true;
                 constexpr const char* kAndroidDebugReadbackPath =
@@ -2060,22 +2065,26 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                         "SHIFT_NATIVE_VULKAN_READBACK_FRAME value '{}'",
                         frame_text);
                   }
-                } else if (explicit_readback_path) {
-                  selected_readback_frame = 1u;
+                } else if (explicit_readback_path || explicit_source_readback_path) {
+                    selected_readback_frame = 1u;
                 } else if (kAndroidDebugReadback) {
                   selected_readback_frame = kAndroidDebugReadbackFrame;
                 }
                 const bool capture_output = !readback_saved_ &&
                     readback_frame_selection_valid && selected_readback_frame != 0 &&
                     upcoming_submitted_frame == selected_readback_frame;
+                const bool capture_source = capture_output &&
+                                            explicit_source_readback_path;
                 std::vector<uint32_t> output_readback;
+                shift::xbox::CapturedVulkanSourceReadback source_readback;
                 std::string render_error;
                 bool refresh_callback_called = false;
                 const bool refreshed = presenter_->RefreshGuestOutput(
                     swap.width, swap.height, swap.width, swap.height,
                     [this, &frame_draws, &render_error, &refresh_callback_called,
                      copy_for_swap, width = swap.width,
-                     height = swap.height, capture_output, &output_readback](
+                     height = swap.height, capture_output, capture_source,
+                     &output_readback, &source_readback](
                         rex::ui::Presenter::GuestOutputRefreshContext& base) {
                       refresh_callback_called = true;
                       // This presenter was created by VulkanProvider below, so the refresh
@@ -2139,7 +2148,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                           depth_stencil_resolve_enabled,
                           {device->properties().samplerAnisotropy,
                            device->properties().maxSamplerAnisotropy},
-                          pipeline_cache_, &texture_cache_);
+                          pipeline_cache_, &texture_cache_,
+                          capture_source ? &source_readback : nullptr);
                     });
                 if (refreshed) {
                   ++submitted_frames;
@@ -2176,16 +2186,93 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                       readback_saved_ = true;
                       REXLOG_INFO("shift-native: {} Vulkan guest output {}x{} as "
                                   "VK_FORMAT_A2B10G10R10_UNORM_PACK32{}{}; "
-                                  "non-black pixels {}, FNV-1a {:016X} at submitted frame {}",
+                                  "non-black pixels {}, FNV-1a64 {:016X} at submitted frame {}",
                                   readback_path && *readback_path ? "saved" : "read back",
                                   swap.width, swap.height,
-                                  readback_path && *readback_path ? " to file " : " (Android debug only)",
+                                  readback_path && *readback_path ? " to file " : " (no output file configured)",
                                   readback_path && *readback_path ? readback_path : "",
                                   non_black_pixels, checksum, readback_frame_counter);
                     } else {
                       REXLOG_WARN("shift-native: could not read/write Vulkan guest output{}{}",
                                   readback_path && *readback_path ? " at " : "",
                                   readback_path && *readback_path ? readback_path : "");
+                    }
+                  }
+                  if (capture_source) {
+                    if (source_readback.status ==
+                        shift::xbox::CapturedVulkanSourceReadback::Status::Captured) {
+                      bool source_written = true;
+                      if (source_readback_path && *source_readback_path) {
+                        std::ofstream source_file(source_readback_path,
+                                                  std::ios::binary | std::ios::trunc);
+                        source_file.write(
+                            reinterpret_cast<const char*>(source_readback.bytes.data()),
+                            static_cast<std::streamsize>(source_readback.bytes.size()));
+                        source_file.close();
+                        source_written = static_cast<bool>(source_file);
+                      }
+                      const uint32_t bytes_per_pixel =
+                          source_readback.format == VK_FORMAT_R16G16B16A16_SFLOAT
+                              ? 8u : 4u;
+                      const size_t pixel_count =
+                          static_cast<size_t>(source_readback.width) *
+                          source_readback.height;
+                      size_t non_black_pixels = 0;
+                      uint64_t checksum = 14695981039346656037ull;
+                      for (size_t byte_index = 0;
+                           byte_index < source_readback.bytes.size(); ++byte_index) {
+                        checksum ^= source_readback.bytes[byte_index];
+                        checksum *= 1099511628211ull;
+                      }
+                      for (size_t pixel_index = 0; pixel_index < pixel_count;
+                           ++pixel_index) {
+                        const uint8_t* pixel = source_readback.bytes.data() +
+                                               pixel_index * bytes_per_pixel;
+                        bool has_color = false;
+                        if (source_readback.format ==
+                            VK_FORMAT_R16G16B16A16_SFLOAT) {
+                          for (size_t channel = 0; channel < 3; ++channel) {
+                            uint16_t value = 0;
+                            std::memcpy(&value, pixel + channel * 2, sizeof(value));
+                            has_color |= (value & 0x7FFFu) != 0;
+                          }
+                        } else if (source_readback.format ==
+                                   VK_FORMAT_A2B10G10R10_UNORM_PACK32) {
+                          uint32_t value = 0;
+                          std::memcpy(&value, pixel, sizeof(value));
+                          has_color = (value & 0x3FFFFFFFu) != 0;
+                        } else {
+                          has_color = pixel[0] || pixel[1] || pixel[2];
+                        }
+                        if (has_color) ++non_black_pixels;
+                      }
+                      const char* source_format_name =
+                          source_readback.format == VK_FORMAT_R8G8B8A8_UNORM
+                              ? "VK_FORMAT_R8G8B8A8_UNORM"
+                          : source_readback.format ==
+                                    VK_FORMAT_A2B10G10R10_UNORM_PACK32
+                              ? "VK_FORMAT_A2B10G10R10_UNORM_PACK32"
+                          : source_readback.format == VK_FORMAT_R16G16B16A16_SFLOAT
+                              ? "VK_FORMAT_R16G16B16A16_SFLOAT" : "unknown";
+                      if (!source_written) {
+                        REXLOG_WARN("shift-native: could not write Vulkan pre-Copy source at {}",
+                                    source_readback_path);
+                      }
+                      readback_saved_ = true;
+                      REXLOG_INFO(
+                          "shift-native: {} Vulkan pre-Copy source {}x{} {} "
+                          "samples {}, average-resolve {}; non-black pixels {}, "
+                          "FNV-1a64 {:016X}, {} bytes at submitted frame {}",
+                          source_written && source_readback_path && *source_readback_path
+                              ? "saved" : "read back",
+                          source_readback.width, source_readback.height,
+                          source_format_name, source_readback.sample_count,
+                          source_readback.multisample_average_resolve,
+                          non_black_pixels, checksum, source_readback.bytes.size(),
+                          readback_frame_counter);
+                    } else {
+                      REXLOG_WARN("shift-native: Vulkan pre-Copy source readback unsupported: {}",
+                                  source_readback.reason);
                     }
                   }
                 } else {

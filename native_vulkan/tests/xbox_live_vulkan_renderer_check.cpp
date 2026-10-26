@@ -99,10 +99,11 @@ bool read_spirv(const char* path, std::vector<uint32_t>* output) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 9) {
+    if (argc != 10) {
         std::cerr << "usage: xbox_live_vulkan_renderer_check vertex.spv fragment.spv "
                      "geometry.spv copy-vertex.spv copy-fragment.spv "
-                     "copy-single-fragment.spv window-vertex.spv window-fragment.spv\n";
+                     "copy-single-fragment.spv window-vertex.spv window-fragment.spv "
+                     "black-copy-fragment.spv\n";
         return 2;
     }
 
@@ -296,6 +297,11 @@ int main(int argc, char** argv) {
         std::cerr << "could not read valid Vulkan 1.1 sample-zero Copy/Convert shaders\n";
         return 1;
     }
+    std::vector<uint32_t> black_copy_fragment_spirv;
+    if (!read_spirv(argv[9], &black_copy_fragment_spirv)) {
+        std::cerr << "could not read valid Vulkan 1.1 black Copy/Convert shader\n";
+        return 1;
+    }
     std::vector<uint32_t> window_vertex_spirv;
     std::vector<uint32_t> window_fragment_spirv;
     if (!read_spirv(argv[7], &window_vertex_spirv) ||
@@ -409,6 +415,81 @@ int main(int argc, char** argv) {
       std::cerr << "reused Vulkan pipeline cache changed captured draw output: "
                 << error << '\n';
       return 1;
+    }
+
+    auto black_copy = copy;
+    black_copy.pixel_shader_spirv = black_copy_fragment_spirv;
+    black_copy.single_sample_pixel_shader_spirv = black_copy_fragment_spirv;
+    shift::xbox::CapturedVulkanSourceReadback colored_source_readback;
+    std::vector<uint32_t> black_final_output;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, draws, &error, &black_final_output,
+            enabled_features.geometryShader, &black_copy, false, {},
+            pipeline_cache, nullptr, &colored_source_readback)) {
+        std::cerr << "source color-target readback with black Copy/Convert failed: "
+                  << error << '\n';
+        return 1;
+    }
+    bool colored_source_has_rgb = false;
+    for (size_t pixel = 0; pixel + 3 < colored_source_readback.bytes.size();
+         pixel += 4) {
+        colored_source_has_rgb |= colored_source_readback.bytes[pixel] != 0 ||
+                                  colored_source_readback.bytes[pixel + 1] != 0 ||
+                                  colored_source_readback.bytes[pixel + 2] != 0;
+    }
+    if (colored_source_readback.status !=
+            shift::xbox::CapturedVulkanSourceReadback::Status::Captured ||
+        colored_source_readback.width != 1280 ||
+        colored_source_readback.height != 720 ||
+        colored_source_readback.format != VK_FORMAT_R8G8B8A8_UNORM ||
+        colored_source_readback.sample_count != 4 ||
+        !colored_source_readback.multisample_average_resolve ||
+        colored_source_readback.bytes.size() != 1280u * 720u * 4u ||
+        !colored_source_has_rgb || black_final_output.size() != 1280u * 720u ||
+        std::any_of(black_final_output.begin(), black_final_output.end(),
+                    [](uint32_t pixel) {
+                        return (pixel & 0x3FFFFFFFu) != 0;
+                    })) {
+        std::cerr << "pre-Copy readback did not distinguish a colored 4x source "
+                     "from its black final output\n";
+        return 1;
+    }
+
+    auto black_source_draws = draws;
+    for (auto& source_draw : black_source_draws) {
+        source_draw.raster.color_write_mask = 0;
+    }
+    shift::xbox::CapturedVulkanSourceReadback black_source_readback;
+    std::vector<uint32_t> black_source_final_output;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, black_source_draws, &error,
+            &black_source_final_output, enabled_features.geometryShader,
+            &black_copy, false, {}, pipeline_cache, nullptr,
+            &black_source_readback) ||
+        black_source_readback.status !=
+            shift::xbox::CapturedVulkanSourceReadback::Status::Captured ||
+        black_source_readback.bytes.size() != 1280u * 720u * 4u ||
+        black_source_final_output.size() != 1280u * 720u) {
+        std::cerr << "black source color-target readback failed: " << error << '\n';
+        return 1;
+    }
+    for (size_t pixel = 0; pixel + 3 < black_source_readback.bytes.size();
+         pixel += 4) {
+        if (black_source_readback.bytes[pixel] ||
+            black_source_readback.bytes[pixel + 1] ||
+            black_source_readback.bytes[pixel + 2]) {
+            std::cerr << "black source target readback contained RGB color\n";
+            return 1;
+        }
+    }
+    if (std::any_of(black_source_final_output.begin(),
+                    black_source_final_output.end(), [](uint32_t pixel) {
+                        return (pixel & 0x3FFFFFFFu) != 0;
+                    })) {
+        std::cerr << "black source Copy/Convert unexpectedly wrote final RGB color\n";
+        return 1;
     }
 
     auto changed_texture_draws = draws;

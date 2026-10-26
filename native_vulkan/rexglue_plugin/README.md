@@ -1120,9 +1120,47 @@ Build ID `e76c6515f0d0737753023971fcc68916d0aaf706`), paired with SDK runtime
 Process 2 commit `8e76681ccc6f29462ba43329c6ef45f46dcedadf` and is the latest
 Linux handoff for the live retail run.
 
-The cache has not yet been loaded by the live game, so device hit rate and
-frame-time change remain unmeasured. The current Android session remains open
-on the legal disclaimer; the new plugin was not installed. Menu-after-disclaimer,
-race output, and full retail parity are still unverified. Artifact identities
-and verification limits are in
+The shader-cache plugin was installed and loaded by the live game on the Redmi
+Note 8 Pro. Its loading/title and legal disclaimer were observed, but the log
+does not include cache hit/miss counters, so device hit rate and frame-time
+change remain unmeasured. The Android session remains open on the legal
+disclaimer. Menu-after-disclaimer, race output, and full retail parity are
+still unverified. Artifact identities and verification limits are in
 [`process2_shader_translation_cache_20261026.json`](../../evidence/process2_shader_translation_cache_20261026.json).
+
+## Selected pre-Copy color-target readback (2026-10-26)
+
+`SHIFT_NATIVE_VULKAN_SOURCE_READBACK_PATH` opts one submitted frame into a
+readback of the captured render target after its draw pass and immediately
+before Copy/Convert. It also reads back the final presenter image, so the log
+records source and output extents, Vulkan formats, non-black pixel counts, and
+FNV-1a64 hashes separately. `SHIFT_NATIVE_VULKAN_READBACK_FRAME` selects the
+same frame for both images; when omitted, setting the source path selects frame
+1. The source file contains tightly packed raw format bytes.
+
+For the homogeneous 4x path, Vulkan cannot copy a multisampled image directly
+to a host buffer. The diagnostic resolves a sidecar image using the Vulkan
+average resolve mode, reads that image, and restores the original 4x target to
+the same shader-read layout used by Copy/Convert. The report labels this as a
+4-sample average resolve; it is a diagnostic of the multisample target, not a
+byte-for-byte capture of the sample-zero value consumed by the existing
+Copy/Convert shader. For the mixed 4x-to-1x path, it reads the final 1x source
+after the existing render-pass resolve and 1x draws. If optional staging or
+transfer-image setup is unsupported, the final image remains submitted and the
+source status is logged as unsupported with its reason. Frames without a
+captured Copy/Convert source also report unsupported.
+
+The renderer CTest's synthetic regression produces a colored 4x source with a
+black Copy shader, then a black source with the same black Copy shader. It
+checks the source and final images independently and passed on the NVIDIA GTX
+950 with `VK_LAYER_KHRONOS_validation` enabled. The Linux plugin DSO compiled
+and its factory and Vulkan-resolve capability tests passed. The updated ARM64
+renderer check also passed offscreen on the Redmi Note 8 Pro Mali-G76 MC4 with
+Vulkan 1.1; Android has no Khronos validation layer. The retail app stayed open
+on its disclaimer, and the updated plugin was not installed. The remaining live
+ring plugin CTests were not rerun because enabling them caused their external
+ReXGlue SDK build to fail on unrelated `getcontext`/SSSE3 configuration errors.
+This readback has not yet been exercised against a retail frame; it is a
+diagnostic, not evidence of retail visual parity. See
+[`process2_source_color_readback_20261026.json`](../../evidence/process2_source_color_readback_20261026.json)
+for build identities, test results, and limits.

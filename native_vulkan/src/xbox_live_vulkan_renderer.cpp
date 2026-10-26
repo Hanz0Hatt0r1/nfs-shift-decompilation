@@ -178,6 +178,9 @@ struct FrameResources {
   ImageResource mixed_msaa_depth;
   ImageResource mixed_single_depth;
   BufferResource output_readback;
+  ImageResource source_resolve;
+  BufferResource source_readback;
+  VkDeviceSize source_readback_size = 0;
   VkCommandPool command_pool = VK_NULL_HANDLE;
   VkFence completion_fence = VK_NULL_HANDLE;
   uint32_t upload_slot = 0;
@@ -245,6 +248,8 @@ struct FrameResources {
     destroy_image(mixed_msaa_depth);
     destroy_image(mixed_single_depth);
     destroy_buffer(output_readback);
+    destroy_image(source_resolve);
+    destroy_buffer(source_readback);
     if (copy_render_pass)
       vkDestroyRenderPass(device, copy_render_pass, nullptr);
     if (render_pass)
@@ -906,6 +911,65 @@ VkFormat captured_color_format(CapturedColorTargetFormat format) {
             return VK_FORMAT_R16G16B16A16_SFLOAT;
     }
     return VK_FORMAT_UNDEFINED;
+}
+
+uint32_t color_format_bytes(VkFormat format) {
+    switch (format) {
+        case VK_FORMAT_R8G8B8A8_UNORM:
+        case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+            return 4;
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+            return 8;
+        default:
+            return 0;
+    }
+}
+
+void source_readback_unsupported(CapturedVulkanSourceReadback* readback,
+                                 std::string reason) {
+    if (!readback) return;
+    readback->status = CapturedVulkanSourceReadback::Status::Unsupported;
+    readback->bytes.clear();
+    readback->reason = std::move(reason);
+}
+
+bool prepare_source_readback_buffer(
+    const VkPhysicalDeviceMemoryProperties& memory_properties,
+    VkDevice device,
+    uint32_t width,
+    uint32_t height,
+    VkFormat format,
+    uint32_t sample_count,
+    bool multisample_average_resolve,
+    FrameResources& resources,
+    CapturedVulkanSourceReadback* readback) {
+    if (!readback) return false;
+    readback->width = width;
+    readback->height = height;
+    readback->format = format;
+    readback->sample_count = sample_count;
+    readback->multisample_average_resolve = multisample_average_resolve;
+    const uint32_t bytes_per_pixel = color_format_bytes(format);
+    const uint64_t pixel_count = static_cast<uint64_t>(width) * height;
+    if (!width || !height || !bytes_per_pixel ||
+        pixel_count > std::numeric_limits<size_t>::max() / bytes_per_pixel ||
+        pixel_count > std::numeric_limits<VkDeviceSize>::max() / bytes_per_pixel) {
+        source_readback_unsupported(readback,
+                                    "source extent or Vulkan format is not readable");
+        return false;
+    }
+    resources.source_readback_size =
+        static_cast<VkDeviceSize>(pixel_count * bytes_per_pixel);
+    std::string resource_error;
+    if (!create_buffer(memory_properties, device, resources.source_readback_size,
+                       VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr,
+                       &resources.source_readback, &resource_error)) {
+        source_readback_unsupported(readback,
+                                    "source staging buffer unavailable: " + resource_error);
+        return false;
+    }
+    readback->reason = "source image readback was not submitted";
+    return true;
 }
 
 void set_copy_resolution_constants(CapturedVulkanDraw *draw,
@@ -1808,7 +1872,8 @@ bool submit_mixed_sample_copy_frame(
     bool depth_stencil_resolve_enabled,
     CapturedVulkanSamplerCapabilities sampler_capabilities,
     VkPipelineCache pipeline_cache,
-    TextureCacheState* texture_cache) {
+    TextureCacheState* texture_cache,
+    CapturedVulkanSourceReadback* source_readback) {
     if (draws.empty() || draws.front().raster.sample_count != 4 ||
         copy.single_sample_pixel_shader_spirv.empty()) {
         return fail("mixed captured frame requires 4x-MSAA followed by 1x and a single-sample Copy/Convert shader",
@@ -1958,12 +2023,30 @@ bool submit_mixed_sample_copy_frame(
     std::vector<size_t> draw_resource_indices(
         draws.size(), std::numeric_limits<size_t>::max());
     resources.draws.resize(rendered_draw_indices.size());
-    if (!create_render_attachment(
-            memory_properties, device, target.width, target.height,
-            target_format,
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-            VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_1_BIT,
-            &resources.mixed_color, error) ||
+    bool source_readback_ready = prepare_source_readback_buffer(
+        memory_properties, device, source_width, source_height, target_format,
+        1, false, resources, source_readback);
+    constexpr VkImageUsageFlags mixed_source_usage =
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    if (source_readback_ready) {
+        std::string optional_error;
+        if (!create_render_attachment(
+                memory_properties, device, target.width, target.height,
+                target_format, mixed_source_usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_1_BIT,
+                &resources.mixed_color, &optional_error)) {
+            resources.destroy_image(resources.mixed_color);
+            source_readback_ready = false;
+            source_readback_unsupported(
+                source_readback, "mixed source image transfer readback unavailable: " +
+                                     optional_error);
+        }
+    }
+    if ((!resources.mixed_color.image &&
+         !create_render_attachment(
+             memory_properties, device, target.width, target.height,
+             target_format, mixed_source_usage, VK_IMAGE_ASPECT_COLOR_BIT,
+             VK_SAMPLE_COUNT_1_BIT, &resources.mixed_color, error)) ||
         !create_render_attachment(
             memory_properties, device, target.width, target.height,
             target_format,
@@ -2455,18 +2538,51 @@ bool submit_mixed_sample_copy_frame(
     VkImageMemoryBarrier source_to_sample{};
     source_to_sample.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     source_to_sample.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    source_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     source_to_sample.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    source_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     source_to_sample.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     source_to_sample.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     source_to_sample.image = resources.mixed_color.image;
     source_to_sample.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     source_to_sample.subresourceRange.levelCount = 1;
     source_to_sample.subresourceRange.layerCount = 1;
-    vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
-                         0, nullptr, 1, &source_to_sample);
+    if (source_readback_ready) {
+        source_to_sample.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        source_to_sample.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr,
+                             0, nullptr, 1, &source_to_sample);
+        VkBufferImageCopy source_copy{};
+        source_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        source_copy.imageSubresource.layerCount = 1;
+        source_copy.imageExtent = {source_width, source_height, 1};
+        vkCmdCopyImageToBuffer(command, resources.mixed_color.image,
+                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                               resources.source_readback.buffer, 1, &source_copy);
+        VkBufferMemoryBarrier source_to_host{};
+        source_to_host.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        source_to_host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        source_to_host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+        source_to_host.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        source_to_host.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        source_to_host.buffer = resources.source_readback.buffer;
+        source_to_host.size = resources.source_readback_size;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_HOST_BIT, 0, 0, nullptr,
+                             1, &source_to_host, 0, nullptr);
+        source_to_sample.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        source_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        source_to_sample.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        source_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                             0, nullptr, 1, &source_to_sample);
+    } else {
+        source_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        source_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                             0, nullptr, 1, &source_to_sample);
+    }
 
     VkImageMemoryBarrier output_to_color{};
     output_to_color.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -2566,7 +2682,7 @@ bool submit_mixed_sample_copy_frame(
     if (result != VK_SUCCESS) return vk_fail("vkQueueSubmit(mixed frame)", result, error);
     resources.submitted = true;
     finish_texture_cache_frame(texture_cache);
-    if (output_readback || !texture_cache) {
+    if (output_readback || source_readback_ready || !texture_cache) {
         if (!wait_for_frame(resources, error)) return false;
     } else {
         texture_cache->in_flight.push_back(std::move(resources_owner));
@@ -2591,6 +2707,40 @@ bool submit_mixed_sample_copy_frame(
         output_readback->resize(static_cast<size_t>(output_width) * output_height);
         std::memcpy(output_readback->data(), mapped, static_cast<size_t>(readback_size));
         vkUnmapMemory(device, resources.output_readback.memory);
+    }
+    if (source_readback_ready) {
+        void* mapped = nullptr;
+        result = vkMapMemory(device, resources.source_readback.memory, 0,
+                             VK_WHOLE_SIZE, 0, &mapped);
+        if (result != VK_SUCCESS) {
+            source_readback_unsupported(
+                source_readback, "mixed source buffer map failed with VkResult " +
+                                     std::to_string(result));
+        } else if ((resources.source_readback.memory_flags &
+             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+            VkMappedMemoryRange range{};
+            range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+            range.memory = resources.source_readback.memory;
+            range.size = VK_WHOLE_SIZE;
+            result = vkInvalidateMappedMemoryRanges(device, 1, &range);
+            if (result != VK_SUCCESS) {
+                vkUnmapMemory(device, resources.source_readback.memory);
+                source_readback_unsupported(
+                    source_readback,
+                    "mixed source buffer invalidate failed with VkResult " +
+                        std::to_string(result));
+                mapped = nullptr;
+            }
+        }
+        if (mapped) {
+            source_readback->bytes.resize(
+                static_cast<size_t>(resources.source_readback_size));
+            std::memcpy(source_readback->bytes.data(), mapped,
+                        static_cast<size_t>(resources.source_readback_size));
+            vkUnmapMemory(device, resources.source_readback.memory);
+            source_readback->status = CapturedVulkanSourceReadback::Status::Captured;
+            source_readback->reason.clear();
+        }
     }
     if (error) error->clear();
     return true;
@@ -2665,8 +2815,14 @@ bool submit_captured_vulkan_frame(
     bool depth_stencil_resolve_enabled,
     CapturedVulkanSamplerCapabilities sampler_capabilities,
     VkPipelineCache pipeline_cache,
-    CapturedVulkanTextureCache* texture_cache) {
+    CapturedVulkanTextureCache* texture_cache,
+    CapturedVulkanSourceReadback* source_readback) {
     if (output_readback) output_readback->clear();
+    if (source_readback) {
+        *source_readback = {};
+        source_readback_unsupported(
+            source_readback, "no captured Copy/Convert source target in this frame");
+    }
     if (!physical_device || !device || !queue || !output_image || !output_view ||
         !output_width || !output_height || draws.empty() || queue_family_index == UINT32_MAX) {
         return fail("invalid captured Vulkan frame target or draw list", error);
@@ -2719,7 +2875,7 @@ bool submit_captured_vulkan_frame(
             output_view, output_written_before, output_width, output_height,
             draws, error, output_readback, geometry_shader_enabled, *copy,
             depth_stencil_resolve_enabled, sampler_capabilities, pipeline_cache,
-            texture_cache_state);
+            texture_cache_state, source_readback);
     }
     const CapturedRasterState& frame_target = draws.front().raster;
     const uint32_t source_width = copy && copy->source_width
@@ -2760,6 +2916,26 @@ bool submit_captured_vulkan_frame(
     }
     const uint32_t raster_width = copy ? source_width : output_width;
     const uint32_t raster_height = copy ? source_height : output_height;
+    bool source_readback_ready = copy && prepare_source_readback_buffer(
+        memory_properties, device, source_width, source_height,
+        raster_color_format, samples, samples > 1, resources, source_readback);
+    if (source_readback_ready && samples > 1) {
+        std::string optional_error;
+        if (!create_render_attachment(
+                memory_properties, device, source_width, source_height,
+                raster_color_format,
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_1_BIT,
+                &resources.source_resolve, &optional_error)) {
+            resources.destroy_image(resources.source_resolve);
+            source_readback_ready = false;
+            source_readback_unsupported(
+                source_readback, "MSAA source resolve image unavailable: " +
+                                     optional_error);
+        }
+    }
     const bool needs_depth = std::any_of(
         draws.begin(), draws.end(), [](const CapturedVulkanDraw& draw) {
             return draw.raster.depth_test_enabled ||
@@ -2813,15 +2989,32 @@ bool submit_captured_vulkan_frame(
         }
     }
 
-    if (samples > 1 &&
-        !create_render_attachment(
-            memory_properties, device, raster_width, raster_height,
-            raster_color_format,
+    if (samples > 1) {
+        const VkImageUsageFlags raster_color_usage =
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                (copy ? VK_IMAGE_USAGE_SAMPLED_BIT : 0),
-            VK_IMAGE_ASPECT_COLOR_BIT,
-            raster_samples, &resources.multisample_color, error)) {
-        return false;
+            (copy ? VK_IMAGE_USAGE_SAMPLED_BIT : 0);
+        if (source_readback_ready) {
+            std::string optional_error;
+            if (!create_render_attachment(
+                    memory_properties, device, raster_width, raster_height,
+                    raster_color_format,
+                    raster_color_usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                    VK_IMAGE_ASPECT_COLOR_BIT, raster_samples,
+                    &resources.multisample_color, &optional_error)) {
+                resources.destroy_image(resources.multisample_color);
+                source_readback_ready = false;
+                source_readback_unsupported(
+                    source_readback, "MSAA source transfer readback unavailable: " +
+                                         optional_error);
+            }
+        }
+        if (!resources.multisample_color.image &&
+            !create_render_attachment(
+                memory_properties, device, raster_width, raster_height,
+                raster_color_format, raster_color_usage, VK_IMAGE_ASPECT_COLOR_BIT,
+                raster_samples, &resources.multisample_color, error)) {
+            return false;
+        }
     }
 
     VkDeviceSize output_readback_size = 0;
@@ -3236,19 +3429,89 @@ bool submit_captured_vulkan_frame(
     if (copy) {
         VkImageMemoryBarrier multisample_to_sample{};
         multisample_to_sample.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        multisample_to_sample.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        multisample_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        multisample_to_sample.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        multisample_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         multisample_to_sample.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         multisample_to_sample.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         multisample_to_sample.image = resources.multisample_color.image;
         multisample_to_sample.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         multisample_to_sample.subresourceRange.levelCount = 1;
         multisample_to_sample.subresourceRange.layerCount = 1;
-        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                             0, nullptr, 0, nullptr, 1, &multisample_to_sample);
+        if (source_readback_ready) {
+            multisample_to_sample.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            multisample_to_sample.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            multisample_to_sample.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            multisample_to_sample.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                 VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                                 0, nullptr, 0, nullptr, 1, &multisample_to_sample);
+
+            VkImageMemoryBarrier resolve_to_destination{};
+            resolve_to_destination.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            resolve_to_destination.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            resolve_to_destination.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            resolve_to_destination.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            resolve_to_destination.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            resolve_to_destination.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            resolve_to_destination.image = resources.source_resolve.image;
+            resolve_to_destination.subresourceRange =
+                multisample_to_sample.subresourceRange;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                 VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                                 0, nullptr, 0, nullptr, 1, &resolve_to_destination);
+
+            VkImageResolve resolve{};
+            resolve.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            resolve.srcSubresource.layerCount = 1;
+            resolve.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            resolve.dstSubresource.layerCount = 1;
+            resolve.extent = {source_width, source_height, 1};
+            vkCmdResolveImage(command, resources.multisample_color.image,
+                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                              resources.source_resolve.image,
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &resolve);
+
+            VkImageMemoryBarrier resolve_to_read = resolve_to_destination;
+            resolve_to_read.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            resolve_to_read.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            resolve_to_read.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            resolve_to_read.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                 VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                                 0, nullptr, 0, nullptr, 1, &resolve_to_read);
+            VkBufferImageCopy source_copy{};
+            source_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            source_copy.imageSubresource.layerCount = 1;
+            source_copy.imageExtent = {source_width, source_height, 1};
+            vkCmdCopyImageToBuffer(command, resources.source_resolve.image,
+                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                   resources.source_readback.buffer, 1, &source_copy);
+            VkBufferMemoryBarrier source_to_host{};
+            source_to_host.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            source_to_host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            source_to_host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+            source_to_host.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            source_to_host.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            source_to_host.buffer = resources.source_readback.buffer;
+            source_to_host.size = resources.source_readback_size;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                 VK_PIPELINE_STAGE_HOST_BIT, 0,
+                                 0, nullptr, 1, &source_to_host, 0, nullptr);
+
+            multisample_to_sample.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            multisample_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            multisample_to_sample.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            multisample_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                                 0, nullptr, 0, nullptr, 1, &multisample_to_sample);
+        } else {
+            multisample_to_sample.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            multisample_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            multisample_to_sample.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            multisample_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                                 0, nullptr, 0, nullptr, 1, &multisample_to_sample);
+        }
 
         VkRenderPassBeginInfo copy_begin{};
         copy_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -3334,7 +3597,7 @@ bool submit_captured_vulkan_frame(
     if (result != VK_SUCCESS) return vk_fail("vkQueueSubmit(captured frame)", result, error);
     resources.submitted = true;
     finish_texture_cache_frame(texture_cache_state);
-    if (output_readback || !texture_cache_state) {
+    if (output_readback || source_readback_ready || !texture_cache_state) {
         if (!wait_for_frame(resources, error)) return false;
     } else {
         texture_cache_state->in_flight.push_back(std::move(resources_owner));
@@ -3362,6 +3625,39 @@ bool submit_captured_vulkan_frame(
         std::memcpy(output_readback->data(), mapped,
                     static_cast<size_t>(output_readback_size));
         vkUnmapMemory(device, resources.output_readback.memory);
+    }
+    if (source_readback_ready) {
+        void* mapped = nullptr;
+        result = vkMapMemory(device, resources.source_readback.memory, 0,
+                             VK_WHOLE_SIZE, 0, &mapped);
+        if (result != VK_SUCCESS) {
+            source_readback_unsupported(
+                source_readback, "source buffer map failed with VkResult " +
+                                     std::to_string(result));
+        } else if ((resources.source_readback.memory_flags &
+             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+            VkMappedMemoryRange range{};
+            range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+            range.memory = resources.source_readback.memory;
+            range.size = VK_WHOLE_SIZE;
+            result = vkInvalidateMappedMemoryRanges(device, 1, &range);
+            if (result != VK_SUCCESS) {
+                vkUnmapMemory(device, resources.source_readback.memory);
+                source_readback_unsupported(
+                    source_readback, "source buffer invalidate failed with VkResult " +
+                                         std::to_string(result));
+                mapped = nullptr;
+            }
+        }
+        if (mapped) {
+            source_readback->bytes.resize(
+                static_cast<size_t>(resources.source_readback_size));
+            std::memcpy(source_readback->bytes.data(), mapped,
+                        static_cast<size_t>(resources.source_readback_size));
+            vkUnmapMemory(device, resources.source_readback.memory);
+            source_readback->status = CapturedVulkanSourceReadback::Status::Captured;
+            source_readback->reason.clear();
+        }
     }
     if (error) error->clear();
     return true;
