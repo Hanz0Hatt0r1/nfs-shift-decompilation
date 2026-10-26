@@ -1,0 +1,134 @@
+{
+  "schema": "shift.xbox360.linux-p2-early-rptr-retail-retest.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "p2_handoff": {
+    "source_commit": "e03a079fb3a83cdb51fae7983bf0e47fcb3656ec",
+    "working_tree_change": "publish snapshotted ring RPTR before parsing nested IBs",
+    "status": "experimental"
+  },
+  "binaries": {
+    "host": {
+      "sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a",
+      "build_id": "bbd15fe3144633bec476ec5b3a71a494a08a212a"
+    },
+    "p1_runtime": {
+      "path_outside_git": "/home/pes/work/process2-p1-current-p2-handoff-20261026/librexruntime.so",
+      "sha256": "f43d094797bf30c2e552b244c6ec50e4e69bb0b11fee409e07a812ba74158f78",
+      "build_id": "6dcf8537149594cf86f574a61bcbedc96c837448",
+      "source_commit": "26cb90f67fd7df711ee6cd4338ef8402f0bfdefa"
+    },
+    "p2_linux_plugin": {
+      "path_outside_git": "/home/pes/work/process2-p1-handoff-early-rptr-20261026/librexgpu-shift-native.so",
+      "sha256": "0837991a5d2ac07c81e5fc352be9b5520d3d7d2b224547d7af76c95d5e985e01",
+      "build_id": "0ff0bd84e85eb7a064bec79c196244972cded9ca"
+    }
+  },
+  "direct_run": {
+    "platform": "Linux AMD64",
+    "bounded_wall_seconds": 55,
+    "controller_input_sent": false,
+    "termination": "Timeout sent SIGINT and hard-exited with code 124; clean title shutdown was not observed.",
+    "runtime_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-p2-early-rptr-test-20261026/bin/logs/nfs_shift_001.log",
+      "sha256": "4a111fc092a9a8c17bb246c3e243f802dec297971c3160874e6fc2198d2bab8f",
+      "coher_status_host_waits_entered": 4,
+      "coher_status_host_waits_completed": 4,
+      "snapshot_rptr_writebacks": ["0x16", "0x19", "0x1C", "0x31"],
+      "target_wait_entered": true,
+      "target_wait_completed": false
+    }
+  },
+  "same_candidate_capture": {
+    "platform": "Linux AMD64",
+    "controller_input_sent": false,
+    "guest_wait_value_written_by_probe": false,
+    "termination": "Read-only GDB snapshot detached at the target wait and sent SIGINT; no clean title shutdown is claimed.",
+    "gdb_script_source": {
+      "path": "tools/xbox360/trace_linux_wait_ring_root.gdb",
+      "sha256": "912ee867ef051b99b9968067a6b27914252288035ed774390951f55105927a47"
+    },
+    "gdb_script_relocated_sha256": "d1f8074132d771552deefe0e2fdee7ca50a423f617daed79701c96e7fb581513",
+    "gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-p2-early-rptr-capture-20261026/gdb.log",
+      "sha256": "a583817b8e02e1cf5fe2b3fcd120e3536d563f6bb731590f92f3baed5d175fdf"
+    },
+    "runtime_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-p2-early-rptr-capture-20261026/bin/logs/nfs_shift_001.log",
+      "sha256": "27b10c779208849b7f9dcb7c00cbd3c1304e98985689f2d25821853c1b0c46f1",
+      "snapshot_rptr_writebacks_before_wait": ["0x19", "0x1C", "0x37"],
+      "target_wait_entered": true,
+      "target_wait_completed": false
+    },
+    "mapped_libraries_sha256": "0284cb46122fd16a2a566d9c767b07af7473960358feee19eb4599cb6c3705fc",
+    "wait": {
+      "guest_physical_word": "0x1B964004",
+      "poll_address": "0x1B964006",
+      "reference": "0x00000001",
+      "mask": "0xFFFFFFFF",
+      "endian_mode": 2,
+      "compare": "equal",
+      "source_ib": "0x095D0120",
+      "byte_offset": "0x49C",
+      "packet": "c0043c00000000131b96400600000001ffffffff00000100",
+      "physical_alias_bytes": "00000000",
+      "context_vE_alias_bytes": "00000000"
+    },
+    "root_ring_capture": {
+      "guest_address": "0x095D0120",
+      "bytes": 2048,
+      "physical_path_outside_git": "/tmp/nfs-shift-p1-p2-early-rptr-capture-20261026/ring_root_physical.bin",
+      "vA_path_outside_git": "/tmp/nfs-shift-p1-p2-early-rptr-capture-20261026/ring_root_vA.bin",
+      "physical_sha256": "b682414ecc1ac594334f72b8699b2f440abc0a1892731962d6e8713db72e3f01",
+      "vA_sha256": "b682414ecc1ac594334f72b8699b2f440abc0a1892731962d6e8713db72e3f01",
+      "aliases_equal": true,
+      "nested_indirect_buffers_before_wait": [
+        {
+          "source_offset": "0x448",
+          "guest_address": "0x0975B660",
+          "dword_count": 74,
+          "path_outside_git": "/tmp/nfs-shift-p1-p2-early-rptr-capture-20261026/nested_ib_0975b660.bin",
+          "sha256": "515d445533bd11926618e9d1cbd5a4f7eaf51930dd27b7935b1efecf24845d7b"
+        },
+        {
+          "source_offset": "0x454",
+          "guest_address": "0x0975C3A0",
+          "dword_count": 13,
+          "path_outside_git": "/tmp/nfs-shift-p1-p2-early-rptr-capture-20261026/nested_ib_0975c3a0.bin",
+          "sha256": "7faaea1a5e85dd8155e2ec67f1c3c63ba1bf57e1d52165c44f254b6099f684a9"
+        },
+        {
+          "source_offset": "0x460",
+          "guest_address": "0x0975CFE0",
+          "dword_count": 48,
+          "path_outside_git": "/tmp/nfs-shift-p1-p2-early-rptr-capture-20261026/nested_ib_0975cfe0.bin",
+          "sha256": "4f2445f960ffe0265688c12b9081c0cdb17e8c0a4c8191cbfecb6bfd6bb8dbfc"
+        }
+      ],
+      "later_packets": [
+        {"byte_offset": "0x518", "opcode": "PM4_INTERRUPT"},
+        {"byte_offset": "0x700", "opcode": "PM4_EVENT_WRITE"},
+        {"byte_offset": "0x75C", "opcode": "PM4_EVENT_WRITE_SHD", "destination": "0x17AF4006"},
+        {"byte_offset": "0x76C", "opcode": "PM4_EVENT_WRITE_SHD", "destination": "0x17AF4002"}
+      ]
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The experimental plugin published four ring read pointers from snapshots before entering the captured wait during the 55-second direct run.",
+      "With the same plugin, the exact retail wait still entered at source 0x095D0120 byte 0x49C and no completion was logged.",
+      "At the read-only GDB snapshot, both the physical and context-vE aliases of 0x1B964004 read zero.",
+      "The 2 KiB root ring and all three direct nested indirect buffers captured before the wait match the previously retained hashes byte for byte."
+    ],
+    "not_proven": [
+      "That early RPTR publication matches Xbox hardware semantics or is safe for every guest batch.",
+      "The CPU/GPU/DMA producer or visibility path for value 1 at 0x1B964004.",
+      "A visible retail frame, main-menu entry, controller polling, offline race, clean shutdown, or Vulkan 1.1 compatibility."
+    ],
+    "next_p1_step": "Keep the retail WAIT_REG_MEM predicate unchanged. Give Process 2 the complete root/child packet bytes and correlate the pre-wait memory-write path; do not treat later same-buffer packets as producers of an earlier blocking wait."
+  }
+}
