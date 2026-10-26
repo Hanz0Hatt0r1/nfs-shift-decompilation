@@ -424,3 +424,16 @@ visible, the original title sequence rendered, and the app remains resumed on
 the disclaimer. APK, plugin/runtime hashes, test commands, screenshots, and
 limits are recorded in
 [`the handoff evidence`](../evidence/process2_latest_renderer_handoff_20261026.json).
+
+## Redmi post-disclaimer input probe (2026-10-26)
+
+The currently resumed Redmi app was left on the legal disclaimer. I sent one
+`KEYCODE_BUTTON_A` and captured the screen ten seconds later. The before/after
+screenshots have the same SHA-256, PID 15722 remained top-resumed, and the guest
+log snapshot is byte-identical to the pre-input snapshot. Its last renderer
+batch remains at 11:52:06.902, followed by four failed `menu_background.xml`
+opens; the final warning is at 11:52:07.332. No new renderer draw contract was
+observed. The event's delivery to the guest is unconfirmed, and the nearby file
+failures do not establish why progression stopped. The app was not restarted
+or closed. See the [probe record](../evidence/process2_redmi_disclaimer_after_a_20261026.json)
+and [post-input screenshot](../evidence/process2_redmi_disclaimer_after_a_20261026.png).

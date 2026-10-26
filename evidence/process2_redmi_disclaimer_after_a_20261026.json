@@ -1,0 +1,44 @@
+{
+  "schema": "shift.process2.redmi_disclaimer_after_a.v1",
+  "observed_at_local": "2026-10-26T12:01:51+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": "13",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 15722,
+    "activity_top_resumed_after_input": true
+  },
+  "candidate": {
+    "renderer_source_commit": "345fc2ef69f485ab3f2f15effbb4d837be96c51f",
+    "apk_sha256": "35383e756421c4d92264e02f3e9da3eafc52db22febe6c316d15007c0076cd3b",
+    "arm64_renderer_plugin_sha256": "9d7ee9ee95b38497ed37f7cf72365a1bcb250560c4d387ab635272de9bd90a0d",
+    "installed_apk_match_verified_by": "evidence/process2_android_descriptor_layout_live_candidate_20261026.json"
+  },
+  "probe": {
+    "action": "adb shell input keyevent KEYCODE_BUTTON_A",
+    "event_delivery_or_guest_handling_confirmed": false,
+    "wait_seconds_before_capture": 10,
+    "app_restarted_or_closed": false,
+    "screenshot_before_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "screenshot_after_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "screenshot_after": "process2_redmi_disclaimer_after_a_20261026.png",
+    "visible_result": "The legal disclaimer and the same thin purple horizontal strips remain visible; no new game screen appeared.",
+    "guest_log": {
+      "path": "process2_redmi_latest_candidate_live_disclaimer_20261026.log.gz",
+      "raw_sha256": "38be1f3b98e2c0b6466a649aac318f4d0fa6d66bb4268ee957bc4dbd9ac24feb",
+      "current_snapshot_matches_pre_input_snapshot": true,
+      "last_renderer_batch": "2026-10-26 11:52:06.902",
+      "last_logged_event": "2026-10-26 11:52:07.332 menu_background.xml open failure, status 0xc000000f"
+    },
+    "new_renderer_draws_observed": false
+  },
+  "limits": [
+    "The unchanged frame does not establish that Android delivered the key event to the guest or that the renderer ignored it.",
+    "The menu_background.xml lookup failures are runtime/content evidence; this probe does not establish causality.",
+    "No new retail draw contract was emitted, so this result does not justify a renderer behavior change."
+  ]
+}

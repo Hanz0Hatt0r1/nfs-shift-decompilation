@@ -292,6 +292,14 @@ log snapshot, screenshot, and limitations are recorded in the
 The live retail process did not enable the Vulkan validation layer; renderer
 validation coverage remains from the separate host regression runs.
 
+A single `KEYCODE_BUTTON_A` was then injected into the active Redmi app while
+it showed the disclaimer. Ten seconds later, the screenshot hash was unchanged,
+the same app process remained top-resumed, and the guest log matched the earlier
+snapshot byte-for-byte. The event's delivery to the guest is unconfirmed; no new
+draw contract was captured. See the
+[`post-disclaimer input probe`](../evidence/process2_redmi_disclaimer_after_a_20261026.json)
+and [captured frame](../evidence/process2_redmi_disclaimer_after_a_20261026.png).
+
 ## Commands
 
 ```bash
