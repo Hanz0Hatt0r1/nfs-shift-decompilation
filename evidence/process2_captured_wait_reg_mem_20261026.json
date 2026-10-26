@@ -1,0 +1,131 @@
+{
+  "schema": "shift.process2.captured_wait_reg_mem.v1",
+  "observed_at_local": "2026-10-26",
+  "process2": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "source_head_before_this_change": "9b205514fc9978a4734f3410c75468b43c08e118",
+    "linux_plugin_sha256": "1ab1cf6a435ba1e7c069ee2c284246de1cfa04393db5411940abc00bc7e7579b",
+    "android_plugin_translation_unit_sha256": "34fc606d68b32c6bb581380ee4df9884d14b0cebe489eca96b266d791ddffd3c",
+    "android_plugin_translation_unit": "aarch64-none-linux-android29, NDK 28.2.13676358"
+  },
+  "retail_capture": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_sha256": "2b0d46856da000cecafb46581ddff50da99f549ff335bee9ba489238eed24059",
+    "mapped_plugin_sha256_at_gdb_stop": "0479958574e7dfaac77a59b026921f7f7ef49fb29be468a7dc75b99c1a9f173a",
+    "wait_function": "0x823B34A0",
+    "ring": {
+      "guest_base": "0x09752580",
+      "size_bytes": "0x8000",
+      "rptr_writeback": "0x1c",
+      "last_sampled_wptr": "0x49",
+      "pending_dwords": 45,
+      "outer_indirect_buffer": {
+        "ring_dword_index": "0x1c",
+        "guest_address": "0x095D0120",
+        "dword_count": 479
+      },
+      "production_snapshot": {
+        "rptr": "0x1c",
+        "wptr_at_first_batch_snapshot": "0x1f",
+        "snapshot_ok": true,
+        "expand_ok": true,
+        "flattened_packet_count": 149,
+        "error": null
+      }
+    },
+    "nested_indirect_buffers": [
+      {
+        "guest_address": "0x0975B660",
+        "dword_count": 74,
+        "sha256": "515d445533bd11926618e9d1cbd5a4f7eaf51930dd27b7935b1efecf24845d7b"
+      },
+      {
+        "guest_address": "0x0975C3A0",
+        "dword_count": 13,
+        "sha256": "7faaea1a5e85dd8155e2ec67f1c3c63ba1bf57e1d52165c44f254b6099f684a9"
+      },
+      {
+        "guest_address": "0x0975CFE0",
+        "dword_count": 48,
+        "sha256": "4f2445f960ffe0265688c12b9081c0cdb17e8c0a4c8191cbfecb6bfd6bb8dbfc"
+      }
+    ],
+    "waits": {
+      "leading_memory_wait": {
+        "guest_address": "0x1B964004",
+        "reference": "0x00000001",
+        "sampled_dword_at_gdb_stop": "0x00000000"
+      },
+      "builder_prefix_memory_waits": [
+        {"guest_address": "0x1B964000", "reference": "0x00000004"},
+        {"guest_address": "0x1B964014", "reference": "0x00000208"},
+        {"guest_address": "0x1B964010", "reference": "0x823A4758"}
+      ],
+      "callback_builder_prefix_ib_byte_offset": "0x4b0",
+      "interrupt_packet": {"opcode": "0x54", "cpu_mask": "0x4"}
+    },
+    "gdb_sample": {
+      "source0_callbacks": 9,
+      "source1_callbacks": 0,
+      "producer_0x823A4758_hits": 0,
+      "guest_predicate": "0x14",
+      "completion_mask_0x02_set": false,
+      "termination": "title stopped at the first guest wait"
+    }
+  },
+  "implementation": {
+    "wait_packet": "Type-3 opcode 0x3c; bounded support for memory target, Equal, full mask, Xenos endian mode 2, poll interval 0x100",
+    "polling": "acquire atomic guest-memory load, captured Xenos endian conversion, 1 ms host sleep between unsuccessful polls, exit on ring-worker shutdown",
+    "logging": "logs entry into the first 16 supported waits and logs completion separately",
+    "unsupported_forms": "logged and skipped as before"
+  },
+  "regressions": {
+    "guest_ring_check": {
+      "result": "passed",
+      "scope": "Production ring snapshot and recursive IB expander; exact captured 3-word outer IB header, three exact nested payloads, exact 30-dword captured wait/interrupt prefix at byte offset 0x4b0; remaining outer words are NOP padding",
+      "callback_invoked": false,
+      "binary_sha256": "6896c2f21deb94a923a53b54fc23780faa562ef0a854a0caab7c3ed049f48173"
+    },
+    "live_ring_smoke": {
+      "result": "passed",
+      "scope": "Production RingWorkerLoop through a root ring IB, captured wait and interrupt packet forms; synthetic vertex/resource inputs",
+      "submissions": 3,
+      "interrupt_packets_reached": 3,
+      "registered_guest_callback": false,
+      "binary_sha256": "1278722844245edd5cf93be8e21e4138c93522a01dd281aa910537bb773027a4"
+    },
+    "linux_ctest": {
+      "result": "6/6 passed",
+      "validation_layer_requested": "VK_LAYER_KHRONOS_validation"
+    },
+    "android": {
+      "result": "plugin translation unit compiled",
+      "full_plugin_link_or_apk": false,
+      "nonfatal_sdk_warning": "ARM64 fpcr inline-assembly operand-width warning in rex/platform/fpscr.h"
+    }
+  },
+  "interpretation": {
+    "confirmed": [
+      "The captured outer IB was committed in the sampled ring range; WPTR 0x49 was beyond RPTR 0x1c.",
+      "The exact production expander reported success and 149 packets for the initial ring snapshot containing the outer IB.",
+      "The three supplied nested spans parse through the production recursion fixture.",
+      "The old mapped plugin at the GDB stop did not implement supported memory WAIT_REG_MEM and would not block on it."
+    ],
+    "not_confirmed": [
+      "Whether the asynchronous production ring worker completed the 149-packet batch before GDB stopped the title.",
+      "Whether another guest thread or GPU command writes 0x1B964004 after the captured zero sample.",
+      "Whether source-1 was dispatched in an uninterrupted exact-XEX run with the current plugin SHA.",
+      "A menu transition, race scene, or full retail parity."
+    ],
+    "next_observation": "Run the exact-XEX stream without stopping all threads at the first guest wait; record the production ring trace completion/writeback and the new WAIT_REG_MEM entry/completion logs while observing writes to 0x1B964004."
+  },
+  "disclaimer_frame": {
+    "report": "User reports the frame is malformed.",
+    "source_isolated": "Retail draws 5058-5061 sample the captured 512x8 Xenos format-20 texture at 0x0A24B000.",
+    "independent_expected_appearance": false,
+    "renderer_change_made": false,
+    "status": "open; no color/blend guess was introduced"
+  },
+  "process1_files_modified": false
+}

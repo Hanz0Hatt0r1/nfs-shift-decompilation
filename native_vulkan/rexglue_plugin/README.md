@@ -410,6 +410,40 @@ interrupts and dispatched callbacks. See the `gpu_interrupt_routing_update`
 and `post_scalar_destination_live_rerun` entries in the evidence JSON for the
 earlier build and test details.
 
+## Captured WAIT_REG_MEM and retail ring boundary (2026-10-26)
+
+The plugin now handles the captured Type-3 `WAIT_REG_MEM` form used by the
+retail stream: memory target, Equal comparison, full mask, Xenos endian mode 2,
+and poll interval `0x100`. It reads the guest word atomically, applies the
+captured endian conversion, and waits until the observed predicate is met or
+the ring worker shuts down. Other forms remain unsupported and are logged.
+
+The guest-ring regression snapshots the captured ring `INDIRECT_BUFFER` at
+dword `0x1c` (guest address `0x095D0120`, length `0x1df` dwords), expands it,
+and checks the captured three-wait/source-1 interrupt prefix at IB byte offset
+`0x4b0`. It also includes the three exact nested spans supplied by P1. The test
+fills the rest of the outer 479-dword extent with NOPs; it verifies ring
+snapshot, recursion, framing, and packet order, not every word of the retail IB.
+The live-ring smoke puts the captured waits and interrupt inside an IB and
+verifies the production ring worker reaches the interrupt after the waits.
+Its resource inputs are synthetic and no guest callback is installed. Linux
+CTest passed 6/6 with `VK_LAYER_KHRONOS_validation` requested; the plugin
+translation unit compiled for Android API 29 / ARM64. This is not a full
+Android plugin link or APK run.
+
+P1's exact-XEX trace recorded `RPTR=0x1c`, final sampled `WPTR=0x49` (45 pending
+dwords), and `expand-ok=true` with 149 flattened packets for the first batch
+that contained the outer IB. The three nested physical spans also parse through
+the production expansion path. This does not prove that the consumer finished
+the batch before the GDB harness stopped the title at the guest wait. At that
+stop, the target word for a preceding memory wait (`0x1B964004`, reference 1)
+was zero. A zero sample alone does not show that no guest thread will write it;
+the updated plugin logs entry into a wait and logs completion separately.
+The same-sample production completion trace or a non-stopping wait/watchpoint
+run is needed before classifying a retail interrupt loss. Full hashes and
+capture bounds are in
+[`process2_captured_wait_reg_mem_20261026.json`](../../evidence/process2_captured_wait_reg_mem_20261026.json).
+
 On 2026-10-24, a fresh ADB screenshot of the still-running Redmi Note 8 Pro app
 was fully black. Its latest runtime log records one captured retail draw
 translated and submitted to the Vulkan presenter, but the
@@ -895,6 +929,9 @@ outputs are closely aligned after viewport scaling, but the app's mapped DSO
 could not be verified from Android, and neither output is an independent Xenos
 reference. The capture isolates which draws and texture produce the strips; it
 does not determine whether their pixels are intentional or a decode/blend bug.
+The user reports that the disclaimer frame is malformed. The expected border
+shape/color is not yet available as an independent reference, so no captured
+texture or blend state has been changed; this visual issue remains open.
 See the [draw-level record](../../evidence/process2_disclaimer_draw_isolation_20261026.json)
 and [Linux Vulkan readback](../../evidence/process2_linux_disclaimer_frame907_readback_20261026.png).
 

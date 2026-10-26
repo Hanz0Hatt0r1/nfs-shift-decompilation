@@ -31,6 +31,29 @@ struct DecodedGuestSwap {
     uint32_t height;
 };
 
+enum class GuestWaitCompare : uint8_t {
+    Never = 0,
+    Less = 1,
+    LessEqual = 2,
+    Equal = 3,
+    NotEqual = 4,
+    GreaterEqual = 5,
+    Greater = 6,
+    Always = 7,
+};
+
+struct DecodedWaitRegMem {
+    uint32_t control;
+    uint32_t poll_address;
+    uint32_t guest_address;
+    uint32_t endian_mode;
+    uint32_t reference;
+    uint32_t mask;
+    uint32_t poll_interval;
+    GuestWaitCompare compare;
+    bool memory;
+};
+
 enum class PacketType : uint8_t {
     Type0,
     Type1,
@@ -563,6 +586,18 @@ bool decode_captured_gpu_interrupt(
     size_t byte_length,
     uint32_t* cpu_mask,
     std::string* error);
+
+// Decodes the five-word payload of a PM4_WAIT_REG_MEM packet. Memory addresses
+// retain their low two Xenos endian bits; the condition helper expects an
+// endian-normalized observed value.
+bool decode_captured_wait_reg_mem(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    DecodedWaitRegMem* output,
+    std::string* error);
+bool captured_wait_reg_mem_condition_met(
+    const DecodedWaitRegMem& wait,
+    uint32_t observed_value) noexcept;
 
 // Decodes the four-payload-word ReXGlue PM4_XE_SWAP marker written by
 // VdSwap. This exposes the guest frontbuffer address and dimensions; it does

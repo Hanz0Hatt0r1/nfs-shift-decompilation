@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
@@ -37,6 +38,9 @@ constexpr uint32_t kVertexShaderAddress = 0x09D568E0u;
 constexpr uint32_t kTextureAddress = 0x09D57000u;
 constexpr uint32_t kQueueDescriptorPhysicalAddress = 0x17AF4000u;
 constexpr uint32_t kQueueDescriptorVirtualAddress = 0xB7AF4000u;
+constexpr uint32_t kWaitMarkerAddress = 0x00014000u;
+constexpr uint32_t kWaitScratchAddress = 0x1B964000u;
+constexpr uint32_t kIndirectBufferAddress = 0x00030000u;
 constexpr uint32_t kFrontbufferAddress = 0x00020000u;
 constexpr uint32_t kTargetWidth = 1280u;
 constexpr uint32_t kTargetHeight = 720u;
@@ -53,6 +57,14 @@ void write_be32(uint8_t* bytes, uint32_t value) {
   bytes[1] = static_cast<uint8_t>(value >> 16);
   bytes[2] = static_cast<uint8_t>(value >> 8);
   bytes[3] = static_cast<uint8_t>(value);
+}
+
+void store_guest_be32_atomic(uint8_t* bytes, uint32_t value) {
+  auto* word = reinterpret_cast<uint32_t*>(bytes);
+  const uint32_t raw = std::endian::native == std::endian::little
+                           ? std::byteswap(value)
+                           : value;
+  __atomic_store_n(word, raw, __ATOMIC_RELEASE);
 }
 
 void append_be32(std::vector<uint8_t>* bytes, uint32_t value) {
@@ -177,6 +189,22 @@ std::vector<uint8_t> make_pm4_stream() {
   append_type3(&stream, 0x36u, {0x00060004u, kIndexAddress, 0x40000006u});
   // The captured AutoIndex rectangle-list form consumes three fetched vertices.
   append_type3(&stream, 0x36u, {0x00030088u});
+  // These wait/interrupt/ack operands are from the captured retail stream
+  // builder. The two EVENT_WRITE_SHD markers let the smoke test prove that
+  // the consumer pauses at the captured waits until their memory conditions
+  // are released by the test harness.
+  append_type3(&stream, 0x58u,
+               {0x00000003u, kWaitMarkerAddress | 2u, 1u});
+  append_type3(&stream, 0x3Cu,
+               {0x13u, 0x1B964002u, 0x00000004u, 0xFFFFFFFFu, 0x00000100u});
+  append_type3(&stream, 0x3Cu,
+               {0x13u, 0x1B964016u, 0x00000208u, 0xFFFFFFFFu, 0x00000100u});
+  append_type3(&stream, 0x3Cu,
+               {0x13u, 0x1B964012u, 0x823A4758u, 0xFFFFFFFFu, 0x00000100u});
+  append_type3(&stream, 0x54u, {0x00000004u});
+  append_type0(&stream, 0x045Eu, 4u);
+  append_type3(&stream, 0x58u,
+               {0x00000003u, kWaitMarkerAddress | 2u, 2u});
   // A retail-shaped EVENT_WRITE_SHD updates descriptor+0 through its physical
   // address; the consumer reads the same storage through the 0xB... alias.
   append_type3(&stream, 0x58u,
@@ -185,6 +213,14 @@ std::vector<uint8_t> make_pm4_stream() {
   append_type3(&stream, 0x64u,
                {0x53574150u, kFrontbufferAddress, kTargetWidth, kTargetHeight});
   return stream;
+}
+
+std::vector<uint8_t> make_ring_stream(const std::vector<uint8_t>& indirect) {
+  std::vector<uint8_t> ring_stream;
+  append_type3(&ring_stream, 0x3Fu,
+               {kIndirectBufferAddress,
+                static_cast<uint32_t>(indirect.size() / sizeof(uint32_t))});
+  return ring_stream;
 }
 
 bool reserve_guest_range(rex::memory::VirtualHeap* heap, uint32_t address,
@@ -237,6 +273,9 @@ int main(int argc, char** argv) {
       reserve_guest_range(physical_heap, kRingAddress, 0x3000u) &&
       reserve_guest_range(physical_heap, kQueueDescriptorPhysicalAddress,
                           kPageBytes) &&
+      reserve_guest_range(physical_heap, kWaitMarkerAddress, kPageBytes) &&
+      reserve_guest_range(physical_heap, kWaitScratchAddress, kPageBytes) &&
+      reserve_guest_range(physical_heap, kIndirectBufferAddress, kPageBytes) &&
       reserve_guest_range(physical_heap, 0x0975D000u, kPageBytes) &&
       reserve_guest_range(physical_heap, 0x09D50000u, kPageBytes) &&
       reserve_guest_range(physical_heap, 0x09D56000u, kPageBytes) &&
@@ -254,6 +293,12 @@ int main(int argc, char** argv) {
       memory.TranslatePhysical<uint8_t*>(kQueueDescriptorPhysicalAddress);
   uint8_t* const queue_descriptor_virtual =
       memory.TranslateVirtual<uint8_t*>(kQueueDescriptorVirtualAddress);
+  uint8_t* const wait_marker_bytes =
+      memory.TranslatePhysical<uint8_t*>(kWaitMarkerAddress);
+  uint8_t* const wait_scratch_bytes =
+      memory.TranslatePhysical<uint8_t*>(kWaitScratchAddress);
+  uint8_t* const indirect_bytes =
+      memory.TranslatePhysical<uint8_t*>(kIndirectBufferAddress);
   uint8_t* const index_bytes =
       memory.TranslatePhysical<uint8_t*>(kIndexAddress);
   uint8_t* const vertex_bytes =
@@ -265,7 +310,8 @@ int main(int argc, char** argv) {
   uint8_t* const texture_bytes =
       memory.TranslatePhysical<uint8_t*>(kTextureAddress);
   if (!ring_bytes || !writeback_bytes || !queue_descriptor_physical ||
-      !queue_descriptor_virtual || !index_bytes || !vertex_bytes ||
+      !queue_descriptor_virtual || !wait_marker_bytes || !wait_scratch_bytes ||
+      !indirect_bytes || !index_bytes || !vertex_bytes ||
       !pixel_shader_bytes || !vertex_shader_bytes || !texture_bytes) {
     dlclose(library);
     return fail("ReXGlue guest memory translation failed");
@@ -274,14 +320,19 @@ int main(int argc, char** argv) {
   const std::vector<uint8_t> vertex_shader = make_vertex_shader();
   const std::vector<uint8_t> pixel_shader = make_captured_pixel_shader_slice();
   const std::vector<uint8_t> pm4_stream = make_pm4_stream();
-  if ((pm4_stream.size() & 3u) != 0u || pm4_stream.size() > 0x1000u) {
+  const std::vector<uint8_t> ring_stream = make_ring_stream(pm4_stream);
+  if ((pm4_stream.size() & 3u) != 0u || pm4_stream.size() > 0x1000u ||
+      ring_stream.size() != 3u * sizeof(uint32_t)) {
     dlclose(library);
     return fail(
         "synthetic live-ring PM4 stream is not dword aligned or exceeds "
         "capacity");
   }
   std::memset(ring_bytes, 0, 0x3000u);
-  std::memcpy(ring_bytes, pm4_stream.data(), pm4_stream.size());
+  std::memset(wait_marker_bytes, 0, kPageBytes);
+  std::memset(wait_scratch_bytes, 0, kPageBytes);
+  std::memcpy(ring_bytes, ring_stream.data(), ring_stream.size());
+  std::memcpy(indirect_bytes, pm4_stream.data(), pm4_stream.size());
   write_be32(queue_descriptor_virtual, 1u);
   std::memcpy(vertex_shader_bytes, vertex_shader.data(), vertex_shader.size());
   std::memcpy(pixel_shader_bytes, pixel_shader.data(), pixel_shader.size());
@@ -328,10 +379,10 @@ int main(int argc, char** argv) {
     dlclose(library);
     return fail("guest GPU vblank interrupt-status bit was not asserted");
   }
-  const uint32_t stream_dwords = static_cast<uint32_t>(pm4_stream.size() / 4u);
+  const uint32_t stream_dwords = static_cast<uint32_t>(ring_stream.size() / 4u);
   constexpr uint32_t kSubmittedBatches = 3u;
   constexpr uint32_t kRingBytes = 1u << (kRingSizeLog2 + 3u);
-  if (pm4_stream.size() * kSubmittedBatches > kRingBytes) {
+  if (ring_stream.size() * kSubmittedBatches > kRingBytes) {
     graphics->Shutdown();
     graphics.reset();
     dlclose(library);
@@ -342,12 +393,33 @@ int main(int argc, char** argv) {
     const uint32_t batch_end = stream_dwords * batch;
     if (batch > 1u) {
       std::memcpy(
-          ring_bytes + static_cast<size_t>(batch - 1u) * pm4_stream.size(),
-          pm4_stream.data(), pm4_stream.size());
+          ring_bytes + static_cast<size_t>(batch - 1u) * ring_stream.size(),
+          ring_stream.data(), ring_stream.size());
     }
     if (!mmio->CheckStore(kWritePointerRegister, batch_end)) {
       consumed_all_batches = false;
       break;
+    }
+    if (batch == 1u) {
+      const auto marker_deadline =
+          std::chrono::steady_clock::now() + std::chrono::seconds(20);
+      while (std::chrono::steady_clock::now() < marker_deadline &&
+             read_be32(wait_marker_bytes) != 1u) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+      if (read_be32(wait_marker_bytes) != 1u) {
+        consumed_all_batches = false;
+        break;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(20));
+      if (read_be32(wait_marker_bytes) != 1u ||
+          read_be32(writeback_bytes) != 0u) {
+        consumed_all_batches = false;
+        break;
+      }
+      store_guest_be32_atomic(wait_scratch_bytes, 4u);
+      store_guest_be32_atomic(wait_scratch_bytes + 0x14u, 0x208u);
+      store_guest_be32_atomic(wait_scratch_bytes + 0x10u, 0x823A4758u);
     }
     const auto deadline =
         std::chrono::steady_clock::now() + std::chrono::seconds(20);
@@ -364,6 +436,7 @@ int main(int argc, char** argv) {
   const bool consumed = consumed_all_batches &&
                         read_be32(writeback_bytes) ==
                             stream_dwords * kSubmittedBatches &&
+                        read_be32(wait_marker_bytes) == 2u &&
                         mmio->CheckLoad(kReadPointerRegister, &read_pointer) &&
                         read_pointer == stream_dwords * kSubmittedBatches;
   const bool event_write_visible_through_alias =
@@ -454,7 +527,7 @@ int main(int argc, char** argv) {
     return fail("PM4 stream was not consumed through live MMIO");
   }
   if (!event_write_visible_through_alias ||
-      diagnostics.find("EVENT_WRITE_SHD #0 initiator=00000003 "
+      diagnostics.find("EVENT_WRITE_SHD #2 initiator=00000003 "
                        "guest=17AF4000 endian=2 packet_value=00000003") ==
           std::string::npos) {
     std::cerr << diagnostics << '\n';
@@ -469,7 +542,17 @@ int main(int argc, char** argv) {
        offset += std::strlen(submission_marker)) {
     ++submission_count;
   }
+  const char* const interrupt_marker =
+      "consumed 1 PM4_INTERRUPT packets and dispatched 0 guest callbacks";
+  size_t interrupt_count = 0;
+  for (size_t offset = 0;
+       (offset = diagnostics.find(interrupt_marker, offset)) !=
+       std::string::npos;
+       offset += std::strlen(interrupt_marker)) {
+    ++interrupt_count;
+  }
   if (submission_count != kSubmittedBatches ||
+      interrupt_count != kSubmittedBatches ||
       diagnostics.find("2 pointer-loaded shader programs (0 unresolved)") ==
           std::string::npos ||
       diagnostics.find(

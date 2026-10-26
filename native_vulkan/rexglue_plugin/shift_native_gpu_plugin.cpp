@@ -1767,6 +1767,85 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     event.endian_mode, event.value, guest_swap_counter,
                     previous_guest_value, stored_guest_value);
               }
+            } else if (packet.type == shift::xbox::PacketType::Type3 &&
+                       packet.opcode == 0x3Cu) {
+              shift::xbox::DecodedWaitRegMem wait{};
+              if (!shift::xbox::decode_captured_wait_reg_mem(
+                      packet_bytes, packet.byte_length, &wait, &error)) {
+                ++unsupported_draws;
+                REXLOG_WARN("shift-native: rejected WAIT_REG_MEM packet: {}",
+                            error);
+                continue;
+              }
+              if (!wait.memory ||
+                  wait.compare != shift::xbox::GuestWaitCompare::Equal ||
+                  wait.mask != UINT32_MAX || wait.endian_mode != 2u ||
+                  wait.poll_interval != 0x100u) {
+                ++unsupported_draws;
+                REXLOG_WARN(
+                    "shift-native: unsupported WAIT_REG_MEM form control={:08X} "
+                    "memory={} compare={} mask={:08X} endian={} interval={:08X}",
+                    wait.control, wait.memory,
+                    static_cast<uint32_t>(wait.compare), wait.mask,
+                    wait.endian_mode, wait.poll_interval);
+                continue;
+              }
+              if (!physical_span_valid(wait.guest_address, sizeof(uint32_t))) {
+                ++unsupported_draws;
+                REXLOG_WARN(
+                    "shift-native: WAIT_REG_MEM address {:08X} is outside "
+                    "physical memory",
+                    wait.guest_address);
+                continue;
+              }
+              auto* poll_word = memory_->TranslatePhysical<uint32_t*>(
+                  wait.guest_address);
+              if (!poll_word) {
+                ++unsupported_draws;
+                REXLOG_WARN(
+                    "shift-native: could not translate WAIT_REG_MEM address {:08X}",
+                    wait.guest_address);
+                continue;
+              }
+              const auto wait_started = std::chrono::steady_clock::now();
+              static std::atomic<uint32_t> wait_log_count{0};
+              const uint32_t wait_log_index =
+                  wait_log_count.fetch_add(1, std::memory_order_relaxed);
+              if (wait_log_index < 16u) {
+                REXLOG_INFO(
+                    "shift-native: entering captured WAIT_REG_MEM guest={:08X} "
+                    "reference={:08X} mask={:08X} endian={} compare={}",
+                    wait.guest_address, wait.reference, wait.mask,
+                    wait.endian_mode, static_cast<uint32_t>(wait.compare));
+              }
+              uint32_t poll_count = 0;
+              for (;;) {
+                const uint32_t raw_value =
+                    __atomic_load_n(poll_word, __ATOMIC_ACQUIRE);
+                const uint32_t observed_value = rex::graphics::xenos::GpuSwap(
+                    raw_value,
+                    static_cast<rex::graphics::xenos::Endian>(wait.endian_mode));
+                if (shift::xbox::captured_wait_reg_mem_condition_met(
+                        wait, observed_value)) {
+                  break;
+                }
+                {
+                  std::lock_guard<std::mutex> lock(ring_mutex_);
+                  if (ring_worker_shutdown_) return;
+                }
+                ++poll_count;
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+              }
+              if (wait_log_index < 16u) {
+                const auto elapsed = std::chrono::duration_cast<
+                    std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - wait_started);
+                REXLOG_INFO(
+                    "shift-native: completed captured WAIT_REG_MEM guest={:08X} "
+                    "reference={:08X} polls={} elapsed_ms={}",
+                    wait.guest_address, wait.reference, poll_count,
+                    elapsed.count());
+              }
             } else if (packet.type == shift::xbox::PacketType::Type0 ||
                 packet.type == shift::xbox::PacketType::Type1) {
               std::vector<shift::xbox::GuestRegisterWrite> writes;

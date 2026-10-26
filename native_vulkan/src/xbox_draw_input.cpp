@@ -882,6 +882,62 @@ bool decode_captured_gpu_interrupt(
     return true;
 }
 
+bool decode_captured_wait_reg_mem(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    DecodedWaitRegMem* output,
+    std::string* error) {
+    constexpr size_t kPacketBytes = 6u * sizeof(uint32_t);
+    if (!packet_bytes || !output || byte_length != kPacketBytes) {
+        return fail("invalid WAIT_REG_MEM packet length", error);
+    }
+
+    const uint32_t header = read_be32(packet_bytes);
+    const uint32_t count = ((header >> 16) & 0x3FFFu) + 1u;
+    if ((header >> 30) != 3u || ((header >> 8) & 0xFFu) != 0x3Cu ||
+        count != 5u) {
+        return fail("unsupported WAIT_REG_MEM packet header", error);
+    }
+
+    const uint32_t control = read_be32(packet_bytes + 4u);
+    if ((control & ~0x17u) != 0u) {
+        return fail("unsupported WAIT_REG_MEM control bits", error);
+    }
+    const uint32_t poll_address = read_be32(packet_bytes + 8u);
+    DecodedWaitRegMem decoded{};
+    decoded.control = control;
+    decoded.poll_address = poll_address;
+    decoded.memory = (control & 0x10u) != 0u;
+    decoded.guest_address = decoded.memory ? poll_address & ~uint32_t{3}
+                                           : poll_address;
+    decoded.endian_mode = decoded.memory ? poll_address & 3u : 0u;
+    decoded.reference = read_be32(packet_bytes + 12u);
+    decoded.mask = read_be32(packet_bytes + 16u);
+    decoded.poll_interval = read_be32(packet_bytes + 20u);
+    decoded.compare = static_cast<GuestWaitCompare>(control & 7u);
+    *output = decoded;
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_wait_reg_mem_condition_met(
+    const DecodedWaitRegMem& wait,
+    uint32_t observed_value) noexcept {
+    const uint32_t value = observed_value & wait.mask;
+    const uint32_t reference = wait.reference & wait.mask;
+    switch (wait.compare) {
+        case GuestWaitCompare::Never: return false;
+        case GuestWaitCompare::Less: return value < reference;
+        case GuestWaitCompare::LessEqual: return value <= reference;
+        case GuestWaitCompare::Equal: return value == reference;
+        case GuestWaitCompare::NotEqual: return value != reference;
+        case GuestWaitCompare::GreaterEqual: return value >= reference;
+        case GuestWaitCompare::Greater: return value > reference;
+        case GuestWaitCompare::Always: return true;
+    }
+    return false;
+}
+
 bool decode_guest_swap(
     const uint8_t* packet_bytes,
     size_t byte_length,
