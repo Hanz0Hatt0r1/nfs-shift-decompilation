@@ -68,6 +68,20 @@
       "sha256": "414ce5a95ad946c59117eb37250a4c20b717edda93b92cc4d16c05a73e2a7667",
       "build_id": "11eb91c7594138674ed46d2780b2ce44498c23d1"
     },
+    "per_draw_visibility_android_plugin_build": {
+      "result": "ARM64 debug plugin compile and link passed; no APK install or live plugin run",
+      "sdk_root": "/home/pes/work/process2-android-sdk-v0.10.0-snapshot",
+      "ndk": "28.2.13676358",
+      "android_platform": 29,
+      "plugin_path": "/home/pes/work/process2-android-inflight-plugin/plugin-output/librexgpu-shift-natived.so",
+      "plugin_sha256": "16f004e5fb45fff2830e461525683f9082937a659a83852e36fa4bb9f67cc87a",
+      "plugin_build_id": "1dd0bd4b627668829e5a5794ad65535117e2c289",
+      "runtime_path": "/home/pes/work/process2-android-sdk-v0.10.0-snapshot/out/android-arm64/librexruntimed.so",
+      "runtime_sha256": "f30281a1c7c88e74eac7ee2d722d43d8594c77916623c6f4b82ab1621a8edac1",
+      "runtime_build_id": "4d6f44bf8e1fc3f891acb94a79cd80995497721e",
+      "needed_runtime": "librexruntimed.so",
+      "compiler_warning": "One pre-existing Android SDK inline-assembly warning about the FPCR operand width; link succeeded."
+    },
     "android_arm64_renderer_check": {
       "result": "passed",
       "device": "Redmi Note 8 Pro (begonia)",
