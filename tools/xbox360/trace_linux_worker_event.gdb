@@ -52,7 +52,11 @@ break rex::kernel::xboxkrnl::xeKeWaitForSingleObject
 commands
   silent
   if $event0_guest != 0 && ((unsigned long)$rdi == (unsigned long)$base + $event0_guest || (unsigned long)$rdi == (unsigned long)$base + $event1_guest)
-    printf "worker_event_wait gdb_thread=%d event_host=%#lx reason=%u mode=%u alertable=%u timeout=%#lx\n", $_thread, $rdi, $rsi, $rdx, $rcx, $r8
+    if $r8 != 0
+      printf "worker_event_wait gdb_thread=%d event_host=%#lx reason=%u mode=%u alertable=%u timeout_ptr=%#lx timeout_ticks=%#llx\n", $_thread, $rdi, $rsi, $rdx, $rcx, $r8, *(unsigned long long*)$r8
+    else
+      printf "worker_event_wait gdb_thread=%d event_host=%#lx reason=%u mode=%u alertable=%u timeout=INFINITE\n", $_thread, $rdi, $rsi, $rdx, $rcx
+    end
   end
   continue
 end
