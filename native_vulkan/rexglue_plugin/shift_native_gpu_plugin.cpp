@@ -91,6 +91,23 @@ bool GuestRingTraceEnabled() {
   return enabled;
 }
 
+bool IsGuestMemoryWriteCandidateOpcode(uint32_t opcode) {
+  switch (opcode) {
+    case 0x3Du:  // MEM_WRITE
+    case 0x3Eu:  // REG_TO_MEM
+    case 0x40u:  // COPY_DATA
+    case 0x45u:  // COND_WRITE
+    case 0x46u:  // EVENT_WRITE
+    case 0x4Fu:  // MEM_WRITE_CNTR
+    case 0x59u:  // EVENT_WRITE_CFL
+    case 0x5Au:  // EVENT_WRITE_EXT
+    case 0x5Bu:  // EVENT_WRITE_ZPD
+      return true;
+    default:
+      return false;
+  }
+}
+
 uint32_t NextGuestRingTraceRecord() {
   static std::atomic<uint32_t> record{0};
   return record.fetch_add(1, std::memory_order_relaxed);
@@ -1677,6 +1694,31 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               packet_bytes = source_bytes + packet.byte_offset;
             }
 
+            if (GuestRingTraceEnabled() &&
+                packet.type == shift::xbox::PacketType::Type3 &&
+                IsGuestMemoryWriteCandidateOpcode(packet.opcode)) {
+              static std::array<std::atomic<uint32_t>, 256> candidate_log_counts{};
+              const uint32_t log_index = candidate_log_counts[packet.opcode].fetch_add(
+                  1, std::memory_order_relaxed);
+              if (log_index < 16u) {
+                std::ostringstream raw_dwords;
+                const size_t dword_count = packet.byte_length / sizeof(uint32_t);
+                for (size_t dword = 0;
+                     dword < std::min(dword_count, size_t{16}); ++dword) {
+                  raw_dwords << (dword == 0 ? "" : ",") << std::hex
+                             << ReadGuestDword(packet_bytes +
+                                               dword * sizeof(uint32_t));
+                }
+                REXLOG_INFO(
+                    "shift-native: memory-write candidate opcode={:02X} #{} "
+                    "source={:08X} depth={} byte-offset={} bytes={} "
+                    "raw-dwords={}",
+                    packet.opcode, log_index, resolved.source_guest_address,
+                    resolved.nesting_depth, packet.byte_offset,
+                    packet.byte_length, raw_dwords.str());
+              }
+            }
+
             if (packet.type == shift::xbox::PacketType::Type3 &&
                 packet.opcode == 0x46u) {
               static std::atomic<uint32_t> event_write_log_count{0};
@@ -1948,10 +1990,13 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 REXLOG_INFO(
                     "shift-native: EVENT_WRITE_SHD #{} initiator={:08X} "
                     "guest={:08X} endian={} packet_value={:08X} "
-                    "swap_counter={} guest_value={:08X}->{:08X}",
+                    "swap_counter={} guest_value={:08X}->{:08X} "
+                    "source={:08X} depth={} byte-offset={}",
                     event_log_index, event.initiator, event.guest_address,
                     event.endian_mode, event.value, guest_swap_counter,
-                    previous_guest_value, stored_guest_value);
+                    previous_guest_value, stored_guest_value,
+                    resolved.source_guest_address, resolved.nesting_depth,
+                    packet.byte_offset);
               }
             } else if (packet.type == shift::xbox::PacketType::Type3 &&
                        packet.opcode == 0x3Cu) {

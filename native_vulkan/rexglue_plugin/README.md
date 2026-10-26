@@ -1055,6 +1055,23 @@ See [`the current ARM64 replay evidence`](../../evidence/process2_disclaimer_cur
 [decoded strip replay](../../evidence/process2_disclaimer_current_arm64_mali_replay_20261026.png),
 and [compressed raw readback](../../evidence/process2_disclaimer_current_arm64_mali_readback_20261026.bin.gz).
 
+### Guest coherency wait owner tracing (2026-10-26)
+
+The exact retail run remains blocked at `WAIT_REG_MEM` guest physical address
+`0x1B964004` (reference `1`, mask `0xFFFFFFFF`, endian mode `2`). The captured
+outer IB has no memory-write packet before that wait. Its later
+`EVENT_WRITE_SHD` packets write `0x17AF4004` and `0x17AF4000`, so they do not
+explain the wait. The raw bytes of the preceding ring-root IBs were not retained,
+and the producer of `0x1B964004` is still unknown.
+
+The ring trace now optionally logs raw dwords for the first 16 candidate guest
+memory-write packets per opcode, with their source IB and byte offset. Set
+`SHIFT_NATIVE_VULKAN_TRACE_RING=1` for a retail capture. This is logging only:
+it does not write guest memory or change wait behavior. The rebuilt Linux plugin
+passed its five plugin CTests with `VK_LAYER_KHRONOS_validation`; the live-ring
+smoke uses test packets and is not retail parity evidence. See the
+[`wait-owner trace build record`](../../evidence/process2_guest_wait_owner_trace_build_20261026.json).
+
 ## Redmi Bink draw replay with the pipeline cache (2026-10-26)
 
 An A/B on Mali-G76 replayed the captured retail Bink draw #2614 with identical
