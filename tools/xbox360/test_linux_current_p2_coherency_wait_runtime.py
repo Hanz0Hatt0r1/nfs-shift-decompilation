@@ -47,9 +47,22 @@ assert first_wait["completion_mask_set"] is False
 memory_wait = trace["memory_wait"]
 assert memory_wait["hardware_write_watchpoints_armed"] == 4
 assert len(memory_wait["watched_host_aliases"]) == 4
+assert memory_wait["watched_host_aliases"][3]["covers_target"] is False
+assert memory_wait["watched_host_aliases"][3]["correct_host_alias_for_target"] == "0x1FB963004"
 assert memory_wait["source1_callback_hits"] == 0
 assert memory_wait["writes_observed_through_watched_aliases"] == 0
 assert memory_wait["completion_log_count"] == 0
+
+corrected = evidence["corrected_alias_follow_up"]
+assert corrected["context_guest_address"] == "0xFB963000"
+assert corrected["guest_virtual_field_address"] == "0xFB963004"
+assert corrected["correct_vE_host_alias"] == "0x1FB963004"
+assert corrected["pre_watch_sample"]["aliases_equal"] is True
+assert corrected["hardware_write_watchpoints_armed"] == 4
+assert corrected["writes_observed_through_exact_watched_aliases"] == 0
+assert corrected["source1_callback_hits"] == 0
+assert corrected["memory_wait_completion_logged"] is False
+assert corrected["mapped_hashes_verified_in_inferior"] is False
 
 input_probe = evidence["input_probe"]
 assert input_probe["controller"]["created_after_sdl_input_init"] is True
@@ -66,6 +79,6 @@ assert input_probe["controller_input_reached_guest"] is False
 limits = " ".join(evidence["interpretation"]["not_proven"])
 assert "device/DMA" in limits
 assert "offline-race entry" in limits
-assert "Preserve the retail WAIT_REG_MEM" in evidence["interpretation"]["next_p1_step"]
+assert "preserve the retail WAIT_REG_MEM" in evidence["interpretation"]["next_p1_step"]
 
-print("current P2 reaches the unresolved retail guest-memory wait before guest input polling")
+print("corrected target aliases reproduce the unresolved retail wait before guest input polling")
