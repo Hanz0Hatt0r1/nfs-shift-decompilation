@@ -1,6 +1,7 @@
 #include "shift_xbox_shader_translate.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -137,9 +138,83 @@ std::vector<uint8_t> captured_pixel_shader_slice() {
     return shader;
 }
 
+void verify_pre_wait_retail_shader_exports() {
+    // Exact shader-program dwords from the captured outer and nested IBs;
+    // provenance and program hashes are in the matching evidence JSON.
+    const auto from_words = [](const auto& words) {
+        std::vector<uint8_t> bytes(words.size() * sizeof(uint32_t));
+        for (size_t i = 0; i < words.size(); ++i) {
+            write_be32(bytes.data() + i * sizeof(uint32_t), words[i]);
+        }
+        return bytes;
+    };
+    constexpr std::array<uint32_t, 27> outer_vertex_words = {
+        0x30052003u, 0x00001200u, 0xC4000000u, 0x00001005u, 0x00001200u,
+        0xC2000000u, 0x00001006u, 0x10071200u, 0x22000000u, 0x30081000u,
+        0x00393A88u, 0x00000007u, 0x00080000u, 0x40263688u, 0x00000300u,
+        0xC80F8000u, 0x00000000u, 0xE2000000u, 0xC80F803Eu, 0x00000000u,
+        0xE2010100u, 0xC8000000u, 0x00000000u, 0xE2000000u, 0x00000000u,
+        0x00000000u, 0x00000000u,
+    };
+    constexpr std::array<uint32_t, 24> nested_vertex_words = {
+        0x00001003u, 0x00001200u, 0xC4000000u, 0x00001004u, 0x00001200u,
+        0xC2000000u, 0x00001005u, 0x10061200u, 0x22000000u, 0xC8000000u,
+        0x00000000u, 0xE2000000u, 0xC800C000u, 0x00000000u, 0xE2000000u,
+        0xC888C03Eu, 0x00000000u, 0xE2010100u, 0xC8000000u, 0x00000000u,
+        0xE2000000u, 0x00000000u, 0x00000000u, 0x00000000u,
+    };
+    constexpr std::array<uint32_t, 9> pixel_words = {
+        0x00000000u, 0x1001C400u, 0x22000000u, 0xC80F8000u, 0x00000000u,
+        0xE2000000u, 0x00000000u, 0x00000000u, 0x00000000u,
+    };
+
+    const auto translate = [](shift::xbox::CapturedShaderStage stage,
+                              const std::vector<uint8_t>& bytes) {
+        shift::xbox::CapturedShaderTranslation output{};
+        std::string error;
+        if (!shift::xbox::translate_captured_shader_glsl(
+                stage, bytes.data(), bytes.size(), {}, &output, &error)) {
+            std::cerr << "pre-wait retail shader did not translate: "
+                      << error << '\n';
+            std::exit(1);
+        }
+        return output;
+    };
+
+    const auto outer_vertex = translate(
+        shift::xbox::CapturedShaderStage::Vertex, from_words(outer_vertex_words));
+    const auto nested_vertex = translate(
+        shift::xbox::CapturedShaderStage::Vertex, from_words(nested_vertex_words));
+    for (const auto* vertex : {&outer_vertex, &nested_vertex}) {
+        require(vertex->glsl.find("imageStore(") == std::string::npos &&
+                    vertex->glsl.find("buffer ") == std::string::npos &&
+                    vertex->glsl.find("atomic") == std::string::npos,
+                "pre-wait retail vertex shader emitted an explicit memory store");
+    }
+    require(outer_vertex.glsl.find("gl_Position.x = alu_6.x") != std::string::npos &&
+                outer_vertex.glsl.find("shift_interpolator0.x = alu_5.x") !=
+                    std::string::npos &&
+                nested_vertex.glsl.find("gl_Position.x = 0.0") != std::string::npos &&
+                nested_vertex.glsl.find("shift_interpolator0.x = 0.0") !=
+                    std::string::npos,
+            "pre-wait vertex export did not target position/varying outputs");
+
+    const auto pixel = translate(
+        shift::xbox::CapturedShaderStage::Pixel, from_words(pixel_words));
+    require(pixel.glsl.find("layout(location=0) out vec4 shift_color0") !=
+                    std::string::npos &&
+                pixel.glsl.find("shift_color0.x = alu_1.x") != std::string::npos &&
+                pixel.glsl.find("imageStore(") == std::string::npos &&
+                pixel.glsl.find("buffer ") == std::string::npos &&
+                pixel.glsl.find("atomic") == std::string::npos,
+            "captured pixel export stopped targeting color output or emitted a memory store");
+}
+
 }  // namespace
 
 int main() {
+    verify_pre_wait_retail_shader_exports();
+
     const std::vector<uint8_t> vertex_shader =
         captured_full_mini_vertex_shader();
     shift::xbox::CapturedShaderTranslationOptions vertex_options{};

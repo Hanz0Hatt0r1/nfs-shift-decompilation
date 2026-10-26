@@ -444,6 +444,29 @@ run is needed before classifying a retail interrupt loss. Full hashes and
 capture bounds are in
 [`process2_captured_wait_reg_mem_20261026.json`](../../evidence/process2_captured_wait_reg_mem_20261026.json).
 
+### Pre-wait shader effect audit (2026-10-26)
+
+P1's hash-identified exact-XEX capture places the memory wait for
+`0x1B964004 == 1` at outer IB byte `0x49C`. I copied that 1,916-byte IB and its
+three preceding nested IBs into the P2 evidence directory. The outer draw and
+the 24 nested one-point draws load four shader programs. Translating those
+exact program bytes maps vertex exports to `gl_Position`/interpolator 0 and
+pixel exports to Vulkan color output `shift_color0`; none emits an image,
+storage-buffer, or atomic write. The captured copy-destination registers
+`0x2318..0x231B` are all zero, no `LOAD_ALU_CONSTANT` packet appears before the
+wait, and the render target is EDRAM color base tile 0. The captured shaders
+therefore do not directly write the waited guest-physical word.
+
+The new shader-translation regression uses those retail program bytes and
+keeps their export targets explicit. The native CMake build passed and CTest
+passed 4/4. This rules out only these shader programs as a direct memory
+writer; it does not identify a CPU, prior-ring, cache, or device/DMA producer.
+The P1 trace's host watchpoints
+also saw no write through the sampled physical/A/C/E aliases for about 22
+seconds, but cannot observe device/DMA writes or other aliases. See
+[`process2_retail_wait_pre_wait_shader_effect_20261026.json`](../../evidence/process2_retail_wait_pre_wait_shader_effect_20261026.json)
+and the preserved outer/nested IB binaries beside it.
+
 On 2026-10-24, a fresh ADB screenshot of the still-running Redmi Note 8 Pro app
 was fully black. Its latest runtime log records one captured retail draw
 translated and submitted to the Vulkan presenter, but the

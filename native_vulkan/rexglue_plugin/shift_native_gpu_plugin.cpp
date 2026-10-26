@@ -1515,6 +1515,29 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
             }
 
             if (packet.type == shift::xbox::PacketType::Type3 &&
+                packet.opcode == 0x46u) {
+              static std::atomic<uint32_t> event_write_log_count{0};
+              const uint32_t event_write_log_index =
+                  event_write_log_count.fetch_add(1, std::memory_order_relaxed);
+              if (event_write_log_index < 16u) {
+                std::ostringstream raw_dwords;
+                const size_t dword_count = packet.byte_length / sizeof(uint32_t);
+                for (size_t dword = 0;
+                     dword < std::min(dword_count, size_t{8}); ++dword) {
+                  raw_dwords << (dword == 0 ? "" : ",") << std::hex
+                             << ReadGuestDword(packet_bytes +
+                                               dword * sizeof(uint32_t));
+                }
+                REXLOG_INFO(
+                    "shift-native: observed PM4_EVENT_WRITE #{} source={:08X} "
+                    "depth={} byte-offset={} bytes={} raw-dwords={}",
+                    event_write_log_index, resolved.source_guest_address,
+                    resolved.nesting_depth, packet.byte_offset,
+                    packet.byte_length, raw_dwords.str());
+              }
+            }
+
+            if (packet.type == shift::xbox::PacketType::Type3 &&
                 (packet.opcode == 0x2Bu || packet.opcode == 0x36u)) {
               if (packet.opcode == 0x36u && packet.byte_length >= 8u) {
                 const uint32_t initiator = ReadGuestDword(packet_bytes + 4u);
@@ -1784,10 +1807,14 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 ++unsupported_draws;
                 REXLOG_WARN(
                     "shift-native: unsupported WAIT_REG_MEM form control={:08X} "
-                    "memory={} compare={} mask={:08X} endian={} interval={:08X}",
-                    wait.control, wait.memory,
-                    static_cast<uint32_t>(wait.compare), wait.mask,
-                    wait.endian_mode, wait.poll_interval);
+                    "poll-address={:08X} reference={:08X} mask={:08X} "
+                    "memory={} compare={} endian={} interval={:08X} "
+                    "source={:08X} depth={} byte-offset={}",
+                    wait.control, wait.poll_address, wait.reference, wait.mask,
+                    wait.memory,
+                    static_cast<uint32_t>(wait.compare), wait.endian_mode,
+                    wait.poll_interval, resolved.source_guest_address,
+                    resolved.nesting_depth, packet.byte_offset);
                 continue;
               }
               if (!physical_span_valid(wait.guest_address, sizeof(uint32_t))) {
@@ -1814,9 +1841,12 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               if (wait_log_index < 16u) {
                 REXLOG_INFO(
                     "shift-native: entering captured WAIT_REG_MEM guest={:08X} "
-                    "reference={:08X} mask={:08X} endian={} compare={}",
+                    "reference={:08X} mask={:08X} endian={} compare={} "
+                    "source={:08X} depth={} byte-offset={}",
                     wait.guest_address, wait.reference, wait.mask,
-                    wait.endian_mode, static_cast<uint32_t>(wait.compare));
+                    wait.endian_mode, static_cast<uint32_t>(wait.compare),
+                    resolved.source_guest_address, resolved.nesting_depth,
+                    packet.byte_offset);
               }
               uint32_t poll_count = 0;
               for (;;) {
