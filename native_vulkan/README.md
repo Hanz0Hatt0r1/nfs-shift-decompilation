@@ -300,6 +300,36 @@ draw contract was captured. See the
 [`post-disclaimer input probe`](../evidence/process2_redmi_disclaimer_after_a_20261026.json)
 and [captured frame](../evidence/process2_redmi_disclaimer_after_a_20261026.png).
 
+## Fresh Redmi disclaimer-border check (2026-10-26)
+
+The installed provider-resolve APK was still running on the Redmi Note 8 Pro.
+Its live plugin mapping hashes to the same DSO as the packaged Process 2 Vulkan
+plugin. The current phone screenshot shows the original legal text and two
+continuous, neutral-gray horizontal rules. Compared with the earlier Redmi
+screenshot containing purple dotted strips, the text body differs by at most
+two intensity levels while the large changes are confined to the rule bands.
+The core line rows are 281–282 and 812–813 in the 2340×1080 phone screenshot;
+their mean RGB is (145.8, 145.8, 145.8). This verifies the disclaimer border
+path on the live device, without claiming a console-reference color comparison.
+
+The captured log records 1,587 Vulkan draw submissions and 1,589 accepted
+source-0/sample-0 Copy/Convert operations. One 14-draw transition frame at
+22:42:34 MSK was rejected for unsupported target/Copy extent; later 13-draw
+disclaimer submissions continued. Draws #0–13 on that transition remained
+fail-closed. Four failed opens of `menu_background.xml` immediately before it
+do not establish the cause of the absent menu. The app remains on the
+disclaimer; a center tap and Enter left its screenshot byte-identical, and
+delivery of those inputs to the guest is unconfirmed.
+
+See the [live evidence record](../evidence/process2_redmi_provider_resolve_disclaimer_live_20261026.json),
+[phone screenshot](../evidence/process2_redmi_provider_resolve_disclaimer_live_20261026.png),
+and [compressed guest log](../evidence/process2_redmi_provider_resolve_disclaimer_live_20261026.log.gz).
+The native Vulkan build and four host CTest checks passed. The resolve-capable
+plugin also built with Clang and all seven plugin CTest checks passed with
+`VK_LAYER_KHRONOS_validation` forced through the loader. The phone run did not
+enable Vulkan validation layers; language-menu continuity, cutscenes, race
+graphics, and full retail parity remain unverified.
+
 ## Commands
 
 ```bash

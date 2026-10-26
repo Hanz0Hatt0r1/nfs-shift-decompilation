@@ -619,6 +619,14 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   }
 
  private:
+  struct ReadPointerWriteback {
+    bool published = false;
+    uint32_t guest_address = 0;
+    uint32_t previous_value = 0;
+    uint32_t stored_value = 0;
+    void* translated_address = nullptr;
+  };
+
   static uint32_t ReadRegisterThunk(void*, void* context, uint32_t address) {
     return static_cast<ShiftNativeGraphicsSystem*>(context)->ReadRegister(address);
   }
@@ -638,6 +646,65 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     const uint64_t physical_limit = uint64_t{kPhysicalAddressMask} + 1u;
     return memory_ && byte_length != 0 &&
            physical_offset + static_cast<uint64_t>(byte_length) <= physical_limit;
+  }
+
+  ReadPointerWriteback PublishReadPointer(uint64_t generation,
+                                          uint32_t expected_read_pointer,
+                                          uint32_t next_read_pointer,
+                                          const char* phase) {
+    ReadPointerWriteback result{};
+    bool writeback_outside_memory = false;
+    bool writeback_untranslated = false;
+    {
+      std::lock_guard<std::mutex> lock(ring_mutex_);
+      if (ring_generation_ != generation ||
+          ring_read_pointer_ != expected_read_pointer) {
+        return result;
+      }
+      ring_read_pointer_ = next_read_pointer;
+      result.guest_address = read_pointer_writeback_address_;
+      result.published = true;
+      if (result.guest_address) {
+        writeback_outside_memory =
+            !physical_span_valid(result.guest_address, sizeof(uint32_t));
+        if (!writeback_outside_memory) {
+          auto* writeback_word =
+              memory_->TranslatePhysical<uint32_t*>(result.guest_address);
+          writeback_untranslated = writeback_word == nullptr;
+          if (writeback_word) {
+            result.translated_address = writeback_word;
+            result.previous_value =
+                rex::memory::load_and_swap<uint32_t>(writeback_word);
+            rex::memory::store_and_swap<uint32_t>(writeback_word,
+                                                   next_read_pointer);
+            result.stored_value =
+                rex::memory::load_and_swap<uint32_t>(writeback_word);
+          }
+        }
+      }
+    }
+
+    if (writeback_outside_memory) {
+      REXLOG_ERROR("shift-native: RPTR writeback address {:08X} is outside "
+                   "physical memory",
+                   result.guest_address);
+    } else if (writeback_untranslated) {
+      REXLOG_ERROR("shift-native: could not translate RPTR writeback address "
+                   "{:08X}", result.guest_address);
+    } else if (result.guest_address) {
+      static std::atomic<uint32_t> writeback_log_count{0};
+      const uint32_t log_index =
+          writeback_log_count.fetch_add(1, std::memory_order_relaxed);
+      if (log_index < 8u || result.stored_value != next_read_pointer) {
+        REXLOG_INFO(
+            "shift-native: RPTR writeback #{} guest={:08X}, translated={:p}, "
+            "value={:08X}, memory={:08X}->{:08X} phase={}",
+            log_index, result.guest_address, result.translated_address,
+            next_read_pointer,
+            result.previous_value, result.stored_value, phase);
+      }
+    }
+    return result;
   }
 
   static bool ReadGuestMemory(void* context, uint32_t guest_address, size_t byte_length,
@@ -1483,6 +1550,65 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     ++coherency_generation_;
   }
 
+  void ApplyScratchRegisterWrite(uint32_t index, uint32_t value) {
+    if (index == rex::graphics::XE_GPU_REG_SCRATCH_ADDR) {
+      scratch_address_.store(value, std::memory_order_release);
+      return;
+    }
+    if (index == rex::graphics::XE_GPU_REG_SCRATCH_UMSK) {
+      scratch_umsk_.store(value, std::memory_order_release);
+      return;
+    }
+    if (index < rex::graphics::XE_GPU_REG_SCRATCH_REG0 ||
+        index > rex::graphics::XE_GPU_REG_SCRATCH_REG7) {
+      return;
+    }
+
+    const uint32_t scratch_index =
+        index - rex::graphics::XE_GPU_REG_SCRATCH_REG0;
+    const uint32_t umsk = scratch_umsk_.load(std::memory_order_acquire);
+    if ((umsk & (uint32_t{1} << scratch_index)) == 0u) return;
+
+    const uint64_t guest_address =
+        static_cast<uint64_t>(scratch_address_.load(std::memory_order_acquire)) +
+        static_cast<uint64_t>(scratch_index) * sizeof(uint32_t);
+    if (guest_address > kPhysicalAddressMask ||
+        !physical_span_valid(static_cast<uint32_t>(guest_address),
+                             sizeof(uint32_t))) {
+      REXLOG_WARN(
+          "shift-native: ignored scratch register {} writeback to invalid guest "
+          "address {:08X}",
+          scratch_index, static_cast<uint32_t>(guest_address));
+      return;
+    }
+    auto* destination = memory_->TranslatePhysical<uint32_t*>(
+        static_cast<uint32_t>(guest_address));
+    if (!destination) {
+      REXLOG_WARN(
+          "shift-native: could not translate scratch register {} writeback "
+          "address {:08X}",
+          scratch_index, static_cast<uint32_t>(guest_address));
+      return;
+    }
+
+    constexpr auto kScratchEndian = rex::graphics::xenos::Endian::k8in32;
+    const uint32_t previous_value = rex::graphics::xenos::GpuSwap(
+        __atomic_load_n(destination, __ATOMIC_ACQUIRE), kScratchEndian);
+    __atomic_store_n(destination,
+                     rex::graphics::xenos::GpuSwap(value, kScratchEndian),
+                     __ATOMIC_RELEASE);
+    static std::atomic<uint32_t> scratch_write_log_count{0};
+    const uint32_t log_index =
+        scratch_write_log_count.fetch_add(1, std::memory_order_relaxed);
+    if (log_index < 16u) {
+      REXLOG_INFO(
+          "shift-native: SCRATCH_REG{} writeback guest={:08X} umsk={:08X} "
+          "guest_value={:08X}->{:08X}",
+          scratch_index, static_cast<uint32_t>(guest_address), umsk,
+          previous_value, value);
+    }
+  }
+
   bool WaitForGuestMemoryCoherency(std::string* error) {
     bool completed = false;
     const auto drain = [this, &completed, error] {
@@ -1498,6 +1624,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
   void NotifyWriteRegister(uint32_t address, uint32_t value) {
     const uint32_t index = (address & 0xFFFFu) / sizeof(uint32_t);
+    ApplyScratchRegisterWrite(index, value);
     ApplyCoherencyRegisterWrite(index, value);
     if (index != kRingWritePointerRegister) return;
 
@@ -1682,6 +1809,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
       uint32_t interrupt_packets = 0;
       uint32_t dispatched_interrupt_callbacks = 0;
+      ReadPointerWriteback read_pointer_writeback{};
       try {
         std::atomic_thread_fence(std::memory_order_acquire);
         const uint8_t* ring_bytes =
@@ -1690,6 +1818,13 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         std::string error;
         const bool snapshotted = shift::xbox::snapshot_guest_ring_batch(
             ring_bytes, ring_byte_length, read_pointer, write_pointer, &batch, &error);
+        if (snapshotted) {
+          // The root ring bytes are now owned by `batch`; release those slots
+          // before parsing nested work, which may stop at a guest memory wait.
+          read_pointer_writeback = PublishReadPointer(
+              ring_generation, read_pointer, batch.next_read_pointer_dwords,
+              "snapshot");
+        }
         shift::xbox::ExpandedGuestCommandStream expanded{};
         const bool expanded_ok = snapshotted && shift::xbox::expand_guest_indirect_buffers(
             batch, ReadGuestMemory, this, &expanded, &error);
@@ -2237,6 +2372,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                       packet_bytes, packet.byte_length, &writes, &error)) {
                 raw_register_writes += static_cast<uint32_t>(writes.size());
                 for (const shift::xbox::GuestRegisterWrite& write : writes) {
+                  ApplyScratchRegisterWrite(write.register_index, write.value);
                   ApplyCoherencyRegisterWrite(write.register_index, write.value);
                   raster_register_state.apply(write);
                   shader_register_state.apply(write);
@@ -2256,6 +2392,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   shift::xbox::decode_captured_constant_load_data(
                       load, source_bytes, load.byte_length, &writes, &error)) {
                 for (const shift::xbox::GuestRegisterWrite& write : writes) {
+                  ApplyScratchRegisterWrite(write.register_index, write.value);
                   ApplyCoherencyRegisterWrite(write.register_index, write.value);
                   raster_register_state.apply(write);
                   shader_register_state.apply(write);
@@ -2956,42 +3093,20 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         REXLOG_ERROR("shift-native: failed to process guest PM4 batch");
       }
 
-      uint32_t writeback_address = 0;
       uint32_t current_read_pointer = 0;
       uint32_t current_write_pointer = 0;
       uint64_t current_ring_generation = 0;
+      if (!read_pointer_writeback.published) {
+        // Keep malformed/unsupported batches consumable as before, but do not
+        // overwrite a newer ring generation or read pointer.
+        read_pointer_writeback = PublishReadPointer(
+            ring_generation, read_pointer, write_pointer, "completion");
+      }
       {
         std::lock_guard<std::mutex> lock(ring_mutex_);
-        // Consume unsupported packets to keep the guest command producer moving.
-        ring_read_pointer_ = write_pointer;
-        writeback_address = read_pointer_writeback_address_;
         current_read_pointer = ring_read_pointer_;
         current_write_pointer = ring_write_pointer_;
         current_ring_generation = ring_generation_;
-      }
-      uint32_t previous_writeback = 0;
-      uint32_t stored_writeback = 0;
-      if (writeback_address &&
-          physical_span_valid(writeback_address, sizeof(uint32_t))) {
-        auto *writeback_word =
-            memory_->TranslatePhysical<uint32_t *>(writeback_address);
-        previous_writeback = rex::memory::load_and_swap<uint32_t>(writeback_word);
-        rex::memory::store_and_swap<uint32_t>(writeback_word, write_pointer);
-        stored_writeback = rex::memory::load_and_swap<uint32_t>(writeback_word);
-        static std::atomic<uint32_t> writeback_log_count{0};
-        const uint32_t log_index =
-            writeback_log_count.fetch_add(1, std::memory_order_relaxed);
-        if (log_index < 8 || stored_writeback != write_pointer) {
-          REXLOG_INFO(
-              "shift-native: RPTR writeback #{} guest={:08X}, translated={:p}, "
-                     "value={:08X}, memory={:08X}->{:08X}",
-              log_index, writeback_address, static_cast<void *>(writeback_word),
-              write_pointer, previous_writeback, stored_writeback);
-        }
-      } else if (writeback_address) {
-        REXLOG_ERROR("shift-native: RPTR writeback address {:08X} is outside "
-                     "physical memory",
-                     writeback_address);
       }
       if (GuestRingTraceEnabled()) {
         const uint32_t trace_record = NextGuestRingTraceRecord();
@@ -3001,8 +3116,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                       "writeback-guest={:08X} value={:08X}->{:08X}",
                       trace_record, read_pointer, write_pointer,
                       current_read_pointer, current_write_pointer,
-                      current_ring_generation, writeback_address,
-                      previous_writeback, stored_writeback);
+                      current_ring_generation,
+                      read_pointer_writeback.guest_address,
+                      read_pointer_writeback.previous_value,
+                      read_pointer_writeback.stored_value);
         }
       }
       if (interrupt_packets) {
@@ -3039,6 +3156,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   uint32_t coher_base_host_ = 0;
   uint32_t coher_status_host_ = 0;
   uint64_t coherency_generation_ = 0;
+  std::atomic<uint32_t> scratch_address_{0};
+  std::atomic<uint32_t> scratch_umsk_{0};
   uint32_t ring_guest_address_ = 0;
   size_t ring_byte_length_ = 0;
   uint32_t ring_read_pointer_ = 0;

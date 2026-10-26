@@ -199,6 +199,11 @@ std::vector<uint8_t> make_pm4_stream() {
   append_type0(&stream, 0x0A2Fu, {0x00002000u, 0x1B962000u});
   append_type3(&stream, 0x3Cu,
                {0x03u, 0x0A31u, 0u, 0x80000000u, 8u});
+  // Retail setup batch 0x095D0000 selects scratch writebacks at 0x1B964000;
+  // the following SCRATCH_REG1 value produces the captured wait word.
+  append_type0(&stream, 0x01DDu, kWaitScratchAddress);
+  append_type0(&stream, 0x01DCu, 0x00020037u);
+  append_type0(&stream, 0x0579u, 1u);
   // These wait/interrupt/ack operands are from the captured retail stream
   // builder. The two EVENT_WRITE_SHD markers let the smoke test prove that
   // the consumer pauses at the captured waits until their memory conditions
@@ -422,12 +427,27 @@ int main(int argc, char** argv) {
         break;
       }
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      uint32_t blocked_read_pointer = 0;
       if (read_be32(wait_marker_bytes) != 1u ||
-          read_be32(writeback_bytes) != 0u) {
+          read_be32(wait_scratch_bytes + 4u) != 1u ||
+          read_be32(writeback_bytes) != batch_end ||
+          !mmio->CheckLoad(kReadPointerRegister, &blocked_read_pointer) ||
+          blocked_read_pointer != batch_end ||
+          log_output.str().find(
+              "SCRATCH_REG1 writeback guest=1B964004 umsk=00020037 "
+              "guest_value=00000000->00000001") == std::string::npos ||
+          log_output.str().find(
+              "entering captured WAIT_REG_MEM guest=1B964004") ==
+              std::string::npos ||
+          log_output.str().find(
+              "completed captured WAIT_REG_MEM guest=1B964004") ==
+              std::string::npos ||
+          log_output.str().find(
+              "submitted 3 captured indexed draw packets to the Vulkan presenter") !=
+              std::string::npos) {
         consumed_all_batches = false;
         break;
       }
-      store_guest_be32_atomic(wait_scratch_bytes + 4u, 1u);
       store_guest_be32_atomic(wait_scratch_bytes + 0x14u, 0x208u);
       store_guest_be32_atomic(wait_scratch_bytes + 0x10u, 0x823A4758u);
     }

@@ -1,0 +1,97 @@
+{
+  "schema": "shift.process2.redmi_provider_resolve_disclaimer_live.v1",
+  "captured_at_local": "2026-10-26 22:51:54 +03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": "13",
+    "api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift"
+  },
+  "installed_candidate": {
+    "apk_path": "/home/pes/work/process2-provider-resolve-android-apk-20261026/nfsshift-provider-resolve-candidate.apk",
+    "apk_sha256": "55eb6c65565bcd81f8b5e9b69b88ba60a6aa06e6bc24dda9c4e72dffc080e11a",
+    "loaded_plugin_mapping": "/data/app/~~ONpOsfOrO4W2zS0Mh1HRug==/com.hanz0hatt0r.nfsshift-IDV_kR3r2ghiSSL3xmz4fw==/lib/arm64/librexgpu-xenosd.so",
+    "loaded_plugin_sha256": "5de2195efac5a785bf2bb68208c15169b3f17852c37b6d8d035554b748e05192",
+    "packaged_native_plugin_dso_sha256": "5de2195efac5a785bf2bb68208c15169b3f17852c37b6d8d035554b748e05192",
+    "runtime_dso_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "runtime_rebuilt_or_replaced": false,
+    "process_id": 14611,
+    "top_resumed_activity": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity"
+  },
+  "renderer_log": {
+    "device_log_path": "files/nfs_shift/user/logs/nfs_shift_031.log",
+    "captured_log": "process2_redmi_provider_resolve_disclaimer_live_20261026.log.gz",
+    "log_sha256": "114afc59c3c6360d013d6f7089b8d9473e0ee397f6487ac0a865cb91ade1b118",
+    "compressed_log_sha256": "6f3f1a7cb59c780d1eb894e0b338cc9bf9f9d590bfcce260644359954626ebeb",
+    "log_bytes": 4187487,
+    "line_count": 27735,
+    "submitted_draw_batches": 1587,
+    "accepted_source0_sample0_copy_convert": 1589,
+    "refresh_failures": 1,
+    "refresh_failure": "2026-10-26 22:42:34.805 MSK: one 14-draw transition frame rejected because its captured target format or Copy/Convert source extent was unsupported; subsequent 13-draw submissions continued.",
+    "pm4_draw_rejections": 0,
+    "unresolved_transition_draws": "Draws #0-13 at 22:42:34 were fail-closed for unsupported target/copy state; this did not prevent the earlier disclaimer frame from displaying.",
+    "menu_background_open_failures": [
+      "2026-10-26 22:42:28.792-22:42:28.796 MSK: four NtCreateFile attempts for D:\\tracks\\_data\\instances\\scenes\\menu_background.xml or D:\\tracks\\_data\\static\\scenes\\menu_background.xml returned 0xc000000f."
+    ]
+  },
+  "screen": {
+    "screenshot": "process2_redmi_provider_resolve_disclaimer_live_20261026.png",
+    "sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+    "extent": [
+      2340,
+      1080
+    ],
+    "guest_output_extent": [
+      1280,
+      720
+    ],
+    "observation": "Live retail legal disclaimer text is readable. Two symmetric, continuous neutral-gray horizontal rules are visible; the prior candidate screenshot had fragmented purple dots/strips in these bands.",
+    "device_pixel_line_core_rows": [
+      281,
+      282,
+      812,
+      813
+    ],
+    "device_pixel_line_core_x_range": [
+      543,
+      1796
+    ],
+    "device_pixel_line_core_mean_rgb": [
+      145.8,
+      145.8,
+      145.8
+    ],
+    "prior_candidate_screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "prior_candidate_line_mean_rgb_at_same_rows": [
+      [
+        5.2,
+        2.3,
+        8.2
+      ],
+      [
+        3.6,
+        2.2,
+        4.9
+      ]
+    ],
+    "text_body_comparison": "Against the prior screenshot, body-region pixel differences were at most 2 intensity levels; dominant changes are confined to the two horizontal-rule bands.",
+    "tap_and_enter_probe": "One center tap and one Android Enter event were sent; before/after screenshots remained byte-identical. Guest event delivery is unconfirmed."
+  },
+  "verification": {
+    "native_vulkan_build": "success",
+    "native_vulkan_ctest": "4/4 passed in /home/pes/work/process2-current-native-renderer-build-20261026",
+    "plugin_build": "success with Clang 22.1.8; SSSE3 enabled for the Linux SDK build",
+    "plugin_ctest": "7/7 passed with VK_LAYER_KHRONOS_validation forced through the Vulkan loader in /home/pes/work/process2-resolve-live-regression-linux-clang-20261026",
+    "live_device_validation_layer": "not enabled"
+  },
+  "limitations": [
+    "This verifies the live disclaimer output and border correction on this device; it does not verify later language-menu transition, cutscene playback, race graphics, or full retail parity.",
+    "The nearby failed menu_background.xml probes do not establish causality.",
+    "One transition frame included unsupported captured target/copy state and was rejected fail-closed.",
+    "The loaded DSO appears under the APK loader alias librexgpu-xenosd.so; its on-device SHA-256 matches the packaged Process 2 native Vulkan DSO. The alias filename alone does not indicate which renderer code executed."
+  ]
+}
