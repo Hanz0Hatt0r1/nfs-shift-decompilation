@@ -3,12 +3,12 @@
   "date": "2026-10-27",
   "process2": {
     "branch": "work/process2-xbox-live-ring-20261023",
-    "commit": "e7a474578efe7bee4e37d71fe58df875993c3e4f",
+    "commit": "296be17faee91f79ef5036d1b282423295d172ac",
     "change": "Reject one Vulkan submission that contains distinct captured Xenos color or depth base tiles."
   },
   "regression": {
     "case": "Two draws share extent and target format but use different color_base_tiles.",
-    "expected": "submit_captured_vulkan_frame rejects the batch with a target-switch diagnostic before Vulkan submission.",
+    "expected": "submit_captured_vulkan_frame rejects before submission and reports the first draw index plus old/new color and depth bases.",
     "result": "passed"
   },
   "verification": {
@@ -19,15 +19,15 @@
     },
     "linux_rexglue_plugin": {
       "build": "passed",
-      "plugin_sha256": "d4cea0ae2db9950a6a033a75dd941bfb32ba4211bdf5488a897f88a493f71749",
-      "plugin_build_id": "afd497fc15711f051134c281fad860a4adbdc7d7",
+      "plugin_sha256": "0ccbeab62a7a592fda942083c83172a1536a89246c2ffc903aa2188f106ac7b0",
+      "plugin_build_id": "0cd7bba100ae44b92098b14dc5e691b13f995fb2",
       "ctest": "6/6 passed",
       "vulkan_validation": "VK_LAYER_KHRONOS_validation"
     },
     "android_arm64_renderer_check": {
       "build": "passed with NDK r28c, Android API 26, arm64-v8a",
-      "binary_sha256": "d0035b66e108f5572a2695fc39012b30ec249e35dda351d26e5bf57a234745eb",
-      "build_id": "273659b4cf2d98d71e88763f4de71de720669a7f",
+      "binary_sha256": "7c70eebc72d5fa978a83814b9676b0c902c45faaf00e5cdece106942851efa53",
+      "build_id": "6fb8f992c23b456f98298117cb72ff919c97492a",
       "device": "Redmi Note 8 Pro / Android 13 / Mali-G76 MC4 / Vulkan 1.1.131",
       "execution": "Offscreen checker process; captured disclaimer draws plus existing renderer regressions.",
       "result": "passed",
@@ -36,8 +36,8 @@
     "android_arm64_plugin": {
       "build": "passed with NDK r28c, Android API 29, arm64-v8a",
       "link_mode": "Used the exact prebuilt ReXGlue runtime DSO from the installed APK.",
-      "plugin_sha256": "809a620aa8b7583431c3d24bf24dcd16ec7b60f668262423b2ffad7bb8fd2468",
-      "plugin_build_id": "7b6ec7f6b08612f5adbe0f7de425b01f69795b45",
+      "plugin_sha256": "38831e3425059a40673cb8b92c3e2a49ea3aaef269a9e8a550555f31ee1a683f",
+      "plugin_build_id": "71881665aee8f6dd2035442fdc27dc7e060e6dc7",
       "runtime_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
       "needed_runtime_soname": "librexruntimed.so",
       "installed": false

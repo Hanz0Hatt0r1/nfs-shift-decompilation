@@ -379,7 +379,8 @@ change within that submission. The existing submit path creates one Vulkan
 attachment and cannot model Xenos EDRAM target switching; silently merging
 different bases could produce a plausible but incorrect image. A regression
 uses equal-sized draws with different color bases and confirms the batch fails
-before submission. Host renderer CTest passed 4/4 with
+before submission. The error includes the first draw index and both before/after
+base values. Host renderer CTest passed 4/4 with
 `VK_LAYER_KHRONOS_validation`, plugin CTest passed 6/6 with the same layer,
 and the ARM64 renderer-check passed offscreen on the Redmi Note 8 Pro / Mali-G76
 MC4. The running app stayed foregrounded and its screenshot hash did not
