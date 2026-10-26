@@ -450,11 +450,56 @@ int main(int argc, char** argv) {
             output_view, false, 1280, 720, switched_render_target_draws,
             &switched_render_target_error, nullptr,
             enabled_features.geometryShader, &copy) ||
-        switched_render_target_error.find("at draw 1 (color 13 -> 14") ==
+        switched_render_target_error.find(
+            "at draw 1 (color_base=13 -> 14") ==
             std::string::npos) {
       std::cerr << "distinct captured render-target bases were merged into one "
                    "Vulkan pass: "
                 << switched_render_target_error << '\n';
+      return 1;
+    }
+    auto changed_extent_draws = draws;
+    changed_extent_draws[1].raster.width--;
+    std::string changed_extent_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, changed_extent_draws,
+            &changed_extent_error, nullptr, enabled_features.geometryShader,
+            &copy) ||
+        changed_extent_error.find("extent=1280x720 -> 1279x720") ==
+            std::string::npos) {
+      std::cerr << "distinct captured target extents were merged into one "
+                   "Vulkan pass: "
+                << changed_extent_error << '\n';
+      return 1;
+    }
+    auto changed_format_draws = draws;
+    changed_format_draws[1].raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgb10A2Unorm;
+    std::string changed_format_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, changed_format_draws,
+            &changed_format_error, nullptr, enabled_features.geometryShader,
+            &copy) ||
+        changed_format_error.find("color_format=1 -> 2") == std::string::npos) {
+      std::cerr << "distinct captured target formats were merged into one "
+                   "Vulkan pass: "
+                << changed_format_error << '\n';
+      return 1;
+    }
+    auto changed_pitch_draws = draws;
+    changed_pitch_draws[1].raster.surface_pitch--;
+    std::string changed_pitch_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, changed_pitch_draws,
+            &changed_pitch_error, nullptr, enabled_features.geometryShader,
+            &copy) ||
+        changed_pitch_error.find("pitch=1280 -> 1279") == std::string::npos) {
+      std::cerr << "distinct captured target pitches were merged into one "
+                   "Vulkan pass: "
+                << changed_pitch_error << '\n';
       return 1;
     }
     const std::vector<uint32_t> cached_output = output_readback;

@@ -3043,16 +3043,35 @@ bool submit_captured_vulkan_frame(
         return fail("Vulkan presenter extent exceeds signed scissor bounds", error);
     }
     const CapturedRasterState& frame_target = draws.front().raster;
+    const bool linear_rgba8_intermediate = copy &&
+        frame_has_gamma_color_target(draws);
+    const VkFormat frame_target_format = captured_color_format(
+        frame_target.color_format, linear_rgba8_intermediate);
     for (size_t draw_index = 1; draw_index < draws.size(); ++draw_index) {
         const CapturedRasterState& raster = draws[draw_index].raster;
-        if (raster.color_base_tiles != frame_target.color_base_tiles ||
-            raster.depth_base_tiles != frame_target.depth_base_tiles) {
+        const bool target_layout_changed =
+            raster.color_base_tiles != frame_target.color_base_tiles ||
+            raster.depth_base_tiles != frame_target.depth_base_tiles ||
+            raster.width != frame_target.width ||
+            raster.height != frame_target.height ||
+            (copy && captured_color_format(raster.color_format,
+                                           linear_rgba8_intermediate) !=
+                         frame_target_format) ||
+            raster.depth_format != frame_target.depth_format ||
+            (raster.surface_pitch != frame_target.surface_pitch &&
+             raster.sample_count == frame_target.sample_count);
+        if (target_layout_changed) {
             std::ostringstream message;
-            message << "captured Vulkan submission switches Xenos target bases at draw "
-                    << draw_index << " (color " << frame_target.color_base_tiles
-                    << " -> " << raster.color_base_tiles << ", depth "
+            message << "captured Vulkan submission changes Xenos target layout at draw "
+                    << draw_index << " (color_base=" << frame_target.color_base_tiles
+                    << " -> " << raster.color_base_tiles << ", depth_base="
                     << frame_target.depth_base_tiles << " -> "
-                    << raster.depth_base_tiles
+                    << raster.depth_base_tiles << ", extent=" << frame_target.width
+                    << 'x' << frame_target.height << " -> " << raster.width << 'x'
+                    << raster.height << ", color_format="
+                    << static_cast<unsigned>(frame_target.color_format) << " -> "
+                    << static_cast<unsigned>(raster.color_format) << ", pitch="
+                    << frame_target.surface_pitch << " -> " << raster.surface_pitch
                     << "); split the ordered render-target operations before submission";
             return fail(message.str(), error);
         }
@@ -3101,8 +3120,6 @@ bool submit_captured_vulkan_frame(
         return fail("captured Copy/Convert is outside the source-0 sample-0 RGBA8 subset",
                     error);
     }
-    const bool linear_rgba8_intermediate = copy &&
-        frame_has_gamma_color_target(draws);
     if (linear_rgba8_intermediate) {
         VkFormatProperties format_properties{};
         vkGetPhysicalDeviceFormatProperties(
