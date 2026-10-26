@@ -457,3 +457,20 @@ and [disclaimer capture](../evidence/process2_redmi_pm4_interrupt_order_disclaim
 plus the [later black-screen recheck](../evidence/process2_redmi_pm4_interrupt_order_black_recheck_20261026.png).
 The launch does not verify a post-disclaimer menu, racing scene, or complete
 retail parity; existing purple strips remain.
+
+## Redmi black-screen thread sample after PM4 candidate (2026-10-26)
+
+A read-only 5-snapshot `top -H` sample on the installed P2 APK found the
+fullscreen still black while the guest main and controller threads each used
+about one core. `SHIFT Native GP` was at 0% across the sampled tables; the
+renderer vertex/shader thread stayed near idle. This is consistent with the
+renderer not receiving sustained work during this interval, but the snapshot
+contains no guest ring pointers or submit counters and cannot prove that the
+producer stopped. The process remained alive and top-resumed; no input, restart,
+or app-data change occurred during this sample.
+
+The [thread evidence](../evidence/process2_redmi_black_idle_threads_20261026.json)
+and [raw top sample](../evidence/process2_redmi_black_idle_top_20261026.log.gz)
+are attached to the current ARM64 APK/plugin hashes. This shifts the next
+cross-process diagnostic toward the guest main/control path while preserving
+Process 2's renderer boundary; it is not a renderer parity result.
