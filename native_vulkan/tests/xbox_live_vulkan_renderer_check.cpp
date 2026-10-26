@@ -442,6 +442,21 @@ int main(int argc, char** argv) {
                    "each draw resource and its sampler state\n";
       return 1;
     }
+    auto switched_render_target_draws = draws;
+    switched_render_target_draws[1].raster.color_base_tiles++;
+    std::string switched_render_target_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, switched_render_target_draws,
+            &switched_render_target_error, nullptr,
+            enabled_features.geometryShader, &copy) ||
+        switched_render_target_error.find(
+            "switches Xenos color/depth target bases") == std::string::npos) {
+      std::cerr << "distinct captured render-target bases were merged into one "
+                   "Vulkan pass: "
+                << switched_render_target_error << '\n';
+      return 1;
+    }
     const std::vector<uint32_t> cached_output = output_readback;
     std::vector<uint32_t> repeated_cached_output;
     if (!shift::xbox::submit_captured_vulkan_frame(

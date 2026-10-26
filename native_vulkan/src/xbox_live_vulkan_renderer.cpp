@@ -3042,6 +3042,17 @@ bool submit_captured_vulkan_frame(
         output_height > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())) {
         return fail("Vulkan presenter extent exceeds signed scissor bounds", error);
     }
+    const CapturedRasterState& frame_target = draws.front().raster;
+    if (std::any_of(
+            draws.begin() + 1, draws.end(), [&](const CapturedVulkanDraw& draw) {
+                return draw.raster.color_base_tiles != frame_target.color_base_tiles ||
+                       draw.raster.depth_base_tiles != frame_target.depth_base_tiles;
+            })) {
+        return fail(
+            "captured Vulkan submission switches Xenos color/depth target bases; "
+            "split the ordered render-target operations before submission",
+            error);
+    }
     VkPhysicalDeviceMemoryProperties memory_properties{};
     vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
     TextureCacheState* texture_cache_state = nullptr;
@@ -3115,7 +3126,6 @@ bool submit_captured_vulkan_frame(
             depth_stencil_resolve_enabled, sampler_capabilities, pipeline_cache,
             texture_cache_state, source_readback, draw_visibility);
     }
-    const CapturedRasterState& frame_target = draws.front().raster;
     const uint32_t source_width = copy && copy->source_width
                                       ? copy->source_width
                                       : frame_target.width;

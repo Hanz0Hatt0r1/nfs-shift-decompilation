@@ -120,7 +120,10 @@ class CapturedVulkanTextureCache {
     friend struct CapturedVulkanTextureCacheAccess;
 };
 
-// Records and submits the captured game draws into the ReXGlue presenter image.
+// Records and submits captured draws for one Xenos color/depth target into the
+// ReXGlue presenter image. The caller must split ordered target switches into
+// separate submissions; this function does not emulate Xenos EDRAM aliasing.
+//
 // With a texture cache and no readback request, frame resources remain owned by
 // that cache until their Vulkan fences signal; without a cache, or with a
 // readback request, the call waits for completion. The caller must externally
