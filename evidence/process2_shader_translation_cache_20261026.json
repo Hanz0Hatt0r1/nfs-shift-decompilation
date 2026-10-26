@@ -4,6 +4,7 @@
   "source": {
     "branch": "work/process2-xbox-live-ring-20261023",
     "base_commit": "d51832d8f9876885e7c074eb206a54834aaca8b9",
+    "implementation_commit": "8e76681ccc6f29462ba43329c6ef45f46dcedadf",
     "implementation_paths": [
       "native_vulkan/include/shift_xbox_shader_translate.hpp",
       "native_vulkan/src/xbox_shader_translate.cpp",

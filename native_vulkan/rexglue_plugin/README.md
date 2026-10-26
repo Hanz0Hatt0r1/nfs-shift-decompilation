@@ -992,7 +992,7 @@ is preserved. The phone does not provide `VK_LAYER_KHRONOS_validation`; device
 validation-layer coverage remains absent. The post-disclaimer menu, race, and
 complete retail parity are still unverified.
 
-## Current P1-compatible Linux renderer handoff (2026-10-26)
+## Initial P1-compatible Linux renderer handoff (2026-10-26)
 
 The current P2 source was rebuilt as an x86_64 ReXGlue plugin against SDK
 commit `fb151b94b4956d1c74ba5052e8838b0829eb9c99`, which matches the runtime
@@ -1110,6 +1110,15 @@ passes 4/4 and Linux plugin CTest passes 5/5 with
 `VK_LAYER_KHRONOS_validation` forced. The ARM64 plugin also builds with NDK
 28.2/API 26 against the existing runtime. Its SHA-256 is
 `968c7c8a…538c27f`, Build ID `8c4d336e0e4d4ee1028fa7ba9738b7d30563ff4d`.
+The refreshed x86_64 plugin for Process 1 is
+`/home/pes/work/process2-p1-ring-trace-resolve-handover-20261026/librexgpu-shift-native.so`
+(SHA-256 `f1d6394bfa01dd65b2472d50eda64b1dd5ceade8993a43771b0e73b84090f95c`,
+Build ID `e76c6515f0d0737753023971fcc68916d0aaf706`), paired with SDK runtime
+`/home/pes/work/rexglue-sdk-process2-resolve-20261024/out/linux-amd64/librexruntime.so`
+(SHA-256 `d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253`).
+`ldd -r` resolves it without undefined symbols. This pair was rebuilt from
+Process 2 commit `8e76681ccc6f29462ba43329c6ef45f46dcedadf` and is the latest
+Linux handoff for the live retail run.
 
 The cache has not yet been loaded by the live game, so device hit rate and
 frame-time change remain unmeasured. The current Android session remains open
