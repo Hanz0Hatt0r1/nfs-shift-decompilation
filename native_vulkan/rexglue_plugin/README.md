@@ -1552,3 +1552,24 @@ unimplemented. The older 14-draw failure remains ambiguous between target
 format and copy source extent. Detailed captured values, build identities,
 tests, and limits are in
 [`process2_redmi_xenos_16bit_targets_20261026.json`](../../evidence/process2_redmi_xenos_16bit_targets_20261026.json).
+
+## Captured offscreen raster extents (2026-10-27)
+
+The transition capture's single-sample `16_16_FLOAT` downsample targets use
+surface pitches 320, 160, and 80 while their top-left viewport/scissor heights
+are 243, 81, 27, 9, 3, and 1. The ring frontend previously scaled target height
+from the 1280x720 guest output, which estimated 180 for the 320-pixel pitch
+and clipped the captured 243-pixel draw. For a single-sample target whose pitch
+differs from the guest output and whose captured viewport starts at the origin,
+the frontend now derives the minimum height from the viewport and scissor. The
+existing guest-output aspect fallback remains for other target forms.
+
+The draw-input regression checks all seven captured extents. Native CTest passed
+4/4 with Vulkan validation; Linux plugin CTest passed 7/7 with validation. The
+same ARM64 draw-input executable passed on the Redmi Note 8 Pro. The updated
+Android plugin builds for AArch64 / Android API 26, but was not installed over
+the running game. The app stayed at the disclaimer with PID 14611, and its
+before/after screenshot hashes match. This corrects target sizing for capture
+parsing and preparation; it does not execute the ordered mode-6 copies or
+verify a changed retail image. See
+[`process2_redmi_offscreen_raster_extents_20261027.json`](../../evidence/process2_redmi_offscreen_raster_extents_20261027.json).
