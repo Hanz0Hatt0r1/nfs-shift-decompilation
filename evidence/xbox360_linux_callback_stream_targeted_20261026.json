@@ -33,7 +33,7 @@
         "guest_stream_address": "0xA95D05D0",
         "guest_stream_host_address": "0x1A95D05D0",
         "r5": "0x0",
-        "r6_callback_value": "0xFFFFFFFF823A4758",
+        "r6_guest_value": "0xFFFFFFFF823A4758",
         "r7": "0x208",
         "output_prefix_words_big_endian": [
           "00000100",
@@ -69,7 +69,7 @@
           "c0043c00",
           "00000013"
         ],
-        "callback_target_word_indexes": [
+        "value_word_indexes": [
           4,
           23
         ],
@@ -130,7 +130,7 @@
         "builder": "0x823B3598",
         "guest_lr": "0x823A4A40",
         "guest_stream_address": "0xA95D05D0",
-        "r6_callback_value": "0xFFFFFFFF823A4758",
+        "r6_guest_value": "0xFFFFFFFF823A4758",
         "r7": "0x208",
         "captured_first_32_dwords_big_endian": [
           "00000100",
@@ -166,6 +166,22 @@
           "c0043c00",
           "00000013"
         ],
+        "decoded_packet_context": {
+          "header_dword_index": 20,
+          "dwords_big_endian": [
+            "c0043c00",
+            "00000013",
+            "1b964012",
+            "823a4758",
+            "ffffffff"
+          ],
+          "type3_opcode": "0x3C",
+          "operation": "WAIT_REG_MEM",
+          "poll_address_field": "0x1B964012",
+          "reference_operand": "0x823A4758",
+          "mask_operand": "0xFFFFFFFF",
+          "reference_is_data_not_control_flow_target": true
+        },
         "capture_bytes_read_after_builder_return": 256
       },
       "observed": {
@@ -206,10 +222,10 @@
     ],
     "not_proven": [
       "The separate stream probe used an older renderer plugin; it does not prove how the current plugin executes the encoded stream.",
-      "The encoded words are not sufficient to establish the command type or prove that a stream containing them was submitted and executed.",
+      "The decoded WAIT_REG_MEM reference is data, not evidence of a guest indirect call to 0x823A4758; this stream capture alone does not prove the packet was submitted or executed.",
       "The absence of producer hits in one 40-second GDB run does not identify the missing event or establish a permanent failure.",
       "This probe does not establish main-menu or offline-race progress."
     ],
-    "next_p1_step": "Correlate the exact retail stream emission and current-pair ring execution with the first guest callback entry, preserving retail queue and wait predicates."
+    "next_p1_step": "Trace the actual caller and indirect-call condition for function 0x823A4758 independently of its WAIT_REG_MEM reference value; preserve retail queue and wait predicates."
   }
 }
