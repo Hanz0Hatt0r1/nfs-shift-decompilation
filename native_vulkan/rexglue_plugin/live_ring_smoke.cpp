@@ -206,7 +206,7 @@ std::vector<uint8_t> make_pm4_stream() {
   append_type3(&stream, 0x58u,
                {0x00000003u, kWaitMarkerAddress | 2u, 1u});
   append_type3(&stream, 0x3Cu,
-               {0x13u, 0x1B964002u, 0x00000004u, 0xFFFFFFFFu, 0x00000100u});
+               {0x13u, 0x1B964006u, 0x00000001u, 0xFFFFFFFFu, 0x00000100u});
   append_type3(&stream, 0x3Cu,
                {0x13u, 0x1B964016u, 0x00000208u, 0xFFFFFFFFu, 0x00000100u});
   append_type3(&stream, 0x3Cu,
@@ -421,13 +421,13 @@ int main(int argc, char** argv) {
         consumed_all_batches = false;
         break;
       }
-      std::this_thread::sleep_for(std::chrono::milliseconds(20));
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
       if (read_be32(wait_marker_bytes) != 1u ||
           read_be32(writeback_bytes) != 0u) {
         consumed_all_batches = false;
         break;
       }
-      store_guest_be32_atomic(wait_scratch_bytes, 4u);
+      store_guest_be32_atomic(wait_scratch_bytes + 4u, 1u);
       store_guest_be32_atomic(wait_scratch_bytes + 0x14u, 0x208u);
       store_guest_be32_atomic(wait_scratch_bytes + 0x10u, 0x823A4758u);
     }
@@ -598,6 +598,17 @@ int main(int argc, char** argv) {
           std::string::npos) {
     std::cerr << diagnostics << '\n';
     return fail("EVENT_WRITE_SHD was missing from the bounded memory-write trace");
+  }
+  if (ring_trace_enabled &&
+      (diagnostics.find("ring trace WAIT_REG_MEM sample guest=1B964004 "
+                        "poll-address=1B964006 reference=00000001") ==
+           std::string::npos ||
+       diagnostics.find("observed=00000000 condition=false") ==
+           std::string::npos ||
+       diagnostics.find("observed=00000001 condition=true") ==
+           std::string::npos)) {
+    std::cerr << diagnostics << '\n';
+    return fail("WAIT_REG_MEM trace did not record the guest value transition");
   }
   if (ring_trace_enabled &&
       (diagnostics.find("ring trace IB dump #0 source=00030000") ==

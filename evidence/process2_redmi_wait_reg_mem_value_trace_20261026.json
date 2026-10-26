@@ -1,0 +1,102 @@
+{
+  "schema": "shift.process2.redmi_wait_reg_mem_value_trace.v1",
+  "date": "2026-10-26",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "base_commit": "923f54f84a2a2f61d9e28a18841c903ec31182b6",
+    "working_tree_changes": [
+      "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/rexglue_plugin/live_ring_smoke.cpp",
+      "native_vulkan/rexglue_plugin/README.md",
+      "evidence/process2_redmi_ring_indirect_buffers_20261026.json",
+      "evidence/process2_redmi_wait_reg_mem_value_trace_20261026.json",
+      "evidence/process2_redmi_wait_reg_mem_value_samples_20261026.log",
+      "evidence/process2_redmi_wait_reg_mem_stalled_screen_20261026.png"
+    ]
+  },
+  "previous_package_issue": {
+    "apk_path": "/home/pes/work/process2-wait-value-trace-20261026/nfsshift-wait-value-trace.apk",
+    "apk_sha256": "643a4e9ac763981c320bb949997d65f7b2fa1754d2a6893fcb7c52ff68919416",
+    "shift_native_entry_sha256": "0dd5a4dbe39a7397e6e7cd66f4d9848c6ccd730b6ccf7355c7ee828dcb9f55c4",
+    "loaded_host_alias_sha256": "b1426ee7dcd99984d78e50216fbd5fff7de83926173243bcf9cea10526aa2076",
+    "finding": "The Android loader selected an older P2 Vulkan DSO stored at the librexgpu-xenosd.so host alias rather than the updated shift-native entry. The old DSO was also emulator-free P2, but lacked the new wait-sampling diagnostic."
+  },
+  "corrected_package": {
+    "apk_path": "/home/pes/work/process2-wait-value-trace-20261026/nfsshift-wait-value-aliasfix.apk",
+    "apk_sha256": "3c0c497bf1791ceaf5e8bfe274c6d64ee67f071638ea3a5b0954d1195263e777",
+    "signed_with": "existing Android Debug certificate; SHA-256 3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "signature_scheme": "APK Signature Scheme v3",
+    "native_library_alignment": "16 KiB; zipalign -c -P 16 4 passed",
+    "plugin": {
+      "path": "/home/pes/work/process2-wait-value-trace-20261026/work/librexgpu-shift-natived.so",
+      "sha256": "0dd5a4dbe39a7397e6e7cd66f4d9848c6ccd730b6ccf7355c7ee828dcb9f55c4",
+      "build_id": "1a8fd72fb9ba2310e2db834c605d5555ed3e1056"
+    },
+    "apk_plugin_aliases": {
+      "lib/arm64-v8a/librexgpu-shift-natived.so": "0dd5a4dbe39a7397e6e7cd66f4d9848c6ccd730b6ccf7355c7ee828dcb9f55c4",
+      "lib/arm64-v8a/librexgpu-xenosd.so": "0dd5a4dbe39a7397e6e7cd66f4d9848c6ccd730b6ccf7355c7ee828dcb9f55c4"
+    }
+  },
+  "build_and_tests": {
+    "android_arm64_plugin": "built successfully for the corrected APK; SDK emitted the existing FPCR inline-assembly operand-width warning",
+    "linux_release_plugin_ctest": {
+      "passed": 7,
+      "total": 7,
+      "command": "/usr/bin/ctest --test-dir /home/pes/work/process2-current-p2-resolve-linux-clang-build-20261026 --output-on-failure"
+    },
+    "targeted_wait_trace_regression": "passes with the captured 0x1B964004/reference-1 wait and a synthetic 0-to-1 guest-memory transition"
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "android_version": "13",
+    "api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 4295,
+    "top_resumed": true,
+    "installed_by": "adb install -r; app data preserved",
+    "loaded_library": "/data/app/~~1LJUJrCD9AbHckZ2NvhowA==/com.hanz0hatt0r.nfsshift-UQWx9EmVgqZrGGNlSOjhlw==/lib/arm64/librexgpu-xenosd.so",
+    "loaded_library_sha256": "0dd5a4dbe39a7397e6e7cd66f4d9848c6ccd730b6ccf7355c7ee828dcb9f55c4",
+    "renderer_identity": "Process 2 Vulkan plugin bytes loaded through the app's xenos loader alias; alias filename does not indicate the Xenos GPU emulator implementation",
+    "screen": "black at the captured WAIT_REG_MEM",
+    "screenshot": "process2_redmi_wait_reg_mem_stalled_screen_20261026.png",
+    "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839"
+  },
+  "blocking_wait": {
+    "source_guest_buffer": "0x095D0120",
+    "byte_offset": 1180,
+    "guest_address": "0x1B964004",
+    "poll_address": "0x1B964006",
+    "reference": "0x00000001",
+    "mask": "0xFFFFFFFF",
+    "endian_mode": 2,
+    "compare": "equal",
+    "poll_interval": "0x00000100",
+    "samples": [
+      {"poll": 0, "elapsed_ms": 0, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+      {"poll": 1000, "elapsed_ms": 1109, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+      {"poll": 2000, "elapsed_ms": 2246, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+      {"poll": 3000, "elapsed_ms": 3373, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+      {"poll": 4000, "elapsed_ms": 4478, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+      {"poll": 5000, "elapsed_ms": 5596, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+      {"poll": 6000, "elapsed_ms": 6709, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+      {"poll": 7000, "elapsed_ms": 7824, "raw": "0x00000000", "observed": "0x00000000", "condition": false}
+    ],
+    "log": "process2_redmi_wait_reg_mem_value_samples_20261026.log",
+    "log_sha256": "834a6f658c805779f32ce9de05d9a889ba84a391f77e8bb43c19537b21d85c14",
+    "ring_result": "reached shader resolution for captured draw #0, then stopped at the unsatisfied guest wait before a Vulkan frame submission"
+  },
+  "cross_reference": {
+    "indirect_buffer_audit": "process2_redmi_ring_indirect_buffers_20261026.json",
+    "explicit_pm4_write_to_wait_address_before_wait": false,
+    "scan_limit": "seven captured buffers only; CPU writes, shader/export stores, unrelated streams, and external producers were not observed"
+  },
+  "limits": [
+    "The wait value remains zero and the game is still black; no live retail Vulkan frame is proven by this run.",
+    "This trace does not identify the wait producer or whether its value/address translation involves a guest CPU write, GPU shader/export store, another command stream, or a Process 1 runtime path.",
+    "No Process 1 files were changed."
+  ]
+}

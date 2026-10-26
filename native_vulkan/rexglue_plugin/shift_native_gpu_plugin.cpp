@@ -2136,13 +2136,16 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 }
               }
               uint32_t poll_count = 0;
+              uint32_t wait_value_samples = 0;
+              uint32_t previous_wait_value = 0;
+              bool have_previous_wait_value = false;
               for (;;) {
                 uint32_t observed_value = 0;
                 uint32_t coher_base = 0;
                 uint32_t coher_size = 0;
+                uint32_t raw_value = 0;
                 if (wait.memory) {
-                  const uint32_t raw_value =
-                      __atomic_load_n(poll_word, __ATOMIC_ACQUIRE);
+                  raw_value = __atomic_load_n(poll_word, __ATOMIC_ACQUIRE);
                   observed_value = rex::graphics::xenos::GpuSwap(
                       raw_value,
                       static_cast<rex::graphics::xenos::Endian>(wait.endian_mode));
@@ -2177,8 +2180,37 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                         coher_base, coher_size);
                   }
                 }
-                if (shift::xbox::captured_wait_reg_mem_condition_met(
-                        wait, observed_value)) {
+                const bool wait_condition_met =
+                    shift::xbox::captured_wait_reg_mem_condition_met(
+                        wait, observed_value);
+                const bool wait_value_changed =
+                    !have_previous_wait_value ||
+                    observed_value != previous_wait_value;
+                const bool periodic_wait_sample =
+                    poll_count != 0u && (poll_count % 1000u) == 0u;
+                if (GuestRingTraceEnabled() && wait.memory &&
+                    wait_value_samples < 8u &&
+                    (wait_value_changed || periodic_wait_sample)) {
+                  const auto elapsed =
+                      std::chrono::duration_cast<std::chrono::milliseconds>(
+                          std::chrono::steady_clock::now() - wait_started);
+                  REXLOG_INFO(
+                      "shift-native: ring trace WAIT_REG_MEM sample "
+                      "guest={:08X} poll-address={:08X} reference={:08X} "
+                      "mask={:08X} endian={} compare={} poll={} raw={:08X} "
+                      "observed={:08X} condition={} elapsed_ms={} "
+                      "source={:08X} byte-offset={}",
+                      wait.guest_address, wait.poll_address, wait.reference,
+                      wait.mask, wait.endian_mode,
+                      static_cast<uint32_t>(wait.compare), poll_count,
+                      raw_value, observed_value, wait_condition_met,
+                      elapsed.count(), resolved.source_guest_address,
+                      packet.byte_offset);
+                  ++wait_value_samples;
+                }
+                previous_wait_value = observed_value;
+                have_previous_wait_value = true;
+                if (wait_condition_met) {
                   break;
                 }
                 {

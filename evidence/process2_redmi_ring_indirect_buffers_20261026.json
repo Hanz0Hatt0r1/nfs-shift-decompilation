@@ -163,5 +163,52 @@
     "The four-draw border replay omits disclaimer text and other frame draws; exact border color and thickness lack an independent original-console comparison.",
     "The current live Android screen is black at WAIT_REG_MEM, so no fresh full disclaimer frame was captured.",
     "No Process 1 files were changed."
-  ]
+  ],
+  "pm4_scan": {
+    "method": "Re-framed all seven reconstructed big-endian buffers using the same PM4 type-0/type-1/type-2/type-3 packet-length rules as scan_captured_packet_stream; inspected candidate memory-write opcodes 0x3D, 0x3E, 0x40, 0x45, 0x46, 0x4F, 0x58, 0x59, 0x5A, and 0x5B.",
+    "all_seven_streams_framed_to_exact_length": true,
+    "before_blocking_wait": [
+      {
+        "source": "0x095D0000",
+        "byte_offset": 240,
+        "opcode": "EVENT_WRITE_SHD (0x58)",
+        "guest_address": "0x17AF4004",
+        "relation_to_wait": "does_not_match"
+      },
+      {
+        "source": "0x095D0000",
+        "byte_offset": 256,
+        "opcode": "EVENT_WRITE_SHD (0x58)",
+        "guest_address": "0x17AF4000",
+        "relation_to_wait": "does_not_match"
+      }
+    ],
+    "after_blocking_wait_in_0x095D0120": [
+      {
+        "byte_offset": 1792,
+        "opcode": "EVENT_WRITE (0x46)",
+        "packet_dwords": [
+          "0xC0004600",
+          "0x00000006"
+        ],
+        "explicit_guest_address": null
+      },
+      {
+        "byte_offset": 1884,
+        "opcode": "EVENT_WRITE_SHD (0x58)",
+        "guest_address": "0x17AF4004"
+      },
+      {
+        "byte_offset": 1900,
+        "opcode": "EVENT_WRITE_SHD (0x58)",
+        "guest_address": "0x17AF4000"
+      }
+    ],
+    "explicit_pm4_write_to_wait_address_before_wait": false,
+    "limits": [
+      "This scan covers only the seven captured indirect buffers.",
+      "It does not inspect CPU writes, GPU shader/export stores, unrelated command streams, or memory producers outside this snapshot."
+    ]
+  },
+  "analysis_commit": "923f54f84a2a2f61d9e28a18841c903ec31182b6"
 }

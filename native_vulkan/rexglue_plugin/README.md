@@ -1087,9 +1087,13 @@ behavior. A live Redmi run captured seven buffers; the `WAIT_REG_MEM` packet
 is at byte offset 1180 in `0x095D0120` and polls `0x1B964004` for value 1. The
 preceding outer buffer `0x095D0000` contains two observed `EVENT_WRITE_SHD`
 targets, `0x17AF4004` and `0x17AF4000`; neither matches the wait address. The
-bounded trace does not rule out a CPU producer or writes outside the captured
-buffers. The app remained top-resumed but black at the wait. The saved
-big-endian buffers and log are linked from the
+complete PM4 framing of all seven saved buffers finds no explicit PM4 memory
+write to the wait address before that packet. The wait buffer itself contains
+an `EVENT_WRITE` marker at offset 1792 and two more `EVENT_WRITE_SHD` packets
+at offsets 1884 and 1900, all after the wait; the worker cannot reach them
+until the wait completes. This does not rule out a CPU producer, shader/export
+writes, or writes outside the captured buffers. The app remained top-resumed
+but black at the wait. The saved big-endian buffers and log are linked from the
 [`Redmi indirect-buffer trace record`](../../evidence/process2_redmi_ring_indirect_buffers_20261026.json).
 
 The separate disclaimer border replay confirms only the four captured retail
@@ -1479,3 +1483,34 @@ startup screen rendering only and makes no cutscene throughput or full parity
 claim. See
 [`process2_android_descriptor_layout_live_candidate_20261026.json`](../../evidence/process2_android_descriptor_layout_live_candidate_20261026.json)
 and its three screenshots for hashes and exact limits.
+
+## Retail wait-value trace on the corrected Android alias (2026-10-26)
+
+The bounded ring trace now samples the first raw guest value, its Xenos-endian
+decoded value, and the wait condition, then records changes or one-second
+samples (at most eight per wait). It only reads guest memory; the captured wait
+and its polling behavior are unchanged. The synthetic ring regression uses
+the exact retail `WAIT_REG_MEM` operands from guest `0x095D0120`, byte offset
+1180, and verifies the value transition at `0x1B964004` from 0 to 1. Linux
+plugin CTest passes 7/7 with this regression.
+
+The first Android package made for this trace contained the new P2 DSO at
+`librexgpu-shift-natived.so` but retained an older P2 Vulkan DSO at the host's
+`librexgpu-xenosd.so` loader path. The process map showed that stale alias was
+loaded; it was still the emulator-free P2 frontend, but it lacked this new
+sampling code. The corrected signed candidate replaces both entries with the
+same P2 DSO; the installed process maps `librexgpu-xenosd.so`, whose file hash
+matches the P2 plugin. Verify both APK entries against the built plugin hash
+before installing future candidates.
+
+With the corrected alias loaded on Redmi Note 8 Pro / Mali-G76 MC4, the retail
+worker reached `WAIT_REG_MEM` at `0x1B964004` and sampled raw/decoded value 0
+through poll 7000 (7.824 seconds), against reference 1, so the condition stayed
+false. The app remained black and the ring stopped before submitting a guest
+Vulkan frame. The seven-buffer PM4 scan found no explicit write to this address
+before the wait, but it does not cover CPU writes, shader/export stores, or
+unrelated command streams. This confirms the current P2 plugin is running and
+narrows the live blocker to an unsatisfied guest wait; its producer path is
+still unknown. It does not claim a visible retail frame. APK, loaded-alias
+identity, samples, screenshot, and limits are in
+[`process2_redmi_wait_reg_mem_value_trace_20261026.json`](../../evidence/process2_redmi_wait_reg_mem_value_trace_20261026.json).

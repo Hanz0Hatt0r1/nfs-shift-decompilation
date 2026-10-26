@@ -1,0 +1,330 @@
+[2026-10-26 20:59:52.703] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_require_fragment_stores_and_atomics'; second registration ignored
+[2026-10-26 20:59:52.703] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_require_vertex_pipeline_stores_and_atomics'; second registration ignored
+[2026-10-26 20:59:52.704] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_require_geometry_shader'; second registration ignored
+[2026-10-26 20:59:52.704] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_require_fill_mode_non_solid'; second registration ignored
+[2026-10-26 20:59:52.704] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_log_debug_messages'; second registration ignored
+[2026-10-26 20:59:52.704] [error] [core] [t4335] cvar: duplicate registration of 'present_render_pass_clear'; second registration ignored
+[2026-10-26 20:59:52.704] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_allow_present_mode_immediate'; second registration ignored
+[2026-10-26 20:59:52.704] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_allow_present_mode_mailbox'; second registration ignored
+[2026-10-26 20:59:52.704] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_allow_present_mode_fifo_relaxed'; second registration ignored
+[2026-10-26 20:59:52.704] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_validation_enabled'; second registration ignored
+[2026-10-26 20:59:52.704] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_device'; second registration ignored
+[2026-10-26 20:59:52.704] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_prefer_geometry_shader'; second registration ignored
+[2026-10-26 20:59:52.704] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_prefer_fragment_stores_and_atomics'; second registration ignored
+[2026-10-26 20:59:52.704] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_prefer_vertex_pipeline_stores_and_atomics'; second registration ignored
+[2026-10-26 20:59:52.704] [error] [core] [t4335] cvar: duplicate registration of 'vulkan_prefer_fill_mode_non_solid'; second registration ignored
+[2026-10-26 20:59:52.713] [info] [core] [t4335] Vulkan instance API version 1.3.0. Enabled layers and extensions:
+[2026-10-26 20:59:52.713] [info] [core] [t4335] * VK_KHR_surface
+[2026-10-26 20:59:52.713] [info] [core] [t4335] * VK_KHR_android_surface
+[2026-10-26 20:59:52.713] [warning] [core] [t4335] Available Vulkan physical devices (use the 'vulkan_device' configuration variable to force a specific device):
+[2026-10-26 20:59:52.713] [warning] [core] [t4335] * 0: Mali-G76 MC4
+[2026-10-26 20:59:52.713] [info] [core] [t4335] Vulkan device 'Mali-G76 MC4': API 1.1.131, vendor 0x13B5, device 0x72110000, driver version 0x6800000
+[2026-10-26 20:59:52.714] [info] [core] [t4335] Enabled Vulkan device extensions:
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * VK_KHR_create_renderpass2
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * VK_KHR_depth_stencil_resolve
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * VK_KHR_driver_properties
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * VK_KHR_swapchain
+[2026-10-26 20:59:52.714] [info] [core] [t4335] Vulkan device properties and enabled features:
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * driverID: ArmProprietary
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * driverName: Mali-G76 MC4
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * driverInfo: v1.r26p0-01eac0.66a08f2668d757b36371f0062427ea04
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * conformanceVersion: 1.2.2.0
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxImageDimension2D: 16383
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxImageDimension3D: 16383
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxImageDimensionCube: 16383
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxImageArrayLayers: 1024
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxStorageBufferRange: 268435456
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxSamplerAllocationCount: 4294967295
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxPerStageDescriptorSamplers: 128
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxPerStageDescriptorStorageBuffers: 35
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxPerStageDescriptorSampledImages: 256
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxPerStageResources: 365
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxVertexOutputComponents: 128
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxTessellationEvaluationOutputComponents: 128
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxGeometryInputComponents: 64
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxGeometryOutputComponents: 128
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxFragmentInputComponents: 128
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxFragmentCombinedOutputResources: 64
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxSamplerAnisotropy: 16
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxViewportDimensions[0]: 16383
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxViewportDimensions[1]: 16383
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * minUniformBufferOffsetAlignment: 16
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * minStorageBufferOffsetAlignment: 64
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxFramebufferWidth: 16383
+[2026-10-26 20:59:52.714] [info] [core] [t4335] * maxFramebufferHeight: 16383
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * framebufferColorSampleCounts: { 1 | 4 | 8 }
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * framebufferDepthSampleCounts: { 1 | 4 | 8 }
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * framebufferStencilSampleCounts: { 1 | 4 | 8 }
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * framebufferNoAttachmentsSampleCounts: { 1 | 4 | 8 | 16 }
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * sampledImageColorSampleCounts: { 1 | 4 | 8 }
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * sampledImageIntegerSampleCounts: { 1 | 4 | 8 }
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * sampledImageDepthSampleCounts: { 1 | 4 | 8 }
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * sampledImageStencilSampleCounts: { 1 | 4 | 8 }
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * standardSampleLocations: 1
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * optimalBufferCopyOffsetAlignment: 64
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * optimalBufferCopyRowPitchAlignment: 64
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * nonCoherentAtomSize: 64
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * geometryShader
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * constantAlphaColorBlendFactors
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * imageViewFormatReinterpretation
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * imageViewFormatSwizzle
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * pointPolygons
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * separateStencilMaskRef
+[2026-10-26 20:59:52.715] [info] [core] [t4335] * shaderSampleRateInterpolationFunctions
+[2026-10-26 20:59:53.304] [info] [core] [t4335] VulkanPresenter: Created 2340x1080 swapchain with format 37, color space 0, presentation mode 1
+[2026-10-26 20:59:53.316] [info] [sys] [t4335] Guest memory arena mapped: virtual base 0x0000000100000000, physical base 0x0000000200000000
+[2026-10-26 20:59:53.661] [info] [core] [t4335] shift-native: guest vblank worker started
+[2026-10-26 20:59:53.661] [info] [core] [t4335] shift-native: installed emulator-free Vulkan frontend; waiting for guest PM4
+[2026-10-26 20:59:53.683] [info] [core] [t4335] Function table initialized for module: code=821A0000-83073F54, image=82000000-83270000
+[2026-10-26 20:59:53.819] [warning] [core] [t4335] SDL GameControllerDB: file 'gamecontrollerdb.txt' does not exist.
+[2026-10-26 20:59:53.820] [info] [core] [t4335] SDL input driver initialized successfully
+[2026-10-26 20:59:54.313] [info] [core] [t4335] VulkanPresenter: Created 2340x1080 swapchain with format 37, color space 0, presentation mode 1
+[2026-10-26 20:59:54.318] [info] [core] [t4335] Initializing shader storage for title 454108B4...
+[2026-10-26 20:59:54.481] [warning] [krnl] [t4384] IoDismountVolumeByFileHandle(0xf800003c) - stub
+[2026-10-26 20:59:54.481] [warning] [krnl] [t4384] IoDismountVolumeByFileHandle(0xf800003c) - stub
+[2026-10-26 20:59:54.483] [warning] [krnl] [t4384] [NtCreateFile] FAILED: path='d:\devmodeconfig.xml' -> 0xc000000f
+[2026-10-26 20:59:55.044] [info] [core] [t4384] shift-native: guest GPU interrupt callback set to 823B37B8
+[2026-10-26 20:59:55.045] [info] [core] [t4382] shift-native: dispatched guest vblank callback 1 at 60.000 Hz
+[2026-10-26 20:59:55.049] [info] [core] [t4384] shift-native: guest PM4 ring at 09752580, 32768 bytes
+[2026-10-26 20:59:55.050] [info] [core] [t4384] shift-native: RPTR writeback enabled guest=17AF403C, block_log2=6, physical_valid=true, translated=0x217af403c, initial=00000000
+[2026-10-26 20:59:55.062] [info] [core] [t4382] shift-native: dispatched guest vblank callback 2 at 60.000 Hz
+[2026-10-26 20:59:55.068] [info] [core] [t4384] shift-native: ring trace wptr #0 mmio=7FC80714 previous=0 new=22 rptr=0 modular-distance=22 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.068] [info] [core] [t4384] shift-native: ring trace wptr #1 mmio=7FC80714 previous=22 new=25 rptr=0 modular-distance=25 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.068] [info] [core] [t4381] shift-native: ring trace wake #2 rptr=0 wptr=25 modular-distance=25 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.069] [info] [core] [t4381] shift-native: ring trace snapshot #3 rptr=0 wptr=25 ring-bytes=32768 snapshot-ok=true batch-bytes=100 expand-ok=true packets=73 error=none
+[2026-10-26 20:59:55.069] [info] [core] [t4381] shift-native: ring trace IB dump #0 source=095DC040 depth=1 source-bytes=44 dumped-bytes=44 truncated=false
+[2026-10-26 20:59:55.069] [info] [core] [t4381] shift-native: ring trace IB data source=095DC040 byte-offset=0 raw-dwords=a31,1000000,10a2f,180000,95d0000,c0043c00,3,a31,0,80000000,8
+[2026-10-26 20:59:55.069] [info] [core] [t4381] shift-native: ring trace IB dump #1 source=095D0000 depth=1 source-bytes=272 dumped-bytes=272 truncated=false
+[2026-10-26 20:59:55.069] [info] [core] [t4381] shift-native: ring trace IB data source=095D0000 byte-offset=0 raw-dwords=d02,10800,30a02,c0100000,7f00000,c0000000,100000,1dd,1b964000,1dc,20037,5c8,20000,d04,0,d01
+[2026-10-26 20:59:55.070] [info] [core] [t4381] shift-native: ring trace IB data source=095D0000 byte-offset=64 raw-dwords=4000000,c0022100,81,ffffffff,80010000,c0022100,82,ffffffff,0,e42,1f60,c85,3,57c,badf00d,57b
+[2026-10-26 20:59:55.070] [info] [core] [t4381] shift-native: ring trace IB data source=095D0000 byte-offset=128 raw-dwords=0,22080,0,0,2d00500,22080,0,0,2d00500,5c8,20000,f01,200e,c0013f00,975b660,4a
+[2026-10-26 20:59:55.070] [info] [core] [t4381] shift-native: ring trace IB data source=095D0000 byte-offset=192 raw-dwords=c0013f00,975c3a0,d,c0013f00,975cfe0,30,22080,0,0,2d00500,c0003b00,7fff,c0025800,3,17af4006,a95d00e4
+[2026-10-26 20:59:55.070] [info] [core] [t4381] shift-native: ring trace IB data source=095D0000 byte-offset=256 raw-dwords=c0025800,3,17af4002,3
+[2026-10-26 20:59:55.070] [info] [core] [t4381] shift-native: ring trace IB dump #2 source=0975B660 depth=2 source-bytes=296 dumped-bytes=296 truncated=false
+[2026-10-26 20:59:55.070] [info] [core] [t4381] shift-native: ring trace IB data source=0975B660 byte-offset=0 raw-dwords=c0003b00,300,c0192b00,0,18,1003,1200,c4000000,1004,1200,c2000000,1005,10061200,22000000,c8000000,0
+[2026-10-26 20:59:55.070] [info] [core] [t4381] shift-native: ring trace IB data source=0975B660 byte-offset=64 raw-dwords=e2000000,c800c000,0,e2000000,c888c03e,0,e2010100,c8000000,0,e2000000,0,0,0,c00a2b00,1,9
+[2026-10-26 20:59:55.070] [info] [core] [t4381] shift-native: ring trace IB data source=0975B660 byte-offset=128 raw-dwords=0,1001c400,22000000,c80f8000,0,e2000000,0,0,0,12180,1000000e,0,22100,ffff,0,0
+[2026-10-26 20:59:55.070] [info] [core] [t4381] shift-native: ring trace IB data source=0975B660 byte-offset=192 raw-dwords=2293,0,22204,10000,10000,300,2312,ffff,200d,0,2200,0,2203,0,2208,4
+[2026-10-26 20:59:55.070] [info] [core] [t4381] shift-native: ring trace IB data source=0975B660 byte-offset=256 raw-dwords=2104,0,2280,80008,2302,4,22080,0,0,100010
+[2026-10-26 20:59:55.070] [info] [core] [t4381] shift-native: ring trace IB dump #3 source=0975C3A0 depth=2 source-bytes=52 dumped-bytes=52 truncated=false
+[2026-10-26 20:59:55.070] [info] [core] [t4381] shift-native: ring trace IB data source=0975C3A0 byte-offset=0 raw-dwords=5c8,20000,78d00,40401,40401,40401,40401,40401,40401,40401,40401,d00,40400
+[2026-10-26 20:59:55.071] [info] [core] [t4381] shift-native: ring trace IB dump #4 source=0975CFE0 depth=2 source-bytes=192 dumped-bytes=192 truncated=false
+[2026-10-26 20:59:55.071] [info] [core] [t4381] shift-native: ring trace IB data source=0975CFE0 byte-offset=0 raw-dwords=c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081
+[2026-10-26 20:59:55.071] [info] [core] [t4381] shift-native: ring trace IB data source=0975CFE0 byte-offset=64 raw-dwords=c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081
+[2026-10-26 20:59:55.071] [info] [core] [t4381] shift-native: ring trace IB data source=0975CFE0 byte-offset=128 raw-dwords=c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081,c0003600,10081
+[2026-10-26 20:59:55.071] [info] [core] [t4381] shift-native: entering captured COHER_STATUS_HOST wait source=095DC040 depth=1 byte-offset=20
+[2026-10-26 20:59:55.072] [info] [core] [t4381] shift-native: completed captured COHER_STATUS_HOST wait base=095D0000 size=00180000 status=00000000
+[2026-10-26 20:59:55.072] [info] [core] [t4381] shift-native: unresolved captured draw #0 topology=1 autoindex=true count=1 raster=false inputs=false translated=false: incomplete captured raster register state valid_mask=0x17038
+[2026-10-26 20:59:55.073] [info] [core] [t4381] shift-native: memory-write candidate opcode=58 #0 source=095D0000 depth=1 byte-offset=240 bytes=16 raw-dwords=c0025800,3,17af4006,a95d00e4
+[2026-10-26 20:59:55.073] [info] [core] [t4381] shift-native: EVENT_WRITE_SHD #0 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95D00E4 swap_counter=0 guest_value=A95CFFFC->A95D00E4 source=095D0000 depth=1 byte-offset=240
+[2026-10-26 20:59:55.073] [info] [core] [t4381] shift-native: memory-write candidate opcode=58 #1 source=095D0000 depth=1 byte-offset=256 bytes=16 raw-dwords=c0025800,3,17af4002,3
+[2026-10-26 20:59:55.073] [info] [core] [t4381] shift-native: EVENT_WRITE_SHD #1 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000003 swap_counter=0 guest_value=00000001->00000003 source=095D0000 depth=1 byte-offset=256
+[2026-10-26 20:59:55.073] [info] [core] [t4381] shift-native: RPTR writeback #0 guest=17AF403C, translated=0x217af403c, value=00000019, memory=00000000->00000019
+[2026-10-26 20:59:55.073] [info] [core] [t4381] shift-native: ring trace complete #4 consumed=[0,25), current-rptr=25 current-wptr=25 generation=1 writeback-guest=17AF403C value=00000000->00000019
+[2026-10-26 20:59:55.075] [warning] [fs] [t4384] VFS: 'ShaderDumpxe:\CompareBackEnds' -> [no device]
+[2026-10-26 20:59:55.079] [info] [core] [t4382] shift-native: dispatched guest vblank callback 3 at 60.000 Hz
+[2026-10-26 20:59:55.400] [info] [core] [t4384] shift-native: ring trace wptr #5 mmio=7FC80714 previous=25 new=28 rptr=25 modular-distance=3 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.400] [info] [core] [t4384] shift-native: ring trace wptr #6 mmio=7FC80714 previous=28 new=31 rptr=25 modular-distance=6 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.400] [info] [core] [t4381] shift-native: ring trace wake #7 rptr=25 wptr=31 modular-distance=6 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.400] [info] [core] [t4384] shift-native: ring trace wptr #8 mmio=7FC80714 previous=31 new=34 rptr=25 modular-distance=9 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.400] [info] [core] [t4384] shift-native: ring trace wptr #9 mmio=7FC80714 previous=34 new=37 rptr=25 modular-distance=12 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.400] [info] [core] [t4381] shift-native: ring trace snapshot #10 rptr=25 wptr=31 ring-bytes=32768 snapshot-ok=true batch-bytes=24 expand-ok=true packets=153 error=none
+[2026-10-26 20:59:55.400] [info] [core] [t4381] shift-native: ring trace IB dump #5 source=095DC100 depth=1 source-bytes=44 dumped-bytes=44 truncated=false
+[2026-10-26 20:59:55.400] [info] [core] [t4384] shift-native: ring trace wptr #11 mmio=7FC80714 previous=37 new=40 rptr=25 modular-distance=15 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.401] [info] [core] [t4384] shift-native: ring trace wptr #12 mmio=7FC80714 previous=40 new=43 rptr=25 modular-distance=18 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.401] [info] [core] [t4381] shift-native: ring trace IB data source=095DC100 byte-offset=0 raw-dwords=a31,1000000,10a2f,180000,95d0000,c0043c00,3,a31,0,80000000,8
+[2026-10-26 20:59:55.401] [info] [core] [t4381] shift-native: ring trace IB dump #6 source=095D0120 depth=1 source-bytes=1916 dumped-bytes=1916 truncated=false
+[2026-10-26 20:59:55.401] [info] [core] [t4384] shift-native: ring trace wptr #13 mmio=7FC80714 previous=43 new=46 rptr=25 modular-distance=21 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.401] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=0 raw-dwords=c0006000,ffffffff,c0006200,ffffffff,c0006100,0,c0006300,0,22080,0,0,2d00500,5c8,20000,f01,200e
+[2026-10-26 20:59:55.401] [info] [core] [t4384] shift-native: ring trace wptr #14 mmio=7FC80714 previous=46 new=49 rptr=25 modular-distance=24 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.401] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=64 raw-dwords=a31,2000000,10a2f,400000,85d0000,c0043c00,3,a31,0,80000000,8,a31,2000000,10a2f,2000,1b962000
+[2026-10-26 20:59:55.401] [info] [core] [t4384] shift-native: ring trace wptr #15 mmio=7FC80714 previous=49 new=52 rptr=25 modular-distance=27 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.401] [info] [core] [t4384] shift-native: ring trace wptr #16 mmio=7FC80714 previous=52 new=55 rptr=25 modular-distance=30 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.401] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=128 raw-dwords=c0043c00,3,a31,0,80000000,8,22080,0,0,2d00500,b2200,700736,10001,87000007,1,80000
+[2026-10-26 20:59:55.401] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=192 raw-dwords=218006,43f,0,4,10001,10001,10001,42180,0,0,0,0,0,f2000,14000500,10000
+[2026-10-26 20:59:55.401] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=256 raw-dwords=2d0,0,0,0,0,0,0,0,0,0,0,0,0,20002000,142100,ffffff
+[2026-10-26 20:59:55.402] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=320 raw-dwords=0,0,ffff,f,3f800000,3f800000,3f800000,3f800000,0,0,0,ffff00,ffff00,0,44200000,44200000
+[2026-10-26 20:59:55.402] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=384 raw-dwords=c3b40000,43b40000,3f800000,0,142280,80008,4000010,8,0,0,1,3f800000,3f800000,e,0,0
+[2026-10-26 20:59:55.402] [info] [core] [t4384] shift-native: ring trace wptr #17 mmio=7FC80714 previous=55 new=58 rptr=25 modular-distance=33 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.402] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=448 raw-dwords=0,0,0,0,0,0,0,0,0,0,252300,400,0,4,40000000,3f800000
+[2026-10-26 20:59:55.402] [info] [core] [t4384] shift-native: ring trace wptr #18 mmio=7FC80714 previous=58 new=61 rptr=25 modular-distance=36 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.402] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=512 raw-dwords=40000000,3f800000,ff000,ff100,0,0,0,0,0,0,0,0,0,ffff,0,0
+[2026-10-26 20:59:55.402] [info] [core] [t4384] shift-native: ring trace wptr #19 mmio=7FC80714 previous=61 new=64 rptr=25 modular-distance=39 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.402] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=576 raw-dwords=0,e,10,0,0,0,0,0,0,0,0,0,0,0,0,2
+[2026-10-26 20:59:55.402] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=640 raw-dwords=0,c0003b00,300,c01c2b00,0,1b,30052003,1200,c4000000,1005,1200,c2000000,1006,10071200,22000000,30081000
+[2026-10-26 20:59:55.402] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=704 raw-dwords=393a88,7,80000,40263688,300,c80f8000,0,e2000000,c80f803e,0,e2010100,c8000000,0,e2000000,0,0
+[2026-10-26 20:59:55.403] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=768 raw-dwords=0,c00a2b00,1,9,0,1001c400,22000000,c80f8000,0,e2000000,0,0,0,12180,10010001,0
+[2026-10-26 20:59:55.403] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=832 raw-dwords=22100,ffff,0,0,2293,0,22204,10000,10000,300,2312,ffff,200d,0,2104,ffff
+[2026-10-26 20:59:55.402] [info] [core] [t4384] shift-native: ring trace wptr #20 mmio=7FC80714 previous=64 new=67 rptr=25 modular-distance=42 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.403] [info] [core] [t4384] shift-native: ring trace wptr #21 mmio=7FC80714 previous=67 new=70 rptr=25 modular-distance=45 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.403] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=896 raw-dwords=2202,0,2201,10001,210d,ff0000,2203,5,22080,0,0,20002000,54800,95dc07f,10000056,0
+[2026-10-26 20:59:55.403] [info] [core] [t4384] shift-native: ring trace wptr #22 mmio=7FC80714 previous=70 new=73 rptr=25 modular-distance=48 ring-dwords=8192 generation=1
+[2026-10-26 20:59:55.403] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=960 raw-dwords=0,0,0,25000,0,0,0,12000,a020280,10000,2301,c003,2200,8777,2208,4
+[2026-10-26 20:59:55.403] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1024 raw-dwords=c0003601,30088,22080,0,0,2d00500,22080,0,0,2d00500,22080,0,0,2d00500,22080,0
+[2026-10-26 20:59:55.403] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1088 raw-dwords=0,2d00500,c0013f00,975b660,4a,c0013f00,975c3a0,d,c0013f00,975cfe0,30,22080,0,0,2d00500,22080
+[2026-10-26 20:59:55.403] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1152 raw-dwords=0,0,2d00500,c0006000,ffffffff,579,1,c0043c00,13,1b964006,1,ffffffff,100,5c8,20000,1057c
+[2026-10-26 20:59:55.403] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1216 raw-dwords=823a4758,208,578,4,c0043c00,13,1b964002,4,ffffffff,100,c0043c00,13,1b964016,208,ffffffff,100
+[2026-10-26 20:59:55.403] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1280 raw-dwords=c0043c00,13,1b964012,823a4758,ffffffff,100,c0005400,4,45e,4,c0043c00,13,1b964002,0,ffffffff,100
+[2026-10-26 20:59:55.403] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1344 raw-dwords=57c,badf00d,c0043c00,13,1b964006,0,ffffffff,100,62200,700734,10001,87000007,0,80000,218006,43f
+[2026-10-26 20:59:55.403] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1408 raw-dwords=2208,4,12000,14000500,10000,200d,0,22100,ffffff,0,0,2104,f,210d,ffff00,5210f
+[2026-10-26 20:59:55.404] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1472 raw-dwords=44200000,44200000,c3b40000,43b40000,3f800000,0,2280,80008,2293,0,12301,0,4,2312,ffff,32318
+[2026-10-26 20:59:55.404] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1536 raw-dwords=100000,975e000,2d00500,1000300,c0003b00,100,c0102b00,0,f,10011002,1200,c4000000,0,1003c200,22000000,80000
+[2026-10-26 20:59:55.404] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1600 raw-dwords=253b48,2,c80f803e,0,e2000000,0,0,0,12180,10002,0,2208,6,2200,0,5c8
+[2026-10-26 20:59:55.404] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1664 raw-dwords=20000,2203,0,22100,ffff,0,0,2293,0,22204,10000,10000,300,2312,ffff,200d
+[2026-10-26 20:59:55.404] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1728 raw-dwords=0,2001,0,54800,95dc0d3,1000001a,0,0,0,0,25000,0,0,0,c0003600,30088
+[2026-10-26 20:59:55.404] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1792 raw-dwords=c0004600,6,2007,0,a31,3000000,10a2f,399000,975e000,c0043c00,3,a31,0,80000000,8,5c8
+[2026-10-26 20:59:55.404] [info] [core] [t4381] shift-native: ring trace IB data source=095D0120 byte-offset=1856 raw-dwords=20000,2318,0,231b,0,c0003b00,7fff,c0025800,3,17af4006,a95d0870,c0025800,3,17af4002,5
+[2026-10-26 20:59:55.404] [info] [core] [t4381] shift-native: entering captured COHER_STATUS_HOST wait source=095DC100 depth=1 byte-offset=20
+[2026-10-26 20:59:55.406] [info] [core] [t4381] shift-native: completed captured COHER_STATUS_HOST wait base=095D0000 size=00180000 status=00000000
+[2026-10-26 20:59:55.406] [info] [core] [t4381] shift-native: entering captured COHER_STATUS_HOST wait source=095D0120 depth=1 byte-offset=84
+[2026-10-26 20:59:55.408] [info] [core] [t4381] shift-native: completed captured COHER_STATUS_HOST wait base=085D0000 size=00400000 status=00000000
+[2026-10-26 20:59:55.408] [info] [core] [t4381] shift-native: entering captured COHER_STATUS_HOST wait source=095D0120 depth=1 byte-offset=128
+[2026-10-26 20:59:55.409] [info] [core] [t4381] shift-native: completed captured COHER_STATUS_HOST wait base=1B962000 size=00002000 status=00000000
+[2026-10-26 20:59:56.579] [info] [core] [t4381] shift-native: resolved captured retail draw #0 (startup sample) elapsed_ms=0
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001 setup=0x10000 cull=0 front_ccw=1 clip={valid:1,disabled:1,vte_valid:1,vte:0x300,window_xy:1}
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x95dc07c descriptor={0x95dc07f,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=0 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(location=1) out vec4 shift_interpolator1;
+layout(location=2) out vec4 shift_interpolator2;
+layout(location=3) out vec4 shift_interpolator3;
+layout(location=4) out vec4 shift_interpolator4;
+layout(location=5) out vec4 shift_interpolator5;
+layout(location=6) out vec4 shift_interpolator6;
+layout(location=7) out vec4 shift_interpolator7;
+layout(location=8) out vec4 shift_interpolator8;
+layout(location=9) out vec4 shift_interpolator9;
+layout(location=10) out vec4 shift_interpolator10;
+layout(location=11) out vec4 shift_interpolator11;
+layout(location=12) out vec4 shift_interpolator12;
+layout(location=13) out vec4 shift_interpolator13;
+layout(location=14) out vec4 shift_interpolator14;
+layout(location=15) out vec4 shift_interpolator15;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  float previous_scalar=0.0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  shift_interpolator1=vec4(0.0);
+  shift_interpolator2=vec4(0.0);
+  shift_interpolator3=vec4(0.0);
+  shift_interpolator4=vec4(0.0);
+  shift_interpolator5=vec4(0.0);
+  shift_interpolator6=vec4(0.0);
+  shift_interpolator7=vec4(0.0);
+  shift_interpolator8=vec4(0.0);
+  shift_interpolator9=vec4(0.0);
+  shift_interpolator10=vec4(0.0);
+  shift_interpolator11=vec4(0.0);
+  shift_interpolator12=vec4(0.0);
+  shift_interpolator13=vec4(0.0);
+  shift_interpolator14=vec4(0.0);
+  shift_interpolator15=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+  gl_Position = vec4(((gl_Position.x * 1.0 + 0.0 - 640.0) * 0.00156250002), ((gl_Position.y * 1.0 + 0.0 - 360.0) * 0.00277777785), gl_Position.z, 1.0);
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=1) in vec4 shift_interpolator1;
+layout(location=2) in vec4 shift_interpolator2;
+layout(location=3) in vec4 shift_interpolator3;
+layout(location=4) in vec4 shift_interpolator4;
+layout(location=5) in vec4 shift_interpolator5;
+layout(location=6) in vec4 shift_interpolator6;
+layout(location=7) in vec4 shift_interpolator7;
+layout(location=8) in vec4 shift_interpolator8;
+layout(location=9) in vec4 shift_interpolator9;
+layout(location=10) in vec4 shift_interpolator10;
+layout(location=11) in vec4 shift_interpolator11;
+layout(location=12) in vec4 shift_interpolator12;
+layout(location=13) in vec4 shift_interpolator13;
+layout(location=14) in vec4 shift_interpolator14;
+layout(location=15) in vec4 shift_interpolator15;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  float previous_scalar=0.0;
+  r[0]=shift_interpolator0;
+  r[1]=shift_interpolator1;
+  r[2]=shift_interpolator2;
+  r[3]=shift_interpolator3;
+  r[4]=shift_interpolator4;
+  r[5]=shift_interpolator5;
+  r[6]=shift_interpolator6;
+  r[7]=shift_interpolator7;
+  r[8]=shift_interpolator8;
+  r[9]=shift_interpolator9;
+  r[10]=shift_interpolator10;
+  r[11]=shift_interpolator11;
+  r[12]=shift_interpolator12;
+  r[13]=shift_interpolator13;
+  r[14]=shift_interpolator14;
+  r[15]=shift_interpolator15;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+  vec3 linear_rgb=clamp(shift_color0.rgb,0.0,1.0);
+  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),step(vec3(512.0/1023.0),linear_rgb));
+  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),step(vec3(64.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(64.0),step(vec3(128.0/1023.0),linear_rgb));
+  gamma_offset=mix(gamma_offset,vec3(128.0),step(vec3(512.0/1023.0),linear_rgb));
+  shift_color0.rgb=(trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;
+}
+
+[2026-10-26 20:59:56.580] [info] [core] [t4381] shift-native: entering captured WAIT_REG_MEM guest=1B964004 reference=00000001 mask=FFFFFFFF endian=2 compare=3 source=095D0120 depth=1 byte-offset=1180
+[2026-10-26 20:59:56.580] [info] [core] [t4381] shift-native: ring trace WAIT_REG_MEM sample guest=1B964004 poll-address=1B964006 reference=00000001 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=00000000 observed=00000000 condition=false elapsed_ms=0 source=095D0120 byte-offset=1180
+[2026-10-26 20:59:57.690] [info] [core] [t4381] shift-native: ring trace WAIT_REG_MEM sample guest=1B964004 poll-address=1B964006 reference=00000001 mask=FFFFFFFF endian=2 compare=3 poll=1000 raw=00000000 observed=00000000 condition=false elapsed_ms=1109 source=095D0120 byte-offset=1180
+[2026-10-26 20:59:58.826] [info] [core] [t4381] shift-native: ring trace WAIT_REG_MEM sample guest=1B964004 poll-address=1B964006 reference=00000001 mask=FFFFFFFF endian=2 compare=3 poll=2000 raw=00000000 observed=00000000 condition=false elapsed_ms=2246 source=095D0120 byte-offset=1180
+[2026-10-26 20:59:59.953] [info] [core] [t4381] shift-native: ring trace WAIT_REG_MEM sample guest=1B964004 poll-address=1B964006 reference=00000001 mask=FFFFFFFF endian=2 compare=3 poll=3000 raw=00000000 observed=00000000 condition=false elapsed_ms=3373 source=095D0120 byte-offset=1180
+[2026-10-26 21:00:01.058] [info] [core] [t4381] shift-native: ring trace WAIT_REG_MEM sample guest=1B964004 poll-address=1B964006 reference=00000001 mask=FFFFFFFF endian=2 compare=3 poll=4000 raw=00000000 observed=00000000 condition=false elapsed_ms=4478 source=095D0120 byte-offset=1180
+[2026-10-26 21:00:02.177] [info] [core] [t4381] shift-native: ring trace WAIT_REG_MEM sample guest=1B964004 poll-address=1B964006 reference=00000001 mask=FFFFFFFF endian=2 compare=3 poll=5000 raw=00000000 observed=00000000 condition=false elapsed_ms=5596 source=095D0120 byte-offset=1180
+[2026-10-26 21:00:03.290] [info] [core] [t4381] shift-native: ring trace WAIT_REG_MEM sample guest=1B964004 poll-address=1B964006 reference=00000001 mask=FFFFFFFF endian=2 compare=3 poll=6000 raw=00000000 observed=00000000 condition=false elapsed_ms=6709 source=095D0120 byte-offset=1180
+[2026-10-26 21:00:04.405] [info] [core] [t4381] shift-native: ring trace WAIT_REG_MEM sample guest=1B964004 poll-address=1B964006 reference=00000001 mask=FFFFFFFF endian=2 compare=3 poll=7000 raw=00000000 observed=00000000 condition=false elapsed_ms=7824 source=095D0120 byte-offset=1180
