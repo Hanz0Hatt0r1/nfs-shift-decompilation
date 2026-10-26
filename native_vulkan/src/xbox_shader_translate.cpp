@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -888,6 +889,127 @@ bool translate_captured_shader_glsl(
     *output = std::move(translated);
     if (error) error->clear();
     return true;
+}
+
+namespace {
+
+template <typename T>
+void append_key_value(std::string& key, T value) {
+    key.append(reinterpret_cast<const char*>(&value), sizeof(value));
+}
+
+void append_key_float(std::string& key, float value) {
+    uint32_t bits = 0;
+    std::memcpy(&bits, &value, sizeof(bits));
+    append_key_value(key, bits);
+}
+
+}  // namespace
+
+std::string CapturedShaderTranslationCache::make_key(
+    CapturedShaderStage stage, const uint8_t* shader_bytes,
+    size_t byte_length,
+    const CapturedShaderTranslationOptions& options) {
+    std::string key;
+    key.reserve(byte_length + 1600);
+    append_key_value(key, static_cast<uint8_t>(stage));
+    append_key_value(key, static_cast<uint64_t>(byte_length));
+    if (byte_length != 0) {
+        key.append(reinterpret_cast<const char*>(shader_bytes), byte_length);
+    }
+    append_key_value(key, static_cast<uint8_t>(options.pixel_b128));
+    append_key_value(key, static_cast<uint8_t>(options.pixel_b129));
+    append_key_value(key, static_cast<uint8_t>(options.gamma_color_target));
+    append_key_value(
+        key, static_cast<uint8_t>(options.clip_disabled_window_coordinates));
+    append_key_value(key, options.window_coordinate_width);
+    append_key_value(key, options.window_coordinate_height);
+    append_key_float(key, options.window_coordinate_x_scale);
+    append_key_float(key, options.window_coordinate_y_scale);
+    append_key_float(key, options.window_coordinate_x_offset);
+    append_key_float(key, options.window_coordinate_y_offset);
+    for (const CapturedShaderTextureOptions& texture : options.textures) {
+        for (uint32_t selector : texture.swizzle) append_key_value(key, selector);
+        for (TextureSign sign : texture.signs) {
+            append_key_value(key, static_cast<uint8_t>(sign));
+        }
+    }
+    return key;
+}
+
+size_t CapturedShaderTranslationCache::translation_payload_bytes(
+    const CapturedShaderTranslation& translation) {
+    return sizeof(translation) + translation.glsl.size() +
+           translation.executed_instruction_addresses.size() * sizeof(uint32_t) +
+           translation.vertex_input_attributes.size() *
+               sizeof(CapturedVertexInputAttribute) +
+           translation.texture_fetch_constant_indices.size() * sizeof(uint32_t) +
+           translation.float_constant_registers.size() * sizeof(uint32_t);
+}
+
+bool CapturedShaderTranslationCache::translate(
+    CapturedShaderStage stage, const uint8_t* shader_bytes, size_t byte_length,
+    const CapturedShaderTranslationOptions& options,
+    CapturedShaderTranslation* output, std::string* error) {
+    // Avoid retaining or copying unusually large guest programs. They still go
+    // through the original translator and its normal validation path.
+    if (byte_length > kMaximumPayloadBytes || (byte_length && !shader_bytes)) {
+        ++misses_;
+        return translate_captured_shader_glsl(stage, shader_bytes, byte_length,
+                                               options, output, error);
+    }
+
+    std::string key = make_key(stage, shader_bytes, byte_length, options);
+    if (const auto found = entries_.find(key); found != entries_.end()) {
+        ++hits_;
+        *output = found->second.translation;
+        if (error) error->clear();
+        return true;
+    }
+
+    ++misses_;
+    CapturedShaderTranslation translated{};
+    if (!translate_captured_shader_glsl(stage, shader_bytes, byte_length,
+                                         options, &translated, error)) {
+        return false;
+    }
+    *output = translated;
+
+    const size_t payload_bytes = key.size() * 2u +
+                                 translation_payload_bytes(translated);
+    if (payload_bytes > kMaximumPayloadBytes) return true;
+
+    while (!insertion_order_.empty() &&
+           (entries_.size() >= kMaximumEntries ||
+            retained_payload_bytes_ + payload_bytes > kMaximumPayloadBytes)) {
+        const std::string& oldest = insertion_order_.front();
+        const auto victim = entries_.find(oldest);
+        if (victim != entries_.end()) {
+            retained_payload_bytes_ -= victim->second.payload_bytes;
+            entries_.erase(victim);
+        }
+        insertion_order_.pop_front();
+    }
+
+    auto [stored, inserted] = entries_.emplace(
+        std::move(key), Entry{std::move(translated), payload_bytes});
+    if (inserted) {
+        retained_payload_bytes_ += payload_bytes;
+        insertion_order_.push_back(stored->first);
+    }
+    return true;
+}
+
+void CapturedShaderTranslationCache::clear() {
+    entries_.clear();
+    insertion_order_.clear();
+    retained_payload_bytes_ = 0;
+    hits_ = 0;
+    misses_ = 0;
+}
+
+CapturedShaderTranslationCache::Stats CapturedShaderTranslationCache::stats() const {
+    return Stats{hits_, misses_, entries_.size(), retained_payload_bytes_};
 }
 
 }  // namespace shift::xbox

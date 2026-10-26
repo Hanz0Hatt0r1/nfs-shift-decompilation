@@ -492,6 +492,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     }
     if (ring_worker_.joinable()) ring_worker_.join();
     texture_cache_.clear();
+    shader_translation_cache_.clear();
     if (pipeline_cache_ && provider_) {
       if (auto* device = provider_->vulkan_device(); device) {
         if (destroy_pipeline_cache_) {
@@ -634,13 +635,13 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     }
     shift::xbox::CapturedShaderTranslation vertex_translation{};
     shift::xbox::CapturedShaderTranslation pixel_translation{};
-    if (!shift::xbox::translate_captured_shader_glsl(
+    if (!shader_translation_cache_.translate(
             shift::xbox::CapturedShaderStage::Vertex, vertex_program.data(),
             vertex_program.size(), options, &vertex_translation, error)) {
       if (error) *error = "captured vertex shader: " + *error;
       return false;
     }
-    if (!shift::xbox::translate_captured_shader_glsl(
+    if (!shader_translation_cache_.translate(
             shift::xbox::CapturedShaderStage::Pixel, pixel_program.data(),
             pixel_program.size(), options, &pixel_translation, error)) {
       if (error) *error = "captured pixel shader: " + *error;
@@ -706,7 +707,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         }
         resolved_textures.push_back(std::move(resolved));
       }
-      if (!shift::xbox::translate_captured_shader_glsl(
+      if (!shader_translation_cache_.translate(
               shift::xbox::CapturedShaderStage::Pixel, pixel_program.data(),
               pixel_program.size(), options, &pixel_translation, error)) {
         if (error) *error = "captured pixel shader: " + *error;
@@ -2256,6 +2257,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
             first_draw_count = false;
           }
           type3_opcode_summary << ']';
+          const auto shader_cache_stats = shader_translation_cache_.stats();
           REXLOG_DEBUG("shift-native: framed {} PM4 packets, {} raw register writes, "
                        "{} constant spans loaded ({} unresolved), "
                        "{} pointer-loaded shader programs ({} unresolved), "
@@ -2263,7 +2265,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                        "{} captured indexed draw packets ({} with supported raster state, "
                        "{} elided as framebuffer no-ops, {} with both shader programs, "
                        "{} with complete captured shader inputs, "
-                       "{} translated to project GLSL, {} with resolved resource bytes "
+                       "{} translated to project GLSL, shader cache {}/{} hits/misses "
+                       "({} entries, {} payload bytes), {} with resolved resource bytes "
                        "({} unresolved)), "
                        "{} guest swaps, {} Vulkan frames submitted, "
                        "{} unsupported packet/draw forms, type3 opcodes [{}]",
@@ -2274,6 +2277,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                        decoded_draws, draws_with_raster_state, draws_elided_as_noops,
                        draws_with_both_shader_programs,
                        draws_with_captured_shader_inputs, draws_with_project_shader_translation,
+                       shader_cache_stats.hits, shader_cache_stats.misses,
+                       shader_cache_stats.entries,
+                       shader_cache_stats.retained_payload_bytes,
                        draws_with_resolved_resource_payloads,
                        draws_with_unresolved_resource_payloads, decoded_swaps, submitted_frames,
                        unsupported_draws, type3_opcode_summary.str());
@@ -2381,6 +2387,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   std::unique_ptr<rex::ui::Presenter> presenter_;
   VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
   shift::xbox::CapturedVulkanTextureCache texture_cache_;
+  shift::xbox::CapturedShaderTranslationCache shader_translation_cache_;
   PFN_vkDestroyPipelineCache destroy_pipeline_cache_ = nullptr;
   rex::ui::WindowedAppContext* app_context_ = nullptr;
   rex::memory::Memory* memory_ = nullptr;

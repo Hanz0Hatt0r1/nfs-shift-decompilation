@@ -1088,3 +1088,32 @@ renderer-core check passed on-device. These synthetic tests do not prove new
 retail output, selector/cutscene rendering, or full scene parity. Details,
 hashes, and limitations are in
 [`process2_sampler_anisotropy_capability_20261026.json`](../../evidence/process2_sampler_anisotropy_capability_20261026.json).
+
+## Bounded captured-shader translation cache (2026-10-26)
+
+`PrepareCapturedDrawResources` translates the same guest VS and PS again for
+each retail draw; textured PS translation runs a second time after captured
+fetch descriptors provide the real swizzle/sign options. The existing Vulkan
+pipeline cache starts after translation, so it does not avoid Xenos instruction
+decode and GLSL generation. A renderer-owned FIFO cache now keys the stage,
+exact shader bytes, boolean constants, gamma target, clip/window transform
+(including float bit patterns), and all 32 captured texture swizzles and sign
+modes. It stores successful results only, is bounded to 128 entries and 4 MiB
+of estimated payload, and clears after the ring worker stops. Debug batch logs
+expose cumulative cache hits/misses and retained payload for a retail run.
+
+The regression compares the complete cached result with direct translation of
+the retail pixel-shader slice used by the b128/b129 capture audit. It checks
+cache hits, b128/b129 selection, texture swizzle/sign, gamma target, failed
+translation retry, FIFO capacity eviction, and clear. Native Vulkan CTest
+passes 4/4 and Linux plugin CTest passes 5/5 with
+`VK_LAYER_KHRONOS_validation` forced. The ARM64 plugin also builds with NDK
+28.2/API 26 against the existing runtime. Its SHA-256 is
+`968c7c8a…538c27f`, Build ID `8c4d336e0e4d4ee1028fa7ba9738b7d30563ff4d`.
+
+The cache has not yet been loaded by the live game, so device hit rate and
+frame-time change remain unmeasured. The current Android session remains open
+on the legal disclaimer; the new plugin was not installed. Menu-after-disclaimer,
+race output, and full retail parity are still unverified. Artifact identities
+and verification limits are in
+[`process2_shader_translation_cache_20261026.json`](../../evidence/process2_shader_translation_cache_20261026.json).

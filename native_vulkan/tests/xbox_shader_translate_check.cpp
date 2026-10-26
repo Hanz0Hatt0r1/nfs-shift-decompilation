@@ -76,6 +76,35 @@ void require(bool condition, const char* message) {
     }
 }
 
+bool same_translation(const shift::xbox::CapturedShaderTranslation& left,
+                      const shift::xbox::CapturedShaderTranslation& right) {
+    if (left.glsl != right.glsl ||
+        left.executed_instruction_addresses != right.executed_instruction_addresses ||
+        left.vertex_input_attributes.size() != right.vertex_input_attributes.size() ||
+        left.has_vertex_fetch_constant != right.has_vertex_fetch_constant ||
+        left.vertex_fetch_constant_index != right.vertex_fetch_constant_index ||
+        left.uses_texture != right.uses_texture ||
+        left.texture_fetch_constant_index != right.texture_fetch_constant_index ||
+        left.texture_fetch_constant_indices != right.texture_fetch_constant_indices ||
+        left.float_constant_registers != right.float_constant_registers ||
+        left.uses_relative_float_constant_index !=
+            right.uses_relative_float_constant_index) {
+        return false;
+    }
+    for (size_t i = 0; i < left.vertex_input_attributes.size(); ++i) {
+        const auto& a = left.vertex_input_attributes[i];
+        const auto& b = right.vertex_input_attributes[i];
+        if (a.location != b.location ||
+            a.destination_register != b.destination_register ||
+            a.vertex_format != b.vertex_format ||
+            a.stride_dwords != b.stride_dwords ||
+            a.offset_dwords != b.offset_dwords) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // Minimal instruction slice from the captured retail PS: its actual CF branch
 // prefix, tfetch2D@4, serialization slot@5, and color export@8. The shader
 // branches exercise the exact b128/b129 path selection without storing a full
@@ -482,5 +511,128 @@ int main() {
                 error.find("scalar opcode 63") != std::string::npos &&
                 error.find("instruction 7") != std::string::npos,
             "unsupported captured scalar opcode diagnostic omitted opcode/address");
+
+    shift::xbox::CapturedShaderTranslationCache translation_cache;
+    shift::xbox::CapturedShaderTranslationOptions cache_options{};
+    cache_options.pixel_b128 = true;
+    const auto retail_pixel = captured_pixel_shader_slice();
+    shift::xbox::CapturedShaderTranslation uncached{};
+    shift::xbox::CapturedShaderTranslation cached{};
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                retail_pixel.data(), retail_pixel.size(), cache_options,
+                &uncached, &error) &&
+                translation_cache.translate(
+                    shift::xbox::CapturedShaderStage::Pixel,
+                    retail_pixel.data(), retail_pixel.size(), cache_options,
+                    &cached, &error) && same_translation(uncached, cached),
+            "translation cache changed the captured retail pixel-shader result");
+    require(translation_cache.translate(
+                shift::xbox::CapturedShaderStage::Pixel,
+                retail_pixel.data(), retail_pixel.size(), cache_options,
+                &cached, &error) && same_translation(uncached, cached),
+            "cached captured retail shader did not reproduce its full translation");
+    auto cache_stats = translation_cache.stats();
+    require(cache_stats.hits == 1 && cache_stats.misses == 1 &&
+                cache_stats.entries == 1,
+            "repeated retail shader translation did not hit the cache");
+    const uint64_t hits_before_stage_change = cache_stats.hits;
+    const bool pixel_bytes_as_vertex = translation_cache.translate(
+        shift::xbox::CapturedShaderStage::Vertex,
+        retail_pixel.data(), retail_pixel.size(), cache_options, &cached, &error);
+    require(translation_cache.stats().hits == hits_before_stage_change &&
+                (!pixel_bytes_as_vertex || !same_translation(uncached, cached)),
+            "shader stage was omitted from the translation cache key");
+
+    cache_options.pixel_b128 = false;
+    require(translation_cache.translate(
+                shift::xbox::CapturedShaderStage::Pixel,
+                retail_pixel.data(), retail_pixel.size(), cache_options,
+                &cached, &error) && cached.glsl != uncached.glsl,
+            "pixel b128 was omitted from the shader translation cache key");
+    cache_options.pixel_b128 = true;
+    cache_options.pixel_b129 = true;
+    const auto hits_before_b129 = translation_cache.stats().hits;
+    require(!translation_cache.translate(
+                shift::xbox::CapturedShaderStage::Pixel,
+                retail_pixel.data(), retail_pixel.size(), cache_options,
+                &cached, &error) &&
+                translation_cache.stats().hits == hits_before_b129,
+            "pixel b129 was omitted from the shader translation cache key");
+    cache_options.pixel_b129 = false;
+    cache_options.pixel_b128 = true;
+    cache_options.textures[0].swizzle = {0, 1, 2, 3};
+    require(translation_cache.translate(
+                shift::xbox::CapturedShaderStage::Pixel,
+                retail_pixel.data(), retail_pixel.size(), cache_options,
+                &cached, &error) && cached.glsl != uncached.glsl,
+            "captured texture swizzle was omitted from the cache key");
+    cache_options.textures[0].swizzle = {2, 1, 0, 3};
+    cache_options.textures[0].signs = {
+        shift::xbox::TextureSign::Gamma, shift::xbox::TextureSign::Gamma,
+        shift::xbox::TextureSign::Gamma, shift::xbox::TextureSign::Unsigned};
+    require(translation_cache.translate(
+                shift::xbox::CapturedShaderStage::Pixel,
+                retail_pixel.data(), retail_pixel.size(), cache_options,
+                &cached, &error) && cached.glsl != uncached.glsl,
+            "captured texture signs were omitted from the cache key");
+    cache_options.textures[0].signs = {
+        shift::xbox::TextureSign::Unsigned, shift::xbox::TextureSign::Unsigned,
+        shift::xbox::TextureSign::Unsigned, shift::xbox::TextureSign::Unsigned};
+    cache_options.gamma_color_target = true;
+    require(translation_cache.translate(
+                shift::xbox::CapturedShaderStage::Pixel,
+                retail_pixel.data(), retail_pixel.size(), cache_options,
+                &cached, &error) && cached.glsl != uncached.glsl,
+            "gamma color-target mode was omitted from the cache key");
+
+    shift::xbox::CapturedShaderTranslationCache failed_cache;
+    auto failed_options = cache_options;
+    failed_options.pixel_b128 = false;
+    require(!failed_cache.translate(
+                shift::xbox::CapturedShaderStage::Pixel,
+                unsupported_scalar_shader.data(), unsupported_scalar_shader.size(),
+                failed_options, &cached, &error) &&
+                !failed_cache.translate(
+                    shift::xbox::CapturedShaderStage::Pixel,
+                    unsupported_scalar_shader.data(), unsupported_scalar_shader.size(),
+                    failed_options, &cached, &error) &&
+                failed_cache.stats().entries == 0 &&
+                failed_cache.stats().misses == 2,
+            "failed shader translations were retained or skipped on retry");
+
+    shift::xbox::CapturedShaderTranslationCache bounded_cache;
+    shift::xbox::CapturedShaderTranslationOptions bounded_options{};
+    bounded_options.clip_disabled_window_coordinates = true;
+    bounded_options.window_coordinate_height = 720;
+    for (uint32_t width = 1;
+         width <= shift::xbox::CapturedShaderTranslationCache::kMaximumEntries + 1;
+         ++width) {
+        bounded_options.window_coordinate_width = width;
+        require(bounded_cache.translate(
+                    shift::xbox::CapturedShaderStage::Vertex,
+                    vertex_shader.data(), vertex_shader.size(), bounded_options,
+                    &vertex_translated, &error),
+                "bounded cache rejected a valid captured vertex shader");
+    }
+    cache_stats = bounded_cache.stats();
+    require(cache_stats.entries ==
+                shift::xbox::CapturedShaderTranslationCache::kMaximumEntries &&
+                cache_stats.retained_payload_bytes <=
+                    shift::xbox::CapturedShaderTranslationCache::kMaximumPayloadBytes,
+            "shader translation cache exceeded its entry or payload bound");
+    bounded_options.window_coordinate_width = 1;
+    require(bounded_cache.translate(
+                shift::xbox::CapturedShaderStage::Vertex,
+                vertex_shader.data(), vertex_shader.size(), bounded_options,
+                &vertex_translated, &error) &&
+                bounded_cache.stats().misses ==
+                    shift::xbox::CapturedShaderTranslationCache::kMaximumEntries + 2,
+            "oldest translation was not evicted at the cache capacity");
+    bounded_cache.clear();
+    cache_stats = bounded_cache.stats();
+    require(cache_stats.entries == 0 && cache_stats.retained_payload_bytes == 0 &&
+                cache_stats.hits == 0 && cache_stats.misses == 0,
+            "clearing shader translation cache did not reset retained state");
     return 0;
 }

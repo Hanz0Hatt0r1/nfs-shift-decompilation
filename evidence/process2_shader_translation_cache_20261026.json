@@ -1,0 +1,81 @@
+{
+  "schema": "shift.process2.shader_translation_cache.v1",
+  "date_local": "2026-10-26",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "base_commit": "d51832d8f9876885e7c074eb206a54834aaca8b9",
+    "implementation_paths": [
+      "native_vulkan/include/shift_xbox_shader_translate.hpp",
+      "native_vulkan/src/xbox_shader_translate.cpp",
+      "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/tests/xbox_shader_translate_check.cpp"
+    ]
+  },
+  "cache": {
+    "key_fields": [
+      "shader stage",
+      "exact guest shader bytes",
+      "pixel boolean constants b128 and b129",
+      "gamma color target",
+      "clip-disabled window transform",
+      "window dimensions",
+      "window scale and offset float bit patterns",
+      "all 32 texture swizzles and sign modes"
+    ],
+    "successful_translations_only": true,
+    "maximum_entries": 128,
+    "maximum_estimated_payload_bytes": 4194304,
+    "eviction": "FIFO",
+    "threading": "owned by the single guest-ring worker; not internally synchronized",
+    "clear_after_worker_stops": true
+  },
+  "checks": {
+    "native_vulkan_ctest": {
+      "passed": 4,
+      "total": 4,
+      "validation_layer_forced": "VK_LAYER_KHRONOS_validation"
+    },
+    "linux_plugin_ctest": {
+      "passed": 5,
+      "total": 5,
+      "validation_layer_forced": "VK_LAYER_KHRONOS_validation"
+    },
+    "translation_regression": [
+      "full result equals direct translation for captured retail pixel-shader slice",
+      "repeat uses a cache hit",
+      "shader stage changes the cache key",
+      "b128 and b129 preserve branch selection and failure behavior",
+      "texture swizzle and sign alter the cache key",
+      "gamma target alters the cache key",
+      "failed translation is retried and not retained",
+      "128-entry bound evicts the oldest translation",
+      "clear resets entries and statistics"
+    ],
+    "git_diff_check": "passed"
+  },
+  "linux_x86_64_plugin": {
+    "path": "/home/pes/work/process2-p1-ring-trace-resolve-handover-20261026/librexgpu-shift-native.so",
+    "sha256": "f1d6394bfa01dd65b2472d50eda64b1dd5ceade8993a43771b0e73b84090f95c",
+    "build_id": "e76c6515f0d0737753023971fcc68916d0aaf706",
+    "runtime_path": "/home/pes/work/rexglue-sdk-process2-resolve-20261024/out/linux-amd64/librexruntime.so",
+    "runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+    "ldd_r": "resolved without undefined symbols"
+  },
+  "android_arm64_plugin": {
+    "path": "/tmp/nfs-p2-prebuilt-runtime-build/plugin-output/librexgpu-shift-natived.so",
+    "sha256": "968c7c8a061c078a223154b06b49fbbc5eb10ee25636f3152916f2fde538c27f",
+    "build_id": "8c4d336e0e4d4ee1028fa7ba9738b7d30563ff4d",
+    "abi": "arm64-v8a",
+    "android_api": 26,
+    "ndk": "28.2.13676358",
+    "runtime_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "apk_installed": false,
+    "device_validation_layer_available": false
+  },
+  "limits": [
+    "Cache hit rate and frame-time change are not measured on the live game.",
+    "The current Redmi session remains on the legal disclaimer; the new Android plugin was not installed or used to restart it.",
+    "Post-disclaimer menu, race output, and complete retail parity remain unverified.",
+    "Payload accounting excludes allocator and container bookkeeping."
+  ]
+}

@@ -3,8 +3,11 @@
 #include "shift_xbox_draw_input.hpp"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace shift::xbox {
@@ -67,5 +70,45 @@ bool translate_captured_shader_glsl(
     const CapturedShaderTranslationOptions& options,
     CapturedShaderTranslation* output,
     std::string* error);
+
+class CapturedShaderTranslationCache {
+public:
+    struct Stats {
+        uint64_t hits = 0;
+        uint64_t misses = 0;
+        size_t entries = 0;
+        size_t retained_payload_bytes = 0;
+    };
+
+    static constexpr size_t kMaximumEntries = 128;
+    static constexpr size_t kMaximumPayloadBytes = 4u * 1024u * 1024u;
+
+    // The renderer owns this cache on its single guest-ring worker thread.
+    bool translate(CapturedShaderStage stage, const uint8_t* shader_bytes,
+                   size_t byte_length,
+                   const CapturedShaderTranslationOptions& options,
+                   CapturedShaderTranslation* output, std::string* error);
+    void clear();
+    Stats stats() const;
+
+private:
+    struct Entry {
+        CapturedShaderTranslation translation;
+        size_t payload_bytes = 0;
+    };
+
+    static std::string make_key(
+        CapturedShaderStage stage, const uint8_t* shader_bytes,
+        size_t byte_length,
+        const CapturedShaderTranslationOptions& options);
+    static size_t translation_payload_bytes(
+        const CapturedShaderTranslation& translation);
+
+    std::unordered_map<std::string, Entry> entries_;
+    std::deque<std::string> insertion_order_;
+    size_t retained_payload_bytes_ = 0;
+    uint64_t hits_ = 0;
+    uint64_t misses_ = 0;
+};
 
 }  // namespace shift::xbox
