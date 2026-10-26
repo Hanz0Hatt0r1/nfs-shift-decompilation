@@ -493,3 +493,23 @@ surface teardown at 13:06:37. The stale surface is a plausible reason that
 presentation fails after resume, not an explanation for the guest ring becoming
 idle before surface destruction. See the [source audit and timeline](PROCESS2_ANDROID_SURFACE_RECREATE_ANALYSIS_20261026.md)
 and [run evidence](../evidence/process2_redmi_surface_recreate_ring_idle_20261026.json).
+
+## Redmi startup wait ring trace (2026-10-26)
+
+A read-only capture from the installed ring-trace candidate confirms the
+Android app is top-resumed but black, with the renderer log stopping at
+`WAIT_REG_MEM` guest address `0x1B964004` (reference `1`, full mask, endian 2,
+compare 3) in indirect buffer `0x095D0120`. The mapped `librexgpu-xenosd.so`
+hash matches the ARM64 trace plugin. Its wrapper exports
+`SHIFT_NATIVE_VULKAN_TRACE_RING=1` and ran; Android denied access to the
+process environment, so the variable was not independently read back. No
+candidate memory-write packets appear in the scanned batches. The observed
+`EVENT_WRITE_SHD` targets `0x17AF4004` and `0x17AF4000` differ from the wait
+address. This narrows the observed GPU-side writes but does not establish the
+CPU-side producer or exclude writes outside the scanned ring batches.
+
+No app data was cleared and the running app was not stopped or restarted.
+Process 2 did not alter the guest wait predicate or Process 1 files. See the
+[device trace record](../evidence/process2_redmi_wait_reg_mem_trace_20261026.json),
+[captured screen](../evidence/process2_redmi_wait_reg_mem_trace_20261026.png),
+and [compressed guest log](../evidence/process2_redmi_wait_reg_mem_trace_20261026.log.gz).
