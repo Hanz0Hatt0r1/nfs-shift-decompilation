@@ -1,0 +1,72 @@
+{
+  "schema": "shift.xbox360.linux-retail-hsio-flag-semantics.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host": {
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "rexglue_runtime": {
+      "sha256": "2b0d46856da000cecafb46581ddff50da99f549ff335bee9ba489238eed24059",
+      "selected_by_ld_library_path": true
+    },
+    "gpu_plugin": {
+      "sha256": "b488dfeb5803f031c4027270b3ab20831a379814145ceda7c052ecd12199a70c",
+      "mapping_verified": false
+    },
+    "retail_elf_analysis_image": {
+      "sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c"
+    }
+  },
+  "static_retail_analysis": {
+    "method": "Raw PowerPC disassembly cross-checked against the exact XEX import table and ReXGlue export table",
+    "global": {
+      "address": "0x831B3820",
+      "writer_function": "0x823B9DA0",
+      "writer_callsite": "0x823B9FC4",
+      "writer_store": "0x823B9FD0",
+      "reader_sites": ["0x823A53C0", "0x823B3444"],
+      "stored_value_formula": "1 when VdIsHSIOTrainingSucceeded returns 0; otherwise 0"
+    },
+    "import": {
+      "guest_thunk": "0x83063DDC",
+      "library": "xboxkrnl.exe",
+      "ordinal": "0x01C6",
+      "resolved_name": "VdIsHSIOTrainingSucceeded",
+      "sdk_entrypoint": "rex::kernel::xboxkrnl::VdIsHSIOTrainingSucceeded_entry"
+    },
+    "software_completion_guard": {
+      "function": "0x823B33A0",
+      "requires_global_nonzero": true,
+      "sets_predicate_mask": "0x02"
+    }
+  },
+  "runtime_probe": {
+    "gdb_log_path_external": "/tmp/nfs-shift-fixed-runtime-run-20261026/hsio-gdb.log",
+    "gdb_log_sha256": "3c651cd3294127e3a4e949abb20b64e49d0d5b51cb3f59291eb977177dd8a752",
+    "host_code_breakpoints": ["sub_823B9DA0+2323", "sub_823B9DA0+2354"],
+    "guest_memory_written": false,
+    "observations": {
+      "guest_r3_after_import": 1,
+      "global_after_retail_store": "0x00000000",
+      "context_r11_at_store": 0
+    },
+    "termination": "The harness killed the title after the store observation; no menu or race was observed."
+  },
+  "interpretation": {
+    "global_zero_is_expected_for_api_success": true,
+    "software_fallback_enabled": false,
+    "global_zero_proves_gpu_event_failure": false,
+    "global_zero_identifies_missing_producer": false,
+    "retail_predicate_or_queue_modified": false,
+    "next_probe": "Trace the GPU event write, guest interrupt callback at 0x823B37B8, and P1 dispatch/scheduling through the still-clear completion mask."
+  },
+  "limitations": [
+    "The Ghidra decompilation of 0x823B9DA0 is incomplete because the decompiler treats the PPC save-register helper as non-returning; conclusions above use raw instructions and a runtime sample.",
+    "The probe does not identify the missing producer or establish whether P1 dispatch or the P2 GPU event path owns the outstanding completion."
+  ]
+}

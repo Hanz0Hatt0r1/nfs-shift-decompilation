@@ -1,0 +1,181 @@
+{
+  "schema": "shift.xbox360.linux-retail-wait-shader-export-audit.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "capture": {
+    "outer_indirect_buffer": {
+      "guest_address": "0x095D0120",
+      "bytes": 1916,
+      "sha256": "0314df2bd6d5142ec11417cffdb6b192bf4b046d22418528772f476ca3cc2580"
+    },
+    "nested_shader_buffer": {
+      "guest_address": "0x0975B660",
+      "bytes": 296,
+      "sha256": "515d445533bd11926618e9d1cbd5a4f7eaf51930dd27b7935b1efecf24845d7b"
+    },
+    "nested_draw_buffer": {
+      "guest_address": "0x0975CFE0",
+      "bytes": 192,
+      "sha256": "4f2445f960ffe0265688c12b9081c0cdb17e8c0a4c8191cbfecb6bfd6bb8dbfc"
+    },
+    "wait": {
+      "outer_byte_offset": "0x49C",
+      "raw_words": [
+        "c0043c00",
+        "00000013",
+        "1b964006",
+        "00000001",
+        "ffffffff",
+        "00000100"
+      ],
+      "guest_physical_word": "0x1B964004",
+      "reference": "0x00000001"
+    },
+    "register_writes_before_wait": {
+      "surface_info": "0x0A020280",
+      "color_info": "0x00010000",
+      "depth_info": "0x000002D0",
+      "copy_control_0x2318": "0x00000000",
+      "copy_dest_base_0x2319": "0x00000000",
+      "copy_dest_pitch_0x231A": "0x00000000",
+      "copy_dest_info_0x231B": "0x00000000",
+      "load_alu_constant_packet_count": 0
+    },
+    "shader_loads_before_wait": [
+      {
+        "stream": "outer",
+        "packet_byte_offset": "0x28C",
+        "packet_header": "c01c2b00",
+        "stage": "vertex",
+        "stage_value": 0,
+        "dword_count": 27,
+        "code_dwords_be": [
+          "30052003", "00001200", "c4000000", "00001005", "00001200", "c2000000",
+          "00001006", "10071200", "22000000", "30081000", "00393a88", "00000007",
+          "00080000", "40263688", "00000300", "c80f8000", "00000000", "e2000000",
+          "c80f803e", "00000000", "e2010100", "c8000000", "00000000", "e2000000",
+          "00000000", "00000000", "00000000"
+        ],
+        "code_sha256": "abfec28e9858fd1b9b27afd527f08421c38f288e9333cc7fc10d6391ac190fa9",
+        "scheduled_alu_instruction_addresses": [5, 6, 7],
+        "export_destinations": [
+          { "instruction": 5, "register_index": 0, "meaning": "VS interpolator 0" },
+          { "instruction": 6, "register_index": 62, "meaning": "VS position" }
+        ],
+        "translated_by_captured_glsl_path": true,
+        "generated_storage_buffer": false,
+        "generated_image_store": false,
+        "generated_atomic_store": false
+      },
+      {
+        "stream": "outer",
+        "packet_byte_offset": "0x304",
+        "packet_header": "c00a2b00",
+        "stage": "pixel",
+        "stage_value": 1,
+        "dword_count": 9,
+        "code_dwords_be": [
+          "00000000", "1001c400", "22000000", "c80f8000", "00000000", "e2000000",
+          "00000000", "00000000", "00000000"
+        ],
+        "code_sha256": "9d4a64e81064abb794c5cba3642feda86a5a1e6b75a13cd4c4d7917bea83e01e",
+        "scheduled_alu_instruction_addresses": [1],
+        "export_destinations": [
+          { "instruction": 1, "register_index": 0, "meaning": "PS color 0" }
+        ],
+        "translated_by_captured_glsl_path": true,
+        "generated_storage_buffer": false,
+        "generated_image_store": false,
+        "generated_atomic_store": false
+      },
+      {
+        "stream": "nested_0x0975B660",
+        "packet_byte_offset": "0x8",
+        "packet_header": "c0192b00",
+        "stage": "vertex",
+        "stage_value": 0,
+        "dword_count": 24,
+        "code_dwords_be": [
+          "00001003", "00001200", "c4000000", "00001004", "00001200", "c2000000",
+          "00001005", "10061200", "22000000", "c8000000", "00000000", "e2000000",
+          "c800c000", "00000000", "e2000000", "c888c03e", "00000000", "e2010100",
+          "c8000000", "00000000", "e2000000", "00000000", "00000000", "00000000"
+        ],
+        "code_sha256": "a5ffccb2a2cdccd0093b55f9051330166881a987052e76249b4841ee7170c608",
+        "scheduled_alu_instruction_addresses": [3, 4, 5, 6],
+        "export_destinations": [
+          { "instruction": 4, "register_index": 0, "meaning": "VS interpolator 0" },
+          { "instruction": 5, "register_index": 62, "meaning": "VS position" }
+        ],
+        "translated_by_captured_glsl_path": true,
+        "generated_storage_buffer": false,
+        "generated_image_store": false,
+        "generated_atomic_store": false
+      },
+      {
+        "stream": "nested_0x0975B660",
+        "packet_byte_offset": "0x74",
+        "packet_header": "c00a2b00",
+        "stage": "pixel",
+        "stage_value": 1,
+        "dword_count": 9,
+        "code_dwords_be": [
+          "00000000", "1001c400", "22000000", "c80f8000", "00000000", "e2000000",
+          "00000000", "00000000", "00000000"
+        ],
+        "code_sha256": "9d4a64e81064abb794c5cba3642feda86a5a1e6b75a13cd4c4d7917bea83e01e",
+        "scheduled_alu_instruction_addresses": [1],
+        "export_destinations": [
+          { "instruction": 1, "register_index": 0, "meaning": "PS color 0" }
+        ],
+        "translated_by_captured_glsl_path": true,
+        "generated_storage_buffer": false,
+        "generated_image_store": false,
+        "generated_atomic_store": false
+      }
+    ],
+    "nested_draws": {
+      "guest_address": "0x0975CFE0",
+      "packet_count": 24,
+      "opcode": "PM4_DRAW_INDX_2",
+      "raw_packet_words": ["c0003600", "00010081"],
+      "source_select": "auto-index",
+      "primitive": "point list",
+      "index_count_per_packet": 1
+    },
+    "shader_register_definition": {
+      "project": "ReXGlue",
+      "source_commit": "26cb90f67fd7df711ee6cd4338ef8402f0bfdefa",
+      "file": "include/rex/graphics/format/ucode.h",
+      "eA_register_index": 32,
+      "eM_register_indices": [33, 34, 35, 36, 37]
+    }
+  },
+  "translator_identity": {
+    "project": "Hanz0Hatt0r1/nfs-shift-xbox-live-ring",
+    "source_commit": "6277bda6dc6a9bf3a6dcda92a2d9725417500f78",
+    "decoder_file": "native_vulkan/src/xbox_draw_input.cpp",
+    "translator_file": "native_vulkan/src/xbox_shader_translate.cpp",
+    "observed_worktree_changes": "The only uncommitted change was the plugin WAIT_REG_MEM diagnostic; decoder and shader translator matched the recorded source commit."
+  },
+  "interpretation": {
+    "established": [
+      "All four inline shader programs loaded before the blocking memory wait translate successfully through the captured shader path.",
+      "Their exported destinations are only VS interpolator 0, VS position, and PS color 0; none targets eA register 32 or eM registers 33 through 37.",
+      "The nested 24 one-index point draws therefore do not use an explicit shader memory export in these captured programs.",
+      "The captured color target is EDRAM base tile 0; the captured copy/resolve destination registers 0x2318 through 0x231B are zero.",
+      "The captured shader and draw payloads contain neither the polled address nor its WAIT_REG_MEM address encoding before the wait packet."
+    ],
+    "not_proven": [
+      "Whether raster output, a preceding ring submission, another GPU job, or a device/DMA path writes 0x1B964004.",
+      "Whether Vulkan submission or visibility ordering in the renderer prevents an otherwise valid write from becoming visible to the host wait.",
+      "That this memory wait alone causes the retail software queue predicate or frontend stall.",
+      "Main-menu entry, offline race, or sustained visible output."
+    ],
+    "next_step": "Trace the writer/visibility path for guest physical word 0x1B964004 across earlier ring submissions and GPU work. Preserve WAIT_REG_MEM and original guest predicate semantics."
+  }
+}
