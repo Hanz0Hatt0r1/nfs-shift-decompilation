@@ -226,6 +226,12 @@ The two SDK patches used here are patch-identical to the already open upstream [
 
 Keep the retail memory wait and predicate semantics unchanged. P1's next step remains tracing the actual writer/producer that should satisfy the wait.
 
+### Current renderer passes host-coherency waits, then reaches the guest wait (2026-10-26)
+
+A hash-verified Linux AMD64 exact-XEX run with Process 2 renderer source commit `ccdee6b4d125f3a8670806f0ba15f0361588b137` logged completion of all four captured `COHER_STATUS_HOST` waits, then entered the captured guest-memory `WAIT_REG_MEM` at `0x1B964004` and did not log completion. A paired bounded GDB run observed the retail software-queue wait at head/target/tail `3/13/21`, predicate `0x14` with completion bit `0x02` clear; no source-1 callback or writes through four watched host aliases appeared during the 49-second interval. This does not rule out device/DMA writes or other aliases, identify the expected-word producer, or establish menu/race output. See the [runtime evidence](../evidence/xbox360_linux_current_p2_coherency_wait_runtime_20261026.json) and [its guard](../tools/xbox360/test_linux_current_p2_coherency_wait_runtime.py).
+
+Keep the captured guest wait and queue predicate unchanged. Continue tracing the guest producer and interrupt/scheduler path that should satisfy them.
+
 ### Retail callback registration at the first queue wait (2026-10-26)
 
 A read-only GDB run with the exact XEX and hash-verified runtime/P2 DSO broke at the first retail software-queue wait. Before the wait, `0x8264C858` called setters `0x823A5730` and `0x823A5728` once each on object `0xB7365F00`, registering `0x82649B68` and `0x82321198`. The guest-big-endian fields `object+16540` and `object+16544` still contained those same addresses at the wait. The producer `0x823A4758` and registered callback `0x82649B68` had zero invocations; the wait was target 13, head 0, tail 21, predicate byte `0x14`. This confirms registration is present before the stall and moves the P1 trace to the invocation condition after registration. It does not prove the encoded stream was submitted/executed or identify which component should invoke the producer, and the debugger killed the title at the wait. See [the callback-registration evidence](../evidence/xbox360_linux_callback_registration_first_wait_20261026.json) and [its guard](../tools/xbox360/test_linux_callback_registration_first_wait.py).
