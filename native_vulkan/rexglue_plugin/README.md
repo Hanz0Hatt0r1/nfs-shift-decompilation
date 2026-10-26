@@ -1195,3 +1195,28 @@ nothing new about renderer output or the cause of the earlier black source.
 The Redmi app remained open on the legal disclaimer; its read-only screenshot
 hash is unchanged. Details are in the `latest_plugin_retail_visibility_attempt`
 record in the source-readback evidence JSON.
+
+## Bounded CPU-side R8 video-plane scratch cache (2026-10-26)
+
+The live Bink path receives captured linear R8 planes and converts each plane
+to the renderer's upload input. The plugin now reuses the CPU vectors for
+recurring planes, keyed by guest draw slot, fetch constant, and dimensions.
+The cache has a 16 MiB cap, rejects duplicate simultaneous leases, and falls
+back to ordinary allocation when a plane does not fit. The upload path copies
+the bytes into Vulkan-owned staging before returning, so the ring worker
+recycles the CPU vector only after that synchronous preparation finishes.
+GPU image/upload caching and the bytes converted or copied per frame are
+unchanged.
+
+The regression verifies the reuse, fresh-frame overwrite, immutable released
+payload, duplicate-lease rejection, and budget bypass. It passed on x86_64 and
+as an ARM64 executable on the Redmi Note 8 Pro. The Linux plugin and its six
+CTest cases passed with `VK_LAYER_KHRONOS_validation` forced; the native Vulkan
+renderer CTest suite also passed 4/4 with the layer. `ldd -r` found no unresolved
+symbols in the built plugin. This measures allocation reuse only: the plugin
+was not installed for a new live retail run, and video playback speed,
+allocation counts under the guest workload, frame time, and retail parity were
+not measured. The menu-selector language labels were separately verified on
+the current Redmi candidate and all six are readable, including the gray
+unselected rows. Build identities and the exact test record are in
+[`process2_r8_upload_scratch_20261026.json`](../../evidence/process2_r8_upload_scratch_20261026.json).

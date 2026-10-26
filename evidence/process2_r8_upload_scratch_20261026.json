@@ -1,0 +1,80 @@
+{
+  "schema": "shift.process2.r8_upload_scratch.v1",
+  "recorded_at_utc": "2026-10-26T07:37:55Z",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "base_commit": "a0e5af103cc6cc51dbac58000ec5232c03a71e7d",
+    "language_selector_fix_commit": "ac7f5793a",
+    "changed_paths": [
+      "native_vulkan/rexglue_plugin/shift_native_r8_upload_scratch.hpp",
+      "native_vulkan/rexglue_plugin/r8_upload_scratch_check.cpp",
+      "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/rexglue_plugin/CMakeLists.txt",
+      "native_vulkan/rexglue_plugin/README.md",
+      "native_vulkan/PROCESS2_XBOX_DRAW27_STATUS_20261025.md"
+    ]
+  },
+  "change": {
+    "description": "Reuse CPU-side byte-vector storage for recurring captured linear R8 video planes in the live plugin path.",
+    "key": ["guest_draw_slot", "fetch_constant_index", "width", "height"],
+    "budget_bytes": 16777216,
+    "fallback": "When the bounded cache cannot admit a plane, the existing conversion path allocates an ordinary vector.",
+    "upload_lifetime": "The renderer copies texture bytes into its own Vulkan staging input before the draw preparation call returns; the ring worker then recycles the CPU payload.",
+    "does_not_change": [
+      "texture conversion semantics",
+      "bytes converted per plane",
+      "Vulkan image/upload cache",
+      "guest draw ordering"
+    ]
+  },
+  "host_build": {
+    "platform": "linux-amd64",
+    "compiler": "Clang 22.1.8",
+    "sdk": "/home/pes/work/rexglue-sdk-process2-resolve-20261024",
+    "sdk_runtime_sha256": "1c436773e551544fbc4b49847826d73093042b8ef8be146932b622450fbefae7",
+    "plugin": "/home/pes/work/process2-r8-scratch-linux-plugin-20261026/librexgpu-shift-native.so",
+    "plugin_sha256": "4758f346a03dce5e4a3be07a1d9ac9e0bf244e8f49a59da8ba1d64bb0a304bb6",
+    "plugin_build_id": "39c14e4a2754ad79dc985109274608a06ef610fb",
+    "ldd_r_unresolved_symbols": 0,
+    "plugin_ctest": {
+      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/process2-current-p2-r8-scratch-linux-build-20261026 --output-on-failure",
+      "passed": 6,
+      "failed": 0
+    },
+    "native_vulkan_ctest": {
+      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/process2-native-vulkan-current-20261026 --output-on-failure",
+      "passed": 4,
+      "failed": 0
+    },
+    "initial_build_note": "A first clean host build missed the SDK's required -mssse3 flag. The project plugin source compiled after configuring that host-only flag; no SDK sources were changed."
+  },
+  "android_device_check": {
+    "device": {
+      "model": "Redmi Note 8 Pro",
+      "codename": "begonia",
+      "android_version": "13",
+      "gpu": "Mali-G76 MC4",
+      "vulkan_api": "1.1.131",
+      "adb_endpoint": "192.168.1.32:38615"
+    },
+    "abi": "arm64-v8a",
+    "build_directory": "/home/pes/work/process2-android-current-plugin-build",
+    "test_executable": "rexgpu_shift_native_r8_upload_scratch_check",
+    "result": "passed: captured R8 upload scratch reuse check passed",
+    "temporary_device_binary_removed": true,
+    "game_app_touched_or_restarted": false
+  },
+  "language_selector": {
+    "fix_commit": "ac7f5793a",
+    "cause": "The shader translator collapsed nonzero Xenos interpolator exports to Vulkan location 0; the language font shader reads the value from interpolator location 1.",
+    "current_candidate_observation": "All six retail language labels are legible in the live Redmi selector screenshot, including the gray unselected entries.",
+    "screenshot": "process2_redmi_language_selector_latest_android_20261026.png",
+    "screenshot_sha256": "1c13514ea6f2ad7dfff70cd1b33cffa2024b39937895b2dfaa68cf8fb90ac676"
+  },
+  "limits": [
+    "The regression verifies CPU buffer reuse, not Bink playback rate.",
+    "No fresh retail run with this optimization was made; no live frame-time or allocation-count improvement is claimed.",
+    "The current Android live candidate has the language-selector fix, but the video-plane scratch change was checked with its standalone ARM64 regression, not installed into the game.",
+    "Host CTest validation does not prove full retail parity."
+  ]
+}

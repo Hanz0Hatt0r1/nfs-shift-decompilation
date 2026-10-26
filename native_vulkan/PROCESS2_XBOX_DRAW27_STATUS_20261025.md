@@ -378,8 +378,9 @@ The latest P2 candidate was installed on the Redmi Note 8 Pro with incremental
 ADB install. Its language-selector screenshot clearly shows the heading,
 selection prompt, and all six labels. After one A-button event, the game
 rendered its original NFS SHIFT title sequence and reached the legal
-disclaimer. This confirms the language-label issue on the current Android
-candidate; the selector capture is a live retail frame, not synthetic output.
+disclaimer. All six language labels are visible in the current Android
+candidate's live retail selector capture; the earlier missing-label symptom
+is fixed.
 
 The guest log contains 1,233 presenter submissions with 11,267 captured
 indexed packets and 1,233 accepted Copy/Convert operations; no presenter

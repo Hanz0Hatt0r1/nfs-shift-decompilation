@@ -1,6 +1,7 @@
 #include "shift_xbox_draw_input.hpp"
 #include "shift_xbox_guest_ring.hpp"
 #include "shift_xbox_shader_translate.hpp"
+#include "shift_native_r8_upload_scratch.hpp"
 
 #include <algorithm>
 #include <array>
@@ -307,6 +308,39 @@ bool CompileCapturedCopyResolveShaders(
                              &copy->single_sample_pixel_shader_spirv, error);
 }
 
+class R8ScratchPayloadReleaseGuard {
+ public:
+  R8ScratchPayloadReleaseGuard(
+      shift::xbox::plugin::R8UploadScratchCache& cache, size_t draw_slot,
+      std::vector<shift::xbox::CapturedVulkanTexture>& textures)
+      : cache_(cache), draw_slot_(draw_slot), textures_(textures) {}
+
+  ~R8ScratchPayloadReleaseGuard() {
+    if (!active_) return;
+    release();
+  }
+
+  void release() {
+    for (auto& texture : textures_) {
+      if (texture.format != shift::xbox::CapturedVulkanTexture::Format::R8) {
+        continue;
+      }
+      cache_.release({draw_slot_, texture.fetch_constant_index,
+                      texture.width, texture.height},
+                     &texture.pixels);
+    }
+    active_ = false;
+  }
+
+  void dismiss() { active_ = false; }
+
+ private:
+  shift::xbox::plugin::R8UploadScratchCache& cache_;
+  size_t draw_slot_;
+  std::vector<shift::xbox::CapturedVulkanTexture>& textures_;
+  bool active_ = true;
+};
+
 std::unique_ptr<rex::ui::vulkan::VulkanProvider> CreateShiftVulkanProvider(
     const bool with_presentation) {
   // Keep Xenos GPU emulation disabled. Request native renderer capabilities
@@ -493,6 +527,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     }
     if (ring_worker_.joinable()) ring_worker_.join();
     texture_cache_.clear();
+    r8_upload_scratch_.clear();
     shader_translation_cache_.clear();
     if (pipeline_cache_ && provider_) {
       if (auto* device = provider_->vulkan_device(); device) {
@@ -550,6 +585,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
   bool PrepareCapturedDrawResources(
       const shift::xbox::DecodedIndexedDraw& draw,
+      size_t draw_slot,
       const shift::xbox::CapturedRasterState& raster_state,
       const shift::xbox::CapturedXboxShaderRegisterState& shader_state,
       const std::vector<uint8_t>& vertex_program,
@@ -859,6 +895,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       }
     }
     prepared.vertex_stride_bytes = vertex_stride_bytes;
+    R8ScratchPayloadReleaseGuard scratch_payload_guard(
+        r8_upload_scratch_, draw_slot, prepared.textures);
     if (DebugFragmentColorEnabled()) {
       static std::atomic<uint32_t> vertex_sample_index{0};
       const uint32_t sample =
@@ -925,12 +963,19 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         };
         const bool use_native_r8 = fetch.format == 2 && fetch.endian_mode == 0 &&
                                    resolved.sampling.swizzle == r8_plane_swizzle;
+        const shift::xbox::plugin::R8UploadScratchKey scratch_key{
+            draw_slot, texture.fetch_constant_index, fetch.width, fetch.height};
+        const bool scratch_acquired = use_native_r8 &&
+            r8_upload_scratch_.acquire(scratch_key, &texture.pixels);
         const bool texture_ready = use_native_r8
             ? shift::xbox::copy_captured_r8_texture_2d(
                   fetch, guest_bytes, fetch.byte_length, &texture.pixels, error)
             : shift::xbox::untile_captured_texture_2d(
                   fetch, guest_bytes, fetch.byte_length, &texture.pixels, error);
         if (!texture_ready) {
+          if (scratch_acquired) {
+            r8_upload_scratch_.release(scratch_key, &texture.pixels);
+          }
           return false;
         }
         texture.format = use_native_r8
@@ -1196,6 +1241,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       }
     }
     *prepared_draw = std::move(prepared);
+    scratch_payload_guard.dismiss();
     return true;
   }
 
@@ -1309,6 +1355,22 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     std::vector<uint8_t> pixel_shader_program;
     std::vector<shift::xbox::CapturedVulkanDraw> frame_draws;
     std::vector<uint32_t> frame_draw_packet_indices;
+    const auto recycle_frame_draws = [this, &frame_draws,
+                                      &frame_draw_packet_indices] {
+      for (size_t draw_slot = 0; draw_slot < frame_draws.size(); ++draw_slot) {
+        for (auto& texture : frame_draws[draw_slot].textures) {
+          if (texture.format != shift::xbox::CapturedVulkanTexture::Format::R8) {
+            continue;
+          }
+          r8_upload_scratch_.release(
+              {draw_slot, texture.fetch_constant_index,
+               texture.width, texture.height},
+              &texture.pixels);
+        }
+      }
+      frame_draws.clear();
+      frame_draw_packet_indices.clear();
+    };
     shift::xbox::CapturedVulkanCopy frame_copy{};
     bool frame_copy_ready = false;
     uint64_t observed_ring_generation = 0;
@@ -1372,8 +1434,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         shader_register_state.reset();
         vertex_shader_program.clear();
         pixel_shader_program.clear();
-        frame_draws.clear();
-        frame_draw_packet_indices.clear();
+        recycle_frame_draws();
         frame_copy = {};
         frame_copy_ready = false;
         last_guest_swap_width = 0;
@@ -1930,7 +1991,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                         : 0u;
                 const bool resources_resolved =
                     raster_state_ready && raster_state.scissor_has_area &&
-                    PrepareCapturedDrawResources(draw, raster_state, shader_register_state,
+                    PrepareCapturedDrawResources(draw, frame_draws.size(),
+                                                 raster_state, shader_register_state,
                                                  vertex_shader_program, pixel_shader_program,
                                                  diagnostic_submitted_frame,
                                                  &prepared_draw, &shader_inputs_ready,
@@ -2008,8 +2070,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               if (!shift::xbox::decode_guest_swap(
                       packet_bytes, packet.byte_length, &swap, &error)) {
                 ++unsupported_draws;
-                frame_draws.clear();
-                frame_draw_packet_indices.clear();
+                recycle_frame_draws();
                 frame_copy = {};
                 frame_copy_ready = false;
                 continue;
@@ -2319,8 +2380,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   }
                 }
               }
-              frame_draws.clear();
-              frame_draw_packet_indices.clear();
+              recycle_frame_draws();
               frame_copy = {};
               frame_copy_ready = false;
               ++guest_swap_counter;
@@ -2373,6 +2433,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
           }
           type3_opcode_summary << ']';
           const auto shader_cache_stats = shader_translation_cache_.stats();
+          const auto r8_scratch_stats = r8_upload_scratch_.stats();
           REXLOG_DEBUG("shift-native: framed {} PM4 packets, {} raw register writes, "
                        "{} constant spans loaded ({} unresolved), "
                        "{} pointer-loaded shader programs ({} unresolved), "
@@ -2383,6 +2444,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                        "{} translated to project GLSL, shader cache {}/{} hits/misses "
                        "({} entries, {} payload bytes), {} with resolved resource bytes "
                        "({} unresolved)), "
+                       "R8 upload scratch {}/{} hits/misses ({} slots, {} bytes), "
                        "{} guest swaps, {} Vulkan frames submitted, "
                        "{} unsupported packet/draw forms, type3 opcodes [{}]",
                        expanded.packets.size(), raw_register_writes,
@@ -2396,7 +2458,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                        shader_cache_stats.entries,
                        shader_cache_stats.retained_payload_bytes,
                        draws_with_resolved_resource_payloads,
-                       draws_with_unresolved_resource_payloads, decoded_swaps, submitted_frames,
+                       draws_with_unresolved_resource_payloads,
+                       r8_scratch_stats.hits, r8_scratch_stats.misses,
+                       r8_scratch_stats.entries, r8_scratch_stats.reserved_bytes,
+                       decoded_swaps, submitted_frames,
                        unsupported_draws, type3_opcode_summary.str());
         } else {
           REXLOG_WARN("shift-native: dropped malformed PM4 batch at WPTR {:08X}: {}",
@@ -2502,6 +2567,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   std::unique_ptr<rex::ui::Presenter> presenter_;
   VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
   shift::xbox::CapturedVulkanTextureCache texture_cache_;
+  shift::xbox::plugin::R8UploadScratchCache r8_upload_scratch_;
   shift::xbox::CapturedShaderTranslationCache shader_translation_cache_;
   PFN_vkDestroyPipelineCache destroy_pipeline_cache_ = nullptr;
   rex::ui::WindowedAppContext* app_context_ = nullptr;

@@ -159,6 +159,14 @@ if(SHIFT_REXGLUE_OUTPUT_DIRECTORY AND
 endif()
 if(SHIFT_REXGLUE_NATIVE_BUILD_TESTS)
   enable_testing()
+  add_executable(rexgpu_shift_native_r8_upload_scratch_check
+    r8_upload_scratch_check.cpp
+  )
+  target_compile_features(rexgpu_shift_native_r8_upload_scratch_check PRIVATE cxx_std_17)
+  add_test(NAME rexgpu_shift_native_r8_upload_scratch_check
+    COMMAND rexgpu_shift_native_r8_upload_scratch_check
+  )
+
   add_executable(rexgpu_shift_native_factory_check factory_smoke.cpp)
   add_dependencies(rexgpu_shift_native_factory_check rexgpu-shift-native)
   target_include_directories(rexgpu_shift_native_factory_check PRIVATE
