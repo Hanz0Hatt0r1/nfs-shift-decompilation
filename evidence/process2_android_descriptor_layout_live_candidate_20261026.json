@@ -1,0 +1,87 @@
+{
+  "schema": "shift.process2.android_descriptor_layout_live_candidate.v1",
+  "recorded_at_utc": "2026-10-26T08:22:14Z",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "commit": "4438283c70c065aaf62714f39a0a0db0fe94ae51",
+    "renderer_change_commit": "345fc2ef69f485ab3f2f15effbb4d837be96c51f",
+    "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "ndk": "28.2.13676358",
+    "android_api": 26,
+    "abi": "arm64-v8a"
+  },
+  "candidate": {
+    "apk_path": "/home/pes/work/process2-descriptor-layout-android-handover-20261026/process2-vulkan-descriptor-layout-20261026.apk",
+    "apk_sha256": "35383e756421c4d92264e02f3e9da3eafc52db22febe6c316d15007c0076cd3b",
+    "base_installed_apk_sha256": "fa7e831fea4deaba4773781e780b4bbdc7dc7d30247974990be73b8040453345",
+    "plugin_sha256": "9d7ee9ee95b38497ed37f7cf72365a1bcb250560c4d387ab635272de9bd90a0d",
+    "plugin_build_id": "3fc444b688db300e3f1d734d034772661ace15f4",
+    "plugin_aliases_identical": true,
+    "changed_payload_entries": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "all_other_payload_entries_identical": true,
+    "old_v1_signature_metadata_removed": true,
+    "apk_signature_scheme": "v3",
+    "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "zipalign_16kb_check": "passed",
+    "installed_with": "adb install -r; app data not cleared"
+  },
+  "runtime": {
+    "sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "build_id": "1f9b9a7276d76f787819fa921c7ef00a39b7d4a7",
+    "matches_runtime_in_preinstall_apk": true,
+    "runtime_rebuilt_or_replaced": false
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": "13",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615",
+    "install_succeeded": true,
+    "launch_pid": 10803,
+    "launch_top_resumed": true,
+    "app_data_cleared": false
+  },
+  "live_screens": {
+    "loading": {
+      "file": "process2_redmi_descriptor_layout_loading_20261026.png",
+      "sha256": "3d15f60c1ff6c5caac8de621384b34472f25a9a8d1a3b8586eb02179318c09b2",
+      "observed": "Original SHIFT loading frame; full Loading text; yellow-orange filled bar and dark empty bar."
+    },
+    "language_selector": {
+      "file": "process2_redmi_descriptor_layout_language_selector_20261026.png",
+      "sha256": "b17ab84a2f55f96dfc4ccca74e203f78b223c8827da907f8a0337a59b16689eb",
+      "visible_labels": [
+        "English",
+        "Français",
+        "Italiano",
+        "Deutsch",
+        "Español",
+        "Nederlands"
+      ]
+    },
+    "legal_disclaimer": {
+      "file": "process2_redmi_descriptor_layout_disclaimer_20261026.png",
+      "sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+      "observed": "Original disclaimer text is readable; the same thin purple horizontal strips remain. This is pixel-identical to the prior candidate's disclaimer screenshot."
+    }
+  },
+  "input_and_later_state": {
+    "android_keycode_96_sent_once": true,
+    "sdl_log": "Unknown keycode 96 at 2026-10-26 11:07:06 and 11:07:38 local",
+    "relationship_to_transition": "The screenshot later shows the disclaimer, but the SDL log does not establish that this key event caused the transition.",
+    "last_read_only_state": "The package process was absent and the top-resumed activity was Android Launcher. No app-specific fatal-signal record was found in the recent logcat tail.",
+    "process_exit_cause": "unknown",
+    "app_closed_by_process2": false
+  },
+  "limits": [
+    "No post-disclaimer menu, Bink frame, or race-scene frame was captured with this candidate.",
+    "No per-frame renderer log from the newly installed plugin was available on the device, so plugin load is identified by installed DSO hashes plus the live application output rather than an explicit plugin-load trace.",
+    "No performance gain is claimed for the descriptor-layout cache or the R8 upload scratch change.",
+    "The process absence after the disclaimer is unexplained; this evidence does not prove a renderer crash or guest wait cause."
+  ]
+}

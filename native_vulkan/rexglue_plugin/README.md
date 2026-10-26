@@ -1238,3 +1238,23 @@ check also passed as ARM64 on the Redmi Note 8 Pro Mali-G76 MC4 using Vulkan
 fresh retail playback with this layout cache was performed; no retail parity
 or frame-time improvement is claimed. Exact build identities and evidence are
 in [`process2_descriptor_layout_cache_20261026.json`](../../evidence/process2_descriptor_layout_cache_20261026.json).
+
+## Redmi live candidate with the layout cache (2026-10-26)
+
+The latest ARM64 plugin was linked against the exact runtime already present
+in the installed APK (`724978a1…c888a`) and packaged by replacing only the two
+renderer aliases. The signed APK passed v3 signature verification and 16-KiB
+native-library alignment. It was installed with `adb install -r`; game data
+was preserved. After launch, the retail loading screen showed the expected
+orange filled bar, dark empty bar, and complete “Loading...” label. The
+language selector showed all six retail labels, then the original disclaimer
+appeared with its known purple edge strips.
+
+The phone later reported the launcher as top-resumed and no game process. No
+Process 2 stop or data clear was issued, and no app-specific fatal signal was
+captured; the process exit cause remains unknown. This run did not reach a
+post-disclaimer menu, Bink frame, or race scene. It confirms current-build
+startup screen rendering only and makes no cutscene throughput or full parity
+claim. See
+[`process2_android_descriptor_layout_live_candidate_20261026.json`](../../evidence/process2_android_descriptor_layout_live_candidate_20261026.json)
+and its three screenshots for hashes and exact limits.
