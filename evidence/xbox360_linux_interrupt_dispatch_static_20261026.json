@@ -1,0 +1,72 @@
+{
+  "schema": "shift.xbox360.linux-interrupt-dispatch-static.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "live_memory_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "static_observations": {
+    "interrupt_dispatcher": {
+      "function": "0x823B37B8",
+      "source_1_path": {
+        "source_test": "0x823B37C8: cmpwi r3,1",
+        "context_pointer_load": "0x823B37D0: lwz r11,10900(r4)",
+        "callback_load": "0x823B37D4: lwz r10,16(r11)",
+        "callback_data_load": "0x823B37E0: lwz r3,20(r11)",
+        "indirect_call": "0x823B37E8: bctrl",
+        "call_condition": "source == 1 and the callback slot at context+0x10 is nonzero"
+      },
+      "source_0_path": {
+        "source_test": "0x823B3824: cmpwi r3,0",
+        "gate_load": "0x823B3830: lwz r11,0x6544(0x7FC80000)",
+        "gate_mask": "0x823B3834: clrlwi. r11,r11,31",
+        "consumer_call": "0x823B3840: bl 0x823A4640",
+        "call_condition": "source == 0 and low bit of 0x7FC86544 is set"
+      },
+      "direct_branches_to_823A4758": [],
+      "direct_branch_scan": {
+        "tool": "llvm-objdump -d --no-show-raw-insn",
+        "scope": "entire exact live-memory-derived ELF disassembly",
+        "branch_mnemonics": ["b", "bl"],
+        "matches": 0
+      }
+    },
+    "deferred_queue_producer": {
+      "function": "0x823A4758",
+      "indirect_callback_slot_load": "0x823A4830: lwz r9,16540(r31)",
+      "indirect_call": "0x823A4868: bctrl",
+      "call_condition": "object+0x409C callback slot is nonzero",
+      "registered_callback_at_first_wait": "0x82649B68",
+      "invocation_hits_before_first_wait": 0
+    }
+  },
+  "runtime_crosscheck": {
+    "evidence_file": "xbox360_linux_current_p2_renderer_frontend_wait_20261026.json",
+    "source_0_callback_hits": 99,
+    "source_1_callback_hits": 0,
+    "deferred_consumer_hits": 98,
+    "producer_0x823A4758_hits": 0,
+    "retail_wait_target": 13,
+    "retail_queue_head": 0,
+    "retail_queue_tail": 21,
+    "predicate_byte": "0x14",
+    "completion_mask": "0x02",
+    "completion_mask_set": false
+  },
+  "interpretation": {
+    "supported": [
+      "The known source-0 callback path reaches the deferred-queue consumer directly; it does not call 0x823A4758.",
+      "The source-1 path uses a callback pointer held in its context; no source-1 callback ran before the sampled retail wait.",
+      "Function 0x823A4758 contains an indirect callback call, but no direct branch to that function was found in the full ELF disassembly.",
+      "The value 0x823A4758 in WAIT_REG_MEM remains a comparison operand, not proof of execution."
+    ],
+    "not_proven": [
+      "The runtime source, registration site, or indirect dispatch target that should invoke 0x823A4758.",
+      "That the source-1 callback or 0x823A4758 is required to complete the memory wait observed in the renderer trace.",
+      "A defect in P1 guest scheduling, ReXGlue interrupt dispatch, or P2 GPU execution."
+    ],
+    "next_p1_probe": "On a fresh exact-XEX run, capture the source-1 context callback pointer and its registration, and trace any dynamic transfer to 0x823A4758. Keep queue and predicate state unchanged."
+  }
+}
