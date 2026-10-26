@@ -35,7 +35,7 @@ mapped = {}
 try:
     with open("/proc/%d/maps" % pid, encoding="utf-8") as maps:
         for line in maps:
-            if "librexgpu-shift-native.so" not in line:
+            if "librexgpu-shift-native" not in line:
                 continue
             fields = line.rstrip().split(None, 5)
             if len(fields) == 6:
