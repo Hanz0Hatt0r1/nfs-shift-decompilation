@@ -384,9 +384,10 @@ before submission. Host renderer CTest passed 4/4 with
 and the ARM64 renderer-check passed offscreen on the Redmi Note 8 Pro / Mali-G76
 MC4. The running app stayed foregrounded and its screenshot hash did not
 change. This is a fail-closed boundary, not implementation of the captured
-intermediate target/copy chain; the full Android plugin build is still blocked
-in the external ReXGlue SDK's Android POSIX fiber/memory sources. The installed
-APK was not replaced. Details and build identifiers are in
+intermediate target/copy chain. The Android ARM64 plugin now builds when linked
+against the exact runtime DSO already packaged in the installed APK; rebuilding
+that runtime from the external SDK still hits its Android POSIX fiber/memory
+errors. The new plugin was not installed. Details and build identifiers are in
 [`process2_multitarget_guard_20261027.json`](../evidence/process2_multitarget_guard_20261027.json).
 
 ## Commands

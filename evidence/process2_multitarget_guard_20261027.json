@@ -3,7 +3,7 @@
   "date": "2026-10-27",
   "process2": {
     "branch": "work/process2-xbox-live-ring-20261023",
-    "commit": "ed9b5674ab7a316beaf722ea49a7b0dfff94fd20",
+    "commit": "e7a474578efe7bee4e37d71fe58df875993c3e4f",
     "change": "Reject one Vulkan submission that contains distinct captured Xenos color or depth base tiles."
   },
   "regression": {
@@ -32,6 +32,15 @@
       "execution": "Offscreen checker process; captured disclaimer draws plus existing renderer regressions.",
       "result": "passed",
       "vulkan_validation": "Android validation layer was unavailable/not enabled."
+    },
+    "android_arm64_plugin": {
+      "build": "passed with NDK r28c, Android API 29, arm64-v8a",
+      "link_mode": "Used the exact prebuilt ReXGlue runtime DSO from the installed APK.",
+      "plugin_sha256": "809a620aa8b7583431c3d24bf24dcd16ec7b60f668262423b2ffad7bb8fd2468",
+      "plugin_build_id": "7b6ec7f6b08612f5adbe0f7de425b01f69795b45",
+      "runtime_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+      "needed_runtime_soname": "librexruntimed.so",
+      "installed": false
     }
   },
   "phone_app_state": {
@@ -42,8 +51,8 @@
     "screenshot_after_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
     "interpretation": "The renderer check did not change or close the running game. This screenshot matches the archived live disclaimer capture."
   },
-  "android_plugin_build": {
-    "status": "blocked by external ReXGlue SDK Android sources",
+  "clean_android_sdk_runtime_rebuild": {
+    "status": "blocked by external ReXGlue SDK Android sources; plugin build passed using the packaged runtime",
     "errors": [
       "fiber_posix.cpp: getcontext/makecontext/swapcontext are undeclared for the configured Bionic build.",
       "memory_posix.cpp: rex::GetAndroidApiLevel is undeclared."
