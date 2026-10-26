@@ -77,6 +77,29 @@
       "13:10:16.621 SDL nativeResume"
     ]
   },
+  "latest_live_recheck": {
+    "checked_at_utc": "2026-10-26 10:33:39 UTC",
+    "adb_endpoint": "192.168.1.32:38615",
+    "adb_state": "device",
+    "pid": 21346,
+    "activity_top_resumed": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity",
+    "screenshot": "process2_redmi_pm4_interrupt_order_black_recheck_20261026.png",
+    "screenshot_sha256": "ca2e7ef708be4e086e78c6921ab25cbd9b871744c1c983089c7de250f7104528",
+    "screenshot_extent": [1080, 2340],
+    "mapped_renderer": {
+      "path_suffix": "/lib/arm64/librexgpu-xenosd.so",
+      "sha256": "ab6900ab1a4802469c07055a739ecbbe99bf4d90678ca6465fdb4018e3c1eb55",
+      "build_id": "5be60cc87833c1ccfa319bcf151867b5e45161c7"
+    },
+    "guest_log": {
+      "bytes": 437074,
+      "sha256": "a0ddd0520898e931182175e6ce9418f29fa64cf324b3643553d0f599bd555418",
+      "unchanged_from_captured_run": true,
+      "last_guest_batch_local_time": "2026-10-26 13:04:19.932",
+      "last_log_event_local_time": "2026-10-26 13:06:37.478"
+    },
+    "input_restart_or_app_data_change": false
+  },
   "source_audit": {
     "sdk_repository": "/home/pes/work/rexglue-sdk-p1-private-unlink-20261026",
     "sdk_commit_inspected": "d6ed02eea517a34166e3a1d0ef8e5ab9c5ca8253",

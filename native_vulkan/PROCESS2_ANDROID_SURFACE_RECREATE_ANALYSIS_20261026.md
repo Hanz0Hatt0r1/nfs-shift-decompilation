@@ -32,6 +32,17 @@ regression should replace the Android native window at the same dimensions and
 verify disconnect-before-release, rebind to the new pointer, and recovery from
 `VK_ERROR_OUT_OF_DATE_KHR` / `VK_ERROR_SURFACE_LOST_KHR`.
 
+At 13:33:39 MSK, a new read-only ADB check found PID 21346 still top-resumed on
+the Redmi with an all-black 1080x2340 screenshot (`ca2e7ef7…f7104528`). The
+mapped ARM64 renderer was independently extracted from the process's APK path
+and matched this P2 candidate exactly (SHA-256
+`ab6900ab…e3c1eb55`, Build ID `5be60cc87833c1ccfa319bcf151867b5e45161c7`).
+The 437,074-byte guest log is unchanged by SHA-256 and still ends with the
+13:04:19.932 draw batch, the four menu XML misses, then the 13:06:37.478
+outdated-present event. No input, restart, stop, or app-data change occurred.
+This confirms the black screen with the exact P2 DSO while preserving the
+timeline distinction between guest submission stopping and the later WSI error.
+
 Evidence: [run record](../evidence/process2_redmi_surface_recreate_ring_idle_20261026.json),
 [compressed guest log](../evidence/process2_redmi_pm4_live_latest_20261026.log.gz).
 This remains a startup/disclaimer capture, not proof of menu, race, sustained
