@@ -1,0 +1,94 @@
+{
+  "schema": "shift.xbox360.linux-current-p2-296be-frontend-followthrough.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "sources": {
+    "p1_runtime": {
+      "source_commit": "7335383bf55d30bbca32a843445d6d333a26a368",
+      "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253"
+    },
+    "p2_renderer": {
+      "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+      "branch": "work/process2-xbox-live-ring-20261023",
+      "source_commit": "296be17faee91f79ef5036d1b282423295d172ac",
+      "plugin_sha256": "0ccbeab62a7a592fda942083c83172a1536a89246c2ffc903aa2188f106ac7b0",
+      "plugin_build_id": "0cd7bba100ae44b92098b14dc5e691b13f995fb2",
+      "linux_dynamic_resolution_clean": true
+    }
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "duration_seconds": 113.452,
+    "termination": "The capture harness sent SIGINT after the final capture; host exited 0. Clean title shutdown was not observed.",
+    "gdb_instrumented": false,
+    "mapped_binary_hashes_verified": true,
+    "guest_memory_modified_by_probe": false,
+    "controller": {
+      "device": "Linux uinput Xbox 360 pad, VID:PID 045e:028e",
+      "pulse_duration_ms": 650,
+      "pulses": [
+        {"at_seconds": 58, "button": "A", "mask": "0x1000"},
+        {"at_seconds": 70, "button": "Start", "mask": "0x0010"},
+        {"at_seconds": 80, "button": "A", "mask": "0x1000"},
+        {"at_seconds": 92, "button": "Start", "mask": "0x0010"},
+        {"at_seconds": 102, "button": "A", "mask": "0x1000"}
+      ],
+      "guest_observation_proven": false
+    },
+    "target_window_captures": [
+      {
+        "elapsed_seconds": 55.347,
+        "path_outside_git": "/home/pes/work/nfs-shift-p2-latest-clean-shm-20261027/captures/before-A.png",
+        "sha256": "87ca0d5f9eafdeafd24193790f6c16b8dd1552a2c8ced5bcb35407dc158e3beb",
+        "observation": "Retail SHIFT logo and loading bar/text visible."
+      },
+      {
+        "elapsed_seconds": 70.314,
+        "path_outside_git": "/home/pes/work/nfs-shift-p2-latest-clean-shm-20261027/captures/after-A.png",
+        "sha256": "4b6d8eb07835f3914b1046ef06a5d1af3d3cbc9800236fc53f78386cdd532b76",
+        "observation": "Mostly black frame after A/Start pulses; no disclaimer or menu UI visible."
+      },
+      {
+        "elapsed_seconds": 90.159,
+        "path_outside_git": "/home/pes/work/nfs-shift-p2-latest-clean-shm-20261027/captures/after-start-a.png",
+        "sha256": "2f648ee020a389a35d7867e764f003001d6468ea11d4877654ca92d8a004085e",
+        "observation": "Mostly black frame; no main-menu UI visible."
+      },
+      {
+        "elapsed_seconds": 113.183,
+        "path_outside_git": "/home/pes/work/nfs-shift-p2-latest-clean-shm-20261027/captures/final.png",
+        "sha256": "f8623d540a36f2496824bb447ddd9701bf9e321986045fe47f4779d87a48315b",
+        "observation": "Same mostly black frame; no main-menu UI visible."
+      }
+    ],
+    "runtime_log": {
+      "path_outside_git": "/home/pes/work/nfs-shift-p2-latest-clean-shm-20261027/bin/logs/nfs_shift_001.log",
+      "sha256": "1ab564f82efa258b1177236127bee1cf7ee2b2713e3d9c9b38e361e6258056d6",
+      "accepted_copy_convert_records": 935,
+      "completed_coher_status_host_wait_records": 8804,
+      "vulkan_frame_refresh_failures": 8,
+      "vulkan_frame_refresh_failure_reason": "mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability",
+      "missing_menu_background_xml_opens": 4
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail XEX ran with the recorded P1 binaries and the Linux plugin built from P2 source commit 296be17faee91f79ef5036d1b282423295d172ac.",
+      "A retail SHIFT loading screen was visible before the first scheduled input; later target-window captures were mostly black and showed no main menu.",
+      "The renderer log recorded eight frame-refresh failures with the same mixed-sample depth/stencil preservation requirement, plus later accepted Copy/Convert records.",
+      "Four loose menu_background.xml opens failed. A prior exact-retail BFF sweep found no member matching either requested tracks/_data/.../scenes/menu_background.xml path; those misses are not established as causal."
+    ],
+    "not_proven": [
+      "That the guest sampled or consumed any scheduled A/Start pulse in this run.",
+      "Retail main-menu entry, offline-race entry, correct sustained rendering, or clean title shutdown.",
+      "That Copy/Convert or draw-submission counts represent frontend or game progress.",
+      "That the missing loose XML caused the black frame, or that the current P1 scheduler/input semantics are defective."
+    ],
+    "next_step": "Keep P1 retail wait and input semantics unchanged. The reproduced frame-refresh failure is a P2 renderer frontier: resolve the mixed 4x-to-1x depth/stencil preservation path, then repeat the exact-XEX capture."
+  }
+}
