@@ -1,0 +1,108 @@
+{
+  "schema": "shift.xbox360.linux-callback-registration-first-wait.v1",
+  "captured_at_local": "2026-10-26T16:04:31+03:00",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "de4773f9089623c3385d625e4ce2b8fd6215187f963e8339078d93eb7d7dc878",
+    "gpu_plugin_sha256": "9e46bf16e1a1fadaac2754b29d5332127a078db12416f287313841367eac4d55",
+    "mapped_hashes_verified_at_wait": true
+  },
+  "static_generated_code": {
+    "source_root": "/home/pes/work/nfsshift-rex/generated/default",
+    "source_hashes": {
+      "nfs_shift_recomp.7.cpp": "63152ebad1da787da9d0bc3634c3d902f283187e4f9aa58d5decaf0f26294b87",
+      "nfs_shift_recomp.48.cpp": "6078a6e93eb791fdfc81c7a9d1c0e040428dc0e1405c4b98ee2f55d7d9b4c848",
+      "nfs_shift_recomp.108.cpp": "3b3553a016f1a26c83c30420d8397b47eb4576a6d94f127d3b69e19a08fc6061",
+      "nfs_shift_recomp.212.cpp": "5e0cff4822bf8e6de9afbcd2e90f378a9dad7fa52b667e8faee82c083ee515fe"
+    },
+    "callback_fields": [
+      {
+        "setter": "0x823A5730",
+        "field_offset": 16540,
+        "implementation": "stores r4 at object+16540",
+        "direct_generated_caller": "0x8264C858",
+        "return_site": "0x8264D310",
+        "registered_target": "0x82649B68"
+      },
+      {
+        "setter": "0x823A5728",
+        "field_offset": 16544,
+        "implementation": "stores r4 at object+16544",
+        "direct_generated_caller": "0x8264C858",
+        "return_site": "0x8264D320",
+        "registered_target": "0x82321198"
+      }
+    ],
+    "producer_gate": {
+      "function": "0x823A4758",
+      "field_read": "object+16540",
+      "behavior": "calls the loaded callback indirectly when the field is nonzero",
+      "indirect_call_site": "0x823A486C"
+    }
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "gdb_script": "/tmp/nfs-shift-p1-callback-registration-verified-20261026/registration.gdb",
+    "gdb_script_sha256": "1e88a60ea054c71cc961a421d51ff8705e385fb32d2527f5e1b101b312d6a9c9",
+    "gdb_log": "/tmp/nfs-shift-p1-callback-registration-verified-20261026/gdb.log",
+    "gdb_log_sha256": "147209c7b265d9c7170bb09b1455638e210517d6a8258caeceb0f531cc20ecbd",
+    "termination": "GDB killed the inferior at the first retail software-queue wait; no clean title shutdown was observed.",
+    "registration_hits": [
+      {
+        "setter": "0x823A5730",
+        "hits_before_first_wait": 1,
+        "object": "0xB7365F00",
+        "value": "0x82649B68",
+        "caller_return_site": "0x8264D310"
+      },
+      {
+        "setter": "0x823A5728",
+        "hits_before_first_wait": 1,
+        "object": "0xB7365F00",
+        "value": "0x82321198",
+        "caller_return_site": "0x8264D320"
+      }
+    ],
+    "first_wait": {
+      "function": "0x823B34A0",
+      "object": "0xB7365F00",
+      "target": 13,
+      "head": 0,
+      "tail": 21,
+      "predicate_byte": "0x14",
+      "callback_16540_guest_big_endian": "0x82649B68",
+      "callback_16544_guest_big_endian": "0x82321198",
+      "producer_0x823A4758_hits": 0,
+      "registered_callback_0x82649B68_hits": 0,
+      "thread": 15
+    },
+    "stack": [
+      "0x823B34A0",
+      "0x823A4E48",
+      "0x823A5610",
+      "0x8264F868",
+      "0x8301DB18",
+      "0x82FC1880",
+      "0x82D30380"
+    ]
+  },
+  "interpretation": {
+    "observed": [
+      "Both retail callback setters ran once on the wait object's address before the first queue wait.",
+      "The callback pointers remained present in guest big-endian form when the object reached the wait.",
+      "The producer 0x823A4758 and registered callback 0x82649B68 were not invoked before that wait.",
+      "The exact runtime and latest available P2 DSO were mapped and their hashes matched the recorded artifacts."
+    ],
+    "not_proven": [
+      "Why the registered producer was not invoked or which GPU/host event should invoke it.",
+      "That the callback stream was submitted or executed by the renderer.",
+      "Main-menu entry, offline-race entry, visible output, or clean title shutdown."
+    ],
+    "next_p1_step": "Trace the invocation condition after successful callback registration while preserving the original queue and predicate semantics."
+  }
+}
