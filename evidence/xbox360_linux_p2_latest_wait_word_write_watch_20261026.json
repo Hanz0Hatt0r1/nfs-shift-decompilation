@@ -1,0 +1,128 @@
+{
+  "schema": "shift.xbox360.linux-p2-latest-wait-word-write-watch.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host_sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a",
+    "host_build_id": "bbd15fe3144633bec476ec5b3a71a494a08a212a",
+    "p1_runtime": {
+      "sha256": "f43d094797bf30c2e552b244c6ec50e4e69bb0b11fee409e07a812ba74158f78",
+      "build_id": "6dcf8537149594cf86f574a61bcbedc96c837448"
+    },
+    "p2_linux_plugin": {
+      "path_outside_git": "/home/pes/work/rexglue-sdk-rexui-vulkan-20261023/out/linux-amd64/librexgpu-shift-native.so",
+      "sha256": "f2a963ddfe4a38acf3b4858182cd38c92101ec54692b578e61626672c961292c",
+      "build_id": "6775830879202111e7345e5f7a58049f96274087",
+      "sdk_worktree_head": "b3648b013b02770fa5ca8d4618235b2326c911ca"
+    }
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "plugin_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-p2latest-plugin-v2-20261026/bin/logs/nfs_shift_002.log",
+      "sha256": "ccf8aac6719e6673b0828d87b5f6b499316503f451acaa6b5da86ef366b6c263"
+    },
+    "plugin_compatibility": {
+      "loader_accepted_plugin": true,
+      "duplicate_cvar_registration_warnings": 15,
+      "note": "Plugin loading and the runtime version gate succeeded; duplicate cvar registrations leave cross-tree ABI equivalence unproven."
+    },
+    "wait": {
+      "operation": "WAIT_REG_MEM",
+      "guest_address": "0x1B964004",
+      "reference": "0x00000001",
+      "mask": "0xFFFFFFFF",
+      "endian": 2,
+      "compare": 3,
+      "source_indirect_buffer": "0x095D0120",
+      "byte_offset": 1180,
+      "coher_status_host_waits_completed_before_it": 4,
+      "raw_packet_poll_field": "0x1B964006",
+      "raw_packet_bytes": "c0043c00000000131b96400600000001ffffffff00000100"
+    },
+    "write_watch": {
+      "script": {
+        "path": "tools/xbox360/trace_linux_p2_latest_wait_word_write_watch.gdb",
+        "sha256": "9d5871147de2053383dfa89d44715a1da29af8aa88de2ea3d2d148e5307a3292"
+      },
+      "gdb_log_path_outside_git": "/tmp/nfs-shift-p1-p2latest-plugin-v2-20261026/watch_wait_word.gdb.log",
+      "gdb_log_sha256": "46ec61173f584fe523a29039895a72e1b18f7c32e25ff496d7afa10a0ecfbf58",
+      "watchpoints_armed_after_zero_samples": true,
+      "guest_memory_write_stops_observed": 0,
+      "observation_deadline_seconds": 20,
+      "watchpoint_active_seconds_before_timeout_approximately": 18.6,
+      "kill_after_seconds": 5,
+      "timeout_exit_code": 137,
+      "termination": "The bounded GDB run was escalated to SIGKILL after its timeout; no clean title shutdown is claimed.",
+      "guest_memory_aliases": [
+        {
+          "name": "physical",
+          "guest_word": "0x1B964004",
+          "host_address": "0x21B964004",
+          "sampled_value": "0x00000000",
+          "mapping": "2074c0000-220000000 rw-s 1074c0000",
+          "backing": "/dev/shm/xenia_memory_33645910774686",
+          "backing_file_offset": "0x11B964004"
+        },
+        {
+          "name": "context_vE",
+          "guest_word": "0x1B964004",
+          "host_address": "0x1FB963004",
+          "sampled_value": "0x00000000",
+          "mapping": "1e0000000-200000000 rw-s 100001000",
+          "backing": "/dev/shm/xenia_memory_33645910774686",
+          "backing_file_offset": "0x11B964004"
+        }
+      ],
+      "both_aliases_used_same_backing": true
+    }
+  },
+  "command_buffer_capture": {
+    "separate_run_same_binary_hashes": true,
+    "host_sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a",
+    "source_guest": "0x095D0120",
+    "bytes_captured": 8192,
+    "sha256": "19accc94945556d225e4d9cd91032bbcbbb1d25675b4bd2540dffb080c820055",
+    "path_outside_git": "/tmp/nfs-shift-p1-p2latest-plugin-v2-20261026/wait_ib_095d0120.bin",
+    "plugin_log_path_outside_git": "/tmp/nfs-shift-p1-p2latest-plugin-v2-20261026/bin/logs/nfs_shift_001.log",
+    "plugin_log_sha256": "c3e3b8c4dfe3796bd854e3eb3dd52c57d1ed6e43761baf652eaad332c69bf8e1",
+    "gdb_log_path_outside_git": "/tmp/nfs-shift-p1-p2latest-plugin-v2-20261026/capture_wait_ib.gdb.log",
+    "gdb_log_sha256": "e34c8cfa6c7cbba8fd37ca6649384e9698abddae73589f03fc693d04cc5c61d3",
+    "capture_script": {
+      "path": "tools/xbox360/trace_linux_p2_latest_wait_buffer.gdb",
+      "sha256": "ffe6f92a59eb29c1a11d88954c8c007000b279714ba20dbb6a14eaf70a4438e3"
+    },
+    "packets_in_stream_order": [
+      {"byte_offset": 1180, "opcode": "WAIT_REG_MEM", "guest_address": "0x1B964004", "reference": "0x00000001"},
+      {"byte_offset": 1232, "opcode": "WAIT_REG_MEM", "guest_address": "0x1B964002", "reference": "0x00000004"},
+      {"byte_offset": 1256, "opcode": "WAIT_REG_MEM", "guest_address": "0x1B964016", "reference": "0x00000208"},
+      {"byte_offset": 1280, "opcode": "WAIT_REG_MEM", "guest_address": "0x1B964012", "reference": "0x823A4758"},
+      {"byte_offset": 1304, "opcode": "PM4_INTERRUPT", "cpu_mask": "0x00000004"},
+      {"byte_offset": 1320, "opcode": "WAIT_REG_MEM", "guest_address": "0x1B964002", "reference": "0x00000000"},
+      {"byte_offset": 1352, "opcode": "WAIT_REG_MEM", "guest_address": "0x1B964006", "reference": "0x00000000"},
+      {"byte_offset": 1792, "opcode": "PM4_EVENT_WRITE"}
+    ],
+    "runtime_log_reached_first_wait_before_later_packets": true,
+    "limitation": "Packet order proves later packets are in the captured guest buffer; it does not prove their execution or identify the independent writer required by the first wait."
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail XEX, rebuilt P1 runtime, and latest P2 Linux plugin reached the same WAIT_REG_MEM address and condition reported by the earlier independent device trace.",
+      "Both observed host aliases mapped the same guest-memory backing and sampled zero when the CPU write watchpoints were armed.",
+      "The physical and context-vE host aliases resolve to the same backing-file offset, and no ordinary CPU write through either alias was observed during the bounded interval.",
+      "The captured guest command buffer places PM4_INTERRUPT and PM4_EVENT_WRITE after the first blocking WAIT_REG_MEM; the current run's renderer log stopped at that earlier wait."
+    ],
+    "not_proven": [
+      "That the GPU or another device path did not write the word through DMA or another alias.",
+      "That WAIT_REG_MEM's predicate should be synthesized or changed by the P1 runtime.",
+      "Main-menu entry, offline-race entry, sustained playability, or clean title shutdown."
+    ],
+    "next_p1_step": "Keep retail memory and scheduler semantics unchanged. Resume P1 diagnosis if the exact wait completes and guest worker/source-1 dispatch then fails; the current observed blocker is the unresolved GPU wait-word producer or visibility path."
+  }
+}
