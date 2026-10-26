@@ -15,6 +15,8 @@ required = (
     "set $record_raw = *(unsigned int*)($base+$object+0x2a94)",
     "set $target_raw = *(unsigned int*)($base+$record_ptr+0x10)",
     "set $argument_raw = *(unsigned int*)($base+$record_ptr+0x14)",
+    "set $record_raw = *(unsigned int*)($base+$object+0x2a94)",
+    "interrupt_record=%#x callback_target=%#x callback_argument=%#x",
     "mapped_gpu_plugin pid=%d path=%s sha256=%s segments=%d",
     "open(\"/proc/%d/maps\" % pid",
     "hashlib.sha256(plugin_file.read()).hexdigest()",
