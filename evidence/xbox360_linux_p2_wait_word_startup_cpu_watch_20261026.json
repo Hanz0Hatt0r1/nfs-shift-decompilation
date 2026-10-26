@@ -1,0 +1,77 @@
+{
+  "schema": "shift.xbox360.linux-p2-wait-word-startup-cpu-watch.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host_sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a",
+    "host_build_id": "bbd15fe3144633bec476ec5b3a71a494a08a212a",
+    "p1_runtime_sha256": "f43d094797bf30c2e552b244c6ec50e4e69bb0b11fee409e07a812ba74158f78",
+    "p1_runtime_build_id": "6dcf8537149594cf86f574a61bcbedc96c837448",
+    "p2_linux_plugin_sha256": "0837991a5d2ac07c81e5fc352be9b5520d3d7d2b224547d7af76c95d5e985e01",
+    "p2_linux_plugin_build_id": "0ff0bd84e85eb7a064bec79c196244972cded9ca",
+    "p2_source_commit": "e03a079fb3a83cdb51fae7983bf0e47fcb3656ec",
+    "p2_candidate_change": "experimental early publication of snapshotted root-ring RPTR"
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "watch_setup": {
+      "when": "immediately after rex::memory::Memory::Initialize returned",
+      "watchpoint_count": 4,
+      "host_aliases": [
+        {"name": "physical", "address": "0x21B964004"},
+        {"name": "vA", "address": "0x1BB964004"},
+        {"name": "vC", "address": "0x1DB964004"},
+        {"name": "vE", "address": "0x1FB963004"}
+      ],
+      "sampled_physical_word_before_arming": "0x00000000"
+    },
+    "wait": {
+      "operation": "WAIT_REG_MEM",
+      "guest_word": "0x1B964004",
+      "poll_address": "0x1B964006",
+      "reference": "0x00000001",
+      "mask": "0xFFFFFFFF",
+      "endian": 2,
+      "compare": 3,
+      "source_ib": "0x095D0120",
+      "byte_offset": "0x49C",
+      "packet_hex": "c0043c00000000131b96400600000001ffffffff00000100"
+    },
+    "write_watch": {
+      "script": {
+        "path": "tools/xbox360/trace_linux_p2_wait_word_startup_cpu_watch.gdb",
+        "sha256": "2887f03215af68a414a69fdb9ed8c586524a60f6b60721ec5e5c6235289f0080"
+      },
+      "gdb_log_path_outside_git": "/tmp/nfs-shift-p1-early-cpu-watch-20261026-retry/gdb.log",
+      "gdb_log_sha256": "bf1d6d46e95bad1cbcb5347445ffa2ab4dd75bd60ea778c59245c6742ce623a6",
+      "target_wait_decode_observed": true,
+      "cpu_write_stops": 0,
+      "post_wait_observation_min_seconds": 75,
+      "termination": "GDB was externally terminated after the bounded observation; clean title shutdown was not observed.",
+      "temporary_guest_memory_file": {
+        "path": "/dev/shm/xenia_memory_4998535171073",
+        "open_or_mapped_references_at_cleanup": 0,
+        "unlinked_after_reference_check": true
+      }
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The four physical/vA/vC/vE CPU write watchpoints were armed before the target wait, immediately after guest-memory initialization returned.",
+      "The exact target WAIT_REG_MEM packet was decoded in the same run.",
+      "No CPU write watchpoint stop occurred during at least 75 seconds after the target wait was observed."
+    ],
+    "not_proven": [
+      "GPU/DMA writes, cache visibility, or accesses through an unobserved alias.",
+      "That the early-RPTR candidate matches Xbox hardware semantics.",
+      "Main-menu entry, offline-race entry, or clean title shutdown."
+    ],
+    "conclusion": "This observation does not justify changing P1 guest-memory or retail WAIT_REG_MEM semantics. The remaining producer/visibility question lies outside ordinary CPU stores through the four watched aliases."
+  }
+}
