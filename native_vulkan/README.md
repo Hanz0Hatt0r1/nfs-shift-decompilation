@@ -330,6 +330,26 @@ plugin also built with Clang and all seven plugin CTest checks passed with
 enable Vulkan validation layers; language-menu continuity, cutscenes, race
 graphics, and full retail parity remain unverified.
 
+## Exact disclaimer-strip replay on Mali (2026-10-27)
+
+The Android ARM64 `xbox_live_vulkan_renderer_check` now links the captured
+draw-input decoder required by its retail texture fixture. The checker was
+built with NDK r28c and run offscreen on the Redmi Note 8 Pro (Android 13,
+Mali-G76 MC4) using the captured 512x8 DXT4/5 texture, decoded RGBA8 pixels,
+four retail vertex payloads, and translated Vulkan 1.1 shaders. The four
+captured draws passed; the output contains two continuous horizontal rules
+without gaps. The game activity remained resumed.
+
+The [Mali replay record](../evidence/process2_mali_disclaimer_exact_replay_20261027.json)
+and [decoded output](../evidence/process2_mali_disclaimer_exact_replay_20261027.png)
+preserve the hashes. Android validation layers were not enabled for this
+shell run; the corresponding host replay passed with
+`VK_LAYER_KHRONOS_validation`. This replay covers the four rule draws only.
+It does not establish an independent retail reference for their color,
+thickness, position, or whether vertical sides should exist. The currently
+installed APK still contains an older renderer DSO, so this is not a fresh
+full-app capture.
+
 ### Captured transition Copy/Convert sequence
 
 The same phone log records a sequence of internal mode-6 copies before the
