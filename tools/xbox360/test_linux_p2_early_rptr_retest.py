@@ -37,6 +37,17 @@ assert wait["packet"] == "c0043c00000000131b96400600000001ffffffff00000100"
 assert wait["guest_physical_word"] == "0x1B964004"
 assert wait["reference"] == "0x00000001"
 assert wait["physical_alias_bytes"] == wait["context_vE_alias_bytes"] == "00000000"
+watch = capture["cpu_write_watch"]
+assert watch["observation_seconds_after_wait_approx"] == 47.329
+assert watch["watchpoints_armed"] == 4
+assert watch["cpu_write_hits"] == 0
+assert [alias["host_address"] for alias in watch["aliases"]] == [
+    "0x21B964004",
+    "0x1BB964004",
+    "0x1DB964004",
+    "0x1FB963004",
+]
+assert all(alias["initial_bytes"] == "00000000" for alias in watch["aliases"])
 root = capture["root_ring_capture"]
 assert root["bytes"] == 2048
 assert root["aliases_equal"] is True

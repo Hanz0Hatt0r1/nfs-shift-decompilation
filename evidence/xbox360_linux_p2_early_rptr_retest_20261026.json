@@ -57,6 +57,30 @@
       "path_outside_git": "/tmp/nfs-shift-p1-p2-early-rptr-capture-20261026/gdb.log",
       "sha256": "a583817b8e02e1cf5fe2b3fcd120e3536d563f6bb731590f92f3baed5d175fdf"
     },
+    "cpu_write_watch": {
+      "script_path_outside_git": "/tmp/nfs-shift-p1-p2-early-rptr-capture-20261026/watch.gdb",
+      "script_sha256": "84e8385235e099d5dda1d2b2094d2c2e6db4430a77b44242895f808c660c8bfd",
+      "stdout_path_outside_git": "/tmp/nfs-shift-p1-p2-early-rptr-capture-20261026/watch.stdout.log",
+      "stdout_sha256": "24e35613fa58ee75da132e3610acdb861cc394d1447bce99334eb156d15f4f60",
+      "runtime_log_path_outside_git": "/tmp/nfs-shift-p1-p2-early-rptr-capture-20261026/bin/logs/nfs_shift_002.log",
+      "runtime_log_sha256": "343bc3da7eedb75eacbc0e7bd6051e2ebe394decfed8623775ae9124d86dc438",
+      "wait_entered_at": "2026-10-26 21:55:32.953",
+      "last_runtime_log_at": "2026-10-26 21:56:20.282",
+      "observation_seconds_after_wait_approx": 47.329,
+      "watchpoints_armed": 4,
+      "aliases": [
+        {"name": "physical", "host_address": "0x21B964004", "initial_bytes": "00000000"},
+        {"name": "vA", "host_address": "0x1BB964004", "initial_bytes": "00000000"},
+        {"name": "vC", "host_address": "0x1DB964004", "initial_bytes": "00000000"},
+        {"name": "vE", "host_address": "0x1FB963004", "initial_bytes": "00000000"}
+      ],
+      "cpu_write_hits": 0,
+      "termination": "The bounded GDB harness escalated to SIGKILL (exit 137); no clean title shutdown is claimed.",
+      "limitations": [
+        "This watches ordinary CPU stores through the four mapped aliases only.",
+        "GPU/DMA writes, cache visibility, and other unobserved aliases are not excluded."
+      ]
+    },
     "runtime_log": {
       "path_outside_git": "/tmp/nfs-shift-p1-p2-early-rptr-capture-20261026/bin/logs/nfs_shift_001.log",
       "sha256": "27b10c779208849b7f9dcb7c00cbd3c1304e98985689f2d25821853c1b0c46f1",
