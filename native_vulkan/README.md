@@ -338,3 +338,19 @@ fail even if a PPM was produced; the Python runner propagates that failure.
 Successful native JSON includes `validation_enabled` and `validation_errors`.
 Warnings go to stderr. CI requires validation for the mixed-resource smoke run.
 Depth image views are created with the depth aspect directly.
+
+## PM4 interrupt order Android smoke (2026-10-26)
+
+A new ARM64 Vulkan plugin was linked against the unchanged runtime extracted
+from the installed Redmi APK. The package keeps both legacy GPU plugin aliases
+pointing to the same Vulkan DSO; all other APK payloads were hash-compared
+unchanged. Incremental install preserved app data. The retail loading frame
+appeared at 15 seconds and the safety disclaimer at 40 seconds. The selector
+was skipped because English was already saved; the preceding same-device live
+capture shows all six labels readable. The app remains foregrounded.
+
+The x86_64 and ARM64 plugin artifacts, APK hashes, screenshots, checks, and
+limits are in the [`PM4 Android smoke record`](../evidence/process2_pm4_interrupt_order_android_smoke_20261026.json).
+This verifies startup output for the packaged renderer, not retail gameplay or
+full visual parity. The existing purple strips remain; Android validation-layer
+coverage was unavailable.

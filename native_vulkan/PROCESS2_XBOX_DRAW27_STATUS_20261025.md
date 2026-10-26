@@ -437,3 +437,19 @@ observed. The event's delivery to the guest is unconfirmed, and the nearby file
 failures do not establish why progression stopped. The app was not restarted
 or closed. See the [probe record](../evidence/process2_redmi_disclaimer_after_a_20261026.json)
 and [post-input screenshot](../evidence/process2_redmi_disclaimer_after_a_20261026.png).
+
+## PM4 interrupt ordering candidate on Redmi (2026-10-26)
+
+Installed the latest P2 Android plugin against the byte-identical packaged
+runtime without clearing application data. The screen showed the original
+Loading text/progress bar at 15 seconds, then the original safety disclaimer
+at 40 seconds. English was already saved, so this launch did not show the
+language selector. The immediately preceding Redmi candidate capture contains
+the heading and all six language names; the current source preserves its
+interpolator-location fix. The app remains open on the disclaimer.
+
+See the [candidate evidence](../evidence/process2_pm4_interrupt_order_android_smoke_20261026.json),
+[Loading capture](../evidence/process2_redmi_pm4_interrupt_order_loading_20261026.png),
+and [disclaimer capture](../evidence/process2_redmi_pm4_interrupt_order_disclaimer_20261026.png).
+The launch does not verify a post-disclaimer menu, racing scene, or complete
+retail parity; existing purple strips remain.

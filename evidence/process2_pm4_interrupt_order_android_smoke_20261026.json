@@ -1,0 +1,87 @@
+{
+  "schema": "shift.process2.pm4_interrupt_order_android_smoke.v1",
+  "captured_at_local": "2026-10-26T13:06:26+03:00",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "commit": "0f5e9f11b16764b1e62f251aaa17f8e4769da8a6",
+    "change": "Dispatch PM4_INTERRUPT callback inline at packet position before the subsequent CALLBACK_ACK packet.",
+    "linux_plugin": {
+      "path": "/home/pes/work/process2-r8-scratch-linux-plugin-20261026/librexgpu-shift-native.so",
+      "sha256": "65b09ee6e498a1b1e04a1278da5bd737bdf703d98f3a3723c282610841539316",
+      "build_id": "a67ec63a267d3eca9849e3fce8ed3badb2a088af"
+    }
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 21346,
+    "activity_top_resumed": true
+  },
+  "android_candidate": {
+    "apk_path": "/home/pes/work/process2-latest-renderer-handover-20261026/android-pm4-interrupt-order-20261026/nfsshift-process2-pm4-interrupt-order-20261026.apk",
+    "apk_sha256": "5d6f68303b299cb57d881127bdb8b7950da1d193de6371afd9859b310d499d94",
+    "installed_apk_sha256": "5d6f68303b299cb57d881127bdb8b7950da1d193de6371afd9859b310d499d94",
+    "source_installed_apk_sha256": "35383e756421c4d92264e02f3e9da3eafc52db22febe6c316d15007c0076cd3b",
+    "arm64_plugin_sha256": "ab6900ab1a4802469c07055a739ecbbe99bf4d90678ca6465fdb4018e3c1eb55",
+    "arm64_plugin_build_id": "5be60cc87833c1ccfa319bcf151867b5e45161c7",
+    "plugin_aliases_identical": true,
+    "runtime_dso_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "apk_v3_signature_verified": true,
+    "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "zipalign_16k_verified": true,
+    "install_succeeded": true,
+    "install_method": "adb install -r",
+    "app_data_cleared": false,
+    "apk_payload_comparison": "All archive payloads except the two GPU plugin aliases were hash-compared unchanged; the packaged runtime DSO stayed byte-identical."
+  },
+  "observed_startup": {
+    "after_5_seconds": "Black frame.",
+    "after_15_seconds": {
+      "observation": "Original retail SHIFT loading screen, including Loading text and the yellow-orange progress bar.",
+      "screenshot": "process2_redmi_pm4_interrupt_order_loading_20261026.png",
+      "screenshot_sha256": "8cd1052a71b99b9a1310776f1c67e012ded1a99b589fed57a3bebfdd5e14f32d"
+    },
+    "after_40_seconds": {
+      "observation": "Original safety disclaimer text is visible with the existing thin purple strips.",
+      "screenshot": "process2_redmi_pm4_interrupt_order_disclaimer_20261026.png",
+      "screenshot_sha256": "c0647dbea35d559dff7737cad990a4f856222497601c4aed777819fc7c1e1ef2"
+    },
+    "app_remained_running_and_resumed": true,
+    "app_was_closed": false
+  },
+  "language_selector": {
+    "visible_in_this_launch": false,
+    "reason": "The saved English selection persisted; app data was kept.",
+    "same_shader_fix_source_commit": "ac7f5793a9d794e81078cd08bdbef15e0babcd0e",
+    "earlier_live_redmi_capture": "process2_redmi_language_selector_latest_android_20261026.png",
+    "earlier_live_capture_sha256": "1c13514ea6f2ad7dfff70cd1b33cffa2024b39937895b2dfaa68cf8fb90ac676",
+    "labels_visible_there": [
+      "English",
+      "Français",
+      "Italiano",
+      "Deutsch",
+      "Español",
+      "Nederlands"
+    ],
+    "note": "The latest source retains the fix that maps each Xenos interpolator to its matching Vulkan location; this launch did not re-exercise the selector because its preference was already saved."
+  },
+  "validation": {
+    "linux_plugin_ctest": "6/6 passed",
+    "native_vulkan_ci_smoke": "passed",
+    "android_plugin_build": "arm64-v8a target built against the unchanged runtime DSO extracted from this installed APK; Android source TU compiled successfully.",
+    "android_vulkan_validation_layer": "Not enabled in the live run.",
+    "full_android_runtime_rebuild": "Not performed; the SDK's POSIX fiber build still has the Bionic ucontext compile gap.",
+    "post_disclaimer_menu_and_race": "Not verified."
+  },
+  "limits": [
+    "The Android run confirms loading and disclaimer output for this plugin/runtime package; it does not establish full retail parity.",
+    "The language selector was not shown in this launch; its all-label screenshot comes from the immediately preceding Android candidate with the same shader varying implementation.",
+    "The Purple strip rendering issue remains and is not addressed by the PM4 interrupt ordering change.",
+    "The live run did not prove a retail PM4_INTERRUPT submission path beyond the observed startup output."
+  ]
+}
