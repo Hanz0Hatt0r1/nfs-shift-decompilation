@@ -100,15 +100,51 @@
       "completion_log_count": 0
     }
   },
+  "input_probe": {
+    "platform": "Linux AMD64",
+    "controller": {
+      "name": "Microsoft X-Box 360 pad",
+      "vendor_id": "0x045E",
+      "product_id": "0x028E",
+      "created_after_sdl_input_init": true,
+      "recognized_by_standalone_sdl3_check": true,
+      "sdl_gamecontroller_ignore_devices": "0x045e/0x0b12"
+    },
+    "buttons_sent": ["START", "A", "A", "A", "A", "A"],
+    "gdb_observation_window_seconds": 22,
+    "controller_input_reached_guest": false,
+    "termination": "The harness sent SIGINT while the title remained on the captured guest-memory wait; the process exited with code 0.",
+    "script": {
+      "path": "/tmp/nfs-shift-p1-controller-probe-20261026/trace_input.gdb",
+      "sha256": "50ca810bfdfae2aee1182c38ff5890df26fc36b9d481df0e9b8286d124e883a4"
+    },
+    "trace": {
+      "path": "/tmp/nfs-shift-p1-controller-probe-20261026/gdb.log",
+      "sha256": "79ab6137dee6b3ff2b196648840c82be7014d8c6e5286f356f1070579322ece4",
+      "input_system_get_state_hits": 0,
+      "sdl_enumerate_devices_hits": 0,
+      "sdl_controller_added_hits": 0
+    },
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-p1-controller-probe-20261026/bin/logs/nfs_shift_001.log",
+      "sha256": "34d5cd95f29bc3b6cb4c1be41f469d9073f2463c1ab7e010b0d8e62447b34c68",
+      "sdl_input_driver_initialized": true,
+      "guest_memory_wait_entered": true,
+      "guest_memory_wait_completed": false
+    },
+    "mapped_hashes_verified_in_inferior": false
+  },
   "interpretation": {
     "supported": [
       "With the identified Process 2 plugin, the exact retail XEX passed four captured COHER_STATUS_HOST waits and entered the captured guest-memory WAIT_REG_MEM at 0x1B964004.",
       "The exact-XEX GDB run reached the first retail queue wait with head/target/tail 3/13/21 and completion bit 0x02 clear.",
-      "No source-1 callback or CPU write through the four watched host aliases was observed during the bounded GDB interval."
+      "No source-1 callback or CPU write through the four watched host aliases was observed during the bounded GDB interval.",
+      "A separate exact-XEX run sent Start/A through a Linux virtual Xbox 360 pad while the title remained at the same wait; GDB observed no guest input query, SDL device enumeration, or controller-added callback during the 22-second probe window."
     ],
     "not_proven": [
       "That no device/DMA write or write through an unwatched alias occurred.",
       "The owner of the expected guest word, the missing source-1 callback, or the causal relationship between the memory wait and software-queue predicate.",
+      "Whether the runtime input driver will enumerate the pad once the guest reaches its input polling path.",
       "A clean title shutdown, verified visible retail output, main-menu entry, or offline-race entry."
     ],
     "next_p1_step": "Trace the guest producer and interrupt/scheduler path that should satisfy the captured wait. Preserve the retail WAIT_REG_MEM, queue indices, and predicate semantics until the writer is identified."

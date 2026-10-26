@@ -51,9 +51,21 @@ assert memory_wait["source1_callback_hits"] == 0
 assert memory_wait["writes_observed_through_watched_aliases"] == 0
 assert memory_wait["completion_log_count"] == 0
 
+input_probe = evidence["input_probe"]
+assert input_probe["controller"]["created_after_sdl_input_init"] is True
+assert input_probe["controller"]["recognized_by_standalone_sdl3_check"] is True
+assert input_probe["buttons_sent"][0] == "START"
+assert set(input_probe["buttons_sent"][1:]) == {"A"}
+assert input_probe["mapped_hashes_verified_in_inferior"] is False
+assert input_probe["trace"]["input_system_get_state_hits"] == 0
+assert input_probe["trace"]["sdl_enumerate_devices_hits"] == 0
+assert input_probe["trace"]["sdl_controller_added_hits"] == 0
+assert input_probe["runtime_log"]["guest_memory_wait_completed"] is False
+assert input_probe["controller_input_reached_guest"] is False
+
 limits = " ".join(evidence["interpretation"]["not_proven"])
 assert "device/DMA" in limits
 assert "offline-race entry" in limits
 assert "Preserve the retail WAIT_REG_MEM" in evidence["interpretation"]["next_p1_step"]
 
-print("current P2 passes captured host-coherency waits and reaches the unresolved retail guest-memory wait")
+print("current P2 reaches the unresolved retail guest-memory wait before guest input polling")
