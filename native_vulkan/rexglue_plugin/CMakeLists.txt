@@ -111,6 +111,14 @@ target_include_directories(rexgpu-shift-native PRIVATE
   "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/renderdoc"
   "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/glslang"
 )
+if(SHIFT_REXGLUE_PREBUILT_RUNTIME)
+  target_include_directories(rexgpu-shift-native SYSTEM PRIVATE
+    "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/fmt/include"
+    "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/spdlog/include"
+    "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/simde"
+    "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/vulkan-headers/include"
+  )
+endif()
 target_compile_features(rexgpu-shift-native PRIVATE cxx_std_23)
 target_link_libraries(rexgpu-shift-native PRIVATE
   ${SHIFT_REXGLUE_PLUGIN_RUNTIME_TARGET}

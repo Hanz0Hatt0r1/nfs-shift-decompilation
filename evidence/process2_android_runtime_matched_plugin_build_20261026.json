@@ -1,0 +1,33 @@
+{
+  "schema": "shift.process2.android_runtime_matched_plugin_build.v1",
+  "date": "2026-10-26",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "source_head_before_evidence_commit": "884f2ae42"
+  },
+  "build": {
+    "target": "rexgpu-shift-native",
+    "platform": "Android arm64-v8a",
+    "api_level": 26,
+    "configuration": "Debug",
+    "result": "passed",
+    "command": "cmake --build /home/pes/work/process2-android-matched-runtime-build-20261026 --target rexgpu-shift-native --parallel 4",
+    "plugin": "/home/pes/work/process2-p1-renderer-handoff-ccdee6b4-20261026/android-runtime-matched/librexgpu-shift-natived.so",
+    "plugin_sha256": "3fe65411654e1132ed4965b59edaa30b12935598849c193568cd7910be6b062c",
+    "plugin_build_id": "ebd132d17b1e687e95863ea650ceefa2e2e87983",
+    "sdk": "/home/pes/work/process2-android-sdk-v0.10.0-snapshot",
+    "runtime_dso": "/home/pes/work/process2-descriptor-layout-android-handover-20261026/librexruntimed.so",
+    "runtime_dso_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "warning": "SDK fpscr.h inline assembly reports a 32-bit operand-width warning for the fpcr register."
+  },
+  "renderer_evidence": {
+    "retail_capture_replay": "process2_disclaimer_current_arm64_mali_20261026.json",
+    "device": "Redmi Note 8 Pro / Mali-G76 MC4",
+    "result": "The corrected packed-mip decoder replays the four captured retail strip draws as two continuous gray horizontal rules."
+  },
+  "limits": [
+    "The plugin build itself was not loaded into the retail game on the phone.",
+    "The retail capture contains only horizontal top and bottom rules for the disclaimer; no vertical border draw was captured."
+  ]
+}
