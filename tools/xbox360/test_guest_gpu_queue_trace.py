@@ -19,6 +19,7 @@ required = (
     "interrupt_record=%#x callback_target=%#x callback_argument=%#x",
     "mapped_gpu_plugin pid=%d path=%s sha256=%s segments=%d",
     "open(\"/proc/%d/maps\" % pid",
+    'if "librexgpu-shift-native" not in line:',
     "hashlib.sha256(plugin_file.read()).hexdigest()",
     "set $object = *(unsigned int*)($ctx+32)",
     "set $read_raw = *(unsigned int*)($base+$object+0x413c)",
