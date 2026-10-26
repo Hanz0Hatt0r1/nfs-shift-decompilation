@@ -1042,6 +1042,19 @@ border color or thickness. See
 [`process2_disclaimer_packed_mip0_fix_20261026.json`](../../evidence/process2_disclaimer_packed_mip0_fix_20261026.json)
 and the [Mali replay](../../evidence/process2_disclaimer_packed_mip0_replay_mali_20261026.png).
 
+After commit `ccdee6b4`, the current ARM64 renderer-check executable was rebuilt
+and run directly on the Redmi Note 8 Pro with the same raw guest texture,
+expected decoded bytes, four captured retail vertex buffers, shaders, and
+Copy/Convert state. The run passed on Mali-G76 MC4. Its raw 1280x720
+A2B10G10R10 readback contains exactly 7,360 nonblack pixels: eight continuous
+four-pixel-high rows across x=180..1099. This is a replay of the four border
+draws only, not the full disclaimer frame or a live game session. No game APK
+was installed or launched. The device has no
+`VK_LAYER_KHRONOS_validation`; host validation remains the layer coverage.
+See [`the current ARM64 replay evidence`](../../evidence/process2_disclaimer_current_arm64_mali_20261026.json),
+[decoded strip replay](../../evidence/process2_disclaimer_current_arm64_mali_replay_20261026.png),
+and [compressed raw readback](../../evidence/process2_disclaimer_current_arm64_mali_readback_20261026.bin.gz).
+
 ## Redmi Bink draw replay with the pipeline cache (2026-10-26)
 
 An A/B on Mali-G76 replayed the captured retail Bink draw #2614 with identical

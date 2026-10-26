@@ -1,0 +1,62 @@
+{
+  "schema": "shift.process2.disclaimer_current_arm64_mali_replay.v1",
+  "date": "2026-10-26",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "commit": "ccdee6b4d125f3a8670806f0ba15f0361588b137",
+    "renderer_check_sha256": "d0bb296b3ac47a1318f182c942e9b509fc386e90c022522c919d60205705cbad",
+    "renderer_check_build": "/tmp/process2-disclaimer-android-vulkan-check-20261026/xbox_live_vulkan_renderer_check"
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "android_version": "13",
+    "api": 33,
+    "gpu": "Mali-G76 MC4",
+    "adb_endpoint": "192.168.1.32:38615",
+    "app_package_installed": false,
+    "game_launched": false,
+    "vulkan_validation_layer_available": false
+  },
+  "test": {
+    "method": "Run the ARM64 Vulkan renderer-check executable directly from /data/local/tmp with exact captured retail disclaimer strip fixtures.",
+    "result": "passed",
+    "captured_draws": [5058, 5059, 5060, 5061],
+    "inputs": {
+      "texture_guest_address": "0x0A24B000",
+      "texture_format": "Xenos format 20 / DXT4/5",
+      "texture_extent": [512, 8],
+      "raw_texture_file": "process2_disclaimer_frame907_draw5058_dxt5_raw_20261026.bin",
+      "expected_decoded_texture_file": "process2_disclaimer_frame907_draw5058_packed_mip0_rgba8_20261026.bin",
+      "vertex_files": [
+        "process2_disclaimer_frame907_draw5058_vertices_20261026.bin",
+        "process2_disclaimer_frame907_draw5059_vertices_20261026.bin",
+        "process2_disclaimer_frame907_draw5060_vertices_20261026.bin",
+        "process2_disclaimer_frame907_draw5061_vertices_20261026.bin"
+      ],
+      "shaders_and_copy_convert": "Captured Vulkan 1.1 shader fixtures passed to the renderer regression executable."
+    },
+    "output": {
+      "extent": [1280, 720],
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "bytes": 3686400,
+      "raw_file": "process2_disclaimer_current_arm64_mali_readback_20261026.bin.gz",
+      "raw_compressed_bytes": 8748,
+      "raw_compressed_sha256": "69f4c26b2d85e295aa8aa19057145a77f20af21eef23f0603d27fba6ebefd8be",
+      "raw_sha256": "f74d8a5929dc756ea165985cfb441a9ef4cff11237fd1abd183e05cfc3103621",
+      "decoded_png": "process2_disclaimer_current_arm64_mali_replay_20261026.png",
+      "decoded_png_sha256": "4d3a4e3565e97cf91ba30bae9bcd9a4b30437c1e5e4cf3760e20166acd251cf4",
+      "nonblack_rgb_pixels": 7360,
+      "continuous_border_rows": [186, 187, 188, 189, 540, 541, 542, 543],
+      "continuous_x_range": [180, 1099],
+      "pixels_per_row": 920
+    }
+  },
+  "limits": [
+    "This replay submits only the four captured border draws; it does not show the disclaimer text or other retail frame draws.",
+    "It is a captured-data Vulkan replay, not a live game run or evidence of full-scene parity.",
+    "The phone did not expose VK_LAYER_KHRONOS_validation; validation coverage is from host CTest runs.",
+    "No independent original-console image establishes exact border color or thickness."
+  ],
+  "device_state": "No APK was installed or launched. The test executable, shader fixtures, and captured inputs were staged under /data/local/tmp/process2-disclaimer-renderer-current."
+}
