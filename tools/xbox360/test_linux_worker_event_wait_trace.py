@@ -55,6 +55,10 @@ assert all(worker["header_raw"] == "00000000" for worker in workers)
 assert all(worker["signal_state_raw"] == "00000000" for worker in workers)
 assert all(worker["wait_reason"] == 3 for worker in workers)
 assert all(worker["alertable"] is False for worker in workers)
+assert workers[0]["timeout_raw_hex"] == "0xfffffffffffb6c20"
+assert workers[0]["timeout_signed_100ns_ticks"] == -300000
+assert workers[0]["relative_timeout_ms_before_guest_clock_scaling"] == 30
+assert workers[1]["timeout"] == "infinite"
 
 queue = evidence["first_retail_queue_wait"]
 assert queue["function"] == "0x823B34A0"
@@ -62,6 +66,9 @@ assert queue["head"] == 3 and queue["tail"] == 21
 assert queue["predicate_byte"] == "0x14"
 assert "another signaling mechanism bypasses XEvent::Set/Pulse" in " ".join(
     evidence["interpretation"]["not_proven"]
+)
+assert "30ms before guest clock scaling" in " ".join(
+    evidence["interpretation"]["supported"]
 )
 assert "do not synthesize a wakeup" in evidence["interpretation"]["next_p1_step"]
 
