@@ -165,6 +165,9 @@ set $wait_hits = 0
 set $last_wait_head = -1
 set $last_wait_tail = -1
 set $last_wait_predicate = -1
+set $last_wait_record_ptr = -1
+set $last_wait_callback_target = -1
+set $last_wait_callback_argument = -1
 break sub_823B34A0
 commands
   silent
@@ -183,11 +186,24 @@ commands
   set $tail_raw = *(unsigned int*)($base+$object+0x2a9c)
   set $tail = (($tail_raw & 0xff)<<24) | (($tail_raw & 0xff00)<<8) | (($tail_raw & 0xff0000)>>8) | (($tail_raw & 0xff000000)>>24)
   set $predicate = *(unsigned char*)($base+$object+0x2abd)
-  if $wait_hits == 1 || $head != $last_wait_head || $tail != $last_wait_tail || $predicate != $last_wait_predicate || $wait_hits % 128 == 0
-    printf "ring_wait hit=%d gdb_thread=%d object=%#x head_ptr=%#x head=%u tail=%u predicate=%#x arg4=%#llx arg5=%#llx arg6=%#llx lr=%#llx\n", $wait_hits, $_thread, $object, $head_ptr, $head, $tail, $predicate, *(unsigned long long*)($rdi+32), *(unsigned long long*)($rdi+40), *(unsigned long long*)($rdi+48), *(unsigned long long*)($rdi+256)
+  set $record_raw = *(unsigned int*)($base+$object+0x2a94)
+  set $record_ptr = (($record_raw & 0xff)<<24) | (($record_raw & 0xff00)<<8) | (($record_raw & 0xff0000)>>8) | (($record_raw & 0xff000000)>>24)
+  set $callback_target = 0
+  set $callback_argument = 0
+  if $record_ptr != 0
+    set $target_raw = *(unsigned int*)($base+$record_ptr+0x10)
+    set $callback_target = (($target_raw & 0xff)<<24) | (($target_raw & 0xff00)<<8) | (($target_raw & 0xff0000)>>8) | (($target_raw & 0xff000000)>>24)
+    set $argument_raw = *(unsigned int*)($base+$record_ptr+0x14)
+    set $callback_argument = (($argument_raw & 0xff)<<24) | (($argument_raw & 0xff00)<<8) | (($argument_raw & 0xff0000)>>8) | (($argument_raw & 0xff000000)>>24)
+  end
+  if $wait_hits == 1 || $head != $last_wait_head || $tail != $last_wait_tail || $predicate != $last_wait_predicate || $record_ptr != $last_wait_record_ptr || $callback_target != $last_wait_callback_target || $callback_argument != $last_wait_callback_argument || $wait_hits % 128 == 0
+    printf "ring_wait hit=%d gdb_thread=%d object=%#x head_ptr=%#x head=%u tail=%u predicate=%#x interrupt_record=%#x callback_target=%#x callback_argument=%#x arg4=%#llx arg5=%#llx arg6=%#llx lr=%#llx\n", $wait_hits, $_thread, $object, $head_ptr, $head, $tail, $predicate, $record_ptr, $callback_target, $callback_argument, *(unsigned long long*)($rdi+32), *(unsigned long long*)($rdi+40), *(unsigned long long*)($rdi+48), *(unsigned long long*)($rdi+256)
     set $last_wait_head = $head
     set $last_wait_tail = $tail
     set $last_wait_predicate = $predicate
+    set $last_wait_record_ptr = $record_ptr
+    set $last_wait_callback_target = $callback_target
+    set $last_wait_callback_argument = $callback_argument
   end
   continue
 end
