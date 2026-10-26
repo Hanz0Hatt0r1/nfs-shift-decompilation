@@ -446,10 +446,14 @@ Loading text/progress bar at 15 seconds, then the original safety disclaimer
 at 40 seconds. English was already saved, so this launch did not show the
 language selector. The immediately preceding Redmi candidate capture contains
 the heading and all six language names; the current source preserves its
-interpolator-location fix. The app remains open on the disclaimer.
+interpolator-location fix. A later recheck found PID 21346 alive and NFS back
+in the foreground on a black screen; no app stop was issued. A key event was
+sent only after a screenshot showed another package foregrounded, so it is not
+counted as an NFS test; its effect is unknown.
 
 See the [candidate evidence](../evidence/process2_pm4_interrupt_order_android_smoke_20261026.json),
 [Loading capture](../evidence/process2_redmi_pm4_interrupt_order_loading_20261026.png),
-and [disclaimer capture](../evidence/process2_redmi_pm4_interrupt_order_disclaimer_20261026.png).
+and [disclaimer capture](../evidence/process2_redmi_pm4_interrupt_order_disclaimer_20261026.png),
+plus the [later black-screen recheck](../evidence/process2_redmi_pm4_interrupt_order_black_recheck_20261026.png).
 The launch does not verify a post-disclaimer menu, racing scene, or complete
 retail parity; existing purple strips remain.

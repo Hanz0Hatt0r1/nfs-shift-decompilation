@@ -20,7 +20,8 @@
     "adb_endpoint": "192.168.1.32:38615",
     "package": "com.hanz0hatt0r.nfsshift",
     "pid": 21346,
-    "activity_top_resumed": true
+    "activity_top_resumed": true,
+    "activity_top_resumed_time": "At the 40-second disclaimer screenshot; this was not a continuous focus assertion."
   },
   "android_candidate": {
     "apk_path": "/home/pes/work/process2-latest-renderer-handover-20261026/android-pm4-interrupt-order-20261026/nfsshift-process2-pm4-interrupt-order-20261026.apk",
@@ -51,8 +52,17 @@
       "screenshot": "process2_redmi_pm4_interrupt_order_disclaimer_20261026.png",
       "screenshot_sha256": "c0647dbea35d559dff7737cad990a4f856222497601c4aed777819fc7c1e1ef2"
     },
-    "app_remained_running_and_resumed": true,
-    "app_was_closed": false
+    "app_was_closed": false,
+    "game_process_active_at_40_second_capture": true,
+    "later_focus_recheck": {
+      "time_local": "2026-10-26T13:10:29+03:00",
+      "nfs_process_id": 21346,
+      "nfs_activity_top_resumed": true,
+      "screen_observation": "Black NFS screen after focus briefly showed vegros101.greatexpanse/.MainActivity.",
+      "screenshot": "process2_redmi_pm4_interrupt_order_black_recheck_20261026.png",
+      "screenshot_sha256": "ca2e7ef708be4e086e78c6921ab25cbd9b871744c1c983089c7de250f7104528",
+      "app_was_closed": false
+    }
   },
   "language_selector": {
     "visible_in_this_launch": false,
@@ -82,6 +92,14 @@
     "The Android run confirms loading and disclaimer output for this plugin/runtime package; it does not establish full retail parity.",
     "The language selector was not shown in this launch; its all-label screenshot comes from the immediately preceding Android candidate with the same shader varying implementation.",
     "The Purple strip rendering issue remains and is not addressed by the PM4 interrupt ordering change.",
-    "The live run did not prove a retail PM4_INTERRUPT submission path beyond the observed startup output."
-  ]
+    "The live run did not prove a retail PM4_INTERRUPT submission path beyond the observed startup output.",
+    "The later A-key probe was not a valid NFS test because another package was foregrounded immediately before it; the NFS black-screen recheck is observational only."
+  ],
+  "input_probe": {
+    "key_event": "KEYCODE_BUTTON_A (96)",
+    "valid_for_nfs": false,
+    "reason": "The immediately preceding read-only screenshot showed vegros101.greatexpanse/.MainActivity foregrounded; NFS was not the confirmed target.",
+    "effect_on_foreground_app": "Unknown; no further input was sent.",
+    "post_event_recheck": "NFS PID 21346 later returned top-resumed on a black screen. No causality is inferred."
+  }
 }

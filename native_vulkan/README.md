@@ -347,10 +347,16 @@ pointing to the same Vulkan DSO; all other APK payloads were hash-compared
 unchanged. Incremental install preserved app data. The retail loading frame
 appeared at 15 seconds and the safety disclaimer at 40 seconds. The selector
 was skipped because English was already saved; the preceding same-device live
-capture shows all six labels readable. The app remains foregrounded.
+capture shows all six labels readable. At the 40-second capture NFS was
+top-resumed. A later read-only check found PID 21346 alive and the NFS screen
+black after a brief focus change to `vegros101.greatexpanse`; no app stop was
+issued. An A event sent after a screenshot showed that other package in the
+foreground is not considered an NFS test, and its effect is unknown.
 
 The x86_64 and ARM64 plugin artifacts, APK hashes, screenshots, checks, and
 limits are in the [`PM4 Android smoke record`](../evidence/process2_pm4_interrupt_order_android_smoke_20261026.json).
 This verifies startup output for the packaged renderer, not retail gameplay or
-full visual parity. The existing purple strips remain; Android validation-layer
-coverage was unavailable.
+full visual parity. The existing purple strips remain on the disclaimer
+capture; the later black screen and brief focus change do not establish
+causality. Android
+validation-layer coverage was unavailable.
