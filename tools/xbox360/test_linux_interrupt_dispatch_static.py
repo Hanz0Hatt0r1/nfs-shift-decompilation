@@ -30,6 +30,26 @@ assert producer["indirect_callback_slot_load"] == "0x823A4830: lwz r9,16540(r31)
 assert producer["indirect_call"] == "0x823A4868: bctrl"
 assert producer["call_condition"] == "object+0x409C callback slot is nonzero"
 
+link = evidence["retail_stream_callback_link"]
+assert link["context_pointer_load"] == "0x823B35E4: lwz r10,10900(r11)"
+assert link["builder_inputs"]["captured_callback_target"] == "0x823A4758"
+assert link["builder_inputs"]["captured_callback_argument"] == "0x00000208"
+assert link["callback_record_dwords"]["captured_stream_words"] == [
+    "0001057c", "823a4758", "00000208"
+]
+waits = link["waits_for_callback_record"]
+assert [(wait["context_field_offset"], wait["reference_operand"]) for wait in waits] == [
+    ("0x14", "0x00000208"),
+    ("0x10", "0x823A4758"),
+]
+assert [wait["packet_address_field"] for wait in waits] == [
+    "0x1B964016", "0x1B964012"
+]
+assert link["interrupt_dispatch_match"]["target_load"] == "0x823B37D4: lwz r10,16(r11)"
+assert link["interrupt_dispatch_match"]["argument_load"] == "0x823B37E0: lwz r3,20(r11)"
+assert link["interrupt_dispatch_match"]["indirect_call"] == "0x823B37E8: bctrl"
+assert link["ordering_in_captured_outer_ib"]["same_execution_run_proven"] is False
+
 runtime = evidence["runtime_crosscheck"]
 assert runtime["source_0_callback_hits"] == 99
 assert runtime["source_1_callback_hits"] == 0

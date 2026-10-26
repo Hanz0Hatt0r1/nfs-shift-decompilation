@@ -42,6 +42,50 @@
       "invocation_hits_before_first_wait": 0
     }
   },
+  "retail_stream_callback_link": {
+    "stream_builder": "0x823B3598",
+    "context_pointer_load": "0x823B35E4: lwz r10,10900(r11)",
+    "builder_inputs": {
+      "callback_target_register": "r6",
+      "callback_argument_register": "r7",
+      "captured_callback_target": "0x823A4758",
+      "captured_callback_argument": "0x00000208"
+    },
+    "callback_record_dwords": {
+      "target_append": "0x823B362C: stwu r28,4(r29)",
+      "argument_append": "0x823B3634: stwu r27,4(r9)",
+      "captured_stream_words": ["0001057c", "823a4758", "00000208"]
+    },
+    "waits_for_callback_record": [
+      {
+        "context_field_offset": "0x14",
+        "poll_address_construction": "0x823B3678: addi r9,r10,20",
+        "packet_address_field": "0x1B964016",
+        "guest_physical_word": "0x1B964014",
+        "reference_operand": "0x00000208",
+        "packet_payload_store": "0x823B36FC: stwu r27,4(r4)"
+      },
+      {
+        "context_field_offset": "0x10",
+        "poll_address_construction": "0x823B36AC: addi r9,r10,16",
+        "packet_address_field": "0x1B964012",
+        "guest_physical_word": "0x1B964010",
+        "reference_operand": "0x823A4758",
+        "packet_payload_store": "0x823B371C: stwu r28,4(r4)"
+      }
+    ],
+    "interrupt_dispatch_match": {
+      "target_load": "0x823B37D4: lwz r10,16(r11)",
+      "argument_load": "0x823B37E0: lwz r3,20(r11)",
+      "indirect_call": "0x823B37E8: bctrl",
+      "source_condition": "source == 1"
+    },
+    "ordering_in_captured_outer_ib": {
+      "third_memory_wait_dword_index": 20,
+      "source_1_interrupt_dword_index": 326,
+      "same_execution_run_proven": false
+    }
+  },
   "runtime_crosscheck": {
     "evidence_file": "xbox360_linux_current_p2_renderer_frontend_wait_20261026.json",
     "source_0_callback_hits": 99,
@@ -59,14 +103,16 @@
     "supported": [
       "The known source-0 callback path reaches the deferred-queue consumer directly; it does not call 0x823A4758.",
       "The source-1 path uses a callback pointer held in its context; no source-1 callback ran before the sampled retail wait.",
-      "Function 0x823A4758 contains an indirect callback call, but no direct branch to that function was found in the full ELF disassembly.",
-      "The value 0x823A4758 in WAIT_REG_MEM remains a comparison operand, not proof of execution."
+      "The stream builder appends callback target 0x823A4758 and argument 0x208, then emits memory waits for those values at context offsets +0x14 and +0x10.",
+      "The source-1 interrupt callback loads the same context offsets as argument and indirect target, then executes bctrl; this is the retail indirect path that can invoke 0x823A4758 after the callback slot is populated.",
+      "The value 0x823A4758 remains WAIT_REG_MEM data, not a control transfer by the packet itself; the later source-1 callback supplies the control transfer."
     ],
     "not_proven": [
-      "The runtime source, registration site, or indirect dispatch target that should invoke 0x823A4758.",
-      "That the source-1 callback or 0x823A4758 is required to complete the memory wait observed in the renderer trace.",
+      "Which prior GPU/CPU operation writes the callback record fields at context+0x14 and context+0x10 in a live run.",
+      "That the captured outer IB reached these exact waits and the later interrupt in the same execution run.",
+      "That this callback is the only condition required to complete the separate retail software-queue predicate.",
       "A defect in P1 guest scheduling, ReXGlue interrupt dispatch, or P2 GPU execution."
     ],
-    "next_p1_probe": "On a fresh exact-XEX run, capture the source-1 context callback pointer and its registration, and trace any dynamic transfer to 0x823A4758. Keep queue and predicate state unchanged."
+    "next_p1_probe": "On a fresh exact-XEX run, sample object+0x2A94 and its +0x10/+0x14 fields plus physical aliases before the waits; correlate source-1 interrupt entry, bctrl target, and r3 argument. Keep queue and predicate state unchanged."
   }
 }

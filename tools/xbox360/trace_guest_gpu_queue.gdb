@@ -15,6 +15,8 @@ set print thread-events off
 set breakpoint pending off
 
 set $interrupt_hits = 0
+set $source1_hits = 0
+set $last_source1_record = -1
 set $last_source0_state = -1
 break sub_823B37B8
 commands
@@ -72,6 +74,28 @@ except OSError as error:
   else
     if $interrupt_hits == 1 || $interrupt_hits % 64 == 0
       printf "interrupt_callback hit=%d source=%u gdb_thread=%d ctx=%p base=%p r4=%#llx r13=%#llx lr=%#llx\n", $interrupt_hits, $source, $_thread, (void*)$rdi, (void*)$rsi, *(unsigned long long*)($rdi+32), *(unsigned long long*)($rdi+104), *(unsigned long long*)($rdi+256)
+    end
+    if $source == 1
+      set $source1_hits = $source1_hits + 1
+      set $object = *(unsigned int*)($ctx+32)
+      set $record_ptr = 0
+      set $callback_target = 0
+      set $callback_argument = 0
+      if $object != 0
+        set $record_raw = *(unsigned int*)($base+$object+0x2a94)
+        set $record_ptr = (($record_raw & 0xff)<<24) | (($record_raw & 0xff00)<<8) | (($record_raw & 0xff0000)>>8) | (($record_raw & 0xff000000)>>24)
+        if $record_ptr != 0
+          set $target_raw = *(unsigned int*)($base+$record_ptr+0x10)
+          set $callback_target = (($target_raw & 0xff)<<24) | (($target_raw & 0xff00)<<8) | (($target_raw & 0xff0000)>>8) | (($target_raw & 0xff000000)>>24)
+          set $argument_raw = *(unsigned int*)($base+$record_ptr+0x14)
+          set $callback_argument = (($argument_raw & 0xff)<<24) | (($argument_raw & 0xff00)<<8) | (($argument_raw & 0xff0000)>>8) | (($argument_raw & 0xff000000)>>24)
+        end
+      end
+      set $source1_record = (((unsigned long long)$callback_target) << 32) | $callback_argument
+      if $source1_hits <= 8 || $source1_record != $last_source1_record || $source1_hits % 64 == 0
+        printf "source1_callback_record hit=%d object=%#x record=%#x target=%#x argument=%#x lr=%#llx\n", $source1_hits, $object, $record_ptr, $callback_target, $callback_argument, *(unsigned long long*)($ctx+256)
+        set $last_source1_record = $source1_record
+      end
     end
   end
   continue
