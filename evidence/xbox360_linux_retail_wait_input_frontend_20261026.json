@@ -1,0 +1,145 @@
+{
+  "schema": "shift.xbox360.linux-retail-wait-input-frontend.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host": {
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "mapping_verified": true
+    },
+    "rexglue_runtime": {
+      "sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+      "mapping_verified": true
+    },
+    "gpu_plugin": {
+      "sha256": "b488dfeb5803f031c4027270b3ab20831a379814145ceda7c052ecd12199a70c",
+      "build_id": "93c34470001d02f86d593819f04784431d3ef9a0",
+      "mapping_verified": true
+    },
+    "proc_maps_path_external": "/home/pes/work/nfs-p1-retail-wait-input-gdb-20261026/mapped-libraries.txt",
+    "proc_maps_sha256": "cb3a200c2ad458cc4eb49d82c7d5cc9fc33991eb8b61166a416afa0b8c3a7ea2"
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "duration_seconds": 82.268,
+    "exit_code": 0,
+    "termination": "Harness sent SIGINT after the bounded capture and read-only GDB snapshot; the still-live title returned 0.",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "controller": {
+      "device": "Linux uinput Microsoft X-Box 360 pad, VID:PID 045e:028e",
+      "same_run_retail_consumption_proven": false,
+      "pulses": [
+        { "at_seconds": 22.691, "button": "A", "pulse_ms": 650 },
+        { "at_seconds": 40.695, "button": "Start", "pulse_ms": 650 },
+        { "at_seconds": 58.668, "button": "A", "pulse_ms": 650 }
+      ]
+    },
+    "window_captures": {
+      "scope": "PID-specific nfs_shift Wayland window, not a desktop capture",
+      "geometry": "0,0 2049x1152",
+      "same_safety_disclaimer_frame": true,
+      "captures": [
+        {
+          "at_seconds": 32.916,
+          "path_external": "/home/pes/work/nfs-p1-retail-wait-input-gdb-20261026/game-window-t32.png",
+          "sha256": "2e5bcb3a85e1ca6c7be94cf2d3b1f87cae8572ad9bad1b47b766bc94d3bec2d5"
+        },
+        {
+          "at_seconds": 52.389,
+          "path_external": "/home/pes/work/nfs-p1-retail-wait-input-gdb-20261026/game-window-t52.png",
+          "sha256": "2e5bcb3a85e1ca6c7be94cf2d3b1f87cae8572ad9bad1b47b766bc94d3bec2d5"
+        },
+        {
+          "at_seconds": 75.876,
+          "path_external": "/home/pes/work/nfs-p1-retail-wait-input-gdb-20261026/game-window-t70.png",
+          "sha256": "2e5bcb3a85e1ca6c7be94cf2d3b1f87cae8572ad9bad1b47b766bc94d3bec2d5"
+        }
+      ]
+    },
+    "gdb": {
+      "pid": 156876,
+      "attach_started_at_seconds": 66.0,
+      "snapshot_at_seconds": 75.161,
+      "breakpoint": "one temporary host software breakpoint at guest entry 0x823A0310",
+      "guest_data_written": false,
+      "log_path_external": "/home/pes/work/nfs-p1-retail-wait-input-gdb-20261026/gdb-snapshot.log",
+      "log_sha256": "2632437af549d60617bf9afd54d51757ad9719fc30ae86b33405e7853cbaaec5"
+    },
+    "runtime_log": {
+      "path_external": "/home/pes/work/nfs-p1-source-window-late-20261026/bin/logs/nfs_shift_004.log",
+      "sha256": "a9c9c13285a045e61f2c180ccb46d909f1d60d3ac16f79f6ca47b7bbad51182b"
+    }
+  },
+  "retail_queue": {
+    "predicate_function": "0x823A0310",
+    "wait_return_site": "0x823B3560",
+    "guest_main_thread": "Core 0/0: Main",
+    "call_chain_top_down": [
+      "sub_823A0310",
+      "sub_823B34A0",
+      "sub_823B3850",
+      "sub_823A0760",
+      "sub_8264F868"
+    ],
+    "object_guest_address": "0xB7365F00",
+    "head_pointer_field_object_plus": "0x2A90",
+    "head_writeback_guest_address": "0xB7AF4000",
+    "head": 5515,
+    "tail_field_object_plus": "0x2A9C",
+    "tail": 5525,
+    "wait_target_guest_r30": "0x1593",
+    "wait_target_decimal": 5523,
+    "predicate_byte_field_object_plus": "0x2ABD",
+    "predicate": "0x04",
+    "tested_completion_mask": "0x02",
+    "object_flag_field_object_plus": "0x2ABC",
+    "object_flag": "0x00",
+    "global_831B3820": "0x00000000"
+  },
+  "runtime_activity": {
+    "copy_convert_accepts": 1201,
+    "draw_submission_entries": 1202,
+    "frame_400": {
+      "width": 1280,
+      "height": 720,
+      "source_format": "VK_FORMAT_R8G8B8A8_UNORM",
+      "source_samples": 1,
+      "presenter_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "non_black_rgb_pixels": 920156,
+      "source_fnv1a64": "A76FF8BD8A74B81F",
+      "presenter_fnv1a64": "E999B15D668DE057",
+      "source_sha256": "ebc1b45965d1a48c76abab4e38b995ef62c1f0393a1a853805fc6145a951b3a9",
+      "presenter_sha256": "1324371b2a85ae55cd654899151b05720b970dab1c28e04b31799fbce6bd406f",
+      "max_abs_8bit_rgb_channel_difference": 0,
+      "mse_rgb": 0.0
+    },
+    "menu_background_xml_open_failures": 4,
+    "cameraconfig_xml_open_failures": 1,
+    "too_few_processor_cores_warnings": 5947,
+    "queue_user_callback_signal_delivery_failures_at_shutdown": 17
+  },
+  "interpretation": {
+    "supported": [
+      "The exact-XEX guest main thread again entered the original 0x823A0310 wait predicate through 0x823B34A0, 0x823B3850 and 0x823A0760.",
+      "At the snapshot, wait target 5523 was between head 5515 and tail 5525; predicate byte 0x04 did not contain tested completion mask 0x02, and the sampled object flag and global 0x831B3820 were zero.",
+      "The three PID-scoped captures at 32.9, 52.4 and 75.9 seconds are byte-identical and show the retail driving-safety disclaimer despite the sent A/Start pulses.",
+      "On selected frame 400, the pre-Copy source and Vulkan presenter have identical RGB values at every pixel; this sample does not show color loss in Copy/Convert or presentation."
+    ],
+    "not_proven": [
+      "That the retail frontend consumed any of the three uinput button pulses or that a pulse caused a scene transition.",
+      "That the sampled queue state violates the original retail protocol or which producer/completion callback should advance it.",
+      "That P1 scheduling, a ReXGlue callback/import, or the P2 graphics worker caused the wait.",
+      "Main-menu entry, an offline race, gameplay, or Vulkan 1.1, ARM64, or Android compatibility.",
+      "That the missing XML requests, scheduling warnings, or shutdown callback warnings caused the retained disclaimer frame."
+    ],
+    "next_p1_step": "Trace the exact retail producer/completion callback and its registration/scheduling conditions at this repeated wait state. Preserve retail queue and predicate semantics until the missing transition is demonstrated."
+  }
+}
