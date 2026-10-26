@@ -181,6 +181,8 @@ struct FrameResources {
   ImageResource source_resolve;
   BufferResource source_readback;
   VkDeviceSize source_readback_size = 0;
+  VkQueryPool draw_visibility_query_pool = VK_NULL_HANDLE;
+  std::vector<uint32_t> draw_visibility_query_indices;
   VkCommandPool command_pool = VK_NULL_HANDLE;
   VkFence completion_fence = VK_NULL_HANDLE;
   uint32_t upload_slot = 0;
@@ -196,6 +198,8 @@ struct FrameResources {
         vkQueueWaitIdle(queue);
       }
     }
+    if (draw_visibility_query_pool)
+      vkDestroyQueryPool(device, draw_visibility_query_pool, nullptr);
     const auto destroy_draw = [this](DrawResources &draw) {
       if (draw.pipeline && !draw.cached_pipeline_entry) {
         vkDestroyPipeline(device, draw.pipeline, nullptr);
@@ -560,6 +564,57 @@ bool wait_for_frame(FrameResources& frame, std::string* error) {
     if (result != VK_SUCCESS) return vk_fail("vkWaitForFences(frame resources)", result, error);
     frame.submitted = false;
     return true;
+}
+
+bool prepare_draw_visibility_queries(
+    VkDevice device, size_t draw_count, FrameResources& resources,
+    std::vector<CapturedVulkanDrawVisibility>* draw_visibility) {
+    if (!draw_visibility) return false;
+    draw_visibility->assign(draw_count, {});
+    if (draw_count == 0 || draw_count > std::numeric_limits<uint32_t>::max()) {
+        return false;
+    }
+    VkQueryPoolCreateInfo query_info{};
+    query_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_info.queryType = VK_QUERY_TYPE_OCCLUSION;
+    query_info.queryCount = static_cast<uint32_t>(draw_count);
+    if (vkCreateQueryPool(device, &query_info, nullptr,
+                          &resources.draw_visibility_query_pool) != VK_SUCCESS) {
+        return false;
+    }
+    return true;
+}
+
+template <typename RecordDraw>
+void record_draw_with_visibility_query(FrameResources& resources,
+                                       VkCommandBuffer command,
+                                       uint32_t draw_index,
+                                       RecordDraw&& record_draw) {
+    if (!resources.draw_visibility_query_pool) {
+        record_draw();
+        return;
+    }
+    vkCmdBeginQuery(command, resources.draw_visibility_query_pool, draw_index, 0);
+    record_draw();
+    vkCmdEndQuery(command, resources.draw_visibility_query_pool, draw_index);
+    resources.draw_visibility_query_indices.push_back(draw_index);
+}
+
+void collect_draw_visibility_queries(
+    const FrameResources& resources,
+    std::vector<CapturedVulkanDrawVisibility>* draw_visibility) {
+    if (!draw_visibility || !resources.draw_visibility_query_pool) return;
+    for (uint32_t draw_index : resources.draw_visibility_query_indices) {
+        uint64_t result = 0;
+        if (vkGetQueryPoolResults(resources.device,
+                                  resources.draw_visibility_query_pool,
+                                  draw_index, 1, sizeof(result), &result,
+                                  sizeof(result), VK_QUERY_RESULT_64_BIT |
+                                                     VK_QUERY_RESULT_WAIT_BIT) ==
+            VK_SUCCESS) {
+            (*draw_visibility)[draw_index] = {true, result != 0};
+        }
+    }
 }
 
 bool retire_reusable_frames(TextureCacheState* cache, uint32_t upload_slot,
@@ -1873,7 +1928,8 @@ bool submit_mixed_sample_copy_frame(
     CapturedVulkanSamplerCapabilities sampler_capabilities,
     VkPipelineCache pipeline_cache,
     TextureCacheState* texture_cache,
-    CapturedVulkanSourceReadback* source_readback) {
+    CapturedVulkanSourceReadback* source_readback,
+    std::vector<CapturedVulkanDrawVisibility>* draw_visibility) {
     if (draws.empty() || draws.front().raster.sample_count != 4 ||
         copy.single_sample_pixel_shader_spirv.empty()) {
         return fail("mixed captured frame requires 4x-MSAA followed by 1x and a single-sample Copy/Convert shader",
@@ -2020,6 +2076,8 @@ bool submit_mixed_sample_copy_frame(
     resources.device = device;
     resources.queue = queue;
     resources.upload_slot = texture_cache ? texture_cache->upload_slot : 0;
+    prepare_draw_visibility_queries(device, draws.size(), resources,
+                                    draw_visibility);
     std::vector<size_t> draw_resource_indices(
         draws.size(), std::numeric_limits<size_t>::max());
     resources.draws.resize(rendered_draw_indices.size());
@@ -2336,6 +2394,10 @@ bool submit_mixed_sample_copy_frame(
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     result = vkBeginCommandBuffer(command, &begin_info);
     if (result != VK_SUCCESS) return vk_fail("vkBeginCommandBuffer(mixed frame)", result, error);
+    if (resources.draw_visibility_query_pool) {
+        vkCmdResetQueryPool(command, resources.draw_visibility_query_pool, 0,
+                            static_cast<uint32_t>(draws.size()));
+    }
 
     std::vector<VkBufferMemoryBarrier> host_barriers;
     host_barriers.reserve(draws.size() * 8);
@@ -2495,7 +2557,10 @@ bool submit_mixed_sample_copy_frame(
     msaa_begin.clearValueCount = static_cast<uint32_t>(msaa_clears.size());
     msaa_begin.pClearValues = msaa_clears.data();
     vkCmdBeginRenderPass(command, &msaa_begin, VK_SUBPASS_CONTENTS_INLINE);
-    for (size_t i = 0; i < first_single_sample_draw; ++i) record_draw(i);
+    for (size_t i = 0; i < first_single_sample_draw; ++i) {
+        record_draw_with_visibility_query(
+            resources, command, static_cast<uint32_t>(i), [&] { record_draw(i); });
+    }
     vkCmdEndRenderPass(command);
 
     VkImageMemoryBarrier resolve_to_single{};
@@ -2530,7 +2595,9 @@ bool submit_mixed_sample_copy_frame(
     for (size_t i = first_single_sample_draw; i < draws.size(); ++i) {
         if (draws[i].raster.sample_count == 1 ||
             remap_trailing_msaa_to_single[i]) {
-            record_draw(i);
+            record_draw_with_visibility_query(
+                resources, command, static_cast<uint32_t>(i),
+                [&] { record_draw(i); });
         }
     }
     vkCmdEndRenderPass(command);
@@ -2682,11 +2749,13 @@ bool submit_mixed_sample_copy_frame(
     if (result != VK_SUCCESS) return vk_fail("vkQueueSubmit(mixed frame)", result, error);
     resources.submitted = true;
     finish_texture_cache_frame(texture_cache);
-    if (output_readback || source_readback_ready || !texture_cache) {
+    if (output_readback || source_readback_ready || draw_visibility ||
+        !texture_cache) {
         if (!wait_for_frame(resources, error)) return false;
     } else {
         texture_cache->in_flight.push_back(std::move(resources_owner));
     }
+    collect_draw_visibility_queries(resources, draw_visibility);
     if (output_readback) {
         void* mapped = nullptr;
         result = vkMapMemory(device, resources.output_readback.memory, 0,
@@ -2816,8 +2885,10 @@ bool submit_captured_vulkan_frame(
     CapturedVulkanSamplerCapabilities sampler_capabilities,
     VkPipelineCache pipeline_cache,
     CapturedVulkanTextureCache* texture_cache,
-    CapturedVulkanSourceReadback* source_readback) {
+    CapturedVulkanSourceReadback* source_readback,
+    std::vector<CapturedVulkanDrawVisibility>* draw_visibility) {
     if (output_readback) output_readback->clear();
+    if (draw_visibility) draw_visibility->assign(draws.size(), {});
     if (source_readback) {
         *source_readback = {};
         source_readback_unsupported(
@@ -2843,6 +2914,8 @@ bool submit_captured_vulkan_frame(
     resources.device = device;
     resources.queue = queue;
     resources.upload_slot = texture_cache_state ? texture_cache_state->upload_slot : 0;
+    prepare_draw_visibility_queries(device, draws.size(), resources,
+                                    draw_visibility);
     resources.draws.resize(draws.size());
     const uint32_t samples = draws.front().raster.sample_count;
     const VkSampleCountFlagBits raster_samples = sample_count_flag(samples);
@@ -2875,7 +2948,7 @@ bool submit_captured_vulkan_frame(
             output_view, output_written_before, output_width, output_height,
             draws, error, output_readback, geometry_shader_enabled, *copy,
             depth_stencil_resolve_enabled, sampler_capabilities, pipeline_cache,
-            texture_cache_state, source_readback);
+            texture_cache_state, source_readback, draw_visibility);
     }
     const CapturedRasterState& frame_target = draws.front().raster;
     const uint32_t source_width = copy && copy->source_width
@@ -3241,6 +3314,10 @@ bool submit_captured_vulkan_frame(
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     result = vkBeginCommandBuffer(command, &begin_info);
     if (result != VK_SUCCESS) return vk_fail("vkBeginCommandBuffer", result, error);
+    if (resources.draw_visibility_query_pool) {
+        vkCmdResetQueryPool(command, resources.draw_visibility_query_pool, 0,
+                            static_cast<uint32_t>(draws.size()));
+    }
 
     std::vector<VkBufferMemoryBarrier> host_barriers;
     host_barriers.reserve(draws.size() * 8);
@@ -3417,12 +3494,16 @@ bool submit_captured_vulkan_frame(
         vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 draw.pipeline_layout, 0, 2,
                                 draw.descriptor_sets, 0, nullptr);
-        if (source.auto_index) {
-            vkCmdDraw(command, source.index_count, 1, 0, 0);
-        } else {
-            vkCmdBindIndexBuffer(command, draw.indices.buffer, 0, VK_INDEX_TYPE_UINT16);
-            vkCmdDrawIndexed(command, source.index_count, 1, 0, 0, 0);
-        }
+        record_draw_with_visibility_query(
+            resources, command, static_cast<uint32_t>(i), [&] {
+                if (source.auto_index) {
+                    vkCmdDraw(command, source.index_count, 1, 0, 0);
+                } else {
+                    vkCmdBindIndexBuffer(command, draw.indices.buffer, 0,
+                                         VK_INDEX_TYPE_UINT16);
+                    vkCmdDrawIndexed(command, source.index_count, 1, 0, 0, 0);
+                }
+            });
     }
     vkCmdEndRenderPass(command);
 
@@ -3597,11 +3678,13 @@ bool submit_captured_vulkan_frame(
     if (result != VK_SUCCESS) return vk_fail("vkQueueSubmit(captured frame)", result, error);
     resources.submitted = true;
     finish_texture_cache_frame(texture_cache_state);
-    if (output_readback || source_readback_ready || !texture_cache_state) {
+    if (output_readback || source_readback_ready || draw_visibility ||
+        !texture_cache_state) {
         if (!wait_for_frame(resources, error)) return false;
     } else {
         texture_cache_state->in_flight.push_back(std::move(resources_owner));
     }
+    collect_draw_visibility_queries(resources, draw_visibility);
     if (output_readback) {
         void* mapped = nullptr;
         result = vkMapMemory(device, resources.output_readback.memory, 0,

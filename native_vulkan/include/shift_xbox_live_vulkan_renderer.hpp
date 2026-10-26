@@ -78,6 +78,13 @@ struct CapturedVulkanSourceReadback {
     std::vector<uint8_t> bytes;
 };
 
+struct CapturedVulkanDrawVisibility {
+    bool available = false;
+    // Vulkan 1.1 guarantees non-precise occlusion queries; this reports only
+    // whether any samples passed, not an exact sample count or color write.
+    bool any_samples_passed = false;
+};
+
 // Reuses live R8 planes, per-draw vertex/index/uniform upload buffers,
 // compatible graphics pipelines, and sampler states across frames. Keep this
 // object alive for one Vulkan device and clear it before destroying that
@@ -112,6 +119,8 @@ class CapturedVulkanTextureCache {
 // depth_stencil_resolve_enabled only from an affirmative provider capability
 // that includes enabled Vulkan entry points and SAMPLE_ZERO support for both
 // depth and stencil, not from extension enumeration alone.
+// When draw_visibility is supplied, the renderer waits for completion and
+// returns one optional non-precise occlusion result per submitted draw.
 bool submit_captured_vulkan_frame(
     VkPhysicalDevice physical_device,
     VkDevice device,
@@ -131,6 +140,7 @@ bool submit_captured_vulkan_frame(
     CapturedVulkanSamplerCapabilities sampler_capabilities = {},
     VkPipelineCache pipeline_cache = VK_NULL_HANDLE,
     CapturedVulkanTextureCache* texture_cache = nullptr,
-    CapturedVulkanSourceReadback* source_readback = nullptr);
+    CapturedVulkanSourceReadback* source_readback = nullptr,
+    std::vector<CapturedVulkanDrawVisibility>* draw_visibility = nullptr);
 
 }  // namespace shift::xbox

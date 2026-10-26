@@ -421,12 +421,15 @@ int main(int argc, char** argv) {
     black_copy.pixel_shader_spirv = black_copy_fragment_spirv;
     black_copy.single_sample_pixel_shader_spirv = black_copy_fragment_spirv;
     shift::xbox::CapturedVulkanSourceReadback colored_source_readback;
+    std::vector<shift::xbox::CapturedVulkanDrawVisibility>
+        colored_source_visibility;
     std::vector<uint32_t> black_final_output;
     if (!shift::xbox::submit_captured_vulkan_frame(
             physical_device, device, queue, queue_family, output_image,
             output_view, false, 1280, 720, draws, &error, &black_final_output,
             enabled_features.geometryShader, &black_copy, false, {},
-            pipeline_cache, nullptr, &colored_source_readback)) {
+            pipeline_cache, nullptr, &colored_source_readback,
+            &colored_source_visibility)) {
         std::cerr << "source color-target readback with black Copy/Convert failed: "
                   << error << '\n';
         return 1;
@@ -447,6 +450,9 @@ int main(int argc, char** argv) {
         !colored_source_readback.multisample_average_resolve ||
         colored_source_readback.bytes.size() != 1280u * 720u * 4u ||
         !colored_source_has_rgb || black_final_output.size() != 1280u * 720u ||
+        colored_source_visibility.size() != draws.size() ||
+        !colored_source_visibility[0].available ||
+        !colored_source_visibility[0].any_samples_passed ||
         std::any_of(black_final_output.begin(), black_final_output.end(),
                     [](uint32_t pixel) {
                         return (pixel & 0x3FFFFFFFu) != 0;
@@ -461,17 +467,22 @@ int main(int argc, char** argv) {
         source_draw.raster.color_write_mask = 0;
     }
     shift::xbox::CapturedVulkanSourceReadback black_source_readback;
+    std::vector<shift::xbox::CapturedVulkanDrawVisibility>
+        black_source_visibility;
     std::vector<uint32_t> black_source_final_output;
     if (!shift::xbox::submit_captured_vulkan_frame(
             physical_device, device, queue, queue_family, output_image,
             output_view, false, 1280, 720, black_source_draws, &error,
             &black_source_final_output, enabled_features.geometryShader,
             &black_copy, false, {}, pipeline_cache, nullptr,
-            &black_source_readback) ||
+            &black_source_readback, &black_source_visibility) ||
         black_source_readback.status !=
             shift::xbox::CapturedVulkanSourceReadback::Status::Captured ||
         black_source_readback.bytes.size() != 1280u * 720u * 4u ||
-        black_source_final_output.size() != 1280u * 720u) {
+        black_source_final_output.size() != 1280u * 720u ||
+        black_source_visibility.size() != black_source_draws.size() ||
+        !black_source_visibility[0].available ||
+        !black_source_visibility[0].any_samples_passed) {
         std::cerr << "black source color-target readback failed: " << error << '\n';
         return 1;
     }

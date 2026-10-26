@@ -1164,3 +1164,16 @@ This readback has not yet been exercised against a retail frame; it is a
 diagnostic, not evidence of retail visual parity. See
 [`process2_source_color_readback_20261026.json`](../../evidence/process2_source_color_readback_20261026.json)
 for build identities, test results, and limits.
+
+For an exact selected presenter frame, `SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME`
+also enables one Vulkan 1.1 non-precise occlusion query per prepared draw. The
+log maps each submitted Vulkan draw back to its decoded guest draw-packet index
+and reports whether any samples passed. A positive result confirms raster and
+depth/stencil coverage, but does not prove that the shader or color-write mask
+changed RGB; zero helps isolate geometry, clipping, and depth/stencil issues.
+Query setup is optional and a failed or unavailable query leaves rendering
+unchanged. The renderer regression checks both a colored draw and a black
+source whose test draw still passes occlusion. Host validation and the
+offscreen Redmi Note 8 Pro Mali-G76 MC4 Vulkan 1.1 run passed. This query path
+has not yet been collected from a retail frame; it does not revise the black
+frame-400 evidence above.

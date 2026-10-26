@@ -1308,6 +1308,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     std::vector<uint8_t> vertex_shader_program;
     std::vector<uint8_t> pixel_shader_program;
     std::vector<shift::xbox::CapturedVulkanDraw> frame_draws;
+    std::vector<uint32_t> frame_draw_packet_indices;
     shift::xbox::CapturedVulkanCopy frame_copy{};
     bool frame_copy_ready = false;
     uint64_t observed_ring_generation = 0;
@@ -1372,6 +1373,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         vertex_shader_program.clear();
         pixel_shader_program.clear();
         frame_draws.clear();
+        frame_draw_packet_indices.clear();
         frame_copy = {};
         frame_copy_ready = false;
         last_guest_swap_width = 0;
@@ -1941,6 +1943,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   if (resources_resolved) {
                     ++draws_with_resolved_resource_payloads;
                     frame_draws.push_back(std::move(prepared_draw));
+                    frame_draw_packet_indices.push_back(decoded_draws - 1u);
                   } else {
                     ++draws_with_unresolved_resource_payloads;
                   }
@@ -2006,6 +2009,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                       packet_bytes, packet.byte_length, &swap, &error)) {
                 ++unsupported_draws;
                 frame_draws.clear();
+                frame_draw_packet_indices.clear();
                 frame_copy = {};
                 frame_copy_ready = false;
                 continue;
@@ -2031,6 +2035,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   provider_->vulkan_device()) {
                 const uint32_t draw_count = static_cast<uint32_t>(frame_draws.size());
                 const uint32_t upcoming_submitted_frame = readback_frame_counter + 1u;
+                const bool capture_draw_visibility =
+                    selected_draw_dump_frame != 0u &&
+                    upcoming_submitted_frame == selected_draw_dump_frame;
                 const char* readback_path = std::getenv("SHIFT_NATIVE_VULKAN_READBACK_PATH");
                 const bool explicit_readback_path = readback_path && *readback_path;
                 const char* source_readback_path =
@@ -2077,14 +2084,17 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                                             explicit_source_readback_path;
                 std::vector<uint32_t> output_readback;
                 shift::xbox::CapturedVulkanSourceReadback source_readback;
+                std::vector<shift::xbox::CapturedVulkanDrawVisibility>
+                    draw_visibility;
                 std::string render_error;
                 bool refresh_callback_called = false;
                 const bool refreshed = presenter_->RefreshGuestOutput(
                     swap.width, swap.height, swap.width, swap.height,
                     [this, &frame_draws, &render_error, &refresh_callback_called,
-                     copy_for_swap, width = swap.width,
-                     height = swap.height, capture_output, capture_source,
-                     &output_readback, &source_readback](
+                      copy_for_swap, width = swap.width,
+                      height = swap.height, capture_output, capture_source,
+                     capture_draw_visibility, &output_readback, &source_readback,
+                     &draw_visibility](
                         rex::ui::Presenter::GuestOutputRefreshContext& base) {
                       refresh_callback_called = true;
                       // This presenter was created by VulkanProvider below, so the refresh
@@ -2149,7 +2159,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                           {device->properties().samplerAnisotropy,
                            device->properties().maxSamplerAnisotropy},
                           pipeline_cache_, &texture_cache_,
-                          capture_source ? &source_readback : nullptr);
+                          capture_source ? &source_readback : nullptr,
+                          capture_draw_visibility ? &draw_visibility : nullptr);
                     });
                 if (refreshed) {
                   ++submitted_frames;
@@ -2158,6 +2169,22 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                               "the Vulkan presenter at {}x{} (frontbuffer {:08X})",
                               draw_count, swap.width, swap.height,
                               swap.frontbuffer_guest_address);
+                  if (capture_draw_visibility) {
+                    for (size_t draw = 0; draw < draw_visibility.size(); ++draw) {
+                      const auto& visibility = draw_visibility[draw];
+                      REXLOG_INFO(
+                          "shift-native: Vulkan occlusion draw packet #{} "
+                          "(submitted draw {}) any samples passed: {}{}",
+                          draw < frame_draw_packet_indices.size()
+                              ? frame_draw_packet_indices[draw] : UINT32_MAX,
+                          draw, visibility.available
+                              ? (visibility.any_samples_passed ? "yes" : "no")
+                              : "unavailable",
+                          visibility.available
+                              ? " (non-precise query; does not prove color writes)"
+                              : "");
+                    }
+                  }
                   if (capture_output) {
                     const size_t expected_pixels =
                         static_cast<size_t>(swap.width) * swap.height;
@@ -2293,6 +2320,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 }
               }
               frame_draws.clear();
+              frame_draw_packet_indices.clear();
               frame_copy = {};
               frame_copy_ready = false;
               ++guest_swap_counter;

@@ -61,6 +61,13 @@
       ],
       "complete_live_ring_suite": "not run: enabling the full external SDK build failed in unrelated ReXGlue code (SSSE3 target configuration in host memory.cpp; Android getcontext/makecontext/swapcontext declarations)."
     },
+    "per_draw_visibility_linux_plugin": {
+      "result": "plugin built; ldd -r resolved; current-DSO factory smoke passed",
+      "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+      "path": "/tmp/nfs-p2-source-readback-resolve-build/plugin-output/librexgpu-shift-nativerd.so",
+      "sha256": "414ce5a95ad946c59117eb37250a4c20b717edda93b92cc4d16c05a73e2a7667",
+      "build_id": "11eb91c7594138674ed46d2780b2ce44498c23d1"
+    },
     "android_arm64_renderer_check": {
       "result": "passed",
       "device": "Redmi Note 8 Pro (begonia)",
@@ -68,9 +75,22 @@
       "vulkan_api": "1.1.131",
       "ndk": "28.2.13676358",
       "android_platform": 29,
-      "test_build_id": "f0dff0a0e1d066cfa15a52278fa1eb6b5204f5dd",
+      "test_build_id": "2fd6f438f3972cb936bc876430b215b304379181",
+      "test_sha256": "4f862a0a27df9bc09265222cc5d84069758a4f5232dbcda0a5031e28d93e5e81",
       "validation_layer_available": false,
-      "result_text": "synthetic offscreen Vulkan 1.1 AutoIndex point and rectangle-list draw plus 4x-to-1x depth/stencil SAMPLE_ZERO preservation and 4:1 anisotropy sampler and captured sample-zero Copy/Convert passed on Mali-G76 MC4"
+      "result_text": "synthetic offscreen Vulkan 1.1 AutoIndex point and rectangle-list draws, 4x-to-1x depth/stencil SAMPLE_ZERO preservation, 4:1 anisotropy sampler, captured sample-zero Copy/Convert, and per-draw occlusion checks passed on Mali-G76 MC4"
+    },
+    "per_draw_visibility_query_regression": {
+      "result": "passed on host and Redmi Note 8 Pro",
+      "query_type": "Vulkan 1.1 non-precise occlusion query",
+      "cases": [
+        "colored synthetic source draw reports at least one passing sample",
+        "color-write-mask-disabled draw reports passing samples while source RGB remains black"
+      ],
+      "interpretation_limit": "A passing query proves sample coverage passed raster/depth/stencil tests, not that the shader or color-write mask changed RGB.",
+      "redmi_gpu": "Mali-G76 MC4",
+      "redmi_vulkan_api": "1.1.131",
+      "validation_layer_available": false
     },
     "git_diff_check": "passed"
   },
@@ -86,7 +106,7 @@
     "updated_readback_apk_built": false,
     "plugin_installed": false,
     "core_regression_run_offscreen": true,
-    "redmi_app_state": "The prior shader-cache APK remains open on the retail disclaimer (PID 31012, top-resumed); no app restart or plugin replacement occurred. Temporary test files were removed."
+    "redmi_app_state": "The installed retail APK remained top-resumed on the legal disclaimer during a read-only check; no restart or plugin replacement occurred. Temporary offscreen test files were removed after the Vulkan 1.1 test."
   },
   "retail_black_frame_400": {
     "run_directory": "/tmp/nfs-p1-source-color-readback-20261026",
@@ -119,6 +139,7 @@
       "per_draw_state_dump_for_frame_400_present": false,
       "ring_pointer_trace_present": false,
       "renderer_attachment_initial_value": "The Vulkan render-pass color attachment uses VK_ATTACHMENT_LOAD_OP_CLEAR with RGB=0 (alpha=1); an untouched target therefore reads black. This does not prove a guest-issued clear packet.",
+      "per_draw_visibility_follow_up": "The renderer now supports opt-in per-submitted-draw non-precise occlusion queries selected with SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME. This exact retail frame has not yet been rerun with the query enabled, so no per-draw coverage result is claimed.",
       "unresolved_startup_draw": "A separate draw #0 near process startup had incomplete raster state valid_mask=0x17038; it is not associated with submitted frame 400.",
       "related_runs_are_not_frame_equivalent": "Older frame-400 draw dumps belong to different launches and show different draw sequences; they cannot supply missing state for this black run."
     }
@@ -126,7 +147,7 @@
   "limits": [
     "The homogeneous 4x source dump is an average resolve and therefore is not a byte-for-byte representation of sample zero consumed by the current guest Copy/Convert shader; the log reports the resolve mode explicitly.",
     "The mixed 4x-to-1x dump reads the final single-sample image after the existing resolve and 1x draws.",
-    "This retail frame-400 source/output measurement is not retail parity evidence: its source and presenter output are black, and no exact-frame per-draw state or pixel-write trace was captured.",
+    "This retail frame-400 source/output measurement is not retail parity evidence: its source and presenter output are black, and no exact-frame per-draw state, occlusion, or pixel-write trace was captured.",
     "The full Linux plugin live-ring CTest suite was not rebuilt because an external ReXGlue SDK host configuration failed; the plugin itself, factory smoke, resolve-capability test, and native Vulkan CTest passed."
   ]
 }
