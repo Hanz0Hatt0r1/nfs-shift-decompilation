@@ -4,7 +4,7 @@
   "source": {
     "branch": "work/process2-xbox-live-ring-20261023",
     "base_commit": "19f95e5b8",
-    "implementation_commit": "pending",
+    "implementation_commit": "f18a19b34d96f27d7cddfed9bc0772624a8fda28",
     "paths": [
       "native_vulkan/include/shift_xbox_live_vulkan_renderer.hpp",
       "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
