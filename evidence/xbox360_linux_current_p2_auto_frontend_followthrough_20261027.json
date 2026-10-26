@@ -1,0 +1,105 @@
+{
+  "schema": "shift.xbox360.linux-current-p2-auto-frontend-followthrough.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_path_outside_git": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data/default.xex",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "movie_asset": {
+      "path_relative_to_game_root": "Movies/Franchise_Ident.bik",
+      "path_outside_git": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data/Movies/Franchise_Ident.bik",
+      "sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c"
+    }
+  },
+  "binaries": {
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "p1_runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+    "p2_linux_plugin": {
+      "source_commit": "9afec9ead95484a63471912ed2e40c5f043bac46",
+      "sha256": "01a2908cfec4492cb6702a0217343d58a8c9d7618e836bef8e598bdfbdc2c0e7",
+      "build_id": "e16e929fc7a5ad5080c55709bc80b81747e14c13"
+    }
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "duration_seconds": 145.535,
+    "termination": "harness SIGINT; exit 0; elapsed 145.535s",
+    "gdb_instrumented": false,
+    "controller_input_sent": false,
+    "mapped_binary_hashes_verified": true,
+    "mapped_files": [
+      {
+        "path": "/tmp/nfs-shift-p1-9af-frontend-20261027/bin/librexgpu-shift-native.so",
+        "sha256": "01a2908cfec4492cb6702a0217343d58a8c9d7618e836bef8e598bdfbdc2c0e7"
+      },
+      {
+        "path": "/tmp/nfs-shift-p1-9af-frontend-20261027/bin/librexruntime.so",
+        "sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253"
+      }
+    ],
+    "captures": [
+      {
+        "elapsed_seconds": 30.423,
+        "path_external": "/tmp/nfs-shift-p1-9af-auto-20261027/captures/auto-30s.png",
+        "sha256": "d9a8420ddda0656482430b9f2cc7c5b943c2a48a554a12568b921ddf331f7655",
+        "observation": "Bright startup graphic/loading presentation visible; no menu UI."
+      },
+      {
+        "elapsed_seconds": 60.109,
+        "path_external": "/tmp/nfs-shift-p1-9af-auto-20261027/captures/auto-60s.png",
+        "sha256": "474f90bd1ed1ef7928c4f00fab83186cc00ab9a85699016ca8a4ddb03dbe5faa",
+        "observation": "Black/dark viewport; no menu UI."
+      },
+      {
+        "elapsed_seconds": 90.165,
+        "path_external": "/tmp/nfs-shift-p1-9af-auto-20261027/captures/auto-90s.png",
+        "sha256": "5164d91a62ca52c435055e557eaadc06ff80acb87fede6bcd8c4ea6a13a5faae",
+        "observation": "Black/dark viewport; no menu UI."
+      },
+      {
+        "elapsed_seconds": 120.172,
+        "path_external": "/tmp/nfs-shift-p1-9af-auto-20261027/captures/auto-120s.png",
+        "sha256": "aed8ed546e3607502743fbc5339ba9a4350c29759e84fe1a740e75f5015b739a",
+        "observation": "Black/dark viewport; no menu UI."
+      },
+      {
+        "elapsed_seconds": 145.106,
+        "path_external": "/tmp/nfs-shift-p1-9af-auto-20261027/captures/auto-145s.png",
+        "sha256": "f14afb0fbbf3e414825d3cb78c4524757a1e6c2fd21d217e33965ddb7548e8df",
+        "observation": "Black/dark viewport; no menu UI."
+      }
+    ],
+    "runtime_log": {
+      "path_external": "/tmp/nfs-shift-p1-9af-frontend-20261027/bin/logs/nfs_shift_002.log",
+      "sha256": "946b670cb0a85214edb9e6f76ae0778894c983c071cd2999a0b2d2ef1e7481a5",
+      "accepted_copy_convert_entries": 497,
+      "completed_coher_status_host_waits": 10407,
+      "guest_fault_entries": 0,
+      "vulkan_frame_refresh_failures": 1,
+      "failure_detail": "One 1280x720 refresh failed with 13 captured draws because mixed 4x-to-1x depth/stencil preservation had no provider-confirmed enabled resolve capability.",
+      "menu_background_xml_misses": 0,
+      "bink_or_movie_path_strings": 0
+    },
+    "run_summary": {
+      "path_external": "/tmp/nfs-shift-p1-9af-auto-20261027/run-summary.json",
+      "sha256": "a843a6164b68eac5cb921877d5ae4db7be12e7e73ed44b2a00ead80ac3cae461"
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail XEX remained live for the 145.535-second no-input run and showed no visible main-menu UI in the captured target window.",
+      "The 30-second capture shows a bright startup/loading graphic; later captures at 60, 90, 120 and 145 seconds show a black/dark viewport.",
+      "The host, P1 runtime and P2 DSO loaded in this run match the recorded SHA-256 values.",
+      "The runtime log contains 497 accepted Copy/Convert entries, 10,407 completed COHER_STATUS_HOST waits, no guest faults, and one Vulkan frame-refresh failure.",
+      "The local Franchise_Ident.bik file matches the recorded retail asset hash, but this run log contains no Bink/movie path strings."
+    ],
+    "not_proven": [
+      "That Franchise_Ident.bik was opened, decoded, or presented in this run; absence of a path string is not proof that it was not accessed.",
+      "That the one frame-refresh failure caused the black viewport or stopped the frontend.",
+      "That Copy/Convert or wait counts represent game progress.",
+      "Main-menu entry, offline-race entry, input consumption, Linux ARM64/Android compatibility, or clean title shutdown."
+    ],
+    "next_step": "Trace the retail Bink wrapper and its caller through the frame target and the following scene-manager transition on this exact XEX; preserve guest event, input, and movie semantics."
+  }
+}
