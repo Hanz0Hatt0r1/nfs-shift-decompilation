@@ -1,0 +1,96 @@
+{
+  "schema": "shift.xbox360.linux-retail-disclaimer-input-retest.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "duration_seconds": 130.296,
+    "termination": "The harness sent SIGINT to the host at 130.032 seconds; the process exited with code 0.",
+    "guest_memory_modified_by_probe": false,
+    "binaries": {
+      "host": {
+        "path_outside_git": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/nfs_shift",
+        "sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a"
+      },
+      "rexglue_runtime": {
+        "path_outside_git": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/librexruntime.so",
+        "sha256": "f43d094797bf30c2e552b244c6ec50e4e69bb0b11fee409e07a812ba74158f78"
+      },
+      "gpu_plugin": {
+        "path_outside_git": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/librexgpu-shift-native.so",
+        "sha256": "f1404a4f57fb073f12cc0b34da4f74a3e75d8d6f2ffb49e62708c9a1b09bb6b6",
+        "source_state": "Local Process 2 scratch-writeback build; not claimed merged."
+      }
+    },
+    "controller": {
+      "device": "Linux uinput Microsoft X-Box 360 pad, VID:PID 045e:028e",
+      "pulse_duration_ms": 500,
+      "pulses": [
+        {"at_seconds": 60, "button": "A", "xinput_mask": "0x1000"},
+        {"at_seconds": 66, "button": "Start", "xinput_mask": "0x0010"},
+        {"at_seconds": 75, "button": "A", "xinput_mask": "0x1000"},
+        {"at_seconds": 81, "button": "Start", "xinput_mask": "0x0010"},
+        {"at_seconds": 90, "button": "A", "xinput_mask": "0x1000"},
+        {"at_seconds": 96, "button": "Start", "xinput_mask": "0x0010"},
+        {"at_seconds": 105, "button": "A", "xinput_mask": "0x1000"},
+        {"at_seconds": 111, "button": "Start", "xinput_mask": "0x0010"},
+        {"at_seconds": 120, "button": "A", "xinput_mask": "0x1000"}
+      ]
+    },
+    "target_window_captures": [
+      {
+        "elapsed_seconds": 85.024,
+        "path_outside_git": "/tmp/nfs-shift-p1-frontier-input-retest-20261026/t085.png",
+        "sha256": "185252f43d20955665836550465f161f76a62e569b6fba8d98083cb6aa595dc0",
+        "observation": "Retail driving-safety disclaimer visible."
+      },
+      {
+        "elapsed_seconds": 95.011,
+        "path_outside_git": "/tmp/nfs-shift-p1-frontier-input-retest-20261026/t095.png",
+        "sha256": "d4bbf6982291264ba751c1865c09ddaaea70531566fa671b10a2a574dfea89d7",
+        "observation": "Disclaimer text no longer visible; mostly black frame with thin horizontal border lines."
+      },
+      {
+        "elapsed_seconds": 125.040,
+        "path_outside_git": "/tmp/nfs-shift-p1-frontier-input-retest-20261026/t125.png",
+        "sha256": "067b662a6215183949a8c4d06427434936a351832bcfdbf1f44ee62bac029f79",
+        "observation": "Same mostly black frame; no main-menu UI visible."
+      }
+    ],
+    "runtime_logs": [
+      {
+        "path_outside_git": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/logs/nfs_shift_010.1.log",
+        "sha256": "3a24c20dab1ba380bc6fa9c064782fd3d8fd676e805bec38f5de90fe0085df68",
+        "failed_menu_background_xml_opens": 4,
+        "unique_unresolved_draw_reasons": 16,
+        "captured_indexed_draw_submissions": 947
+      },
+      {
+        "path_outside_git": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/logs/nfs_shift_010.log",
+        "sha256": "4116d2041e625f1f0fba0c9d6ed68adda24b7fe38508cfebdbc1d702f46e36d7",
+        "captured_indexed_draw_submissions": 339
+      }
+    ]
+  },
+  "interpretation": {
+    "observed": [
+      "The safety disclaimer was visible at 85 seconds, after the A/Start pulses at 60, 66, 75, and 81 seconds.",
+      "A was emitted at 90 seconds; by the 95-second target-window capture the disclaimer had disappeared, and the frame remained mostly black through 125 seconds.",
+      "The same run logged four failed menu_background.xml opens and 16 unique unresolved captured draw reasons, while also recording later indexed draw submissions."
+    ],
+    "inference": [
+      "The timing is consistent with A advancing past the disclaimer. The run did not trace the guest frontend handler, so this is not proof that the guest consumed that specific pulse."
+    ],
+    "not_proven": [
+      "That the title reached the retail main menu or an offline race.",
+      "That missing menu_background.xml requests or unresolved draw states caused the black frame.",
+      "That button pulses reached this run's XInputGetState call.",
+      "That the local Process 2 plugin change is merged or production-ready."
+    ],
+    "next_p1_step": "Treat the A-to-black-frame transition as a lead, not as verified menu entry. Keep tracing retail input/state only if it can distinguish the scene transition from the missing visible frontend; renderer-state decoding remains Process 2's boundary."
+  }
+}
