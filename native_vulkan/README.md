@@ -330,6 +330,28 @@ plugin also built with Clang and all seven plugin CTest checks passed with
 enable Vulkan validation layers; language-menu continuity, cutscenes, race
 graphics, and full retail parity remain unverified.
 
+### Captured transition Copy/Convert sequence
+
+The same phone log records a sequence of internal mode-6 copies before the
+presenter copy. One selects all four source samples, clears color and depth,
+and converts to a 1280x720 format-26 destination with unsigned number format
+and exponent bias 11. Seven following copies target distinct addresses and
+extents in format 31 (`16_16_FLOAT`), selecting sample 0 and clearing color.
+The final accepted copy to `0x0975E000` is a separate 1280x720 sample-0
+frontbuffer operation.
+
+The 14-draw refresh error does not identify whether target format or source
+extent rejected the batch. The P2 submit model retains one draw vector and one
+Copy/Convert operation per swap; it does not write intermediate copy results
+back to guest memory. Rendering this capture therefore needs ordered
+intermediate target/copy execution before the final frontbuffer pass. The
+different intermediate sizes resemble a downsample chain, but that purpose is
+not proven by this capture. Exact register values, field decoding, log hashes,
+and limitations are in
+[`process2_redmi_transition_copy_chain_20261026.json`](../evidence/process2_redmi_transition_copy_chain_20261026.json).
+Field meanings use the Xenos register layout in
+[`registers.h`](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/registers.h).
+
 ## Commands
 
 ```bash

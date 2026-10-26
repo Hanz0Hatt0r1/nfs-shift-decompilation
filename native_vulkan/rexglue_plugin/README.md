@@ -1514,3 +1514,12 @@ narrows the live blocker to an unsatisfied guest wait; its producer path is
 still unknown. It does not claim a visible retail frame. APK, loaded-alias
 identity, samples, screenshot, and limits are in
 [`process2_redmi_wait_reg_mem_value_trace_20261026.json`](../../evidence/process2_redmi_wait_reg_mem_value_trace_20261026.json).
+
+The later provider-resolve capture still stops at a separate graphics limit:
+its transition batch contains an all-four-sample format-26 resolve, seven
+single-sample format-31 intermediate copies at different extents, and a final
+frontbuffer copy. The current renderer handles the final copy path but does not
+write those internal copies to guest memory or preserve their ordering as
+render-target operations. See the exact phone register sequence and failure
+limits in
+[`process2_redmi_transition_copy_chain_20261026.json`](../../evidence/process2_redmi_transition_copy_chain_20261026.json).
