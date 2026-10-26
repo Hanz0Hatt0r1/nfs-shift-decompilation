@@ -988,6 +988,11 @@ the tested paths; it does not establish full disclaimer-frame parity or
 confirm that every visible strip pixel is wrong. Build hashes and test scope
 are recorded in
 [`process2_disclaimer_gamma_target_fix_20261026.json`](../../evidence/process2_disclaimer_gamma_target_fix_20261026.json).
+The updated ARM64 offscreen renderer regression was then run directly on the
+Redmi Note 8 Pro and passed on Mali-G76 MC4, including the synthetic gamma
+target and 4x-to-1x Copy/Convert cases. This verifies the intermediate format
+and shader path on the phone GPU; it does not run the game or confirm the
+retail border image.
 The Redmi install attempt was blocked by insufficient internal storage; the
 package is temporarily unregistered after `uninstall -k`, which retained its
 data/cache. The updated signed APK and the previous signed APK backup are in
