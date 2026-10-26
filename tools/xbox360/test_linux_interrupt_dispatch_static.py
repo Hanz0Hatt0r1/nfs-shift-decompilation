@@ -50,6 +50,20 @@ assert link["interrupt_dispatch_match"]["argument_load"] == "0x823B37E0: lwz r3,
 assert link["interrupt_dispatch_match"]["indirect_call"] == "0x823B37E8: bctrl"
 assert link["ordering_in_captured_outer_ib"]["same_execution_run_proven"] is False
 
+record = evidence["retail_interrupt_context_reference_scan"]
+assert record["allocation_and_initialization"]["allocate_32_bytes"].startswith(
+    "0x823B3C04:"
+)
+assert record["allocation_and_initialization"]["zero_32_bytes"] == (
+    "0x823B3C2C: memset(context,0,32)"
+)
+assert [writer["context_field_offset_written"] for writer in record["identified_guest_cpu_writes_through_context"]] == [
+    "0x04", "0x04"
+]
+assert record["target_argument_field_accesses"][
+    "direct_guest_cpu_store_to_offsets_0x10_or_0x14_identified"
+] is False
+
 runtime = evidence["runtime_crosscheck"]
 assert runtime["source_0_callback_hits"] == 99
 assert runtime["source_1_callback_hits"] == 0

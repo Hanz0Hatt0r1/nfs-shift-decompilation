@@ -86,6 +86,41 @@
       "same_execution_run_proven": false
     }
   },
+  "retail_interrupt_context_reference_scan": {
+    "owner_pointer_field_offset": "0x2A94",
+    "allocation_and_initialization": {
+      "allocate_32_bytes": "0x823B3C04: li r3,32; call allocator",
+      "store_pointer": "0x823B3C08: stw r3,10900(r31)",
+      "zero_32_bytes": "0x823B3C2C: memset(context,0,32)",
+      "clear_pointer_on_teardown": "0x823B3B28: stw r29,10900(r31)"
+    },
+    "identified_guest_cpu_writes_through_context": [
+      {
+        "function": "0x823A4640",
+        "context_pointer_load": "0x823A46C0: lwz r11,10900(r31)",
+        "store": "0x823A46C4: stw r9,4(r11)",
+        "context_field_offset_written": "0x04"
+      },
+      {
+        "function": "0x823A4758",
+        "context_pointer_load": "0x823A48DC: lwz r11,10900(r31)",
+        "store": "0x823A48E4: stw r10,4(r11)",
+        "context_field_offset_written": "0x04"
+      }
+    ],
+    "target_argument_field_accesses": {
+      "stream_builder_waits": [
+        "0x823B3678: addi r9,r10,20",
+        "0x823B36AC: addi r9,r10,16"
+      ],
+      "source1_callback_reads": [
+        "0x823B37D4: lwz r10,16(r11)",
+        "0x823B37E0: lwz r3,20(r11)"
+      ],
+      "direct_guest_cpu_store_to_offsets_0x10_or_0x14_identified": false
+    },
+    "scope_and_limits": "Raw llvm-objdump review of the exact live-memory-derived ELF. The inspected initialization, deferred-consumer/producer, stream-builder, and interrupt-handler paths allocate/zero the 32-byte record, write context+0x04, or read/wait on context+0x10/+0x14. This does not exclude a writer through a different alias, a bulk memory operation, GPU/device DMA, or an unexamined function."
+  },
   "runtime_crosscheck": {
     "evidence_file": "xbox360_linux_current_p2_renderer_frontend_wait_20261026.json",
     "source_0_callback_hits": 99,
