@@ -94,9 +94,16 @@
         {"name": "physical", "address": "0x21B964004", "initial_bytes": "00000000"},
         {"name": "vA0000000", "address": "0x1BB964004", "initial_bytes": "00000000"},
         {"name": "vC0000000", "address": "0x1DB964004", "initial_bytes": "00000000"},
-        {"name": "vE0000000+host_offset_0x1000", "address": "0x1FB965004", "initial_bytes": "00000000"}
+        {
+          "name": "vE0000000_displaced_address",
+          "address": "0x1FB965004",
+          "initial_bytes": "00000000",
+          "covers_target": false,
+          "correct_host_alias_for_target": "0x1FB963004"
+        }
       ],
       "writes_observed_through_watched_aliases": 0,
+      "writes_observed_through_confirmed_target_aliases": 0,
       "completion_log_count": 0
     }
   },
@@ -134,19 +141,64 @@
     },
     "mapped_hashes_verified_in_inferior": false
   },
+  "corrected_alias_follow_up": {
+    "platform": "Linux AMD64",
+    "termination": "GDB and its exact-XEX inferior were SIGKILLed after the bounded observation; the title remained at WAIT_REG_MEM and no clean shutdown was observed.",
+    "duration_after_first_wait_seconds_approx": 115,
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "context_guest_address": "0xFB963000",
+    "wait_guest_physical_word": "0x1B964004",
+    "wait_reference": "0x00000001",
+    "guest_virtual_field_address": "0xFB963004",
+    "guest_virtual_mapping_host_base": "0x100000000",
+    "correct_vE_host_alias": "0x1FB963004",
+    "pre_watch_sample": {
+      "physical_host_alias": "0x21B964004",
+      "physical_bytes": "00000000",
+      "vE_host_alias": "0x1FB963004",
+      "vE_bytes": "00000000",
+      "aliases_equal": true
+    },
+    "watchpoints": [
+      {"alias": "physical", "host_address": "0x21B964004"},
+      {"alias": "vA0000000", "host_address": "0x1BB964004"},
+      {"alias": "vC0000000", "host_address": "0x1DB964004"},
+      {"alias": "vE0000000_exact_context_alias", "host_address": "0x1FB963004"}
+    ],
+    "hardware_write_watchpoints_armed": 4,
+    "writes_observed_through_exact_watched_aliases": 0,
+    "source1_callback_hits": 0,
+    "memory_wait_completion_logged": false,
+    "mapped_hashes_verified_in_inferior": false,
+    "script": {
+      "path": "/tmp/nfs-shift-p1-correct-e-alias-20261026/trace.gdb",
+      "sha256": "b6d27a407d3fb3be663ebc68a46fef96186bb7f8958d5feb18c8896dc5939d5f"
+    },
+    "trace": {
+      "path": "/tmp/nfs-shift-p1-correct-e-alias-20261026/gdb.log",
+      "sha256": "5b570c4fcfb257aadfc98367ae90d2b4be773eea954576d391fc6a17c37515bd"
+    },
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-p1-correct-e-alias-20261026/bin/logs/nfs_shift_001.log",
+      "sha256": "60100dda189bb5fdce96292a790e63976ee616579430a7a38c31a4f73d314e9d"
+    }
+  },
   "interpretation": {
     "supported": [
       "With the identified Process 2 plugin, the exact retail XEX passed four captured COHER_STATUS_HOST waits and entered the captured guest-memory WAIT_REG_MEM at 0x1B964004.",
       "The exact-XEX GDB run reached the first retail queue wait with head/target/tail 3/13/21 and completion bit 0x02 clear.",
-      "No source-1 callback or CPU write through the four watched host aliases was observed during the bounded GDB interval.",
+      "No source-1 callback or CPU write through the physical and A/C aliases was observed in the initial GDB interval; its fourth E-window address was displaced and did not cover this target.",
+      "A corrected GDB run derived the E-window host alias from guest context 0xFB963000, confirmed it aliases the physical target while both read zero, then watched all four exact aliases without a write for about 115 seconds.",
       "A separate exact-XEX run sent Start/A through a Linux virtual Xbox 360 pad while the title remained at the same wait; GDB observed no guest input query, SDL device enumeration, or controller-added callback during the 22-second probe window."
     ],
     "not_proven": [
       "That no device/DMA write or write through an unwatched alias occurred.",
       "The owner of the expected guest word, the missing source-1 callback, or the causal relationship between the memory wait and software-queue predicate.",
+      "That the expected word will remain zero beyond the bounded corrected watch interval.",
       "Whether the runtime input driver will enumerate the pad once the guest reaches its input polling path.",
       "A clean title shutdown, verified visible retail output, main-menu entry, or offline-race entry."
     ],
-    "next_p1_step": "Trace the guest producer and interrupt/scheduler path that should satisfy the captured wait. Preserve the retail WAIT_REG_MEM, queue indices, and predicate semantics until the writer is identified."
+    "next_p1_step": "Trace the guest producer and device visibility path for the zero context+4 word. The corrected watch excludes ordinary CPU stores through the four mapped aliases only for this bounded run; preserve the retail WAIT_REG_MEM and queue predicate."
   }
 }
