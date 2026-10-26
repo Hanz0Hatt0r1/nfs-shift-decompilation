@@ -588,6 +588,15 @@ int main(int argc, char** argv) {
     std::cerr << diagnostics << '\n';
     return fail("EVENT_WRITE_SHD did not update descriptor+0 through its guest alias");
   }
+  const char* ring_trace_enabled =
+      std::getenv("SHIFT_NATIVE_VULKAN_TRACE_RING");
+  if (ring_trace_enabled && std::string(ring_trace_enabled) == "1" &&
+      diagnostics.find(
+          "memory-write candidate opcode=58 #0 source=00030000 depth=1") ==
+          std::string::npos) {
+    std::cerr << diagnostics << '\n';
+    return fail("EVENT_WRITE_SHD was missing from the bounded memory-write trace");
+  }
   const char* const submission_marker =
       "submitted 3 captured indexed draw packets to the Vulkan presenter";
   size_t submission_count = 0;

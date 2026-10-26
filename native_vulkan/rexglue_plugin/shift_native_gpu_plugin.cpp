@@ -86,7 +86,12 @@ bool parse_positive_environment_frame(const char* text, uint32_t* frame) {
 bool GuestRingTraceEnabled() {
   static const bool enabled = [] {
     const char* value = std::getenv("SHIFT_NATIVE_VULKAN_TRACE_RING");
-    return value && std::string(value) == "1";
+    if (value) return std::string(value) == "1";
+#if defined(SHIFT_NATIVE_VULKAN_TRACE_RING_DEFAULT_ON)
+    return true;
+#else
+    return false;
+#endif
   }();
   return enabled;
 }
@@ -98,6 +103,7 @@ bool IsGuestMemoryWriteCandidateOpcode(uint32_t opcode) {
     case 0x40u:  // COPY_DATA
     case 0x45u:  // COND_WRITE
     case 0x46u:  // EVENT_WRITE
+    case 0x58u:  // EVENT_WRITE_SHD
     case 0x4Fu:  // MEM_WRITE_CNTR
     case 0x59u:  // EVENT_WRITE_CFL
     case 0x5Au:  // EVENT_WRITE_EXT

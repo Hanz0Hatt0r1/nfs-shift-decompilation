@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 project(shift_rexglue_native_gpu LANGUAGES CXX)
 option(SHIFT_REXGLUE_NATIVE_BUILD_TESTS "Build the native GPU plugin smoke test" ON)
+option(SHIFT_NATIVE_VULKAN_TRACE_RING_DEFAULT_ON
+    "Enable the bounded guest ring trace when its environment flag is unavailable" OFF)
 set(SHIFT_REXGLUE_PLUGIN_OUTPUT_DIR "" CACHE PATH
     "Optional isolated output directory for the native GPU plugin")
 set(SHIFT_REXGLUE_PREBUILT_RUNTIME "" CACHE FILEPATH
@@ -93,6 +95,11 @@ add_library(rexgpu-shift-native SHARED shift_native_gpu_plugin.cpp)
 target_compile_definitions(rexgpu-shift-native PRIVATE
   SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME=${SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME}
 )
+if(SHIFT_NATIVE_VULKAN_TRACE_RING_DEFAULT_ON)
+  target_compile_definitions(rexgpu-shift-native PRIVATE
+    SHIFT_NATIVE_VULKAN_TRACE_RING_DEFAULT_ON=1
+  )
+endif()
 if(SHIFT_REXGLUE_OPTIONAL_SAMPLER_ANISOTROPY_PROVIDER)
   target_compile_definitions(rexgpu-shift-native PRIVATE
     SHIFT_REXGLUE_OPTIONAL_SAMPLER_ANISOTROPY_PROVIDER
@@ -198,6 +205,12 @@ if(SHIFT_REXGLUE_NATIVE_BUILD_TESTS)
   )
   add_test(NAME rexgpu_shift_native_live_ring_check
     COMMAND rexgpu_shift_native_live_ring_check $<TARGET_FILE:rexgpu-shift-native>
+  )
+  add_test(NAME rexgpu_shift_native_live_ring_write_trace_check
+    COMMAND rexgpu_shift_native_live_ring_check $<TARGET_FILE:rexgpu-shift-native>
+  )
+  set_tests_properties(rexgpu_shift_native_live_ring_write_trace_check PROPERTIES
+    ENVIRONMENT "SHIFT_NATIVE_VULKAN_TRACE_RING=1"
   )
   add_test(NAME rexgpu_shift_native_live_ring_selected_draw_dump_check
     COMMAND rexgpu_shift_native_live_ring_check $<TARGET_FILE:rexgpu-shift-native>

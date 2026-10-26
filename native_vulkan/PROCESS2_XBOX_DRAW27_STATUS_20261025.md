@@ -496,20 +496,33 @@ and [run evidence](../evidence/process2_redmi_surface_recreate_ring_idle_2026102
 
 ## Redmi startup wait ring trace (2026-10-26)
 
-A read-only capture from the installed ring-trace candidate confirms the
-Android app is top-resumed but black, with the renderer log stopping at
-`WAIT_REG_MEM` guest address `0x1B964004` (reference `1`, full mask, endian 2,
-compare 3) in indirect buffer `0x095D0120`. The mapped `librexgpu-xenosd.so`
-hash matches the ARM64 trace plugin. Its wrapper exports
-`SHIFT_NATIVE_VULKAN_TRACE_RING=1` and ran; Android denied access to the
-process environment, so the variable was not independently read back. No
-candidate memory-write packets appear in the scanned batches. The observed
-`EVENT_WRITE_SHD` targets `0x17AF4004` and `0x17AF4000` differ from the wait
-address. This narrows the observed GPU-side writes but does not establish the
-CPU-side producer or exclude writes outside the scanned ring batches.
+A read-only capture from the installed ring-trace candidate showed the Android
+app top-resumed but black, with the renderer log stopping at `WAIT_REG_MEM`
+guest address `0x1B964004` (reference `1`, full mask, endian 2, compare 3) in
+indirect buffer `0x095D0120`. The package's wrapper marker was stale
+(`2026-10-25T17:53:58+03:00`); the launcher did not execute that wrapper, and
+trace activation in this run is unproven. The helper also omitted
+`EVENT_WRITE_SHD` opcode `0x58` from its candidate set. Its separate handler
+logged targets `0x17AF4004` and `0x17AF4000`, which differ from the wait
+address, but the zero candidate-record count cannot exclude GPU memory writes.
+See the corrected follow-up capture below.
 
 No app data was cleared and the running app was not stopped or restarted.
 Process 2 did not alter the guest wait predicate or Process 1 files. See the
 [device trace record](../evidence/process2_redmi_wait_reg_mem_trace_20261026.json),
 [captured screen](../evidence/process2_redmi_wait_reg_mem_trace_20261026.png),
 and [compressed guest log](../evidence/process2_redmi_wait_reg_mem_trace_20261026.log.gz).
+
+The helper now includes opcode `0x58` and a CTest checks that a synthetic
+`EVENT_WRITE_SHD` packet is recorded as a candidate. The diagnostic Android
+plugin was rebuilt with `SHIFT_NATIVE_VULKAN_TRACE_RING_DEFAULT_ON=ON`, so it
+does not depend on the inactive wrapper. A fresh capture logs two candidate
+writes, targeting `0x17AF4004` and `0x17AF4000`, before the same wait at
+`0x1B964004`; neither observed target matches the wait address. This remains a
+bounded ring snapshot and does not rule out CPU writes or GPU writes outside
+the scanned batches. The app stayed black at the wait. See the
+[corrected device trace record](../evidence/process2_redmi_wait_reg_mem_trace_default_on_20261026.json),
+[screen](../evidence/process2_redmi_wait_reg_mem_trace_default_on_20261026.png),
+and [compressed log](../evidence/process2_redmi_wait_reg_mem_trace_default_on_20261026.log.gz).
+The diagnostic package was applied with `adb install -r`; app data was
+preserved, and the app process was relaunched to collect this trace.

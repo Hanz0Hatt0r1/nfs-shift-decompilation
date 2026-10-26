@@ -23,8 +23,9 @@
     "loaded_file_sha256": "0d88433461e530a50d67d889fcb789509ded0ec798af3db656380f38591b69e6",
     "packaged_candidate": "nfsshift-disclaimer-packed-mip-ringtrace-20261026.apk",
     "packaged_candidate_sha256": "d8b9f13df03b70250d19b92ddb3ec017a604458449a85de104002d2265bc4761",
-    "wrapper_marker": "wrapper-ran",
-    "environment_note": "The packaged wrap.sh exports SHIFT_NATIVE_VULKAN_TRACE_RING=1 and then execs the game. The marker confirms the wrapper ran. Android denied access to /proc/29306/environ, so the inherited environment was not independently read back."
+    "wrapper_marker": "present but stale",
+    "wrapper_marker_timestamp": "2026-10-25T17:53:58+03:00",
+    "environment_note": "This marker predates the 2026-10-26 launch and was not refreshed. The Android launcher did not execute the packaged wrap.sh, and Android denied access to /proc/29306/environ. Trace activation in this run is unproven."
   },
   "guest_log": {
     "file": "process2_redmi_wait_reg_mem_trace_20261026.log.gz",
@@ -32,6 +33,7 @@
     "uncompressed_sha256": "f76d9c37df78da8e03351a26e80b829c5608c4a1d5c54319ba49fc132714b5f4",
     "uncompressed_bytes": 18145,
     "memory_write_candidate_records": 0,
+    "candidate_set_gap": "The trace helper in source_commit omitted opcode 0x58 (EVENT_WRITE_SHD) from the candidate set. The plugin logged its two observed EVENT_WRITE_SHD packets through a separate handler; both targets differ from the wait address. Zero candidate records therefore does not establish that all possible GPU memory writes were absent.",
     "wait": {
       "guest_address": "0x1B964004",
       "reference": "0x00000001",
@@ -48,8 +50,8 @@
     ]
   },
   "conclusion": {
-    "established": "The Android app is top-resumed but black and its latest plugin log stops at WAIT_REG_MEM for 0x1B964004. The diagnostic logger emitted no candidate PM4 memory-write packets in the batches it scanned. The two logged EVENT_WRITE_SHD targets are different addresses.",
-    "not_established": "This does not identify the CPU-side producer or prove that no writer exists outside the captured/scanned ring batches. The guest wait predicate was not changed.",
+    "established": "The Android app was top-resumed but black and its latest plugin log stopped at WAIT_REG_MEM for 0x1B964004. The two logged EVENT_WRITE_SHD targets are different addresses.",
+    "not_established": "Trace activation is unproven, and the trace helper omitted EVENT_WRITE_SHD opcode 0x58 from its candidate set. The zero candidate-record count cannot exclude GPU memory writes or identify the CPU-side producer. The guest wait predicate was not changed.",
     "process1_files_modified": false,
     "app_data_cleared": false,
     "app_stopped_or_restarted": false

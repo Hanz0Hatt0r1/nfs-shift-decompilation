@@ -1064,12 +1064,18 @@ outer IB has no memory-write packet before that wait. Its later
 explain the wait. The raw bytes of the preceding ring-root IBs were not retained,
 and the producer of `0x1B964004` is still unknown.
 
-The ring trace now optionally logs raw dwords for the first 16 candidate guest
-memory-write packets per opcode, with their source IB and byte offset. Set
-`SHIFT_NATIVE_VULKAN_TRACE_RING=1` for a retail capture. This is logging only:
-it does not write guest memory or change wait behavior. The rebuilt Linux plugin
-passed its five plugin CTests with `VK_LAYER_KHRONOS_validation`; the live-ring
-smoke uses test packets and is not retail parity evidence. See the
+The ring trace optionally logs raw dwords for the first 16 candidate guest
+memory-write packets per opcode, with their source IB and byte offset. Include
+`SHIFT_NATIVE_VULKAN_TRACE_RING=1` in a retail capture. The initial candidate
+set omitted `EVENT_WRITE_SHD` (`0x58`), although that opcode is handled as a
+guest-memory write elsewhere in the plugin; the candidate set and live-ring
+regression now include it. This is logging only: it does not write guest
+memory or change wait behavior. Host CTest verifies the trace against a
+synthetic `EVENT_WRITE_SHD` packet. Android launchers that do not run the
+packaged wrapper can use `-DSHIFT_NATIVE_VULKAN_TRACE_RING_DEFAULT_ON=ON` for a
+diagnostic build; production builds leave this option off. The corrected
+Redmi capture still finds no observed writer for `0x1B964004` in the scanned
+batches and does not identify the CPU-side producer. See the
 [`wait-owner trace build record`](../../evidence/process2_guest_wait_owner_trace_build_20261026.json).
 
 ## Redmi Bink draw replay with the pipeline cache (2026-10-26)
