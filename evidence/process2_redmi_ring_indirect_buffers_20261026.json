@@ -1,0 +1,167 @@
+{
+  "schema": "shift.process2.redmi_ring_indirect_buffers.v1",
+  "date": "2026-10-26",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "commit": "cffb297d5"
+  },
+  "implementation": {
+    "trace_only": true,
+    "read_only_guest_memory": true,
+    "max_unique_nested_buffers_per_ring_session": 8,
+    "max_bytes_per_buffer": 4096,
+    "log_grouping": "16 big-endian dwords per line",
+    "semantic_effect": "none"
+  },
+  "builds": {
+    "linux_plugin": {
+      "target": "rexgpu-shift-native",
+      "configuration": "Release",
+      "result": "passed",
+      "sha256": "451959da772ee93ee6ffa86923180da7b921147c9393969e049aa364dd01307f",
+      "build_id": "e9b15e653c6308731f6adb45961d12c927aa0d7e"
+    },
+    "android_diagnostic_apk": {
+      "path": "/home/pes/work/process2-latest-renderer-handover-20261026/android-ring-ib-dump-20261026/nfsshift-ring-ib-dump-v2.apk",
+      "sha256": "3be78b844d7fa8a75bb767704ace28ecb9dd940dbda11dfe1a3d05ff9d5a0ba",
+      "stripped_plugin_sha256": "b1426ee7dcd99984d78e50216fbd5fff7de83926173243bcf9cea10526aa2076",
+      "plugin_build_id": "5e3b24e4dca95fb99b7bf2860b49990201b1171e",
+      "trace_default_on": true,
+      "installed_with": "adb install -r; app data preserved"
+    }
+  },
+  "verification": {
+    "linux_plugin_ctest": {
+      "passed": 7,
+      "total": 7,
+      "command": "/usr/bin/ctest --test-dir /home/pes/work/process2-current-p2-resolve-linux-clang-build-20261026 --output-on-failure"
+    },
+    "live_android_trace": "passed; seven unique IBs reconstructed completely from logged raw dwords"
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "android_version": "13",
+    "api": 33,
+    "gpu": "Mali-G76 MC4",
+    "adb_endpoint": "192.168.1.32:38615",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 32673,
+    "top_resumed": true,
+    "screen": "black at WAIT_REG_MEM",
+    "screenshot": "process2_redmi_ring_indirect_buffers_black_screen_20261026.png",
+    "screenshot_sha256": "ca2e7ef708be4e086e78c6921ab25cbd9b871744c1c983089c7de250f7104528"
+  },
+  "buffers": [
+    {
+      "guest_address": "0x095DC040",
+      "nesting_depth": 1,
+      "bytes": 44,
+      "captured_bytes": 44,
+      "sha256": "598f4cef8e585055bad823031db3ada2b52a6519b6395edf139cbdaeafc0eaba",
+      "file": "process2_redmi_ring_ib_095dc040_20261026.bin"
+    },
+    {
+      "guest_address": "0x095D0000",
+      "nesting_depth": 1,
+      "bytes": 272,
+      "captured_bytes": 272,
+      "sha256": "ed0f137928f120b591eb8304ad9449313097cf7185029ee0807b7391725cfaf7",
+      "file": "process2_redmi_ring_ib_095d0000_20261026.bin"
+    },
+    {
+      "guest_address": "0x0975B660",
+      "nesting_depth": 2,
+      "bytes": 296,
+      "captured_bytes": 296,
+      "sha256": "515d445533bd11926618e9d1cbd5a4f7eaf51930dd27b7935b1efecf24845d7b",
+      "file": "process2_redmi_ring_ib_0975b660_20261026.bin"
+    },
+    {
+      "guest_address": "0x0975C3A0",
+      "nesting_depth": 2,
+      "bytes": 52,
+      "captured_bytes": 52,
+      "sha256": "7faaea1a5e85dd8155e2ec67f1c3c63ba1bf57e1d52165c44f254b6099f684a9",
+      "file": "process2_redmi_ring_ib_0975c3a0_20261026.bin"
+    },
+    {
+      "guest_address": "0x0975CFE0",
+      "nesting_depth": 2,
+      "bytes": 192,
+      "captured_bytes": 192,
+      "sha256": "4f2445f960ffe0265688c12b9081c0cdb17e8c0a4c8191cbfecb6bfd6bb8dbfc",
+      "file": "process2_redmi_ring_ib_0975cfe0_20261026.bin"
+    },
+    {
+      "guest_address": "0x095DC100",
+      "nesting_depth": 1,
+      "bytes": 44,
+      "captured_bytes": 44,
+      "sha256": "598f4cef8e585055bad823031db3ada2b52a6519b6395edf139cbdaeafc0eaba",
+      "file": "process2_redmi_ring_ib_095dc100_20261026.bin"
+    },
+    {
+      "guest_address": "0x095D0120",
+      "nesting_depth": 1,
+      "bytes": 1916,
+      "captured_bytes": 1916,
+      "sha256": "0314df2bd6d5142ec11417cffdb6b192bf4b046d22418528772f476ca3cc2580",
+      "file": "process2_redmi_ring_ib_095d0120_20261026.bin"
+    }
+  ],
+  "log": {
+    "file": "process2_redmi_ring_indirect_buffers_20261026.log.gz",
+    "uncompressed_bytes": 33754,
+    "uncompressed_sha256": "2faa2e90d265bb1d44df206ae77103d4152e5016a8c40bbaf61bc492e175e663",
+    "compressed_sha256": "e8d36c27e7b4cd2cba9aab2ea8989e5b2f50f361b47b924be0534bdcd9e6c281"
+  },
+  "blocking_packet": {
+    "source_guest_buffer": "0x095D0120",
+    "byte_offset": 1180,
+    "bytes": 24,
+    "raw_hex": "c0043c00000000131b96400600000001ffffffff00000100",
+    "raw_dwords": [
+      "0xC0043C00",
+      "0x00000013",
+      "0x1B964006",
+      "0x00000001",
+      "0xFFFFFFFF",
+      "0x00000100"
+    ],
+    "opcode": "WAIT_REG_MEM (0x3C)",
+    "guest_poll_address": "0x1B964004",
+    "reference": "0x00000001",
+    "mask": "0xFFFFFFFF",
+    "endian_mode": 2,
+    "compare": "equal",
+    "poll_interval": "0x00000100"
+  },
+  "observed_event_write_shd_candidates": [
+    {
+      "source": "0x095D0000",
+      "byte_offset": 240,
+      "guest_address": "0x17AF4004"
+    },
+    {
+      "source": "0x095D0000",
+      "byte_offset": 256,
+      "guest_address": "0x17AF4000"
+    }
+  ],
+  "disclaimer_border_followup": {
+    "old_live_capture": "process2_redmi_latest_candidate_live_disclaimer_20261026.png",
+    "old_capture_source_commit": "345fc2ef69f485ab3f2f15effbb4d837be96c51f",
+    "observation": "purple fragmented strips in the stored full frame predate the packed-mip fix",
+    "fix_commit": "79d9f6edde8442dc7a348957c336b39284158938",
+    "corrected_capture_replay": "process2_disclaimer_current_arm64_mali_replay_20261026.png",
+    "corrected_replay_evidence": "process2_disclaimer_current_arm64_mali_20261026.json",
+    "result": "four captured retail strip draws replay as continuous gray top and bottom rules on Mali; the full live frame has not been recaptured because this run stops at WAIT_REG_MEM"
+  },
+  "limits": [
+    "The bounded trace does not rule out CPU writes or GPU writes outside the captured buffers.",
+    "The four-draw border replay omits disclaimer text and other frame draws; exact border color and thickness lack an independent original-console comparison.",
+    "The current live Android screen is black at WAIT_REG_MEM, so no fresh full disclaimer frame was captured.",
+    "No Process 1 files were changed."
+  ]
+}
