@@ -81,12 +81,17 @@
     "note": "The latest source retains the fix that maps each Xenos interpolator to its matching Vulkan location; this launch did not re-exercise the selector because its preference was already saved."
   },
   "validation": {
-    "linux_plugin_ctest": "6/6 passed",
+    "linux_plugin_ctest": "6/6 passed for the transferred Linux AMD64 DSO with VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation.",
     "native_vulkan_ci_smoke": "passed",
     "android_plugin_build": "arm64-v8a target built against the unchanged runtime DSO extracted from this installed APK; Android source TU compiled successfully.",
     "android_vulkan_validation_layer": "Not enabled in the live run.",
     "full_android_runtime_rebuild": "Not performed; the SDK's POSIX fiber build still has the Bionic ucontext compile gap.",
-    "post_disclaimer_menu_and_race": "Not verified."
+    "post_disclaimer_menu_and_race": "Not verified.",
+    "linux_plugin_ctest_command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/process2-p1-ring-trace-resolve-build-20261026 --output-on-failure -V",
+    "linux_plugin_ctest_log": "process2_pm4_interrupt_order_linux_ctest_20261026.log",
+    "linux_plugin_ctest_log_sha256": "3d642aab03144d269c8316c297ea7bce3a1fb7225b82bf551498d161f9dd6bf7",
+    "linux_plugin_ctest_scope": "Factory, live-ring integration, selected draw/resource dump, synthetic magenta readback, R8 scratch, and resolve-capability checks. The live-ring fixtures use synthetic vertex/resource inputs.",
+    "linux_plugin_ctest_host_memory_note": "The first local run hit SIGBUS in ReX Memory::Initialize before renderer startup while /dev/shm was 4.7/5.9 GiB used. fuser found no open users for 21 xenia_memory_* files; those unreferenced mappings were removed. A clean rerun passed 6/6 with 5.8 GiB free. This is a host test-environment note."
   },
   "limits": [
     "The Android run confirms loading and disclaimer output for this plugin/runtime package; it does not establish full retail parity.",

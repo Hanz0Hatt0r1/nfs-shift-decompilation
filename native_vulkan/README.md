@@ -360,3 +360,12 @@ full visual parity. The existing purple strips remain on the disclaimer
 capture; the later black screen and brief focus change do not establish
 causality. Android
 validation-layer coverage was unavailable.
+
+The latest Linux AMD64 handoff DSO was built from renderer commit
+`0f5e9f11b16764b1e62f251aaa17f8e4769da8a6` and passed all six plugin CTest
+checks with `VK_LAYER_KHRONOS_validation` forced. The run covered the PM4 ring
+fixture, selected draw/resource dumps, synthetic Vulkan readback, R8 upload
+reuse, and resolve capability. The log is
+[`process2_pm4_interrupt_order_linux_ctest_20261026.log`](../evidence/process2_pm4_interrupt_order_linux_ctest_20261026.log)
+(SHA-256 `3d642aab…f9dd6bf7`). Its PM4 draw/resource inputs are synthetic, so
+this result does not establish retail gameplay or parity.
