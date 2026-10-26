@@ -306,6 +306,24 @@ bool CompileCapturedCopyResolveShaders(
                              &copy->single_sample_pixel_shader_spirv, error);
 }
 
+std::unique_ptr<rex::ui::vulkan::VulkanProvider> CreateShiftVulkanProvider(
+    const bool with_presentation) {
+  // Keep Xenos GPU emulation disabled. Request native renderer capabilities
+  // independently when the provider API exposes them.
+#if defined(SHIFT_REXGLUE_OPTIONAL_SAMPLER_ANISOTROPY_PROVIDER)
+  return rex::ui::vulkan::VulkanProvider::Create(false, with_presentation, true, true, true);
+#elif defined(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER) && \
+    defined(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
+  return rex::ui::vulkan::VulkanProvider::Create(false, with_presentation, true, true);
+#elif defined(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER)
+  return rex::ui::vulkan::VulkanProvider::Create(false, with_presentation, false, true);
+#elif defined(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
+  return rex::ui::vulkan::VulkanProvider::Create(false, with_presentation, true);
+#else
+  return rex::ui::vulkan::VulkanProvider::Create(false, with_presentation);
+#endif
+}
+
 class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
  public:
   ~ShiftNativeGraphicsSystem() override { Shutdown(); }
@@ -313,19 +331,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   X_STATUS SetupPresentation(rex::ui::WindowedAppContext* app_context) override {
     if (presenter_) return X_STATUS_SUCCESS;
     if (!provider_) {
-      // Native project renderer: do not enable ReXGlue's Xenos GPU features.
-#if defined(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER) &&          \
-    defined(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
-      provider_ =
-          rex::ui::vulkan::VulkanProvider::Create(false, true, true, true);
-#elif defined(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER)
-      provider_ =
-          rex::ui::vulkan::VulkanProvider::Create(false, true, false, true);
-#elif defined(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
-      provider_ = rex::ui::vulkan::VulkanProvider::Create(false, true, true);
-#else
-      provider_ = rex::ui::vulkan::VulkanProvider::Create(false, true);
-#endif
+      provider_ = CreateShiftVulkanProvider(true);
     }
     if (!provider_) {
       REXLOG_ERROR("shift-native: unable to create the Vulkan presentation provider");
@@ -364,18 +370,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (!memory_) return X_STATUS_UNSUCCESSFUL;
     if (!provider_) {
       // Headless Vulkan device for callers that deliberately skip presentation.
-#if defined(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER) &&          \
-    defined(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
-      provider_ =
-          rex::ui::vulkan::VulkanProvider::Create(false, false, true, true);
-#elif defined(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER)
-      provider_ =
-          rex::ui::vulkan::VulkanProvider::Create(false, false, false, true);
-#elif defined(SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER)
-      provider_ = rex::ui::vulkan::VulkanProvider::Create(false, false, true);
-#else
-      provider_ = rex::ui::vulkan::VulkanProvider::Create(false, false);
-#endif
+      provider_ = CreateShiftVulkanProvider(false);
     }
     if (!provider_) return X_STATUS_UNSUCCESSFUL;
 

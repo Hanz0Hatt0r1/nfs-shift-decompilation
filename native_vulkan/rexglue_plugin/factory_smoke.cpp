@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 
 #include <dlfcn.h>
@@ -6,7 +7,9 @@
 #include <rex/system/gpu_plugin.h>
 
 int main(int argc, char** argv) {
-  if (argc != 2) return 2;
+  if (argc != 2 && argc != 3) return 2;
+  const bool sampler_anisotropy_check = argc == 3;
+  if (sampler_anisotropy_check && std::strcmp(argv[2], "--sampler-anisotropy") != 0) return 2;
 
   void* library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
   if (!library) {
@@ -33,6 +36,20 @@ int main(int argc, char** argv) {
     return 1;
   }
   delete graphics;
+
+  if (sampler_anisotropy_check) {
+    using SamplerAnisotropyCheckFn = int (*)();
+    const auto check = reinterpret_cast<SamplerAnisotropyCheckFn>(
+        dlsym(library, "rexgpu_shift_native_check_sampler_anisotropy"));
+    if (!check) {
+      std::cerr << "plugin does not expose the sampler anisotropy test hook\n";
+      dlclose(library);
+      return 1;
+    }
+    const int result = check();
+    dlclose(library);
+    return result;
+  }
 
   info.backend = "unsupported";
   const bool rejected_backend =

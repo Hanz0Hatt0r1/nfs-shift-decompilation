@@ -600,6 +600,7 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
+    const bool anisotropy_sampler_path_ran = enabled_features.samplerAnisotropy;
 
     auto linear_target_draw = draws[1];
     linear_target_draw.raster.color_format =
@@ -1142,6 +1143,8 @@ int main(int argc, char** argv) {
               << (can_resolve_sample_zero
                       ? " plus 4x-to-1x depth/stencil SAMPLE_ZERO preservation"
                       : " with depth/stencil resolve fail-closed")
+              << (anisotropy_sampler_path_ran ? " and 4:1 anisotropy sampler"
+                                             : " with anisotropy fallback")
               << " and captured sample-zero Copy/Convert passed on "
               << device_properties.deviceName
               << (use_validation ? " with validation enabled\n" : "\n");

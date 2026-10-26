@@ -1063,3 +1063,28 @@ latest plugin-only APK contains this core but has not been installed; the game
 remains open on the legal disclaimer. See
 [`process2_draw_upload_buffer_cache_20261026.json`](../../evidence/process2_draw_upload_buffer_cache_20261026.json)
 and its [host validation log](../../evidence/process2_draw_upload_buffer_cache_renderer_test_20261026.log).
+
+## Captured 4:1 sampler anisotropy follow-up (2026-10-26)
+
+The retail D3D9 sampler audit captured texture `0x0679a000`, format 19, with
+anisotropy enum 3 (4:1). The renderer now requests Vulkan `samplerAnisotropy`
+independently of Xenos GPU-emulation features, and caps the sampler at the
+captured ratio and the device limit. The SDK change ([PR #6](https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/6)) adds overloads while
+preserving the existing provider/device signatures; the legacy overload still
+enables anisotropy when GPU emulation is requested. Linux CTest passes with
+`VK_LAYER_KHRONOS_validation`; the dedicated offscreen renderer regression
+also passes on the Redmi Note 8 Pro Mali-G76 MC4 and reports the 4:1 sampler
+path. Android does not provide the Khronos validation layer.
+
+The Linux handoff pair is in
+`/home/pes/work/process2-latest-renderer-handover-20261026/linux-anisotropy-20261026/`.
+The signed Android candidate APK is in
+`/home/pes/work/process2-latest-renderer-handover-20261026/android-plugin-sampler-anisotropy-20261026/`;
+it preserves the previous APK's signature and changes only the two P2 plugin
+aliases. That candidate has not been installed or loaded by the game. The
+Android provider-level capability harness could not run because the reused
+runtime crashes during `dlopen` before the test hook; the independent
+renderer-core check passed on-device. These synthetic tests do not prove new
+retail output, selector/cutscene rendering, or full scene parity. Details,
+hashes, and limitations are in
+[`process2_sampler_anisotropy_capability_20261026.json`](../../evidence/process2_sampler_anisotropy_capability_20261026.json).

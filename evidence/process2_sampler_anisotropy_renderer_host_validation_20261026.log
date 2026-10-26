@@ -1,0 +1,23 @@
+UpdateCTestConfiguration  from :/home/pes/work/process2-native-vulkan-current-20261026/DartConfiguration.tcl
+Test project /home/pes/work/process2-native-vulkan-current-20261026
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 4
+    Start 4: xbox_live_vulkan_renderer_check
+
+4: Test command: /home/pes/work/process2-native-vulkan-current-20261026/xbox_live_vulkan_renderer_check "/home/pes/work/process2-native-vulkan-current-20261026/shaders/live_draw_smoke.vert.spv" "/home/pes/work/process2-native-vulkan-current-20261026/shaders/live_draw_smoke.frag.spv" "/home/pes/work/process2-native-vulkan-current-20261026/shaders/live_draw_rectlist.geom.spv" "/home/pes/work/process2-native-vulkan-current-20261026/shaders/xenos_copy_sample0.vert.spv" "/home/pes/work/process2-native-vulkan-current-20261026/shaders/xenos_copy_sample0.frag.spv" "/home/pes/work/process2-native-vulkan-current-20261026/shaders/xenos_copy_sample0_single.frag.spv" "/home/pes/work/process2-native-vulkan-current-20261026/shaders/clip_disabled_window.vert.spv" "/home/pes/work/process2-native-vulkan-current-20261026/shaders/clip_disabled_window.frag.spv"
+4: Working Directory: /home/pes/work/process2-native-vulkan-current-20261026
+4: Test timeout computed to be: 10000000
+4: synthetic offscreen Vulkan 1.1 AutoIndex point and rectangle-list draw plus 4x-to-1x depth/stencil SAMPLE_ZERO preservation and 4:1 anisotropy sampler and captured sample-zero Copy/Convert passed on NVIDIA GeForce GTX 950 with validation enabled
+1/1 Test #4: xbox_live_vulkan_renderer_check ...   Passed    4.74 sec
+
+The following tests passed:
+	xbox_live_vulkan_renderer_check
+
+100% tests passed out of 1
+
+Total Test time (real) =   4.74 sec

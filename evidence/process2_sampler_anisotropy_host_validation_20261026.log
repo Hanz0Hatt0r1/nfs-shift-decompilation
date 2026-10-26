@@ -1,0 +1,127 @@
+UpdateCTestConfiguration  from :/tmp/nfs-p2-anisotropy-host-build-clang/DartConfiguration.tcl
+Test project /tmp/nfs-p2-anisotropy-host-build-clang
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 6
+    Start 6: rexgpu_vulkan_sampler_anisotropy_check
+
+6: Test command: /tmp/nfs-p2-anisotropy-host-build-clang/rexgpu_shift_native_factory_check "/home/pes/work/rexglue-sdk-process2-anisotropy-20261026/out/linux-amd64/librexgpu-shift-native.so" "--sampler-anisotropy"
+6: Working Directory: /tmp/nfs-p2-anisotropy-host-build-clang
+6: Test timeout computed to be: 10000000
+6: [info] [core] Vulkan instance API version 1.4.357. Enabled layers and extensions:
+6: [info] [core] * VK_LAYER_KHRONOS_validation
+6: [info] [core] * VK_EXT_debug_utils
+6: [info] [core] * VK_KHR_portability_enumeration
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message): linux_read_sorted_physical_devices: (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):      Original order: (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [0] llvmpipe (LLVM 22.1.8, 256 bits) (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [1] NVIDIA GeForce GTX 950 (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):      Sorted order: (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA GeForce GTX 950   (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 22.1.8, 256 bits)   (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message): linux_read_sorted_physical_devices: (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):      Original order: (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [0] llvmpipe (LLVM 22.1.8, 256 bits) (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [1] NVIDIA GeForce GTX 950 (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):      Sorted order: (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA GeForce GTX 950   (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 22.1.8, 256 bits)   (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message): linux_read_sorted_physical_devices: (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):      Original order: (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [0] llvmpipe (LLVM 22.1.8, 256 bits) (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [1] NVIDIA GeForce GTX 950 (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):      Sorted order: (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA GeForce GTX 950   (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 22.1.8, 256 bits)   (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message): linux_read_sorted_physical_devices: (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):      Original order: (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [0] llvmpipe (LLVM 22.1.8, 256 bits) (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [1] NVIDIA GeForce GTX 950 (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):      Sorted order: (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA GeForce GTX 950   (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 22.1.8, 256 bits)   (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/libvulkan_radeon.so due to not having any physical devices (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/libvulkan_nouveau.so due to not having any physical devices (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/libvulkan_intel.so due to not having any physical devices (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/libvulkan_intel_hasvk.so due to not having any physical devices (object 0: Instance 0x556fe2234310)
+6: [warning] [core] Available Vulkan physical devices (use the 'vulkan_device' configuration variable to force a specific device):
+6: [warning] [core] * 0: NVIDIA GeForce GTX 950
+6: [warning] [core] * 1: llvmpipe (LLVM 22.1.8, 256 bits)
+6: [info] [core] Vulkan device 'NVIDIA GeForce GTX 950': API 1.4.312, vendor 0x10DE, device 0x1402, driver version 0x912C8100
+6: [info] [core] Enabled Vulkan device extensions:
+6: [info] [core] * VK_EXT_memory_budget
+6: [info] [core] Vulkan device properties and enabled features:
+6: [info] [core] * driverID: NvidiaProprietary
+6: [info] [core] * driverName: NVIDIA
+6: [info] [core] * driverInfo: 580.178.04
+6: [info] [core] * conformanceVersion: 1.4.1.3
+6: [info] [core] * maxImageDimension2D: 16384
+6: [info] [core] * maxImageDimension3D: 2048
+6: [info] [core] * maxImageDimensionCube: 16384
+6: [info] [core] * maxImageArrayLayers: 2048
+6: [info] [core] * maxStorageBufferRange: 4294967295
+6: [info] [core] * maxSamplerAllocationCount: 4000
+6: [info] [core] * maxPerStageDescriptorSamplers: 1048576
+6: [info] [core] * maxPerStageDescriptorStorageBuffers: 1048576
+6: [info] [core] * maxPerStageDescriptorSampledImages: 1048576
+6: [info] [core] * maxPerStageResources: 4294967295
+6: [info] [core] * maxVertexOutputComponents: 128
+6: [info] [core] * maxTessellationEvaluationOutputComponents: 128
+6: [info] [core] * maxGeometryInputComponents: 128
+6: [info] [core] * maxGeometryOutputComponents: 128
+6: [info] [core] * maxFragmentInputComponents: 128
+6: [info] [core] * maxFragmentCombinedOutputResources: 4294967295
+6: [info] [core] * maxSamplerAnisotropy: 16
+6: [info] [core] * maxViewportDimensions[0]: 16384
+6: [info] [core] * maxViewportDimensions[1]: 16384
+6: [info] [core] * minUniformBufferOffsetAlignment: 256
+6: [info] [core] * minStorageBufferOffsetAlignment: 16
+6: [info] [core] * maxFramebufferWidth: 16384
+6: [info] [core] * maxFramebufferHeight: 16384
+6: [info] [core] * framebufferColorSampleCounts: { 1 | 2 | 4 | 8 }
+6: [info] [core] * framebufferDepthSampleCounts: { 1 | 2 | 4 | 8 }
+6: [info] [core] * framebufferStencilSampleCounts: { 1 | 2 | 4 | 8 | 16 }
+6: [info] [core] * framebufferNoAttachmentsSampleCounts: { 1 | 2 | 4 | 8 | 16 }
+6: [info] [core] * sampledImageColorSampleCounts: { 1 | 2 | 4 | 8 }
+6: [info] [core] * sampledImageIntegerSampleCounts: { 1 | 2 | 4 | 8 }
+6: [info] [core] * sampledImageDepthSampleCounts: { 1 | 2 | 4 | 8 }
+6: [info] [core] * sampledImageStencilSampleCounts: { 1 | 2 | 4 | 8 | 16 }
+6: [info] [core] * standardSampleLocations: 1
+6: [info] [core] * optimalBufferCopyOffsetAlignment: 1
+6: [info] [core] * optimalBufferCopyRowPitchAlignment: 1
+6: [info] [core] * nonCoherentAtomSize: 64
+6: [info] [core] * samplerAnisotropy
+6: [info] [core] * constantAlphaColorBlendFactors
+6: [info] [core] * imageViewFormatReinterpretation
+6: [info] [core] * imageViewFormatSwizzle
+6: [info] [core] * pointPolygons
+6: [info] [core] * separateStencilMaskRef
+6: [info] [core] * shaderSampleRateInterpolationFunctions
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message): Inserted device layer "VK_LAYER_KHRONOS_validation" (/usr/lib/libVkLayer_khronos_validation.so) (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message): Failed to find vkGetDeviceProcAddr in layer "/usr/lib/libVkLayer_MESA_device_select.so" (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message): vkCreateDevice layer callstack setup to: (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):    <Application> (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):      || (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):    <Loader> (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):      || (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):    VK_LAYER_KHRONOS_validation (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            Type: Explicit (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            Enabled By: Environment Variable VK_INSTANCE_LAYERS (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            Manifest: /usr/share/vulkan/explicit_layer.d/VkLayer_khronos_validation.json (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):            Library:  /usr/lib/libVkLayer_khronos_validation.so (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):      || (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):    <Device> (object 0: Instance 0x556fe2234310)
+6: [info] [gpu] Vulkan Info ({ General }, ID 0: Loader Message):        Using "NVIDIA GeForce GTX 950" with driver: "/usr/lib/libGLX_nvidia.so.580.178.04" (object 0: Instance 0x556fe2234310)
+6: device=NVIDIA GeForce GTX 950 samplerAnisotropy=1 max=16 GPU-emulation features=disabled
+1/1 Test #6: rexgpu_vulkan_sampler_anisotropy_check ...   Passed    4.32 sec
+
+The following tests passed:
+	rexgpu_vulkan_sampler_anisotropy_check
+
+100% tests passed out of 1
+
+Total Test time (real) =   4.32 sec

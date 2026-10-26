@@ -1,0 +1,81 @@
+{
+  "schema": "shift.process2.redmi_disclaimer_after_input_probe.v1",
+  "captured_at_local": "2026-10-26T02:29:52+03:00",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "recording_commit": "251a8c79b7db747584de5ddca797cd1dcb7720bb",
+    "installed_apk_sha256": "3aa064b7da0c08d515db81ecb53fbd67290c0132132aa8c889d175b24ccecb77"
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro (begonia)",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 24561,
+    "top_resumed": true
+  },
+  "observations": {
+    "screen": "Retail safety disclaimer with readable text and thin purple horizontal strips.",
+    "before_and_after_input_screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "two_captures_five_seconds_apart_identical": true,
+    "input_probes": [
+      {
+        "action": "center touchscreen tap at 1170x540",
+        "visual_change_after_3s": false
+      },
+      {
+        "action": "Android KEYCODE_START (108)",
+        "visual_change_after_3s": false
+      },
+      {
+        "action": "Android KEYCODE_BUTTON_A (96)",
+        "visual_change_after_5s": false
+      }
+    ],
+    "input_delivery_to_guest_verified": false
+  },
+  "renderer_log": {
+    "file": "process2_redmi_disclaimer_after_input_probe_20261026.log.gz",
+    "raw_bytes": 409154,
+    "raw_sha256": "cd7a6d77e224f2b4b577834374060aba5c040d63373cb32f8a5ef0655909ee93",
+    "gzip_sha256": "67e5c81677af9b6421dbfe0f9a4c2704a4726be67d934f47383a619c92a7efce",
+    "last_vulkan_submit_local": "2026-10-26T02:25:08.814+03:00",
+    "last_submit_draw_count": 14,
+    "last_copy_convert_local": "2026-10-26T02:25:08.716+03:00",
+    "post_submit_guest_open_failures": [
+      {
+        "time_local": "2026-10-26T02:25:09.336+03:00",
+        "path": "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      },
+      {
+        "time_local": "2026-10-26T02:25:09.338+03:00",
+        "path": "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      },
+      {
+        "time_local": "2026-10-26T02:25:09.340+03:00",
+        "path": "D:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      },
+      {
+        "time_local": "2026-10-26T02:25:09.341+03:00",
+        "path": "D:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      }
+    ],
+    "no_later_renderer_log_records_at_capture": true
+  },
+  "interpretation": {
+    "established": "The app remained alive and top-resumed, but the screenshot remained byte-identical and the renderer log did not advance through the input probes.",
+    "not_established": "The ADB key events reached the guest input consumer; the menu_background.xml open failures caused the guest to stop submitting; the renderer caused the stall.",
+    "process1_files_modified": false
+  },
+  "artifacts": {
+    "screenshot": "process2_redmi_disclaimer_after_input_probe_20261026.png",
+    "screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "compressed_guest_log": "process2_redmi_disclaimer_after_input_probe_20261026.log.gz"
+  }
+}

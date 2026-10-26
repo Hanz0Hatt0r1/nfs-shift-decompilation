@@ -51,6 +51,9 @@ endif()
 if(SHIFT_REXGLUE_VULKAN_PROVIDER_HEADER MATCHES "bool with_depth_stencil_resolve")
   set(SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER ON)
 endif()
+if(SHIFT_REXGLUE_VULKAN_PROVIDER_HEADER MATCHES "bool with_sampler_anisotropy")
+  set(SHIFT_REXGLUE_OPTIONAL_SAMPLER_ANISOTROPY_PROVIDER ON)
+endif()
 find_package(Vulkan REQUIRED)
 get_target_property(SHIFT_REXGLUE_OUTPUT_DIRECTORY rexruntime LIBRARY_OUTPUT_DIRECTORY)
 set(SHIFT_REXGLUE_PLUGIN_RUNTIME_TARGET rexruntime)
@@ -90,6 +93,11 @@ add_library(rexgpu-shift-native SHARED shift_native_gpu_plugin.cpp)
 target_compile_definitions(rexgpu-shift-native PRIVATE
   SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME=${SHIFT_NATIVE_VULKAN_DEBUG_READBACK_FRAME}
 )
+if(SHIFT_REXGLUE_OPTIONAL_SAMPLER_ANISOTROPY_PROVIDER)
+  target_compile_definitions(rexgpu-shift-native PRIVATE
+    SHIFT_REXGLUE_OPTIONAL_SAMPLER_ANISOTROPY_PROVIDER
+  )
+endif()
 if(SHIFT_NATIVE_VULKAN_DEBUG_READBACK_PATH)
   target_compile_definitions(rexgpu-shift-native PRIVATE
     SHIFT_NATIVE_VULKAN_DEBUG_READBACK_PATH="${SHIFT_NATIVE_VULKAN_DEBUG_READBACK_PATH}"
@@ -197,11 +205,20 @@ if(SHIFT_REXGLUE_NATIVE_BUILD_TESTS)
     )
     target_compile_features(rexgpu_vulkan_resolve_capability_check PRIVATE cxx_std_23)
     target_link_libraries(rexgpu_vulkan_resolve_capability_check PRIVATE
-      rexruntime
+      ${SHIFT_REXGLUE_PLUGIN_RUNTIME_TARGET}
       ${SHIFT_REXGLUE_VULKAN_PROVIDER_TARGET}
     )
     add_test(NAME rexgpu_vulkan_resolve_capability_check
       COMMAND rexgpu_vulkan_resolve_capability_check
     )
+  endif()
+  if(SHIFT_REXGLUE_OPTIONAL_SAMPLER_ANISOTROPY_PROVIDER)
+    target_sources(rexgpu-shift-native PRIVATE sampler_anisotropy_check.cpp)
+    if(NOT ANDROID)
+      add_test(NAME rexgpu_vulkan_sampler_anisotropy_check
+        COMMAND rexgpu_shift_native_factory_check
+          $<TARGET_FILE:rexgpu-shift-native> --sampler-anisotropy
+      )
+    endif()
   endif()
 endif()
