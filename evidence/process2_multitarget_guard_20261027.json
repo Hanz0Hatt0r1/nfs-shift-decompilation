@@ -1,0 +1,58 @@
+{
+  "schema": "shift.process2.multitarget_submission_guard.v1",
+  "date": "2026-10-27",
+  "process2": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "commit": "ed9b5674ab7a316beaf722ea49a7b0dfff94fd20",
+    "change": "Reject one Vulkan submission that contains distinct captured Xenos color or depth base tiles."
+  },
+  "regression": {
+    "case": "Two draws share extent and target format but use different color_base_tiles.",
+    "expected": "submit_captured_vulkan_frame rejects the batch with a target-switch diagnostic before Vulkan submission.",
+    "result": "passed"
+  },
+  "verification": {
+    "linux_native": {
+      "build": "passed",
+      "ctest": "4/4 passed",
+      "vulkan_validation": "VK_LAYER_KHRONOS_validation"
+    },
+    "linux_rexglue_plugin": {
+      "build": "passed",
+      "plugin_sha256": "d4cea0ae2db9950a6a033a75dd941bfb32ba4211bdf5488a897f88a493f71749",
+      "plugin_build_id": "afd497fc15711f051134c281fad860a4adbdc7d7",
+      "ctest": "6/6 passed",
+      "vulkan_validation": "VK_LAYER_KHRONOS_validation"
+    },
+    "android_arm64_renderer_check": {
+      "build": "passed with NDK r28c, Android API 26, arm64-v8a",
+      "binary_sha256": "d0035b66e108f5572a2695fc39012b30ec249e35dda351d26e5bf57a234745eb",
+      "build_id": "273659b4cf2d98d71e88763f4de71de720669a7f",
+      "device": "Redmi Note 8 Pro / Android 13 / Mali-G76 MC4 / Vulkan 1.1.131",
+      "execution": "Offscreen checker process; captured disclaimer draws plus existing renderer regressions.",
+      "result": "passed",
+      "vulkan_validation": "Android validation layer was unavailable/not enabled."
+    }
+  },
+  "phone_app_state": {
+    "package": "com.hanz0hatt0r.nfsshift",
+    "activity_top_resumed_before_and_after": true,
+    "last_update_time": "2026-10-26 22:40:04",
+    "screenshot_before_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+    "screenshot_after_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+    "interpretation": "The renderer check did not change or close the running game. This screenshot matches the archived live disclaimer capture."
+  },
+  "android_plugin_build": {
+    "status": "blocked by external ReXGlue SDK Android sources",
+    "errors": [
+      "fiber_posix.cpp: getcontext/makecontext/swapcontext are undeclared for the configured Bionic build.",
+      "memory_posix.cpp: rex::GetAndroidApiLevel is undeclared."
+    ],
+    "process2_source_changes": "None; the failure is in the separately checked out SDK."
+  },
+  "limits": [
+    "The guard does not implement Xenos EDRAM target switching or the captured intermediate Copy/Convert chain.",
+    "The Android check ran the renderer library directly; it did not load the new plugin into the APK.",
+    "The current screenshot shows two horizontal rules, but no independent Xbox image proves different geometry or appearance is expected."
+  ]
+}
