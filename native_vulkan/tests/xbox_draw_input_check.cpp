@@ -1043,6 +1043,13 @@ int main() {
     captured_rg16_registers.viewport_y_offset = 0x42F30000u;
     captured_rg16_registers.window_scissor_br = 0x00F300F3u;
     captured_rg16_registers.blend_control_0 = 0x00010001u;
+    uint32_t inferred_width = 0;
+    uint32_t inferred_height = 0;
+    require(shift::xbox::infer_captured_raster_extent(
+                captured_rg16_registers, 1280, 720, &inferred_width,
+                &inferred_height, &error) &&
+                inferred_width == 320 && inferred_height == 243,
+            "captured 320x243 offscreen extent used the presenter aspect ratio");
     require(shift::xbox::decode_captured_raster_state(
                 captured_rg16_registers, &live_raster_state, &error, 320, 243) &&
                 live_raster_state.color_format ==
@@ -1053,6 +1060,29 @@ int main() {
                 live_raster_state.scissor_x1 == 243 &&
                 live_raster_state.scissor_y1 == 243,
             "captured Redmi 16_16_FLOAT render target tuple was rejected or misdecoded");
+    const std::array<std::array<uint32_t, 4>, 6> captured_downsample_extents = {{
+        {0x018000A0u, 0x42220000u, 0x00510051u, 81u},
+        {0x00080050u, 0x41580000u, 0x001B001Bu, 27u},
+        {0x00080050u, 0x40900000u, 0x00090009u, 9u},
+        {0x00080050u, 0x3FC00000u, 0x00030003u, 3u},
+        {0x00080050u, 0x3F000000u, 0x00010001u, 1u},
+        {0x00080050u, 0x3F000000u, 0x00010001u, 1u},
+    }};
+    for (const auto& expected : captured_downsample_extents) {
+        auto downsample_registers = captured_rg16_registers;
+        downsample_registers.surface_info = expected[0];
+        downsample_registers.viewport_x_scale = expected[1];
+        downsample_registers.viewport_x_offset = expected[1];
+        downsample_registers.viewport_y_scale = expected[1] | 0x80000000u;
+        downsample_registers.viewport_y_offset = expected[1];
+        downsample_registers.window_scissor_br = expected[2];
+        require(shift::xbox::infer_captured_raster_extent(
+                    downsample_registers, 1280, 720, &inferred_width,
+                    &inferred_height, &error) &&
+                    inferred_width == (expected[0] & 0x3FFFu) &&
+                    inferred_height == expected[3],
+                "captured downsample viewport/scissor extent was not preserved");
+    }
     live_raster_registers.color_info = 0x00040000u;
     require(!shift::xbox::decode_captured_raster_state(
                 live_raster_registers, &live_raster_state, &error),

@@ -1401,6 +1401,66 @@ bool CapturedXboxShaderRegisterState::snapshot_texture_fetch_descriptor(
     return true;
 }
 
+bool infer_captured_raster_extent(
+    const CapturedRasterRegisters& registers,
+    uint32_t guest_output_width,
+    uint32_t guest_output_height,
+    uint32_t* width,
+    uint32_t* height,
+    std::string* error) {
+    if (!width || !height || !guest_output_width || !guest_output_height) {
+        return fail("captured raster extent requires a guest output size", error);
+    }
+
+    const uint32_t surface_pitch = registers.surface_info & 0x3FFFu;
+    const uint32_t msaa_mode = (registers.surface_info >> 16) & 0x3u;
+    if (!surface_pitch || msaa_mode > 2u) {
+        return fail("unsupported captured surface pitch or MSAA mode", error);
+    }
+
+    const uint64_t target_width = static_cast<uint64_t>(surface_pitch) *
+        (msaa_mode == 2u ? 2u : 1u);
+    const uint64_t scaled_height =
+        (static_cast<uint64_t>(guest_output_height) * target_width +
+         guest_output_width / 2u) /
+        guest_output_width;
+    if (!target_width || target_width > UINT32_MAX || !scaled_height ||
+        scaled_height > UINT32_MAX) {
+        return fail("captured raster extent exceeds supported bounds", error);
+    }
+
+    uint32_t target_height = static_cast<uint32_t>(scaled_height);
+    const float viewport_x_scale = register_float(registers.viewport_x_scale);
+    const float viewport_x_offset = register_float(registers.viewport_x_offset);
+    const float viewport_y_scale = register_float(registers.viewport_y_scale);
+    const float viewport_y_offset = register_float(registers.viewport_y_offset);
+    const bool full_origin_single_sample_viewport =
+        msaa_mode == 0u && surface_pitch != guest_output_width &&
+        viewport_x_scale > 0.0f && viewport_y_scale < 0.0f &&
+        viewport_x_offset == viewport_x_scale &&
+        viewport_y_offset == -viewport_y_scale &&
+        registers.screen_scissor_tl == 0 &&
+        registers.window_scissor_tl == 0 && registers.window_offset == 0;
+    if (full_origin_single_sample_viewport) {
+        uint32_t viewport_height = 0;
+        if (!viewport_dimension(-viewport_y_scale, &viewport_height)) {
+            return fail("unsupported captured offscreen viewport height", error);
+        }
+        const uint32_t screen_scissor_y1 =
+            (registers.screen_scissor_br >> 16) & 0x7FFFu;
+        const uint32_t window_scissor_y1 =
+            (registers.window_scissor_br >> 16) & 0x3FFFu;
+        const uint32_t scissor_y1 =
+            std::min(screen_scissor_y1, window_scissor_y1);
+        target_height = std::max(viewport_height, scissor_y1);
+    }
+
+    *width = static_cast<uint32_t>(target_width);
+    *height = target_height;
+    if (error) error->clear();
+    return true;
+}
+
 bool decode_captured_raster_state(
     const CapturedRasterRegisters& registers,
     CapturedRasterState* output,

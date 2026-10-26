@@ -2457,27 +2457,14 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 uint32_t captured_target_height = last_guest_swap_height;
                 if (raster_registers_ready && last_guest_swap_width != 0 &&
                     last_guest_swap_height != 0) {
-                  const uint32_t surface_pitch =
-                      raster_registers.surface_info & 0x3FFFu;
-                  const uint32_t msaa_mode =
-                      (raster_registers.surface_info >> 16) & 0x3u;
-                  const uint64_t target_width =
-                      static_cast<uint64_t>(surface_pitch) *
-                      (msaa_mode == 2u ? 2u : 1u);
-                  if (target_width != 0 &&
-                      target_width <= std::numeric_limits<uint32_t>::max()) {
-                    const uint64_t target_height =
-                        (static_cast<uint64_t>(last_guest_swap_height) *
-                             target_width +
-                         last_guest_swap_width / 2u) /
-                        last_guest_swap_width;
-                    if (target_height != 0 &&
-                        target_height <= std::numeric_limits<uint32_t>::max()) {
-                      captured_target_width =
-                          static_cast<uint32_t>(target_width);
-                      captured_target_height =
-                          static_cast<uint32_t>(target_height);
-                    }
+                  uint32_t inferred_width = 0;
+                  uint32_t inferred_height = 0;
+                  if (shift::xbox::infer_captured_raster_extent(
+                          raster_registers, last_guest_swap_width,
+                          last_guest_swap_height, &inferred_width,
+                          &inferred_height, nullptr)) {
+                    captured_target_width = inferred_width;
+                    captured_target_height = inferred_height;
                   }
                 }
                 if (!raster_registers_ready &&

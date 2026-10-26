@@ -639,6 +639,19 @@ bool decode_captured_texture_sampling(
     CapturedTextureSampling* output,
     std::string* error);
 
+// Derives a minimum render-image extent from a captured surface pitch and the
+// active viewport/scissor. Full-origin single-sample offscreen targets use the
+// captured vertical coverage instead of scaling the presenter's aspect ratio;
+// other targets retain the guest-swap aspect-ratio fallback because Xenos has
+// no surface-height register.
+bool infer_captured_raster_extent(
+    const CapturedRasterRegisters& registers,
+    uint32_t guest_output_width,
+    uint32_t guest_output_height,
+    uint32_t* width,
+    uint32_t* height,
+    std::string* error);
+
 // Decodes only the captured color/depth target, viewport, and scissor form.
 // This maps observed registers to neutral render state; it does not emulate
 // register writes or Xenos rasterization. Partial viewports require the known
