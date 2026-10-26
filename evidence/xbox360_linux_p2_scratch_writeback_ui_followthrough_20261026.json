@@ -1,0 +1,112 @@
+{
+  "schema": "shift.xbox360.linux.p2-scratch-writeback-ui-followthrough.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "host": {
+      "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/nfs_shift",
+      "sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a"
+    },
+    "rexglue_runtime": {
+      "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/librexruntime.so",
+      "sha256": "f43d094797bf30c2e552b244c6ec50e4e69bb0b11fee409e07a812ba74158f78"
+    },
+    "p2_renderer_plugin": {
+      "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/librexgpu-shift-native.so",
+      "sha256": "f1404a4f57fb073f12cc0b34da4f74a3e75d8d6f2ffb49e62708c9a1b09bb6b6",
+      "source_status": "Built from the P2 worktree with its local scratch-register writeback change; that source change was not part of this P1 commit."
+    }
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "instrumentation": "No GDB; guest memory was not modified by the capture harness.",
+    "window_capture": {
+      "method": "Hyprland target-window geometry with grim; only the nfs_shift window was captured.",
+      "captures": [
+        {"scheduled_seconds": 20, "path": "/tmp/nfs-shift-p1-p2-scratch-linux-window-20261026/captures/t020.png", "sha256": "26de78ee5c8ebba2625f5bc3a6380070f6abf487007677f854dca8fa539561f6", "observation": "black game viewport with diagnostic overlay"},
+        {"scheduled_seconds": 35, "path": "/tmp/nfs-shift-p1-p2-scratch-linux-window-20261026/captures/t035.png", "sha256": "3671ae9092580b27987db9b0210d896bb2c8af882a1ea8db56f2716fe050ccba", "observation": "retail Language Select screen"},
+        {"scheduled_seconds": 45, "path": "/tmp/nfs-shift-p1-p2-scratch-linux-window-20261026/captures/t045.png", "sha256": "ec885061f6e2b19034b29eb9e8dd7e3cff35ca51aca90aa6512dda0dbba966b9", "observation": "retail SHIFT logo"},
+        {"scheduled_seconds": 55, "path": "/tmp/nfs-shift-p1-p2-scratch-linux-window-20261026/captures/t055.png", "sha256": "34e391c3478d42cd7c4757606624a849bcb10165cb07d21abc38410a51631202", "observation": "retail driving-safety disclaimer"},
+        {"scheduled_seconds": 65, "path": "/tmp/nfs-shift-p1-p2-scratch-linux-window-20261026/captures/t065.png", "sha256": "acf276b1ce56fa05d1fb017fde3565f29c372861b591555249ea365e668807b3", "observation": "retail driving-safety disclaimer"},
+        {"scheduled_seconds": 75, "path": "/tmp/nfs-shift-p1-p2-scratch-linux-window-20261026/captures/t075.png", "sha256": "cae0b4ed05b5f362eb7147ce130d1b8067016334dd2f973e7ef3ee2fe781394b", "observation": "black viewport with horizontal loading lines; no menu visible"},
+        {"scheduled_seconds": 85, "path": "/tmp/nfs-shift-p1-p2-scratch-linux-window-20261026/captures/t085.png", "sha256": "01e5b12a27f91df9c6f8d7f33c6860c6350b3522c537aa69e0ced78589a3fe09", "observation": "black viewport with horizontal loading lines; no menu visible"},
+        {"scheduled_seconds": 95, "path": "/tmp/nfs-shift-p1-p2-scratch-linux-window-20261026/captures/t095.png", "sha256": "ec010cc977eb1e68744f19c0b8a2bec72a00d07085b2454408ca29f12df742b0", "observation": "black viewport with horizontal loading lines; no menu visible"},
+        {"scheduled_seconds": 105, "path": "/tmp/nfs-shift-p1-p2-scratch-linux-window-20261026/captures/t105.png", "sha256": "06dcab3fdb3b422badd0040c9c22e79db17d7a423d6f5850bfcb497593b6bf81", "observation": "black viewport with horizontal loading lines; no menu visible"}
+      ]
+    },
+    "runtime_logs": [
+      {
+        "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/logs/nfs_shift_003.1.log",
+        "sha256": "d61cd34a0c192f57cf3b872c787b859a45e386f6c1c08629cbeef3c8bb0f1034",
+        "bytes": 5242869
+      },
+      {
+        "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/logs/nfs_shift_003.log",
+        "sha256": "f8b1ca10e4c14daa81e93f470f2f65edaad4840f99f824aeddd43c8901bb21d1",
+        "bytes": 1797810
+      }
+    ],
+    "observed_log_span_seconds": 136.936,
+    "termination": "The title logged window shutdown near the end; the capture wrapper did not save a complete run manifest, so a clean-exit status is not claimed.",
+    "input": {
+      "device": "Linux uinput Microsoft X-Box 360 pad, VID:PID 045e:028e",
+      "buttons": ["A", "Start"],
+      "guest_consumption_verified": false
+    }
+  },
+  "scratch_wait": {
+    "command_buffer_guest_address": "0x095D0120",
+    "scratch_address": "0x1B964000",
+    "scratch_umsk": "0x00020037",
+    "writeback": {
+      "register": "SCRATCH_REG1",
+      "guest_word": "0x1B964004",
+      "before": "0x00000000",
+      "after": "0x00000001",
+      "local_time": "2026-10-26 22:21:40.884"
+    },
+    "retail_wait": {
+      "guest_word": "0x1B964004",
+      "reference": "0x00000001",
+      "result": "completed",
+      "polls": 0,
+      "elapsed_ms": 0,
+      "command_buffer_byte_offset": "0x49C",
+      "local_time": "2026-10-26 22:21:40.884"
+    }
+  },
+  "frontend_followthrough": {
+    "menu_background_xml_open_failures": 4,
+    "last_missing_xml_local_time": "2026-10-26 22:22:29.519",
+    "vulkan_frame_refresh_failures": 1,
+    "failed_refresh": {
+      "local_time": "2026-10-26 22:22:31.068",
+      "captured_draws": 14,
+      "reason": "mixed captured frame has an unsupported target format or Copy/Convert source extent"
+    },
+    "first_following_successful_draw_submission": {
+      "local_time": "2026-10-26 22:22:31.121",
+      "indexed_packets": 13
+    },
+    "draw_submission_entries_after_last_missing_xml": 1353,
+    "last_draw_submission_local_time": "2026-10-26 22:23:52.843",
+    "guest_fault_log_entries": 0
+  },
+  "interpretation": {
+    "observed": [
+      "The P2 plugin wrote the exact retail wait word from SCRATCH_REG1, and WAIT_REG_MEM completed with the expected value without a host-side preset.",
+      "The title displayed Language Select, the SHIFT logo, and the driving-safety disclaimer in target-window captures.",
+      "Despite four missing menu_background.xml opens and one transient mixed-frame refresh failure, the renderer logged 1,353 later draw-submission entries. The missing opens did not stop subsequent draw submissions in this run."
+    ],
+    "not_proven": [
+      "The retail main menu or an offline race was reached.",
+      "The blank viewport is caused by the missing XML, input handling, or renderer behavior.",
+      "The uinput button presses were consumed by the guest frontend.",
+      "The process completed a normal shutdown."
+    ]
+  }
+}
