@@ -1,0 +1,87 @@
+{
+  "schema": "shift.xbox360.linux-retail-wait-word-write-watch.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host": {
+      "path": "/tmp/nfs-shift-p1-wait-word-1b964010-20261026/bin/nfs_shift",
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "rexglue_runtime": {
+      "path": "/tmp/nfs-shift-p1-wait-word-1b964010-20261026/bin/librexruntime.so",
+      "sha256": "de4773f9089623c3385d625e4e2b8fd6215187f963e8339078d93eb7d7dc878",
+      "mapped_hash_verified": true
+    },
+    "gpu_plugin": {
+      "path": "/tmp/nfs-shift-p1-wait-word-1b964010-20261026/bin/librexgpu-shift-nativerd.so",
+      "sha256": "9e46bf16e1a1fadaac2754b29d5332127a078db12416f287313841367eac4d55",
+      "mapped_hash_verified": true
+    }
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "termination": "GDB killed the inferior at the first retail software-queue wait; no clean title shutdown was observed.",
+    "guest_memory_written_by_probe": false,
+    "gdb_log": {
+      "path": "/tmp/nfs-shift-p1-wait-word-1b964010-20261026/gdb-offset-verified.log",
+      "sha256": "8a700215e20ddd74abceedd3297000473f8e0398290490839efff0c1d2e0f8e6"
+    },
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-p1-wait-word-1b964010-20261026/bin/logs/nfs_shift_002.log",
+      "sha256": "2364ae6e6c844a9440189d2928039b9be9d18688dc741be0aa20485e9bc5303e"
+    },
+    "watchpoint": {
+      "trigger": "sub_823B3598 received guest r6=0x823A4758",
+      "packet_address_source": {
+        "evidence": "evidence/xbox360_linux_callback_stream_targeted_20261026.json",
+        "packet_header_dword_index": 20,
+        "packet_address_field": "0x1B964012",
+        "guest_physical_word": "0x1B964010",
+        "derivation_note": "The recorded WAIT_REG_MEM decode for address field 0x1B964006 resolves to guest word 0x1B964004; this probe applied the same two-byte lane adjustment to the captured 0x1B964012 field."
+      },
+      "guest_memory_physical_base": "0x200000000",
+      "host_physical_alias": "0x21B964010",
+      "hardware_watchpoint_armed": true,
+      "initial_raw": "0x00000000",
+      "initial_guest_big_endian": "0x00000000",
+      "write_hits_before_first_wait": 0,
+      "raw_at_first_wait": "0x00000000",
+      "guest_big_endian_at_first_wait": "0x00000000"
+    },
+    "first_software_queue_wait": {
+      "function": "0x823B34A0",
+      "object": "0xB7365F00",
+      "target": 13,
+      "head": 0,
+      "tail": 21,
+      "predicate_byte": "0x14",
+      "producer_0x823A4758_hits": 0,
+      "registered_callback_0x82649B68_hits": 0
+    }
+  },
+  "interpretation": {
+    "observed": [
+      "The exact retail XEX and recorded host, runtime, and GPU-plugin hashes match the earlier evidence set.",
+      "The command-stream builder entered with r6=0x823A4758 and armed a hardware write watchpoint at host alias 0x21B964010.",
+      "The watched host alias read zero when armed and at the first software-queue wait; the hardware watchpoint reported no writes before that wait.",
+      "At the same stop, the retail queue wait had target 13 between head 0 and tail 21, and its predicate byte was 0x14."
+    ],
+    "not_proven": [
+      "That this stream packet was submitted or executed before the first software-queue wait; the packet address field is correlated from a separate capture of the same retail builder.",
+      "That no device/DMA write or write through another host alias occurred.",
+      "Which earlier GPU job, CPU producer, or visibility operation should set guest word 0x1B964010.",
+      "That this word alone causes the software-queue wait or frontend stall.",
+      "Main-menu entry, offline-race entry, or sustained visible retail output."
+    ],
+    "next_p1_step": "Identify the producer and visibility path for guest word 0x1B964010, then correlate it with command-stream submission while preserving the original WAIT_REG_MEM and queue predicates."
+  },
+  "limitations": [
+    "This was a bounded, intrusive GDB run and ended at the first software-queue wait.",
+    "Only the selected physical host alias was watched; device/DMA writes and alternate host aliases are outside the observation.",
+    "The packet address field and queue wait were not captured from the same run."
+  ]
+}
