@@ -450,8 +450,8 @@ int main(int argc, char** argv) {
             output_view, false, 1280, 720, switched_render_target_draws,
             &switched_render_target_error, nullptr,
             enabled_features.geometryShader, &copy) ||
-        switched_render_target_error.find(
-            "switches Xenos color/depth target bases") == std::string::npos) {
+        switched_render_target_error.find("at draw 1 (color 13 -> 14") ==
+            std::string::npos) {
       std::cerr << "distinct captured render-target bases were merged into one "
                    "Vulkan pass: "
                 << switched_render_target_error << '\n';

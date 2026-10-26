@@ -3043,15 +3043,19 @@ bool submit_captured_vulkan_frame(
         return fail("Vulkan presenter extent exceeds signed scissor bounds", error);
     }
     const CapturedRasterState& frame_target = draws.front().raster;
-    if (std::any_of(
-            draws.begin() + 1, draws.end(), [&](const CapturedVulkanDraw& draw) {
-                return draw.raster.color_base_tiles != frame_target.color_base_tiles ||
-                       draw.raster.depth_base_tiles != frame_target.depth_base_tiles;
-            })) {
-        return fail(
-            "captured Vulkan submission switches Xenos color/depth target bases; "
-            "split the ordered render-target operations before submission",
-            error);
+    for (size_t draw_index = 1; draw_index < draws.size(); ++draw_index) {
+        const CapturedRasterState& raster = draws[draw_index].raster;
+        if (raster.color_base_tiles != frame_target.color_base_tiles ||
+            raster.depth_base_tiles != frame_target.depth_base_tiles) {
+            std::ostringstream message;
+            message << "captured Vulkan submission switches Xenos target bases at draw "
+                    << draw_index << " (color " << frame_target.color_base_tiles
+                    << " -> " << raster.color_base_tiles << ", depth "
+                    << frame_target.depth_base_tiles << " -> "
+                    << raster.depth_base_tiles
+                    << "); split the ordered render-target operations before submission";
+            return fail(message.str(), error);
+        }
     }
     VkPhysicalDeviceMemoryProperties memory_properties{};
     vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
