@@ -1,0 +1,59 @@
+{
+  "schema": "shift.process2.linux_current_renderer_disclaimer.v1",
+  "captured_at_local": "2026-10-26T11:47:37+03:00",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "renderer_source_commit": "345fc2ef69f485ab3f2f15effbb4d837be96c51f",
+    "build_evidence_commit": "4438283c70c065aaf62714f39a0a0db0fe94ae51",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+  },
+  "renderer": {
+    "plugin_path": "/home/pes/work/process2-current-renderer-retail-probe-20261026/bin/librexgpu-shift-native.so",
+    "plugin_sha256": "78d02ba81efa7a8d07e8a1cc6c1b93c22259954dd401b029a02d24bc08fc61d6",
+    "runtime_path": "/home/pes/work/process2-current-renderer-retail-probe-20261026/bin/librexruntime.so",
+    "runtime_sha256": "1c436773e551544fbc4b49847826d73093042b8ef8be146932b622450fbefae7",
+    "process_maps_confirm_plugin_loaded": true,
+    "process_maps_confirm_rexgpu_xenos_absent": true,
+    "vulkan_device": "NVIDIA GeForce GTX 950",
+    "validation_layer_enabled_for_this_retail_run": false
+  },
+  "run": {
+    "pid": 24646,
+    "command": "./nfs_shift --game_data_root=/home/pes/work/process2-retail-isolated-irq-20261023/game-data --gpu_plugin=shift-native --no-async_shader_compilation --fullscreen=false",
+    "app_left_running": true,
+    "window_screenshot": "process2_linux_current_renderer_disclaimer_20261026.png",
+    "window_screenshot_sha256": "05506709d8a202172088c462cfc213f2ca1870cceb264153ae42c25c08102cae",
+    "window_screenshot_extent": [
+      1054,
+      694
+    ],
+    "screen_observation": "The original retail legal disclaimer is visible with thin purple horizontal strips. This is a window capture, not Vulkan output readback or a parity comparison."
+  },
+  "renderer_activity_at_log_snapshot": {
+    "submitted_draw_batches": 1139,
+    "accepted_copy_convert_operations": 1139,
+    "renderer_refresh_failures": 0,
+    "rejected_pm4_draw_packets": 0,
+    "unresolved_draw_diagnostics": [
+      "unresolved captured draw #0 topology=1 autoindex=true count=1 raster=false inputs=false translated=false: incomplete captured raster register state valid_mask=0x17038"
+    ],
+    "last_submit_log_line": "[2026-10-26 11:45:33.358] [info] [core] [t24729] shift-native: submitted 14 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)",
+    "last_menu_scene_open_misses": [
+      "[2026-10-26 11:45:33.402] [warning] [krnl] [t24739] [NtCreateFile] FAILED: path='d:\\tracks\\_data\\instances\\scenes\\menu_background.xml' -> 0xc000000f",
+      "[2026-10-26 11:45:33.402] [warning] [krnl] [t24739] [NtCreateFile] FAILED: path='d:\\tracks\\_data\\instances\\scenes\\menu_background.xml' -> 0xc000000f",
+      "[2026-10-26 11:45:33.403] [warning] [krnl] [t24739] [NtCreateFile] FAILED: path='d:\\tracks\\_data\\static\\scenes\\menu_background.xml' -> 0xc000000f",
+      "[2026-10-26 11:45:33.403] [warning] [krnl] [t24739] [NtCreateFile] FAILED: path='d:\\tracks\\_data\\static\\scenes\\menu_background.xml' -> 0xc000000f"
+    ],
+    "log_line_count": 15352,
+    "log_snapshot_sha256": "bc95e35e95f3e746ad255ad049029ee9b924db91a153ee8635e116159afe6b33",
+    "compressed_log": "process2_linux_current_renderer_disclaimer_20261026.log.gz",
+    "compressed_log_sha256": "3fc558b7da46a4def4ac3fc756aa1ab7638d6d07536cc23e1de610e4523e5c16"
+  },
+  "limitations": [
+    "The run reached the legal disclaimer and emitted no post-disclaimer menu or race draw before the captured menu_background.xml open failures; their causality is not established.",
+    "The only unresolved renderer draw was the early draw #0, rejected fail-closed because the captured raster register mask was 0x17038.",
+    "The Vulkan layer was not enabled in this live retail process; validation coverage is from the separate host renderer and plugin regression suites.",
+    "No phone parity, sustained live Bink sequence, menu, or race-scene parity is established by this Linux run."
+  ]
+}

@@ -182,24 +182,27 @@ recorded in
   Android validation layers were unavailable; its output differed from the
   GTX 950 host output by at most 2/255 per RGB channel, so this is a device
   execution check rather than pixel-identical or retail-frame parity;
-- Android full-game status: the renderer and ReXGlue Vulkan presenter/surface
-  source compile for arm64-v8a with NDK r28.2 / API 33. The complete plugin
-  build stops in ReXGlue's POSIX fiber backend because Bionic lacks
-  `getcontext`, `makecontext`, and `swapcontext`; that scheduler code belongs
-  to Process 1. The repository has a minimal NativeActivity surface-probe
-  library, but it does not integrate the game or ReXGlue runtime and there is
-  no game manifest/APK target. No full game build has been installed or tested
-  on the phone;
+- Android full-game status: the project-owned ARM64 renderer plugin has been
+  built against the unchanged runtime DSO from the already-built game APK and
+  installed on the Redmi Note 8 Pro. The latest candidate displays the retail
+  Loading screen, all six language-selector labels, the title sequence, and
+  the safety disclaimer. This is a plugin replacement in an existing APK, not
+  a complete Android runtime rebuild: the SDK's POSIX fiber source still uses
+  `getcontext`, `makecontext`, and `swapcontext`, which Bionic does not expose.
+  That scheduler implementation belongs to Process 1. Current hashes and
+  screenshots are in
+  [`process2_android_descriptor_layout_live_candidate_20261026.json`](../evidence/process2_android_descriptor_layout_live_candidate_20261026.json);
 - limitations: the standalone capture bundle starts from black because prior
   EDRAM contents were not captured; the black texture-border alpha remains
   unresolved, and the live frontend currently selects transparent-black
   provisionally. The plugin has no dependency on the runtime-loaded
   `rexgpu-xenos` renderer; ReXGlue's common runtime still includes generic
-  Xenos format utilities. The Android verification exercises the platform
-  independent renderer only, not ReXGlue window presentation. Live retail
-  submission is confirmed, but the captured host window remained black apart
-  from the cursor, so visible output is not working yet. Full-scene parity is
-  not claimed. The product path must not load
+  Xenos format utilities. The early standalone capture-bundle smoke was not
+  visible in its host window, but later exact-XEX runs and the current Redmi
+  candidate do show original retail output. Menu-after-disclaimer, race
+  scenes, sustained live Bink playback, and full-scene parity are not
+  established. Android validation-layer coverage is unavailable. The product
+  path must not load
   `rexgpu-xenos` or another GPU renderer emulator;
 - Linux CI coverage for native smoke paths.
 
@@ -223,6 +226,51 @@ other Xenos EDRAM copy/resolve forms and EDRAM accumulation remain unsupported.
 The current Redmi evidence records 1,090 accepted Copy/Convert operations paired
 with 1,090 presenter submissions, but does not establish post-disclaimer menu,
 race rendering, or full retail parity.
+
+## Latest Redmi renderer candidate and retail boundary (2026-10-26)
+
+The latest Android package was rebuilt with the P2 renderer source through
+`345fc2ef69f485ab3f2f15effbb4d837be96c51` and installed incrementally on the
+Redmi Note 8 Pro. Its APK SHA-256 is
+`35383e756421c4d92264e02f3e9da3eafc52db22febe6c316d15007c0076cd3b`; the
+ARM64 renderer DSO SHA-256 is
+`9d7ee9ee95b38497ed37f7cf72365a1bcb250560c4d387ab635272de9bd90a0d`. Only
+the two GPU-plugin APK payload entries changed; the existing runtime DSO was
+kept byte-identical. The package signature and 16-KiB alignment checks passed.
+The recorded screenshots show the original loading screen, all six language
+labels, and readable safety text. See the
+[`candidate record`](../evidence/process2_android_descriptor_layout_live_candidate_20261026.json).
+
+The corresponding Linux renderer source was handed to Process 1 and loaded
+with its matching runtime. The available P2 retail log shows startup draw #0
+arriving before a complete raster-register state (`valid_mask=0x17038`) and
+being rejected fail-closed; subsequent observed batches were submitted. The
+latest Android package has no per-frame plugin log, and its app process later
+disappeared with an unknown cause. Neither observation proves a Vulkan crash.
+No post-disclaimer menu, new Bink frame from the current Android candidate, or
+race-scene draw was captured. The next renderer change therefore needs a fresh
+retail PM4 capture and paired Vulkan readback from that scene; the nearby
+`menu_background.xml` open failures are a Process 1 runtime/content observation
+and do not establish the cause of the stalled screen.
+
+## Fresh exact-XEX retail check (2026-10-26)
+
+I launched the exact retail XEX with the latest Process 2 Linux plugin and its
+matching runtime. The loaded plugin hash is `78d02ba8…c08fc61d6`; the process
+map contains no `rexgpu-xenos`. The Vulkan window shows the original safety
+disclaimer and its thin purple strips. Across this log snapshot, 1,139 live
+draw batches were submitted with 1,139 accepted source-0/sample-0
+Copy/Convert operations, no PM4 draw rejections, and no Vulkan refresh
+failures. The sole unresolved draw remains the early draw #0 with incomplete
+raster state (`valid_mask=0x17038`), which stays fail-closed.
+
+The last captured 14-draw batch is followed by failed opens of
+`menu_background.xml`; the run records no later menu or race draws. This
+timing does not establish causality or a renderer defect. The exact build,
+log snapshot, screenshot, and limitations are recorded in the
+[`Linux retail evidence`](../evidence/process2_linux_current_renderer_disclaimer_20261026.json).
+The live retail process did not enable the Vulkan validation layer; renderer
+validation coverage remains from the separate host regression runs.
 
 ## Commands
 
