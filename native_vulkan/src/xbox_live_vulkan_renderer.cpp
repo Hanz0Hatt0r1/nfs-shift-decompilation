@@ -3049,16 +3049,23 @@ bool submit_captured_vulkan_frame(
         draws.begin() + 1, draws.end(), [samples](const CapturedVulkanDraw& draw) {
             return draw.raster.sample_count != samples;
         });
+    const bool single_sample_copy = !mixed_sample_counts && samples == 1;
     if (copy &&
-        ((!mixed_sample_counts && samples != 4) || copy->state.source_select != 0 ||
+        ((!mixed_sample_counts && samples != 1 && samples != 4) ||
+         copy->state.source_select != 0 ||
          copy->state.sample_select != 0 ||
          copy->state.command != CapturedCopyCommand::Convert ||
          copy->state.destination_pitch != output_width ||
          copy->state.destination_height != output_height ||
          copy->state.destination_format != 6 ||
          !copy->state.destination_swap_red_blue ||
-         copy->vertex_shader_spirv.empty() || copy->pixel_shader_spirv.empty() ||
-         (copy->source_gamma && copy->gamma_pixel_shader_spirv.empty()))) {
+         copy->vertex_shader_spirv.empty() ||
+         (single_sample_copy ? copy->single_sample_pixel_shader_spirv.empty()
+                             : copy->pixel_shader_spirv.empty()) ||
+         (copy->source_gamma &&
+          (single_sample_copy
+               ? copy->gamma_single_sample_pixel_shader_spirv.empty()
+               : copy->gamma_pixel_shader_spirv.empty())))) {
         return fail("captured Copy/Convert is outside the source-0 sample-0 RGBA8 subset",
                     error);
     }
@@ -3205,7 +3212,7 @@ bool submit_captured_vulkan_frame(
         }
     }
 
-    if (samples > 1) {
+    if (samples > 1 || copy) {
         const VkImageUsageFlags raster_color_usage =
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
             (copy ? VK_IMAGE_USAGE_SAMPLED_BIT : 0);
@@ -3266,7 +3273,7 @@ bool submit_captured_vulkan_frame(
                                                      : VK_ATTACHMENT_STORE_OP_DONT_CARE;
     color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    color_attachment.initialLayout = samples == 1
+    color_attachment.initialLayout = samples == 1 && !copy
                                          ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
                                          : VK_IMAGE_LAYOUT_UNDEFINED;
     color_attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -3325,7 +3332,9 @@ bool submit_captured_vulkan_frame(
     framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebuffer_info.renderPass = resources.render_pass;
     std::vector<VkImageView> framebuffer_views;
-    framebuffer_views.push_back(samples > 1 ? resources.multisample_color.view : output_view);
+    framebuffer_views.push_back(copy || samples > 1
+                                    ? resources.multisample_color.view
+                                    : output_view);
     if (needs_depth) framebuffer_views.push_back(resources.depth.view);
     if (samples > 1 && !copy) framebuffer_views.push_back(output_view);
     framebuffer_info.attachmentCount = static_cast<uint32_t>(framebuffer_views.size());
@@ -3376,8 +3385,11 @@ bool submit_captured_vulkan_frame(
         CapturedVulkanDraw copy_draw{};
         copy_draw.vertex_shader_spirv = copy->vertex_shader_spirv;
         copy_draw.pixel_shader_spirv = copy->source_gamma
-            ? copy->gamma_pixel_shader_spirv
-            : copy->pixel_shader_spirv;
+            ? (single_sample_copy
+                   ? copy->gamma_single_sample_pixel_shader_spirv
+                   : copy->gamma_pixel_shader_spirv)
+            : (single_sample_copy ? copy->single_sample_pixel_shader_spirv
+                                  : copy->pixel_shader_spirv);
         copy_draw.auto_index = true;
         copy_draw.index_count = 3;
         copy_draw.texture_width = 1;

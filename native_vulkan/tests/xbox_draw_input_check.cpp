@@ -749,10 +749,27 @@ int main() {
                 retail_narrow_rgba8.byte_length == 32u * 64u * 4u,
             "captured retail draw-29 padded RGBA8 descriptor was rejected or mis-sized");
     std::vector<uint8_t> retail_narrow_tiled(retail_narrow_rgba8.byte_length);
-    retail_narrow_tiled[0] = 0x11;
-    retail_narrow_tiled[1] = 0x22;
-    retail_narrow_tiled[2] = 0x33;
-    retail_narrow_tiled[3] = 0x44;
+    const auto retail_narrow_tiled_offset = [](uint32_t x, uint32_t y,
+                                                uint32_t pitch) {
+        const uint64_t outer_blocks =
+            ((static_cast<uint64_t>(y >> 5) * (pitch >> 5)) + (x >> 5)) << 6;
+        const uint64_t inner_blocks = (((y >> 1) & 0x7u) << 3) | (x & 0x7u);
+        const uint64_t outer_inner_bytes = (outer_blocks | inner_blocks) << 2;
+        const uint32_t bank = (y >> 4) & 1u;
+        const uint32_t pipe = ((x >> 3) & 3u) ^ (((y >> 3) & 1u) << 1);
+        return static_cast<size_t>(
+            (static_cast<uint64_t>(y & 1u) << 4) |
+            (static_cast<uint64_t>(pipe) << 6) |
+            (static_cast<uint64_t>(bank) << 11) | (outer_inner_bytes & 0xFu) |
+            (((outer_inner_bytes >> 4) & 1u) << 5) |
+            (((outer_inner_bytes >> 5) & 7u) << 8) |
+            (outer_inner_bytes >> 8 << 12));
+    };
+    const size_t retail_narrow_sample = retail_narrow_tiled_offset(16, 0, 32);
+    retail_narrow_tiled[retail_narrow_sample] = 0x11;
+    retail_narrow_tiled[retail_narrow_sample + 1] = 0x22;
+    retail_narrow_tiled[retail_narrow_sample + 2] = 0x33;
+    retail_narrow_tiled[retail_narrow_sample + 3] = 0x44;
     std::vector<uint8_t> retail_narrow_linear;
     require(shift::xbox::untile_captured_texture_2d(
                 retail_narrow_rgba8, retail_narrow_tiled.data(),
@@ -1639,6 +1656,7 @@ int main() {
         }
     }
     dxt2_3_test_fetch.tiled = false;
+    dxt2_3_test_fetch.packed_mips = false;
     require(shift::xbox::untile_captured_texture_2d(
                 dxt2_3_test_fetch, linear_dxt2_3.data(), linear_dxt2_3.size(),
                 &decoded_dxt2_3, &error) &&

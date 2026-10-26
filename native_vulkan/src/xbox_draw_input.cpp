@@ -1080,6 +1080,7 @@ bool decode_captured_texture_fetch(
         descriptor_words[5] & 0x3u,
         (descriptor_words[3] >> 31) != 0,
         tiled != 0,
+        (descriptor_words[5] & (1u << 11)) != 0,
     };
     if (error) {
         error->clear();
@@ -1687,6 +1688,38 @@ bool untile_captured_texture_2d(
 
     const uint32_t blocks_wide = (texture.width + 3u) / 4u;
     const uint32_t blocks_high = (texture.height + 3u) / 4u;
+    if (texture.packed_mips &&
+        (!texture.tiled || (!compressed && !rgba8))) {
+        return fail("packed captured texture layout is unsupported", error);
+    }
+    uint32_t packed_offset_x_pixels = 0;
+    uint32_t packed_offset_y_pixels = 0;
+    uint32_t packed_offset_x_blocks = 0;
+    uint32_t packed_offset_y_blocks = 0;
+    if (texture.packed_mips) {
+        const auto log2_ceil = [](uint32_t value) {
+            uint32_t result = 0;
+            uint32_t power = 1;
+            while (power < value) {
+                power <<= 1;
+                ++result;
+            }
+            return result;
+        };
+        const uint32_t log2_width = log2_ceil(texture.width);
+        const uint32_t log2_height = log2_ceil(texture.height);
+        // When the mip tail starts at level 0, Xenos places that base image
+        // 16 texels into the tile along its shorter axis.
+        if (std::min(log2_width, log2_height) <= 4u) {
+            if (log2_width > log2_height) {
+                packed_offset_y_pixels = 16u;
+            } else {
+                packed_offset_x_pixels = 16u;
+            }
+        }
+        packed_offset_x_blocks = packed_offset_x_pixels / 4u;
+        packed_offset_y_blocks = packed_offset_y_pixels / 4u;
+    }
     const uint64_t output_bytes = static_cast<uint64_t>(texture.width) *
                                   texture.height * 4u;
     const uint64_t linear_block_bytes =
@@ -1730,9 +1763,15 @@ bool untile_captured_texture_2d(
             for (uint32_t x = 0; x < blocks_wide; ++x) {
                 const size_t source = texture.tiled
                     ? static_cast<size_t>(dxt5a
-                          ? tiled_2d_offset_8bpb(x, y, pitch_blocks)
-                          : tiled_2d_offset_16bpb(x, y, pitch_blocks))
-                    : (static_cast<size_t>(y) * pitch_blocks + x) * bytes_per_block;
+                          ? tiled_2d_offset_8bpb(
+                                x + packed_offset_x_blocks,
+                                y + packed_offset_y_blocks, pitch_blocks)
+                          : tiled_2d_offset_16bpb(
+                                x + packed_offset_x_blocks,
+                                y + packed_offset_y_blocks, pitch_blocks))
+                    : (static_cast<size_t>(y + packed_offset_y_blocks) *
+                           pitch_blocks + x + packed_offset_x_blocks) *
+                          bytes_per_block;
                 const size_t destination =
                     (static_cast<size_t>(y) * blocks_wide + x) * bytes_per_block;
                 if (source + bytes_per_block > source_bytes) {
@@ -1836,7 +1875,9 @@ bool untile_captured_texture_2d(
     for (uint32_t y = 0; y < texture.height; ++y) {
         for (uint32_t x = 0; x < texture.width; ++x) {
             const size_t source = static_cast<size_t>(
-                tiled_2d_offset_32bpp(x, y, texture.pitch));
+                tiled_2d_offset_32bpp(x + packed_offset_x_pixels,
+                                      y + packed_offset_y_pixels,
+                                      texture.pitch));
             const size_t destination =
                 (static_cast<size_t>(y) * texture.width + x) * 4;
             if (source + 4 > byte_length) {

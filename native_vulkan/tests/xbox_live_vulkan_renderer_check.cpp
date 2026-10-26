@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdlib>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -96,10 +97,18 @@ bool read_spirv(const char* path, std::vector<uint32_t>* output) {
     return output->front() == 0x07230203u;
 }
 
+bool read_bytes(const char* path, std::vector<uint8_t>* output) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file || !output) return false;
+    output->assign(std::istreambuf_iterator<char>(file),
+                   std::istreambuf_iterator<char>());
+    return static_cast<bool>(file) || file.eof();
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 14) {
+    if (argc != 14 && argc != 23) {
         std::cerr << "usage: xbox_live_vulkan_renderer_check vertex.spv fragment.spv "
                      "geometry.spv copy-vertex.spv copy-fragment.spv "
                      "copy-single-fragment.spv window-vertex.spv window-fragment.spv "
@@ -314,6 +323,16 @@ int main(int argc, char** argv) {
         !read_spirv(argv[12], &gamma_copy_single_fragment_spirv) ||
         !read_spirv(argv[13], &gamma_copy_ms_fragment_spirv)) {
         std::cerr << "could not read Vulkan 1.1 gamma target regression shaders\n";
+        return 1;
+    }
+    std::vector<uint32_t> disclaimer_vertex_spirv;
+    std::vector<uint32_t> disclaimer_encoded_fragment_spirv;
+    std::vector<uint32_t> disclaimer_linear_fragment_spirv;
+    if (argc == 23 &&
+        (!read_spirv(argv[14], &disclaimer_vertex_spirv) ||
+         !read_spirv(argv[15], &disclaimer_encoded_fragment_spirv) ||
+         !read_spirv(argv[16], &disclaimer_linear_fragment_spirv))) {
+        std::cerr << "could not read captured disclaimer Vulkan 1.1 shaders\n";
         return 1;
     }
     std::vector<uint32_t> window_vertex_spirv;
@@ -1257,6 +1276,183 @@ int main(int argc, char** argv) {
         std::cerr << "unsupported trailing color draw was not rejected precisely: "
                   << trailing_color_write_error << '\n';
         return 1;
+    }
+
+    if (argc == 23) {
+        std::vector<uint8_t> disclaimer_texture_source;
+        std::vector<uint8_t> disclaimer_texture;
+        std::vector<uint8_t> expected_disclaimer_texture;
+        const uint32_t disclaimer_fetch_words[6] = {
+            0x840248FEu, 0x0A24B054u, 0x0000E1FFu,
+            0x06A80D10u, 0x00000E43u, 0x0A24BA10u,
+        };
+        shift::xbox::CapturedTextureFetch disclaimer_fetch{};
+        std::string disclaimer_texture_error;
+        if (!read_bytes(argv[17], &disclaimer_texture_source) ||
+            disclaimer_texture_source.size() != 65536u ||
+            !shift::xbox::decode_captured_texture_fetch(
+                disclaimer_fetch_words, &disclaimer_fetch,
+                &disclaimer_texture_error) ||
+            !disclaimer_fetch.packed_mips ||
+            disclaimer_fetch.width != 512u || disclaimer_fetch.height != 8u ||
+            !shift::xbox::untile_captured_texture_2d(
+                disclaimer_fetch, disclaimer_texture_source.data(),
+                disclaimer_texture_source.size(), &disclaimer_texture,
+                &disclaimer_texture_error) ||
+            !read_bytes(argv[18], &expected_disclaimer_texture) ||
+            disclaimer_texture != expected_disclaimer_texture) {
+            std::cerr << "captured disclaimer packed DXT texture decode failed: "
+                      << disclaimer_texture_error << '\n';
+            return 1;
+        }
+        shift::xbox::CapturedVulkanDraw disclaimer_draw{};
+        disclaimer_draw.raster.width = 1280;
+        disclaimer_draw.raster.height = 720;
+        disclaimer_draw.raster.surface_pitch = 1280;
+        disclaimer_draw.raster.sample_count = 1;
+        disclaimer_draw.raster.color_base_tiles = 0;
+        disclaimer_draw.raster.color_format =
+            shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
+        disclaimer_draw.raster.depth_base_tiles = 720;
+        disclaimer_draw.raster.depth_format =
+            shift::xbox::CapturedDepthTargetFormat::D24S8;
+        disclaimer_draw.raster.color_write_mask = 0xFu;
+        disclaimer_draw.raster.depth_test_enabled = true;
+        disclaimer_draw.raster.depth_control = 0x12u;
+        disclaimer_draw.raster.viewport_y_flipped = true;
+        disclaimer_draw.raster.scissor_x0 = 0;
+        disclaimer_draw.raster.scissor_y0 = 0;
+        disclaimer_draw.raster.scissor_x1 = 1280;
+        disclaimer_draw.raster.scissor_y1 = 720;
+        disclaimer_draw.raster.scissor_has_area = true;
+        disclaimer_draw.raster.blend_control_0 = 0x07060706u;
+        disclaimer_draw.raster.setup_mode_control = 0x00218000u;
+        disclaimer_draw.constants.vertex_float_constants[0] = {
+            0x3FBB18D8u, 0, 0, 0};
+        disclaimer_draw.constants.vertex_float_constants[1] = {
+            0, 0x3FBB18D8u, 0, 0};
+        disclaimer_draw.constants.vertex_float_constants[2] = {
+            0, 0, 0x3F8020CDu, 0xBDCD0148u};
+        disclaimer_draw.constants.vertex_float_constants[3] = {
+            0, 0, 0x3F800000u, 0};
+        disclaimer_draw.vertex_shader_spirv = disclaimer_vertex_spirv;
+        disclaimer_draw.pixel_shader_spirv =
+            disclaimer_encoded_fragment_spirv;
+        disclaimer_draw.pixel_shader_spirv_linear_target =
+            disclaimer_linear_fragment_spirv;
+        disclaimer_draw.vertex_stride_bytes = 24;
+        disclaimer_draw.vertex_input_attributes = {
+            {0, 2, 57, 6, 0}, {1, 1, 6, 6, 3}, {2, 0, 37, 6, 4},
+        };
+        disclaimer_draw.topology =
+            shift::xbox::PrimitiveTopology::TriangleList;
+        disclaimer_draw.auto_index = true;
+        disclaimer_draw.index_count = 6;
+        disclaimer_draw.texture_width = 512;
+        disclaimer_draw.texture_height = 8;
+        disclaimer_draw.texture_sampling.swizzle = {
+            shift::xbox::TextureComponent::X,
+            shift::xbox::TextureComponent::Y,
+            shift::xbox::TextureComponent::Z,
+            shift::xbox::TextureComponent::W,
+        };
+        disclaimer_draw.texture_sampling.signs = {
+            shift::xbox::TextureSign::Gamma,
+            shift::xbox::TextureSign::Gamma,
+            shift::xbox::TextureSign::Gamma,
+            shift::xbox::TextureSign::Unsigned,
+        };
+        disclaimer_draw.texture_sampling.clamps = {
+            shift::xbox::TextureClamp::ClampToEdge,
+            shift::xbox::TextureClamp::ClampToEdge,
+            shift::xbox::TextureClamp::ClampToEdge,
+        };
+        disclaimer_draw.texture_sampling.mag_filter =
+            shift::xbox::TextureFilter::Linear;
+        disclaimer_draw.texture_sampling.min_filter =
+            shift::xbox::TextureFilter::Linear;
+        disclaimer_draw.texture_sampling.mip_filter =
+            shift::xbox::TextureFilter::Linear;
+        disclaimer_draw.texture_sampling.anisotropy =
+            shift::xbox::TextureAnisotropy::Max4To1;
+        disclaimer_draw.texture_sampling.border_color =
+            shift::xbox::TextureBorderColor::AbgrBlack;
+        disclaimer_draw.texture_sampling.border_alpha_known = false;
+        disclaimer_draw.textures.push_back({
+            0, disclaimer_draw.texture_sampling, 512, 8,
+            shift::xbox::CapturedVulkanTexture::Format::Rgba8,
+            disclaimer_texture});
+        std::vector<shift::xbox::CapturedVulkanDraw> disclaimer_draws;
+        disclaimer_draws.reserve(4);
+        for (int i = 0; i < 4; ++i) {
+            auto captured_draw = disclaimer_draw;
+            if (!read_bytes(argv[19 + i], &captured_draw.vertices) ||
+                captured_draw.vertices.size() != 6u * 24u) {
+                std::cerr << "captured disclaimer vertex fixture is missing or malformed\n";
+                return 1;
+            }
+            disclaimer_draws.push_back(std::move(captured_draw));
+        }
+        auto disclaimer_copy = copy;
+        disclaimer_copy.source_gamma = true;
+        disclaimer_copy.gamma_single_sample_pixel_shader_spirv =
+            gamma_copy_single_fragment_spirv;
+        disclaimer_copy.gamma_pixel_shader_spirv =
+            gamma_copy_ms_fragment_spirv;
+        std::vector<uint32_t> disclaimer_output;
+        std::string disclaimer_error;
+        if (!shift::xbox::submit_captured_vulkan_frame(
+                physical_device, device, queue, queue_family, output_image,
+                output_view, false, 1280, 720, disclaimer_draws,
+                &disclaimer_error, &disclaimer_output,
+                enabled_features.geometryShader, &disclaimer_copy, false,
+                sampler_capabilities, pipeline_cache, &texture_cache) ||
+            disclaimer_output.size() != 1280u * 720u) {
+            std::cerr << "captured disclaimer frame replay failed: "
+                      << disclaimer_error << '\n';
+            return 1;
+        }
+        size_t upper_strip_pixels = 0;
+        size_t lower_strip_pixels = 0;
+        for (uint32_t y = 0; y < 720; ++y) {
+            for (uint32_t x = 0; x < 1280; ++x) {
+                if ((disclaimer_output[static_cast<size_t>(y) * 1280 + x] &
+                     0x3FFFFFFFu) == 0) {
+                    continue;
+                }
+                if (y >= 175 && y < 205) ++upper_strip_pixels;
+                if (y >= 515 && y < 550) ++lower_strip_pixels;
+            }
+        }
+        if (upper_strip_pixels < 100 || lower_strip_pixels < 100) {
+            std::cerr << "captured disclaimer strips lost visible output: top="
+                      << upper_strip_pixels << " bottom=" << lower_strip_pixels
+                      << '\n';
+            return 1;
+        }
+        for (uint32_t y : {187u, 541u}) {
+            for (uint32_t x = 185u; x < 1095u; ++x) {
+                if ((disclaimer_output[static_cast<size_t>(y) * 1280 + x] &
+                     0x3FFFFFFFu) == 0) {
+                    std::cerr << "captured disclaimer packed border has a gap at "
+                              << x << ',' << y << '\n';
+                    return 1;
+                }
+            }
+        }
+        if (const char* output_path = std::getenv(
+                "SHIFT_VULKAN_DISCLAIMER_REPLAY_RAW_OUT")) {
+            std::ofstream output(output_path, std::ios::binary);
+            output.write(reinterpret_cast<const char*>(disclaimer_output.data()),
+                         static_cast<std::streamsize>(disclaimer_output.size() *
+                                                      sizeof(uint32_t)));
+            if (!output) {
+                std::cerr << "could not write captured disclaimer replay output\n";
+                return 1;
+            }
+        }
+        std::cout << "captured retail disclaimer strip draws passed on "
+                  << device_properties.deviceName << '\n';
     }
 
     std::vector<shift::xbox::CapturedVulkanDraw> reverse_sample_draws{

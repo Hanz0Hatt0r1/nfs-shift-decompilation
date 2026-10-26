@@ -173,9 +173,39 @@ if(GLSLANG_VALIDATOR)
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_gamma_ms.frag
     VERBATIM
   )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/disclaimer_frame907.vert.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/disclaimer_frame907.vert
+            -o ${SHIFT_VULKAN_SHADER_DIR}/disclaimer_frame907.vert.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/disclaimer_frame907.vert
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/disclaimer_frame907_encoded.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/disclaimer_frame907_encoded.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/disclaimer_frame907_encoded.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/disclaimer_frame907_encoded.frag
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/disclaimer_frame907_linear.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/disclaimer_frame907_linear.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/disclaimer_frame907_linear.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/disclaimer_frame907_linear.frag
+    VERBATIM
+  )
   add_executable(xbox_live_vulkan_renderer_check tests/xbox_live_vulkan_renderer_check.cpp)
   add_dependencies(xbox_live_vulkan_renderer_check shift_xbox_live_vulkan_renderer)
-  target_link_libraries(xbox_live_vulkan_renderer_check PRIVATE shift_xbox_live_vulkan_renderer)
+  target_link_libraries(xbox_live_vulkan_renderer_check PRIVATE
+    shift_xbox_live_vulkan_renderer
+    shift_xbox_draw_input
+  )
   add_custom_target(shift_xbox_live_vulkan_renderer_smoke_shaders
     DEPENDS
       ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.vert.spv
@@ -191,6 +221,9 @@ if(GLSLANG_VALIDATOR)
       ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_linear.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_gamma_single.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_gamma_ms.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/disclaimer_frame907.vert.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/disclaimer_frame907_encoded.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/disclaimer_frame907_linear.frag.spv
   )
   add_dependencies(xbox_live_vulkan_renderer_check shift_xbox_live_vulkan_renderer_smoke_shaders)
   add_test(
@@ -209,6 +242,15 @@ if(GLSLANG_VALIDATOR)
             ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_linear.frag.spv
             ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_gamma_single.frag.spv
             ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_gamma_ms.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/disclaimer_frame907.vert.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/disclaimer_frame907_encoded.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/disclaimer_frame907_linear.frag.spv
+            ${CMAKE_CURRENT_SOURCE_DIR}/../evidence/process2_disclaimer_frame907_draw5058_dxt5_raw_20261026.bin
+            ${CMAKE_CURRENT_SOURCE_DIR}/../evidence/process2_disclaimer_frame907_draw5058_packed_mip0_rgba8_20261026.bin
+            ${CMAKE_CURRENT_SOURCE_DIR}/../evidence/process2_disclaimer_frame907_draw5058_vertices_20261026.bin
+            ${CMAKE_CURRENT_SOURCE_DIR}/../evidence/process2_disclaimer_frame907_draw5059_vertices_20261026.bin
+            ${CMAKE_CURRENT_SOURCE_DIR}/../evidence/process2_disclaimer_frame907_draw5060_vertices_20261026.bin
+            ${CMAKE_CURRENT_SOURCE_DIR}/../evidence/process2_disclaimer_frame907_draw5061_vertices_20261026.bin
   )
   set_tests_properties(xbox_live_vulkan_renderer_check PROPERTIES SKIP_RETURN_CODE 77)
 

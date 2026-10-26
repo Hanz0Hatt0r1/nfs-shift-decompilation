@@ -247,6 +247,7 @@ struct CapturedTextureFetch {
     uint32_t border_color;
     bool border_size;
     bool tiled;
+    bool packed_mips = false;
 };
 
 enum class TextureComponent : uint8_t {
