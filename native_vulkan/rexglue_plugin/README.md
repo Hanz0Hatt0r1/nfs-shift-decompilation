@@ -1181,9 +1181,11 @@ frame-400 evidence above.
 The updated plugin also compiles and links as an Android ARM64 debug DSO with
 NDK r28c/API 29. It links against the matching runtime built from the existing
 Android SDK snapshot; no APK was rebuilt or installed, and this DSO was not
-loaded into the running game. The Android build emitted one SDK FPCR inline
-assembly width warning. Artifact hashes and build IDs are recorded in the
-source-readback evidence JSON.
+loaded into the running game. A separate Android factory smoke loaded the DSO
+and checked the GPU ABI/backend on the Redmi Note 8 Pro; it submitted no draws.
+The retail app remained resumed and the temporary test files were removed. The
+Android build emitted one SDK FPCR inline assembly width warning. Artifact
+hashes and build IDs are recorded in the source-readback evidence JSON.
 
 Process 1 tried the selected frame again with this plugin and the matching
 runtime in an isolated Linux retail run. The host stopped with `SIGBUS` after
