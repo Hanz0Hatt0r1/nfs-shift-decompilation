@@ -1,0 +1,75 @@
+{
+  "schema": "shift.process2.redmi_latest_candidate_live_disclaimer.v1",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": "13",
+    "api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615",
+    "package": "com.hanz0hatt0r.nfsshift"
+  },
+  "installed_candidate": {
+    "apk_path": "/home/pes/work/process2-descriptor-layout-android-handover-20261026/process2-vulkan-descriptor-layout-20261026.apk",
+    "apk_sha256": "35383e756421c4d92264e02f3e9da3eafc52db22febe6c316d15007c0076cd3b",
+    "device_base_apk_sha256_match": true,
+    "last_update_time_local": "2026-10-26 11:05:55 +03:00",
+    "renderer_source_commit": "345fc2ef69f485ab3f2f15effbb4d837be96c51f",
+    "arm64_renderer_dso_sha256": "9d7ee9ee95b38497ed37f7cf72365a1bcb250560c4d387ab635272de9bd90a0d",
+    "renderer_plugin_aliases_identical": true,
+    "runtime_dso_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "runtime_rebuilt_or_replaced": false
+  },
+  "launch": {
+    "started_from": "Android Launcher with `monkey -p com.hanz0hatt0r.nfsshift 1`",
+    "reinstalled": false,
+    "app_data_cleared": false,
+    "game_input_sent": false,
+    "process_id": 15722,
+    "activity_top_resumed_at_recheck": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity",
+    "app_remained_foreground_at_recheck": true
+  },
+  "renderer_log": {
+    "device_log_path": "files/nfs_shift/user/logs/nfs_shift_016.log",
+    "captured_log": "process2_redmi_latest_candidate_live_disclaimer_20261026.log.gz",
+    "log_sha256": "38be1f3b98e2c0b6466a649aac318f4d0fa6d66bb4268ee957bc4dbd9ac24feb",
+    "compressed_log_sha256": "907b21da9ad2ac6ded41802b5998dfa16d76dcdb3f3275ca6ebd7997621f95d0",
+    "line_count": 3962,
+    "vulkan_device_logged": "Mali-G76 MC4, API 1.1.131",
+    "emulator_free_vulkan_frontend_logged": true,
+    "guest_ring": "0x09752580",
+    "guest_ring_bytes": 32768,
+    "submitted_draw_batches": 495,
+    "accepted_source0_sample0_copy_convert": 495,
+    "refresh_failures": 0,
+    "pm4_draw_rejections": 0,
+    "unresolved_draws": [
+      "[2026-10-26 11:50:26.031] [info] [core] [t15780] shift-native: unresolved captured draw #0 topology=1 autoindex=true count=1 raster=false inputs=false translated=false: incomplete captured raster register state valid_mask=0x17038"
+    ],
+    "menu_background_open_failures": [
+      "[2026-10-26 11:52:07.321] [warning] [krnl] [t15783] [NtCreateFile] FAILED: path='d:\\tracks\\_data\\instances\\scenes\\menu_background.xml' -> 0xc000000f",
+      "[2026-10-26 11:52:07.323] [warning] [krnl] [t15783] [NtCreateFile] FAILED: path='d:\\tracks\\_data\\instances\\scenes\\menu_background.xml' -> 0xc000000f",
+      "[2026-10-26 11:52:07.325] [warning] [krnl] [t15783] [NtCreateFile] FAILED: path='d:\\tracks\\_data\\static\\scenes\\menu_background.xml' -> 0xc000000f",
+      "[2026-10-26 11:52:07.332] [warning] [krnl] [t15783] [NtCreateFile] FAILED: path='d:\\tracks\\_data\\static\\scenes\\menu_background.xml' -> 0xc000000f"
+    ]
+  },
+  "screen": {
+    "screenshot": "process2_redmi_latest_candidate_live_disclaimer_20261026.png",
+    "sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "extent": [
+      2340,
+      1080
+    ],
+    "captured_at_local": "2026-10-26 11:52:17 +03:00",
+    "observation": "Original retail safety disclaimer is visible with readable text and thin purple horizontal strips.",
+    "two_read_only_screenshots_same_sha256_28_seconds_apart": true,
+    "second_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af"
+  },
+  "limitations": [
+    "No post-disclaimer menu or race draw appeared in this run; four menu_background.xml open failures followed the final renderer batch, but causality is not established.",
+    "The only unresolved PM4 draw was early draw #0, rejected fail-closed because raster state was incomplete (valid_mask=0x17038).",
+    "The phone run did not enable Vulkan validation layers; host regression runs provide validation coverage.",
+    "This verifies a stable disclaimer frame on this device, not full-scene parity or sustained live cutscene playback."
+  ]
+}

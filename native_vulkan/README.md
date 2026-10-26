@@ -245,13 +245,33 @@ The corresponding Linux renderer source was handed to Process 1 and loaded
 with its matching runtime. The available P2 retail log shows startup draw #0
 arriving before a complete raster-register state (`valid_mask=0x17038`) and
 being rejected fail-closed; subsequent observed batches were submitted. The
-latest Android package has no per-frame plugin log, and its app process later
-disappeared with an unknown cause. Neither observation proves a Vulkan crash.
-No post-disclaimer menu, new Bink frame from the current Android candidate, or
-race-scene draw was captured. The next renderer change therefore needs a fresh
-retail PM4 capture and paired Vulkan readback from that scene; the nearby
-`menu_background.xml` open failures are a Process 1 runtime/content observation
-and do not establish the cause of the stalled screen.
+initial Android install capture had no per-frame plugin log; a later
+read-only check found its process absent, with unknown cause. A fresh relaunch
+of the same installed APK is recorded below. No post-disclaimer menu, new Bink
+frame from the current Android candidate, or race-scene draw has been
+captured. The nearby `menu_background.xml` open failures are a Process 1
+runtime/content observation and do not establish the cause of the stalled
+screen.
+
+## Fresh Redmi relaunch (2026-10-26)
+
+The APK installed on the Redmi was re-hashed on device and matches the
+candidate exactly (`35383e75…0076cd3b`). I launched it from the Android
+launcher without reinstalling or clearing data. The app displayed the original
+legal disclaimer; two screenshots 28 seconds apart are byte-identical. Its
+`shift-native` log records 495 live draw submissions and 495 accepted
+source-0/sample-0 Copy/Convert operations, zero Vulkan refresh failures, and
+zero rejected PM4 draw packets. The only unresolved draw is the early draw #0
+with incomplete raster state (`valid_mask=0x17038`), still fail-closed.
+
+Four failed `menu_background.xml` opens follow the last 14-draw renderer batch;
+the run does not establish causality. The app was left foregrounded. See the
+[`Redmi relaunch evidence`](../evidence/process2_redmi_latest_candidate_live_disclaimer_20261026.json),
+[device screenshot](../evidence/process2_redmi_latest_candidate_live_disclaimer_20261026.png),
+and [captured runtime log](../evidence/process2_redmi_latest_candidate_live_disclaimer_20261026.log.gz).
+This confirms a stable disclaimer frame on Mali-G76 MC4; it does not verify
+the menu, race, or full-scene parity. Android validation-layer coverage is
+unavailable.
 
 ## Fresh exact-XEX retail check (2026-10-26)
 
