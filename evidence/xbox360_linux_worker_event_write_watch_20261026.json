@@ -1,0 +1,139 @@
+{
+  "schema": "shift.xbox360.linux-worker-event-write-watch.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "duration_seconds": 61.479,
+    "termination": "The harness sent SIGINT to the inferior after a 60-second observation; GDB exited with code 0.",
+    "controller_input_sent": false,
+    "guest_memory_modified_by_probe": false,
+    "mapped_hashes_verified_in_inferior": false,
+    "binaries": {
+      "host": {
+        "path_outside_git": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/nfs_shift",
+        "sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a"
+      },
+      "rexglue_runtime": {
+        "path_outside_git": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/librexruntime.so",
+        "sha256": "f43d094797bf30c2e552b244c6ec50e4e69bb0b11fee409e07a812ba74158f78"
+      },
+      "gpu_plugin": {
+        "path_outside_git": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/librexgpu-shift-native.so",
+        "sha256": "f1404a4f57fb073f12cc0b34da4f74a3e75d8d6f2ffb49e62708c9a1b09bb6b6",
+        "source_state": "Local Process 2 scratch-writeback build; not claimed merged."
+      }
+    },
+    "gdb_script": {
+      "path": "tools/xbox360/trace_linux_worker_event_write_watch.gdb",
+      "sha256": "75043fae0a4a693593618442c5691b093bf007a4f1ca65c7a60614af17db6ffb"
+    },
+    "gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-worker-event-write-watch-20261026/gdb.log",
+      "sha256": "851f656501d15690671b24f38264ac1a65700136feb9f50248b08e68a7bea00c"
+    }
+  },
+  "worker_event_state_watch": {
+    "guest_field": "event object + 4",
+    "watchpoints_installed": 2,
+    "writes_observed": 0,
+    "events": [
+      {
+        "worker_guest_object": "0xB7368BE0",
+        "event_guest_address": "0xB7368C00",
+        "event_state_host_alias": "0x1B7368C04",
+        "initial_state": "0x00000000"
+      },
+      {
+        "worker_guest_object": "0xB7368C30",
+        "event_guest_address": "0xB7368C50",
+        "event_state_host_alias": "0x1B7368C54",
+        "initial_state": "0x00000000"
+      }
+    ]
+  },
+  "retail_queue": {
+    "wait_helper": "0x823B34A0",
+    "logged_entry_milestones": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900,
+      1000,
+      1100,
+      1200
+    ],
+    "minimum_entries_observed": 1200,
+    "first_sample": {
+      "head": 3,
+      "tail": 21,
+      "predicate_byte": "0x14"
+    },
+    "last_sample": {
+      "entry_milestone": 1200,
+      "head": 3249,
+      "tail": 3259,
+      "predicate_byte": "0x14"
+    },
+    "sampled_predicate_bytes": [
+      "0x14",
+      "0x04"
+    ],
+    "completion_mask": "0x02",
+    "completion_mask_set_in_samples": false
+  },
+  "interpretation": {
+    "observed": [
+      "Both retail workers entered 0x823B8AC8 and read their event signal-state field as zero; read-only hardware watchpoints were installed for both fields.",
+      "No write to either watched guest event state was observed during the bounded run.",
+      "The retail queue wait helper was entered at least 1,200 times, with sampled head advancing from 3 to 3,249 and tail from 21 to 3,259.",
+      "The sampled predicate alternated between 0x14 and 0x04; completion mask 0x02 stayed clear in these samples while the queue head advanced."
+    ],
+    "not_proven": [
+      "That either worker event is responsible for the retail queue predicate or that all possible host-side wake paths write this guest field.",
+      "A causal relation between worker event state, source-1 callbacks, or Process 2 graphics completion.",
+      "Main-menu entry, offline-race entry, or sustained visible gameplay output.",
+      "That the local Process 2 plugin change is merged or production-ready."
+    ],
+    "next_p1_step": "Do not synthesize worker-event signals or change the retail queue predicate. This run shows the queue advancing with both watched event states unchanged; resume P1 changes when a specific guest input, scheduler, or initialization mismatch is demonstrated."
+  }
+}
