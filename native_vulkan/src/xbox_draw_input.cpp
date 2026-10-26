@@ -1577,37 +1577,63 @@ bool decode_captured_copy_state(
     const uint32_t command = (registers.copy_control >> 20) & 0x3u;
     const uint32_t destination_pitch = registers.copy_dest_pitch & 0x3FFFu;
     const uint32_t destination_height = (registers.copy_dest_pitch >> 16) & 0x3FFFu;
+    const uint32_t destination_endian = registers.copy_dest_info & 0x7u;
+    const bool destination_array = ((registers.copy_dest_info >> 3) & 1u) != 0;
+    const uint32_t destination_slice = (registers.copy_dest_info >> 4) & 0x7u;
     const uint32_t destination_format = (registers.copy_dest_info >> 7) & 0x3Fu;
     const uint32_t destination_number = (registers.copy_dest_info >> 13) & 0x7u;
-    const uint32_t destination_exp_bias = (registers.copy_dest_info >> 16) & 0x3Fu;
+    const uint32_t raw_exp_bias = (registers.copy_dest_info >> 16) & 0x3Fu;
+    const int32_t destination_exp_bias = (raw_exp_bias & 0x20u)
+        ? static_cast<int32_t>(raw_exp_bias) - 0x40
+        : static_cast<int32_t>(raw_exp_bias);
+    const bool color_clear_enable = (clear_flags & 1u) != 0;
+    const bool depth_clear_enable = (clear_flags & 2u) != 0;
+    const bool destination_swap_red_blue =
+        ((registers.copy_dest_info >> 24) & 1u) != 0;
+    const bool known_destination =
+        (destination_format == 6u && destination_number == 0u &&
+         destination_endian == 0u && destination_exp_bias == 0 &&
+         sample_select == 0u && !color_clear_enable &&
+         !depth_clear_enable && destination_swap_red_blue) ||
+        (destination_format == 26u && destination_number == 2u &&
+         destination_endian == 1u && destination_exp_bias == 11 &&
+         sample_select == 6u && color_clear_enable &&
+         depth_clear_enable && !destination_swap_red_blue) ||
+        (destination_format == 31u && destination_number == 7u &&
+         destination_endian == 2u && destination_exp_bias == 0 &&
+         sample_select == 0u && color_clear_enable &&
+         !depth_clear_enable && !destination_swap_red_blue);
     if ((registers.copy_control & ~kCopyControlFields) != 0 ||
-        source_select != 0 || sample_select != 0 || clear_flags != 0 ||
+        source_select != 0 ||
         command != static_cast<uint32_t>(CapturedCopyCommand::Convert) ||
         registers.copy_dest_base == 0 || (registers.copy_dest_base & 0xFFFu) != 0 ||
         (registers.copy_dest_pitch & ~kCopyDestPitchFields) != 0 ||
-        destination_pitch != 1280 || destination_height != 720 ||
-        (destination_pitch & 7u) != 0 || (destination_height & 7u) != 0 ||
+        destination_pitch == 0 || destination_height == 0 ||
+        (destination_pitch & 7u) != 0 ||
         (registers.copy_dest_info & ~kCopyDestInfoFields) != 0 ||
-        (registers.copy_dest_info & 0x7Fu) != 0 ||
-        ((registers.copy_dest_info >> 4) & 0x7u) != 0 ||
-        destination_format != 6 || destination_number != 0 ||
-        destination_exp_bias != 0 ||
+        destination_array || destination_slice != 0 ||
+        destination_endian > 2u || !known_destination ||
         ((registers.copy_dest_info >> 22) & 0x3u) != 0 ||
         ((registers.copy_dest_info >> 25) & 0x7Fu) != 0) {
         return fail("unsupported captured Xenos color Copy/Convert state", error);
     }
 
-    *output = CapturedCopyState{
-        source_select,
-        sample_select,
-        CapturedCopyCommand::Convert,
-        registers.copy_dest_base,
-        destination_pitch,
-        destination_height,
-        destination_format,
-        ((registers.copy_dest_info >> 24) & 1u) != 0,
-        ((registers.color_info >> 16) & 0xFu) == 1u,
-    };
+    output->source_select = source_select;
+    output->sample_select = sample_select;
+    output->command = CapturedCopyCommand::Convert;
+    output->destination_base = registers.copy_dest_base;
+    output->destination_pitch = destination_pitch;
+    output->destination_height = destination_height;
+    output->destination_endian = destination_endian;
+    output->destination_array = destination_array;
+    output->destination_slice = destination_slice;
+    output->destination_format = destination_format;
+    output->destination_number_format = destination_number;
+    output->destination_exp_bias = destination_exp_bias;
+    output->destination_swap_red_blue = destination_swap_red_blue;
+    output->color_clear_enable = color_clear_enable;
+    output->depth_clear_enable = depth_clear_enable;
+    output->source_gamma = ((registers.color_info >> 16) & 0xFu) == 1u;
     if (error) error->clear();
     return true;
 }

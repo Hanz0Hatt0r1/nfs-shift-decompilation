@@ -1185,6 +1185,45 @@ int main() {
                 phone_copy_registers, &phone_copy_state, &error) &&
                 phone_copy_state.source_gamma,
             "Copy/Convert source color format did not retain the captured gamma bit");
+    auto captured_msaa_copy = phone_copy_registers;
+    captured_msaa_copy.color_info = 0x000C0000u;
+    captured_msaa_copy.copy_control = 0x00100360u;
+    captured_msaa_copy.copy_dest_base = 0x0BE19000u;
+    captured_msaa_copy.copy_dest_pitch = 0x02D00500u;
+    captured_msaa_copy.copy_dest_info = 0x000B4D01u;
+    require(shift::xbox::decode_captured_copy_state(
+                captured_msaa_copy, &phone_copy_state, &error) &&
+                phone_copy_state.sample_select == 6u &&
+                phone_copy_state.color_clear_enable &&
+                phone_copy_state.depth_clear_enable &&
+                phone_copy_state.destination_endian == 1u &&
+                phone_copy_state.destination_format == 26u &&
+                phone_copy_state.destination_number_format == 2u &&
+                phone_copy_state.destination_exp_bias == 11 &&
+                phone_copy_state.destination_pitch == 1280u &&
+                phone_copy_state.destination_height == 720u &&
+                !phone_copy_state.destination_swap_red_blue &&
+                !phone_copy_state.source_gamma,
+            "captured 4x format-26 Copy/Convert register contract was rejected");
+    auto captured_downsample_copy = phone_copy_registers;
+    captured_downsample_copy.color_info = 0x00060000u;
+    captured_downsample_copy.copy_control = 0x00100100u;
+    captured_downsample_copy.copy_dest_base = 0x0CC87000u;
+    captured_downsample_copy.copy_dest_pitch = 0x00F30100u;
+    captured_downsample_copy.copy_dest_info = 0x0000EF82u;
+    require(shift::xbox::decode_captured_copy_state(
+                captured_downsample_copy, &phone_copy_state, &error) &&
+                phone_copy_state.sample_select == 0u &&
+                phone_copy_state.color_clear_enable &&
+                !phone_copy_state.depth_clear_enable &&
+                phone_copy_state.destination_endian == 2u &&
+                phone_copy_state.destination_format == 31u &&
+                phone_copy_state.destination_number_format == 7u &&
+                phone_copy_state.destination_exp_bias == 0 &&
+                phone_copy_state.destination_pitch == 256u &&
+                phone_copy_state.destination_height == 243u &&
+                !phone_copy_state.destination_swap_red_blue,
+            "captured 16_16_FLOAT downsample Copy/Convert contract was rejected");
     auto unsupported_copy_registers = phone_copy_registers;
     unsupported_copy_registers.copy_valid_mask = 0x7u;
     require(!shift::xbox::decode_captured_copy_state(

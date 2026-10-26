@@ -326,15 +326,22 @@ enum class CapturedCopyCommand : uint8_t {
 };
 
 struct CapturedCopyState {
-    uint32_t source_select;
-    uint32_t sample_select;
-    CapturedCopyCommand command;
-    uint32_t destination_base;
-    uint32_t destination_pitch;
-    uint32_t destination_height;
-    uint32_t destination_format;
-    bool destination_swap_red_blue;
+    uint32_t source_select = 0;
+    uint32_t sample_select = 0;
+    CapturedCopyCommand command = CapturedCopyCommand::Convert;
+    uint32_t destination_base = 0;
+    uint32_t destination_pitch = 0;
+    uint32_t destination_height = 0;
+    uint32_t destination_format = 0;
+    bool destination_swap_red_blue = false;
     bool source_gamma = false;
+    uint32_t destination_endian = 0;
+    bool destination_array = false;
+    uint32_t destination_slice = 0;
+    uint32_t destination_number_format = 0;
+    int32_t destination_exp_bias = 0;
+    bool color_clear_enable = false;
+    bool depth_clear_enable = false;
 };
 
 enum class CapturedDepthTargetFormat : uint8_t {

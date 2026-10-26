@@ -1852,6 +1852,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         uint32_t draws_with_project_shader_translation = 0;
         uint32_t draws_with_resolved_resource_payloads = 0;
         uint32_t draws_with_unresolved_resource_payloads = 0;
+        uint32_t recognized_intermediate_copies = 0;
         uint32_t loaded_shader_programs = 0;
         uint32_t unresolved_shader_programs = 0;
         uint32_t loaded_immediate_shader_programs = 0;
@@ -2544,6 +2545,17 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   shift::xbox::CapturedCopyState copy_state{};
                   if (shift::xbox::decode_captured_copy_state(
                           raster_registers, &copy_state, &error)) {
+                    if (copy_state.destination_format != 6u ||
+                        copy_state.destination_number_format != 0u ||
+                        copy_state.destination_endian != 0u ||
+                        copy_state.destination_exp_bias != 0 ||
+                        copy_state.sample_select != 0u ||
+                        copy_state.color_clear_enable ||
+                        copy_state.depth_clear_enable ||
+                        !copy_state.destination_swap_red_blue) {
+                      ++recognized_intermediate_copies;
+                      continue;
+                    }
                     shift::xbox::CapturedVulkanCopy prepared_copy{};
                     prepared_copy.state = copy_state;
                     prepared_copy.source_width = captured_target_width;
@@ -3076,6 +3088,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                        "({} entries, {} payload bytes), {} with resolved resource bytes "
                        "({} unresolved)), "
                        "R8 upload scratch {}/{} hits/misses ({} slots, {} bytes), "
+                       "{} intermediate Copy/Convert states decoded, "
                        "{} guest swaps, {} Vulkan frames submitted, "
                        "{} unsupported packet/draw forms, type3 opcodes [{}]",
                        expanded.packets.size(), raw_register_writes,
@@ -3092,7 +3105,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                        draws_with_unresolved_resource_payloads,
                        r8_scratch_stats.hits, r8_scratch_stats.misses,
                        r8_scratch_stats.entries, r8_scratch_stats.reserved_bytes,
-                       decoded_swaps, submitted_frames,
+                       recognized_intermediate_copies, decoded_swaps, submitted_frames,
                        unsupported_draws, type3_opcode_summary.str());
         } else {
           REXLOG_WARN("shift-native: dropped malformed PM4 batch at WPTR {:08X}: {}",
