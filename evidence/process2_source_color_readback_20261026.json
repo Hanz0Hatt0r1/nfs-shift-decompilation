@@ -88,10 +88,45 @@
     "core_regression_run_offscreen": true,
     "redmi_app_state": "The prior shader-cache APK remains open on the retail disclaimer (PID 31012, top-resumed); no app restart or plugin replacement occurred. Temporary test files were removed."
   },
+  "retail_black_frame_400": {
+    "run_directory": "/tmp/nfs-p1-source-color-readback-20261026",
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "plugin_sha256": "b488dfeb5803f031c4027270b3ab20831a379814145ceda7c052ecd12199a70c",
+    "runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+    "selected_submitted_frame": 400,
+    "source": {
+      "format": "VK_FORMAT_R8G8B8A8_UNORM",
+      "samples": 4,
+      "average_resolve": true,
+      "non_black_pixels": 0,
+      "fnv1a64": "E5D4D97753B440E8",
+      "raw_sha256": "f4e8ca8a048fab88780f073776ab2676d5936988e1622b93cb49e1855cfecb65"
+    },
+    "presenter_output": {
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "non_black_pixels": 0,
+      "fnv1a64": "D78AD60E15E72325",
+      "raw_sha256": "e94e580f80b4522e921a3c0cf72c929eed0fb7093da4e372c782eaf83827e991"
+    },
+    "frame_events": {
+      "captured_indexed_draws_submitted": 2,
+      "copy_convert": "accepted source-0/sample-0 Copy/Convert to the 1280x720 presenter target",
+      "black_source_precedes_copy": true
+    },
+    "trace_assessment": {
+      "conclusion": "The source render target remained at black after two renderer-ready indexed draws were submitted; the black presenter output is downstream of that already-black source. The evidence does not distinguish guest-requested clear/no effective color writes from draw state, shader, or rasterization producing no visible RGB.",
+      "per_draw_state_dump_for_frame_400_present": false,
+      "ring_pointer_trace_present": false,
+      "renderer_attachment_initial_value": "The Vulkan render-pass color attachment uses VK_ATTACHMENT_LOAD_OP_CLEAR with RGB=0 (alpha=1); an untouched target therefore reads black. This does not prove a guest-issued clear packet.",
+      "unresolved_startup_draw": "A separate draw #0 near process startup had incomplete raster state valid_mask=0x17038; it is not associated with submitted frame 400.",
+      "related_runs_are_not_frame_equivalent": "Older frame-400 draw dumps belong to different launches and show different draw sequences; they cannot supply missing state for this black run."
+    }
+  },
   "limits": [
     "The homogeneous 4x source dump is an average resolve and therefore is not a byte-for-byte representation of sample zero consumed by the current guest Copy/Convert shader; the log reports the resolve mode explicitly.",
     "The mixed 4x-to-1x dump reads the final single-sample image after the existing resolve and 1x draws.",
-    "No retail frame has been captured with this diagnostic yet. Synthetic CTest output is not retail parity evidence.",
+    "This retail frame-400 source/output measurement is not retail parity evidence: its source and presenter output are black, and no exact-frame per-draw state or pixel-write trace was captured.",
     "The full Linux plugin live-ring CTest suite was not rebuilt because an external ReXGlue SDK host configuration failed; the plugin itself, factory smoke, resolve-capability test, and native Vulkan CTest passed."
   ]
 }
