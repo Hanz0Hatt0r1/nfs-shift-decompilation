@@ -1,0 +1,79 @@
+{
+  "schema": "shift.xbox360.linux-p2-e03-wait-runtime-crossrun.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host": {
+      "path": "/tmp/nfs-shift-p1-p2e03-crossrun-20261026/bin/nfs_shift",
+      "sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a",
+      "build_id": "bbd15fe3144633bec476ec5b3a71a494a08a212a"
+    },
+    "p1_runtime": {
+      "path": "/home/pes/work/process2-p1-current-p2-handoff-20261026/librexruntime.so",
+      "sha256": "f43d094797bf30c2e552b244c6ec50e4e69bb0b11fee409e07a812ba74158f78",
+      "build_id": "6dcf8537149594cf86f574a61bcbedc96c837448",
+      "source_commit": "26cb90f67fd7df711ee6cd4338ef8402f0bfdefa"
+    },
+    "p2_linux_plugin": {
+      "path": "/home/pes/work/process2-p1-current-p2-handoff-20261026/librexgpu-shift-native.so",
+      "copied_path": "/tmp/nfs-shift-p1-p2e03-crossrun-20261026/bin/librexgpu-shift-native.so",
+      "sha256": "1f9e04549f74b6af2506bfc2600dc220e7857d90661b9a57f4a17209e9311f5d",
+      "build_id": "7ae7a3cbb1c9d3a35ea5e68dc896fa6e990c05b3",
+      "source_commit": "e03a079fb3a83cdb51fae7983bf0e47fcb3656ec"
+    }
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "bounded_wall_seconds": 28,
+    "controller_input_sent": false,
+    "guest_memory_written_by_observer": false,
+    "mapped_hashes_verified_in_inferior": true,
+    "termination": "The bounded run timed out, sent SIGINT, and hard-exited with code 124; clean title shutdown was not observed.",
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-p1-p2e03-crossrun-20261026/bin/logs/nfs_shift_002.log",
+      "sha256": "7aee42471b4fddae5b4a02638d6b7f1da19ec7fe4adad47a876019b5e901cdf6"
+    },
+    "verified_game_window_capture": false,
+    "wait_reg_mem": {
+      "entered": true,
+      "completed": false,
+      "guest_physical_word": "0x1B964004",
+      "poll_address": "0x1B964006",
+      "reference": "0x00000001",
+      "mask": "0xFFFFFFFF",
+      "endian_mode": 2,
+      "compare": 3,
+      "source_ib": "0x095D0120",
+      "byte_offset": 1180,
+      "coher_status_host_waits_entered": 4,
+      "coher_status_host_waits_completed": 4,
+      "samples": [
+        {"poll": 0, "elapsed_ms": 0, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+        {"poll": 1000, "elapsed_ms": 1094, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+        {"poll": 2000, "elapsed_ms": 2189, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+        {"poll": 3000, "elapsed_ms": 3296, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+        {"poll": 4000, "elapsed_ms": 4431, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+        {"poll": 5000, "elapsed_ms": 5552, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+        {"poll": 6000, "elapsed_ms": 6643, "raw": "0x00000000", "observed": "0x00000000", "condition": false},
+        {"poll": 7000, "elapsed_ms": 7735, "raw": "0x00000000", "observed": "0x00000000", "condition": false}
+      ]
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "With the identified P1 runtime and P2 e03 Linux plugin, the exact retail XEX passed four captured COHER_STATUS_HOST waits and entered the retail WAIT_REG_MEM at 0x1B964004.",
+      "The P2 Linux sampler read zero at the target word for polls 0 through 7000 (0 through 7735 ms); every recorded equality condition remained false.",
+      "The wait packet and retail comparison operands remained unchanged during this run."
+    ],
+    "not_proven": [
+      "The owner or producer of the expected value 1, or the cause of its absence.",
+      "Whether an unobserved CPU, shader, DMA, or device path writes the target outside the recorded samples.",
+      "A visible game frame, main-menu entry, controller polling, or offline-race entry."
+    ],
+    "next_p1_step": "Trace the retail producer and guest/device visibility path for context+4 without bypassing WAIT_REG_MEM or changing retail comparison semantics."
+  }
+}
