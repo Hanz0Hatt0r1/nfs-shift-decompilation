@@ -395,8 +395,13 @@ int main(int argc, char** argv) {
       return 1;
     }
     const size_t cached_sampler_count = texture_cache.cached_sampler_count();
+    const size_t cached_descriptor_layout_count =
+        texture_cache.cached_descriptor_layout_count();
+    const size_t descriptor_layout_cache_hits =
+        texture_cache.descriptor_layout_cache_hits();
     if (texture_cache.size() != draws.size() ||
         texture_cache.cached_pipeline_count() != draws.size() ||
+        cached_descriptor_layout_count == 0 ||
         cached_sampler_count == 0) {
       std::cerr << "captured texture or graphics pipeline cache did not retain "
                    "each draw resource and its sampler state\n";
@@ -411,7 +416,11 @@ int main(int argc, char** argv) {
             false, {}, pipeline_cache, &texture_cache) ||
         repeated_cached_output != cached_output ||
         texture_cache.cached_pipeline_count() != draws.size() ||
-        texture_cache.cached_sampler_count() != cached_sampler_count) {
+        texture_cache.cached_sampler_count() != cached_sampler_count ||
+        texture_cache.cached_descriptor_layout_count() !=
+            cached_descriptor_layout_count ||
+        texture_cache.descriptor_layout_cache_hits() <=
+            descriptor_layout_cache_hits) {
       std::cerr << "reused Vulkan pipeline cache changed captured draw output: "
                 << error << '\n';
       return 1;
@@ -1185,7 +1194,9 @@ int main(int argc, char** argv) {
     }
     texture_cache.clear();
     if (texture_cache.cached_pipeline_count() != 0 ||
-        texture_cache.cached_sampler_count() != 0) {
+        texture_cache.cached_sampler_count() != 0 ||
+        texture_cache.cached_descriptor_layout_count() != 0 ||
+        texture_cache.descriptor_layout_cache_hits() != 0) {
       std::cerr << "clearing texture cache retained GPU objects\n";
       return 1;
     }

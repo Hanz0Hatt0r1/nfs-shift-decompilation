@@ -86,9 +86,10 @@ struct CapturedVulkanDrawVisibility {
 };
 
 // Reuses live R8 planes, per-draw vertex/index/uniform upload buffers,
-// compatible graphics pipelines, and sampler states across frames. Keep this
-// object alive for one Vulkan device and clear it before destroying that
-// device. Calls that share it must be externally synchronized.
+// compatible graphics pipelines, sampler states, and compatible descriptor
+// layouts across frames. Keep this object alive for one Vulkan device and
+// clear it before destroying that device. Calls that share it must be
+// externally synchronized.
 class CapturedVulkanTextureCache {
  public:
     CapturedVulkanTextureCache();
@@ -101,6 +102,8 @@ class CapturedVulkanTextureCache {
     size_t cached_pipeline_count() const;
     size_t cached_sampler_count() const;
     size_t cached_draw_buffer_count() const;
+    size_t cached_descriptor_layout_count() const;
+    size_t descriptor_layout_cache_hits() const;
 
  private:
     struct Impl;

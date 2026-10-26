@@ -61,6 +61,7 @@ struct DrawResources {
   VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
   VkPipeline pipeline = VK_NULL_HANDLE;
   CachedGraphicsPipeline *cached_pipeline_entry = nullptr;
+  bool cached_descriptor_layouts = false;
 };
 
 struct TextureCacheKey {
@@ -109,6 +110,7 @@ constexpr uint64_t kDrawBufferCacheBudgetBytes = 16u * 1024u * 1024u;
 constexpr size_t kDrawBufferCacheEntryLimit = 128;
 constexpr size_t kGraphicsPipelineCacheEntryLimit = 128;
 constexpr size_t kSamplerCacheEntryLimit = 64;
+constexpr size_t kDescriptorLayoutCacheEntryLimit = 128;
 
 struct SamplerCacheKey {
   std::array<uint32_t, 9> values{};
@@ -146,6 +148,25 @@ struct CachedGraphicsPipeline {
 };
 
 using GraphicsPipelineKey = std::vector<uint64_t>;
+
+using DescriptorLayoutKey = std::vector<uint32_t>;
+
+struct DescriptorLayoutKeyHash {
+  size_t operator()(const DescriptorLayoutKey& key) const noexcept {
+    uint64_t hash = 14695981039346656037ull;
+    for (uint32_t binding : key) {
+      hash ^= binding;
+      hash *= 1099511628211ull;
+    }
+    return static_cast<size_t>(hash);
+  }
+};
+
+struct CachedDescriptorLayouts {
+  VkDescriptorSetLayout constants = VK_NULL_HANDLE;
+  VkDescriptorSetLayout textures = VK_NULL_HANDLE;
+  VkPipelineLayout pipeline = VK_NULL_HANDLE;
+};
 
 struct GraphicsPipelineKeyHash {
   size_t operator()(const GraphicsPipelineKey &key) const noexcept {
@@ -204,14 +225,16 @@ struct FrameResources {
       if (draw.pipeline && !draw.cached_pipeline_entry) {
         vkDestroyPipeline(device, draw.pipeline, nullptr);
       }
-      if (draw.pipeline_layout) {
+      if (draw.pipeline_layout && !draw.cached_descriptor_layouts) {
         vkDestroyPipelineLayout(device, draw.pipeline_layout, nullptr);
       }
       if (draw.descriptor_pool)
         vkDestroyDescriptorPool(device, draw.descriptor_pool, nullptr);
-      for (VkDescriptorSetLayout layout : draw.descriptor_layouts) {
-        if (layout)
-          vkDestroyDescriptorSetLayout(device, layout, nullptr);
+      if (!draw.cached_descriptor_layouts) {
+        for (VkDescriptorSetLayout layout : draw.descriptor_layouts) {
+          if (layout)
+            vkDestroyDescriptorSetLayout(device, layout, nullptr);
+        }
       }
       if (draw.vertex_shader)
         vkDestroyShaderModule(device, draw.vertex_shader, nullptr);
@@ -308,7 +331,11 @@ struct TextureCacheState {
   std::unordered_map<GraphicsPipelineKey, CachedGraphicsPipeline,
                      GraphicsPipelineKeyHash>
       graphics_pipelines;
+  std::unordered_map<DescriptorLayoutKey, CachedDescriptorLayouts,
+                     DescriptorLayoutKeyHash>
+      descriptor_layouts;
   std::unordered_map<SamplerCacheKey, VkSampler, SamplerCacheKeyHash> samplers;
+  size_t descriptor_layout_cache_hits = 0;
   std::deque<std::unique_ptr<FrameResources>> in_flight;
 };
 
@@ -689,6 +716,7 @@ bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
     if (cache->device && cache->device != device &&
         (!cache->draw_buffers.empty() || !cache->textures.empty() ||
          !cache->graphics_pipelines.empty() ||
+         !cache->descriptor_layouts.empty() ||
          !cache->samplers.empty() || !cache->in_flight.empty())) {
         return fail("captured Vulkan resource cache cannot be shared across devices", error);
     }
@@ -829,6 +857,16 @@ void clear_texture_cache(TextureCacheState* cache) {
         destroy_cached_graphics_pipeline(cache->device, pipeline);
     }
     cache->graphics_pipelines.clear();
+    for (auto& [key, layouts] : cache->descriptor_layouts) {
+        if (layouts.pipeline)
+            vkDestroyPipelineLayout(cache->device, layouts.pipeline, nullptr);
+        if (layouts.textures)
+            vkDestroyDescriptorSetLayout(cache->device, layouts.textures, nullptr);
+        if (layouts.constants)
+            vkDestroyDescriptorSetLayout(cache->device, layouts.constants, nullptr);
+    }
+    cache->descriptor_layouts.clear();
+    cache->descriptor_layout_cache_hits = 0;
     for (auto& [key, sampler] : cache->samplers) {
         if (sampler) vkDestroySampler(cache->device, sampler, nullptr);
     }
@@ -1395,10 +1433,6 @@ bool create_draw_resources(
       VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
   descriptor_layout_info.bindingCount = 2;
   descriptor_layout_info.pBindings = constant_bindings;
-  result = vkCreateDescriptorSetLayout(device, &descriptor_layout_info, nullptr,
-                                       &output->descriptor_layouts[0]);
-  if (result != VK_SUCCESS)
-    return vk_fail("vkCreateDescriptorSetLayout(constants)", result, error);
 
   std::vector<VkDescriptorSetLayoutBinding> texture_bindings;
   texture_bindings.reserve(output->textures.size());
@@ -1407,13 +1441,76 @@ bool create_draw_resources(
                                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1,
                                 VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
   }
-  descriptor_layout_info.bindingCount =
-      static_cast<uint32_t>(texture_bindings.size());
-  descriptor_layout_info.pBindings = texture_bindings.data();
-  result = vkCreateDescriptorSetLayout(device, &descriptor_layout_info, nullptr,
-                                       &output->descriptor_layouts[1]);
-  if (result != VK_SUCCESS)
-    return vk_fail("vkCreateDescriptorSetLayout(texture)", result, error);
+  DescriptorLayoutKey descriptor_layout_key;
+  descriptor_layout_key.reserve(texture_bindings.size());
+  for (const VkDescriptorSetLayoutBinding& binding : texture_bindings) {
+    descriptor_layout_key.push_back(binding.binding);
+  }
+  bool descriptor_layouts_reused = false;
+  if (texture_cache) {
+    const auto cached = texture_cache->descriptor_layouts.find(
+        descriptor_layout_key);
+    if (cached != texture_cache->descriptor_layouts.end()) {
+      output->descriptor_layouts[0] = cached->second.constants;
+      output->descriptor_layouts[1] = cached->second.textures;
+      output->pipeline_layout = cached->second.pipeline;
+      output->cached_descriptor_layouts = true;
+      descriptor_layouts_reused = true;
+      ++texture_cache->descriptor_layout_cache_hits;
+    }
+  }
+  if (!descriptor_layouts_reused) {
+    result = vkCreateDescriptorSetLayout(device, &descriptor_layout_info,
+                                         nullptr,
+                                         &output->descriptor_layouts[0]);
+    if (result != VK_SUCCESS)
+      return vk_fail("vkCreateDescriptorSetLayout(constants)", result, error);
+
+    descriptor_layout_info.bindingCount =
+        static_cast<uint32_t>(texture_bindings.size());
+    descriptor_layout_info.pBindings = texture_bindings.data();
+    result = vkCreateDescriptorSetLayout(device, &descriptor_layout_info,
+                                         nullptr,
+                                         &output->descriptor_layouts[1]);
+    if (result != VK_SUCCESS)
+      return vk_fail("vkCreateDescriptorSetLayout(texture)", result, error);
+
+    const VkPipelineLayoutCreateInfo pipeline_layout_info{
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        nullptr,
+        0,
+        2,
+        output->descriptor_layouts,
+        0,
+        nullptr};
+    result = vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr,
+                                    &output->pipeline_layout);
+    if (result != VK_SUCCESS)
+      return vk_fail("vkCreatePipelineLayout", result, error);
+
+    if (texture_cache &&
+        texture_cache->descriptor_layouts.size() <
+            kDescriptorLayoutCacheEntryLimit) {
+      const auto [entry, inserted] = texture_cache->descriptor_layouts.emplace(
+          descriptor_layout_key,
+          CachedDescriptorLayouts{output->descriptor_layouts[0],
+                                  output->descriptor_layouts[1],
+                                  output->pipeline_layout});
+      if (inserted) {
+        output->cached_descriptor_layouts = true;
+      } else {
+        vkDestroyPipelineLayout(device, output->pipeline_layout, nullptr);
+        vkDestroyDescriptorSetLayout(device, output->descriptor_layouts[1],
+                                     nullptr);
+        vkDestroyDescriptorSetLayout(device, output->descriptor_layouts[0],
+                                     nullptr);
+        output->descriptor_layouts[0] = entry->second.constants;
+        output->descriptor_layouts[1] = entry->second.textures;
+        output->pipeline_layout = entry->second.pipeline;
+        output->cached_descriptor_layouts = true;
+      }
+    }
+  }
 
   const VkDescriptorPoolSize pool_sizes[2] = {
       {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
@@ -1471,19 +1568,6 @@ bool create_draw_resources(
   }
   vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()),
                          writes.data(), 0, nullptr);
-
-  const VkPipelineLayoutCreateInfo pipeline_layout_info{
-      VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-      nullptr,
-      0,
-      2,
-      output->descriptor_layouts,
-      0,
-      nullptr};
-  result = vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr,
-                                  &output->pipeline_layout);
-  if (result != VK_SUCCESS)
-    return vk_fail("vkCreatePipelineLayout", result, error);
 
   if (!cached_pipeline_entry) {
     VkPipelineShaderStageCreateInfo stages[3]{};
@@ -2864,6 +2948,14 @@ size_t CapturedVulkanTextureCache::cached_draw_buffer_count() const {
         }
     }
     return count;
+}
+
+size_t CapturedVulkanTextureCache::cached_descriptor_layout_count() const {
+    return impl_ ? impl_->state.descriptor_layouts.size() : 0;
+}
+
+size_t CapturedVulkanTextureCache::descriptor_layout_cache_hits() const {
+    return impl_ ? impl_->state.descriptor_layout_cache_hits : 0;
 }
 
 bool submit_captured_vulkan_frame(

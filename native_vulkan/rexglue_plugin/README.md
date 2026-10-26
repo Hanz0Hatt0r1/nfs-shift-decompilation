@@ -1220,3 +1220,21 @@ not measured. The menu-selector language labels were separately verified on
 the current Redmi candidate and all six are readable, including the gray
 unselected rows. Build identities and the exact test record are in
 [`process2_r8_upload_scratch_20261026.json`](../../evidence/process2_r8_upload_scratch_20261026.json).
+
+## Bounded Vulkan descriptor-layout cache (2026-10-26)
+
+Captured draws now reuse Vulkan descriptor-set layouts and pipeline layouts
+when their texture binding numbers match. The cache is bounded to 128
+compatible layouts and is cleared with the existing per-device renderer cache
+after in-flight work completes. Descriptor pools and descriptor sets remain
+per draw because their buffer and image bindings change. The renderer
+regression verifies that repeated submissions reuse layouts without changing
+the offscreen pixels, and that clearing releases the retained layouts.
+
+The native Vulkan renderer tests passed 4/4 and the Linux plugin tests passed
+6/6 with `VK_LAYER_KHRONOS_validation` enabled. The updated offscreen renderer
+check also passed as ARM64 on the Redmi Note 8 Pro Mali-G76 MC4 using Vulkan
+1.1. The Linux plugin links cleanly against the matching ReXGlue runtime. No
+fresh retail playback with this layout cache was performed; no retail parity
+or frame-time improvement is claimed. Exact build identities and evidence are
+in [`process2_descriptor_layout_cache_20261026.json`](../../evidence/process2_descriptor_layout_cache_20261026.json).
