@@ -1177,3 +1177,12 @@ source whose test draw still passes occlusion. Host validation and the
 offscreen Redmi Note 8 Pro Mali-G76 MC4 Vulkan 1.1 run passed. This query path
 has not yet been collected from a retail frame; it does not revise the black
 frame-400 evidence above.
+
+Process 1 tried the selected frame again with this plugin and the matching
+runtime in an isolated Linux retail run. The host stopped with `SIGBUS` after
+about 194 seconds; its log ended at `waiting for guest PM4`, with no draw-query
+events and no source or presenter readback files. This run therefore says
+nothing new about renderer output or the cause of the earlier black source.
+The Redmi app remained open on the legal disclaimer; its read-only screenshot
+hash is unchanged. Details are in the `latest_plugin_retail_visibility_attempt`
+record in the source-readback evidence JSON.

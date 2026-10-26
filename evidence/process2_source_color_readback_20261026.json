@@ -144,6 +144,33 @@
       "related_runs_are_not_frame_equivalent": "Older frame-400 draw dumps belong to different launches and show different draw sequences; they cannot supply missing state for this black run."
     }
   },
+  "latest_plugin_retail_visibility_attempt": {
+    "run_directory": "/home/pes/work/nfs-p1-draw-visibility-20261026",
+    "owner": "Process 1 isolated Linux retail run; Process 2 only read its outputs",
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "plugin_sha256": "414ce5a95ad946c59117eb37250a4c20b717edda93b92cc4d16c05a73e2a7667",
+    "runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+    "selected_presenter_frame": 400,
+    "duration_seconds": 193.929,
+    "process_exit_code": -7,
+    "environment": {
+      "SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME": "400",
+      "SHIFT_NATIVE_VULKAN_READBACK_FRAME": "400",
+      "source_readback_requested": true,
+      "presenter_readback_requested": true
+    },
+    "renderer_log_last_progress": "shift-native: installed emulator-free Vulkan frontend; waiting for guest PM4",
+    "draw_query_events": 0,
+    "readback_files_written": false,
+    "window_capture_exit_code": 1,
+    "conclusion": "The run ended before any guest PM4 or Vulkan draw submission/query event appeared. It provides no new evidence about frame-400 rasterization, color writes, or retail parity; do not attribute the failure to the Vulkan renderer.",
+    "phone_app": {
+      "action": "read-only ADB recheck; no restart or input",
+      "top_resumed": true,
+      "screen": "legal disclaimer",
+      "screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af"
+    }
+  },
   "limits": [
     "The homogeneous 4x source dump is an average resolve and therefore is not a byte-for-byte representation of sample zero consumed by the current guest Copy/Convert shader; the log reports the resolve mode explicitly.",
     "The mixed 4x-to-1x dump reads the final single-sample image after the existing resolve and 1x draws.",
