@@ -1017,6 +1017,8 @@ VkFormat captured_color_format(CapturedColorTargetFormat format,
             return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
         case CapturedColorTargetFormat::Rgb10A2Float:
             return VK_FORMAT_R16G16B16A16_SFLOAT;
+        case CapturedColorTargetFormat::Rg16Float:
+            return VK_FORMAT_R16G16_SFLOAT;
     }
     return VK_FORMAT_UNDEFINED;
 }
@@ -1025,6 +1027,7 @@ uint32_t color_format_bytes(VkFormat format) {
     switch (format) {
         case VK_FORMAT_R8G8B8A8_UNORM:
         case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+        case VK_FORMAT_R16G16_SFLOAT:
             return 4;
         case VK_FORMAT_R16G16B16A16_UNORM:
         case VK_FORMAT_R16G16B16A16_SFLOAT:
@@ -2053,10 +2056,18 @@ bool submit_mixed_sample_copy_frame(
                                                    : target.width;
     const uint32_t source_height = copy.source_height ? copy.source_height
                                                        : target.height;
-    if (target_format == VK_FORMAT_UNDEFINED || source_width != target.width ||
-        source_height != target.height) {
-        return fail("mixed captured frame has an unsupported target format or Copy/Convert source extent",
-                    error);
+    if (target_format == VK_FORMAT_UNDEFINED) {
+        std::ostringstream message;
+        message << "mixed captured frame has unsupported Xenos color target format "
+                << static_cast<unsigned>(target.color_format);
+        return fail(message.str(), error);
+    }
+    if (source_width != target.width || source_height != target.height) {
+        std::ostringstream message;
+        message << "mixed captured Copy/Convert source extent " << source_width
+                << 'x' << source_height << " does not match first render target "
+                << target.width << 'x' << target.height;
+        return fail(message.str(), error);
     }
     size_t first_single_sample_draw = 0;
     while (first_single_sample_draw < draws.size() &&

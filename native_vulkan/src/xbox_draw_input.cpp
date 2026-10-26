@@ -1416,8 +1416,10 @@ bool decode_captured_raster_state(
     const uint32_t color_format = (registers.color_info >> 16) & 0xFu;
     const uint32_t depth_format = (registers.depth_info >> 16) & 0x1u;
     const bool depth_only = registers.mode_control == 5u;
+    const bool supported_color_format = color_format <= 3u ||
+        color_format == 6u || color_format == 12u;
     if ((registers.mode_control != 4u && !depth_only) || msaa_samples > 2 ||
-        color_format > 3u || depth_format != 0 ||
+        !supported_color_format || depth_format != 0 ||
         (registers.color_info & ~0x000F0FFFu) != 0 ||
         (registers.depth_info & ~0x00010FFFu) != 0 ||
         (registers.color_mask & ~0xFFFFu) != 0 || registers.window_offset != 0 ||
@@ -1431,6 +1433,19 @@ bool decode_captured_raster_state(
     const bool cull_back = (registers.setup_mode_control & 2u) != 0;
     if (cull_front && cull_back) {
         return fail("unsupported captured front-and-back culling", error);
+    }
+
+    CapturedColorTargetFormat captured_color_format;
+    switch (color_format) {
+        case 0: captured_color_format = CapturedColorTargetFormat::Rgba8Linear; break;
+        case 1: captured_color_format = CapturedColorTargetFormat::Rgba8Gamma; break;
+        case 2: captured_color_format = CapturedColorTargetFormat::Rgb10A2Unorm; break;
+        case 3:
+        case 12:
+            captured_color_format = CapturedColorTargetFormat::Rgb10A2Float;
+            break;
+        case 6: captured_color_format = CapturedColorTargetFormat::Rg16Float; break;
+        default: return fail("unsupported captured target or raster state", error);
     }
 
     const float x_scale = register_float(registers.viewport_x_scale);
@@ -1503,10 +1518,7 @@ bool decode_captured_raster_state(
         surface_pitch,
         msaa_samples == 0 ? 1u : msaa_samples == 1 ? 2u : 4u,
         registers.color_info & 0xFFFu,
-        color_format == 0 ? CapturedColorTargetFormat::Rgba8Linear
-        : color_format == 1 ? CapturedColorTargetFormat::Rgba8Gamma
-        : color_format == 2 ? CapturedColorTargetFormat::Rgb10A2Unorm
-                            : CapturedColorTargetFormat::Rgb10A2Float,
+        captured_color_format,
         depth_only,
         registers.depth_info & 0xFFFu,
         CapturedDepthTargetFormat::D24S8,

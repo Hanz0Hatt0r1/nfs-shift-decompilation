@@ -1024,6 +1024,35 @@ int main() {
                 live_raster_state.color_format ==
                     shift::xbox::CapturedColorTargetFormat::Rgb10A2Float,
             "captured Xenos 2_10_10_10_FLOAT target format was rejected");
+    live_raster_registers.color_info = 0x000C0000u;
+    require(shift::xbox::decode_captured_raster_state(
+                live_raster_registers, &live_raster_state, &error) &&
+                live_raster_state.color_format ==
+                    shift::xbox::CapturedColorTargetFormat::Rgb10A2Float,
+            "captured Xenos 2_10_10_10_FLOAT_AS_16_16_16_16 target was rejected");
+    auto captured_rg16_registers = live_raster_registers;
+    captured_rg16_registers.surface_info = 0x04000140u;
+    captured_rg16_registers.color_info = 0x00060000u;
+    captured_rg16_registers.depth_info = 0x00000400u;
+    captured_rg16_registers.mode_control = 0x00000004u;
+    captured_rg16_registers.depth_control = 0x00700730u;
+    captured_rg16_registers.color_mask = 0x0000000Fu;
+    captured_rg16_registers.viewport_x_scale = 0x42F30000u;
+    captured_rg16_registers.viewport_x_offset = 0x42F30000u;
+    captured_rg16_registers.viewport_y_scale = 0xC2F30000u;
+    captured_rg16_registers.viewport_y_offset = 0x42F30000u;
+    captured_rg16_registers.window_scissor_br = 0x00F300F3u;
+    captured_rg16_registers.blend_control_0 = 0x00010001u;
+    require(shift::xbox::decode_captured_raster_state(
+                captured_rg16_registers, &live_raster_state, &error, 320, 243) &&
+                live_raster_state.color_format ==
+                    shift::xbox::CapturedColorTargetFormat::Rg16Float &&
+                live_raster_state.surface_pitch == 320 &&
+                live_raster_state.width == 320 && live_raster_state.height == 243 &&
+                live_raster_state.sample_count == 1 &&
+                live_raster_state.scissor_x1 == 243 &&
+                live_raster_state.scissor_y1 == 243,
+            "captured Redmi 16_16_FLOAT render target tuple was rejected or misdecoded");
     live_raster_registers.color_info = 0x00040000u;
     require(!shift::xbox::decode_captured_raster_state(
                 live_raster_registers, &live_raster_state, &error),

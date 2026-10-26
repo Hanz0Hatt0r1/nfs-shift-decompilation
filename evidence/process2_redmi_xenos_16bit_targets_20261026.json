@@ -1,0 +1,130 @@
+{
+  "schema": "shift.process2.redmi_xenos_16bit_targets.v1",
+  "date": "2026-10-26",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "base_commit": "d73108922367a30438dfb81dfb18150817b09b94",
+    "changed_files": [
+      "native_vulkan/include/shift_xbox_draw_input.hpp",
+      "native_vulkan/src/xbox_draw_input.cpp",
+      "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
+      "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/tests/xbox_draw_input_check.cpp",
+      "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp"
+    ]
+  },
+  "captured_contracts": [
+    {
+      "role": "single-sample intermediate render target",
+      "source_log": "process2_redmi_provider_resolve_disclaimer_live_20261026.log.gz",
+      "time_local": "2026-10-26 22:42:34.583 +03:00",
+      "registers": {
+        "surface_info": "0x04000140",
+        "color_info": "0x00060000",
+        "depth_info": "0x00000400",
+        "mode_control": "0x00000004",
+        "depth_control": "0x00700730",
+        "color_mask": "0x0000000f",
+        "blend_control_0": "0x00010001",
+        "viewport_x_scale": "0x42f30000",
+        "viewport_x_offset": "0x42f30000",
+        "viewport_y_scale": "0xc2f30000",
+        "viewport_y_offset": "0x42f30000",
+        "screen_scissor_tl": "0x00000000",
+        "screen_scissor_br": "0x20002000",
+        "window_scissor_tl": "0x00000000",
+        "window_scissor_br": "0x00f300f3"
+      },
+      "decoded": {
+        "xenos_color_render_target_format": 6,
+        "xenos_name": "16_16_FLOAT",
+        "vulkan_format": "VK_FORMAT_R16G16_SFLOAT",
+        "surface_pitch": 320,
+        "provided_target_extent": [320, 243],
+        "sample_count": 1,
+        "scissor_extent": [243, 243]
+      },
+      "extent_note": "Xenos surface registers provide the 320-pixel pitch, not an explicit height. The decoder regression supplies 243 from the captured viewport/scissor bounds; that height is not claimed as an independently captured surface-height register."
+    },
+    {
+      "role": "4x multisample Copy/Convert source target",
+      "source_log": "process2_redmi_provider_resolve_disclaimer_live_20261026.log.gz",
+      "time_local": "2026-10-26 22:42:34.335 +03:00",
+      "registers": {
+        "surface_info": "0x14020500",
+        "color_info": "0x000c0000",
+        "mode_control": "0x00000006",
+        "copy_control": "0x00100360",
+        "copy_dest_base": "0x0be19000",
+        "copy_dest_pitch": "0x02d00500",
+        "copy_dest_info": "0x000b4d01"
+      },
+      "decoded": {
+        "xenos_color_render_target_format": 12,
+        "xenos_name": "2_10_10_10_FLOAT_AS_16_16_16_16",
+        "renderer_representation_for_this_format": "VK_FORMAT_R16G16B16A16_SFLOAT",
+        "copy_sample_select": 6,
+        "copy_samples": "all four samples",
+        "color_clear_enable": true,
+        "depth_clear_enable": true,
+        "copy_destination_format": 26,
+        "copy_destination_extent": [1280, 720]
+      },
+      "execution_status": "the raster decoder maps this color-format value for draw-mode snapshots, but the captured packet is mode 6 and is not routed through that raster path; Copy/Convert execution and clear side effects are not implemented by this change"
+    }
+  ],
+  "implementation": {
+    "format_6": "Captured Xenos 16_16_FLOAT targets decode to Rg16Float and Vulkan R16G16_SFLOAT attachments.",
+    "format_12": "Captured Xenos 2_10_10_10_FLOAT_AS_16_16_16_16 uses the existing 16-bit-float RGBA attachment path.",
+    "readback": "R16G16_SFLOAT byte sizing and color diagnostics are recognized.",
+    "mixed_frame_diagnostic": "Unsupported target format and Copy/Convert source-extent mismatch now have separate errors; a mismatch regression checks the exact extents."
+  },
+  "verification": {
+    "native_linux": {
+      "build": "passed",
+      "ctest": "4/4 passed",
+      "validation_layer_forced": true,
+      "build_directory": "/home/pes/work/process2-current-native-renderer-build-20261026"
+    },
+    "plugin_linux": {
+      "build": "passed",
+      "ctest": "7/7 passed",
+      "validation_layer_forced": true,
+      "build_directory": "/home/pes/work/process2-resolve-live-regression-linux-clang-20261026"
+    },
+    "android_arm64_renderer_check": {
+      "build": "passed with NDK r28c, Android API 29",
+      "sha256": "9c604228822080e2edfa1b157811a2ff722eada0ea0ab2c5883863e7a89d2e47",
+      "build_id": "a83c535b6215fca6c79a77c742b0aca1a0f0d6ee",
+      "run_on_device": "passed the synthetic R16G16_SFLOAT render-target plus captured sample-zero Copy/Convert regression",
+      "device_output": "synthetic offscreen Vulkan 1.1 AutoIndex point and rectangle-list draw plus 4x-to-1x depth/stencil SAMPLE_ZERO preservation and 4:1 anisotropy sampler with R16G16_SFLOAT target and captured sample-zero Copy/Convert passed on Mali-G76 MC4"
+    },
+    "android_arm64_plugin": {
+      "build": "passed against the existing Android runtime SDK; one existing FPCR asm operand-width warning",
+      "sha256": "cc49feba216fb6afdb1b2c248a34f5208e3af845211ecf2fdf56ca071788eb60",
+      "build_id": "eb8a6df361c1f2ddbf717ccc0c501d705ea34064",
+      "installed_or_loaded_in_game": false
+    },
+    "device_app_untouched": {
+      "model": "Redmi Note 8 Pro",
+      "gpu": "Mali-G76 MC4",
+      "vulkan_api": "1.1.131",
+      "package": "com.hanz0hatt0r.nfsshift",
+      "pid_before_and_after": 14611,
+      "screen": "legal disclaimer",
+      "before_after_screenshot_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8"
+    }
+  },
+  "limits": [
+    "The ARM64 offscreen regression uses synthetic draw shaders; it verifies the Vulkan target format on the Mali device, not retail image parity.",
+    "The newly built Android plugin was not installed over the running retail app, so no live-game frame using these changes is claimed.",
+    "Ordered mode-6 Copy/Convert operations, EDRAM source association, intermediate destination writes, format-26 conversion, and color/depth clear side effects remain unsupported.",
+    "The earlier 14-draw runtime failure still does not distinguish its original target-format rejection from its source-extent rejection; this change adds clearer diagnostics for future captures but does not identify which original predicate fired.",
+    "No Process 1 files were changed."
+  ],
+  "references": [
+    "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h",
+    "https://github.com/xenia-canary/xenia-canary/blob/canary_experimental/src/xenia/gpu/vulkan/vulkan_render_target_cache.cc"
+  ]
+}

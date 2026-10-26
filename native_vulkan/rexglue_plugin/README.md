@@ -1523,3 +1523,32 @@ write those internal copies to guest memory or preserve their ordering as
 render-target operations. See the exact phone register sequence and failure
 limits in
 [`process2_redmi_transition_copy_chain_20261026.json`](../../evidence/process2_redmi_transition_copy_chain_20261026.json).
+
+## Captured 16-bit floating-point targets (2026-10-26)
+
+The transition capture also contains a single-sample Xenos color format 6
+(`16_16_FLOAT`) target at pitch 320 and a 243x243 viewport/scissor. The raster
+decoder maps it to Vulkan `R16G16_SFLOAT`; the viewport/scissor supplies the
+height passed to the decoder because `SURFACE_INFO` does not encode one. The
+capture's mode-6 source format 12 (`2_10_10_10_FLOAT_AS_16_16_16_16`) maps to
+the existing `R16G16B16A16_SFLOAT` representation in the raster decoder.
+However, this capture uses mode 6, so its copy source is not yet routed through
+that raster path. The mappings follow the [Xenos format definitions](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h)
+and [Xenia's Vulkan target mapping](https://github.com/xenia-canary/xenia-canary/blob/canary_experimental/src/xenia/gpu/vulkan/vulkan_render_target_cache.cc).
+
+The draw-input regression checks the captured format-6 tuple and format-12
+mapping. The Vulkan regression renders a synthetic draw to `R16G16_SFLOAT`,
+then runs the existing captured sample-zero Copy/Convert path. Native Linux
+tests passed 4/4 and plugin tests passed 7/7 with Vulkan validation forced.
+The ARM64 offscreen checker also passed on the Redmi Note 8 Pro Mali-G76 MC4
+using Vulkan 1.1.131. The updated Android plugin compiled but was not installed
+over the running retail app; the game stayed at the disclaimer with the same
+PID and screenshot hash before and after the offscreen check.
+
+This adds target-format handling, not the missing ordered mode-6 operation
+stream. EDRAM source association, the all-four-sample resolve, format-26 and
+format-31 intermediate writes, and color/depth clear side effects remain
+unimplemented. The older 14-draw failure remains ambiguous between target
+format and copy source extent. Detailed captured values, build identities,
+tests, and limits are in
+[`process2_redmi_xenos_16bit_targets_20261026.json`](../../evidence/process2_redmi_xenos_16bit_targets_20261026.json).

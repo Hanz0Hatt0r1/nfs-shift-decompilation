@@ -968,6 +968,37 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    auto rg16_target_draw = draw;
+    rg16_target_draw.raster.width = 320;
+    rg16_target_draw.raster.height = 243;
+    rg16_target_draw.raster.surface_pitch = 320;
+    rg16_target_draw.raster.sample_count = 1;
+    rg16_target_draw.raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rg16Float;
+    rg16_target_draw.raster.depth_test_enabled = false;
+    rg16_target_draw.raster.depth_write_enabled = false;
+    rg16_target_draw.raster.stencil_test_enabled = false;
+    rg16_target_draw.raster.scissor_x1 = 320;
+    rg16_target_draw.raster.scissor_y1 = 243;
+    auto rg16_copy = copy;
+    rg16_copy.source_width = 320;
+    rg16_copy.source_height = 243;
+    std::vector<uint32_t> rg16_target_output;
+    std::string rg16_target_error;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, {rg16_target_draw},
+            &rg16_target_error, &rg16_target_output,
+            enabled_features.geometryShader, &rg16_copy) ||
+        std::none_of(rg16_target_output.begin(), rg16_target_output.end(),
+                     [](uint32_t pixel) {
+                         return (pixel & 0x3FFFFFFFu) != 0;
+                     })) {
+        std::cerr << "captured Redmi 16_16_FLOAT target Copy/Convert failed: "
+                  << rg16_target_error << '\n';
+        return 1;
+    }
+
     auto partial_viewport_draw = draw;
     partial_viewport_draw.topology = shift::xbox::PrimitiveTopology::PointList;
     partial_viewport_draw.index_count = 1;
@@ -1065,6 +1096,21 @@ int main(int argc, char** argv) {
         mixed_sample_output.size() != 1280u * 720u) {
         std::cerr << "mixed 4x-MSAA/1x captured Copy/Convert failed: "
                   << mixed_sample_error << '\n';
+        return 1;
+    }
+    auto mismatched_copy_extent = copy;
+    mismatched_copy_extent.source_width = 1281;
+    std::string mismatched_copy_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, mixed_sample_draws,
+            &mismatched_copy_error, nullptr,
+            enabled_features.geometryShader, &mismatched_copy_extent) ||
+        mismatched_copy_error.find(
+            "source extent 1281x720 does not match first render target 1280x720") ==
+            std::string::npos) {
+        std::cerr << "mismatched mixed Copy/Convert extent was not diagnosed precisely: "
+                  << mismatched_copy_error << '\n';
         return 1;
     }
     bool mixed_has_color = false;
@@ -1568,7 +1614,8 @@ int main(int argc, char** argv) {
                       : " with depth/stencil resolve fail-closed")
               << (anisotropy_sampler_path_ran ? " and 4:1 anisotropy sampler"
                                              : " with anisotropy fallback")
-              << " and captured sample-zero Copy/Convert passed on "
+              << " with R16G16_SFLOAT target and captured sample-zero "
+                 "Copy/Convert passed on "
               << device_properties.deviceName
               << (use_validation ? " with validation enabled\n" : "\n");
     return 0;

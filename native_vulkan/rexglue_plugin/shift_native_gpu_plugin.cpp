@@ -741,7 +741,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         raster_state.color_format !=
             shift::xbox::CapturedColorTargetFormat::Rgb10A2Unorm &&
         raster_state.color_format !=
-            shift::xbox::CapturedColorTargetFormat::Rgb10A2Float) {
+            shift::xbox::CapturedColorTargetFormat::Rgb10A2Float &&
+        raster_state.color_format !=
+            shift::xbox::CapturedColorTargetFormat::Rg16Float) {
       if (error) *error = "unsupported captured Vulkan color-target format";
       return false;
     }
@@ -2930,6 +2932,13 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                             has_color |= (value & 0x7FFFu) != 0;
                           }
                         } else if (source_readback.format ==
+                                   VK_FORMAT_R16G16_SFLOAT) {
+                          for (size_t channel = 0; channel < 2; ++channel) {
+                            uint16_t value = 0;
+                            std::memcpy(&value, pixel + channel * 2, sizeof(value));
+                            has_color |= (value & 0x7FFFu) != 0;
+                          }
+                        } else if (source_readback.format ==
                                    VK_FORMAT_A2B10G10R10_UNORM_PACK32) {
                           uint32_t value = 0;
                           std::memcpy(&value, pixel, sizeof(value));
@@ -2948,7 +2957,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                           : source_readback.format == VK_FORMAT_R16G16B16A16_SFLOAT
                               ? "VK_FORMAT_R16G16B16A16_SFLOAT"
                           : source_readback.format == VK_FORMAT_R16G16B16A16_UNORM
-                              ? "VK_FORMAT_R16G16B16A16_UNORM" : "unknown";
+                              ? "VK_FORMAT_R16G16B16A16_UNORM"
+                          : source_readback.format == VK_FORMAT_R16G16_SFLOAT
+                              ? "VK_FORMAT_R16G16_SFLOAT" : "unknown";
                       if (!source_written) {
                         REXLOG_WARN("shift-native: could not write Vulkan pre-Copy source at {}",
                                     source_readback_path);

@@ -318,6 +318,7 @@ enum class CapturedColorTargetFormat : uint8_t {
     Rgba8Gamma,
     Rgb10A2Unorm,
     Rgb10A2Float,
+    Rg16Float,
 };
 
 enum class CapturedCopyCommand : uint8_t {
