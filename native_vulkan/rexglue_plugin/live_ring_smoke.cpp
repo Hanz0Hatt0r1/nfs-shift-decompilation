@@ -522,6 +522,40 @@ int main(int argc, char** argv) {
     }
     std::cout << "selected-frame raw texture dump matches captured fixture bytes\n";
   }
+  const char* texture_source_dump_prefix =
+      std::getenv("SHIFT_NATIVE_VULKAN_DUMP_TEXTURE_SOURCE_PREFIX");
+  if (texture_source_dump_prefix && *texture_source_dump_prefix) {
+    const std::string texture_source_dump_path =
+        std::string(texture_source_dump_prefix) +
+        ".frame1.slot0.texture0.source.bin";
+    std::ifstream texture_source_file(texture_source_dump_path,
+                                      std::ios::binary);
+    const std::vector<uint8_t> dumped_texture_source(
+        std::istreambuf_iterator<char>(texture_source_file), {});
+    if (dumped_texture_source.size() != kTextureBytes ||
+        !std::equal(dumped_texture_source.begin(),
+                    dumped_texture_source.end(), texture_bytes)) {
+      std::cerr << diagnostics << '\n';
+      return fail(
+          "selected-frame guest texture source dump differs from fixture memory");
+    }
+    std::cout << "selected-frame guest texture source dump matches fixture memory\n";
+    const std::string selected_guest_source_path =
+        std::string(texture_source_dump_prefix) +
+        ".guest9d57000.first.source.bin";
+    std::ifstream selected_guest_source_file(selected_guest_source_path,
+                                             std::ios::binary);
+    const std::vector<uint8_t> selected_guest_source(
+        std::istreambuf_iterator<char>(selected_guest_source_file), {});
+    if (selected_guest_source.size() != kTextureBytes ||
+        !std::equal(selected_guest_source.begin(), selected_guest_source.end(),
+                    texture_bytes)) {
+      std::cerr << diagnostics << '\n';
+      return fail(
+          "guest-address texture source dump differs from fixture memory");
+    }
+    std::cout << "guest-address texture source dump matches fixture memory\n";
+  }
   if (!consumed) {
     std::cerr << diagnostics << '\n';
     return fail("PM4 stream was not consumed through live MMIO");

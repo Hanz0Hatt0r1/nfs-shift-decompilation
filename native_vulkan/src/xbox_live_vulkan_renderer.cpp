@@ -993,11 +993,26 @@ VkSampleCountFlagBits sample_count_flag(uint32_t samples) {
     }
 }
 
-VkFormat captured_color_format(CapturedColorTargetFormat format) {
+bool frame_has_gamma_color_target(
+    const std::vector<CapturedVulkanDraw>& draws) {
+    return std::any_of(draws.begin(), draws.end(), [](const CapturedVulkanDraw& draw) {
+        return draw.raster.color_format == CapturedColorTargetFormat::Rgba8Gamma;
+    });
+}
+
+VkFormat captured_color_format(CapturedColorTargetFormat format,
+                               bool linear_rgba8_intermediate) {
     switch (format) {
         case CapturedColorTargetFormat::Rgba8Linear:
         case CapturedColorTargetFormat::Rgba8Gamma:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+            // RGBA8 linear and gamma draws can share one live EDRAM target.
+            // When gamma occurs, keep both variants in the linear UNORM16
+            // attachment so Vulkan can blend the gamma draw in linear light.
+            return linear_rgba8_intermediate
+                ? VK_FORMAT_R16G16B16A16_UNORM
+                : (format == CapturedColorTargetFormat::Rgba8Gamma
+                       ? VK_FORMAT_R16G16B16A16_UNORM
+                       : VK_FORMAT_R8G8B8A8_UNORM);
         case CapturedColorTargetFormat::Rgb10A2Unorm:
             return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
         case CapturedColorTargetFormat::Rgb10A2Float:
@@ -1011,6 +1026,7 @@ uint32_t color_format_bytes(VkFormat format) {
         case VK_FORMAT_R8G8B8A8_UNORM:
         case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
             return 4;
+        case VK_FORMAT_R16G16B16A16_UNORM:
         case VK_FORMAT_R16G16B16A16_SFLOAT:
             return 8;
         default:
@@ -1096,7 +1112,12 @@ bool create_draw_resources(
     VkRenderPass render_pass, uint64_t render_pass_key,
     VkPipelineCache pipeline_cache, bool geometry_shader_enabled,
     CapturedVulkanSamplerCapabilities sampler_capabilities,
-    DrawResources *output, std::string *error) {
+    DrawResources *output, std::string *error,
+    bool use_linear_gamma_target_shader = false) {
+  const std::vector<uint32_t> &pixel_shader_spirv =
+      use_linear_gamma_target_shader
+          ? source.pixel_shader_spirv_linear_target
+          : source.pixel_shader_spirv;
   const uint32_t vertex_constants_size =
       sizeof(source.constants.vertex_float_constants);
   const uint32_t pixel_constants_size =
@@ -1161,7 +1182,7 @@ bool create_draw_resources(
       (!has_vertex_inputs && !source.vertices.empty()) ||
       source.index_count == 0 ||
       (source.auto_index ? !source.indices.empty() : source.indices.empty()) ||
-      source.vertex_shader_spirv.empty() || source.pixel_shader_spirv.empty() ||
+      source.vertex_shader_spirv.empty() || pixel_shader_spirv.empty() ||
       (source.topology == PrimitiveTopology::RectangleList &&
        source.geometry_shader_spirv.empty()) ||
       (source.topology != PrimitiveTopology::RectangleList &&
@@ -1190,7 +1211,7 @@ bool create_draw_resources(
   if (texture_cache && render_pass_key != 0) {
     pipeline_key.reserve(32 + source.vertex_shader_spirv.size() +
                          source.geometry_shader_spirv.size() +
-                         source.pixel_shader_spirv.size());
+                         pixel_shader_spirv.size());
     const auto append = [&pipeline_key](uint64_t value) {
       pipeline_key.push_back(value);
     };
@@ -1225,7 +1246,7 @@ bool create_draw_resources(
     append(source.raster.color_write_mask);
     append_shader(source.vertex_shader_spirv);
     append_shader(source.geometry_shader_spirv);
-    append_shader(source.pixel_shader_spirv);
+    append_shader(pixel_shader_spirv);
     append(texture_inputs.size());
     for (const TextureInput &texture : texture_inputs) {
       append(texture.fetch_constant_index);
@@ -1414,8 +1435,8 @@ bool create_draw_resources(
         return vk_fail("vkCreateShaderModule(geometry)", result, error);
       }
     }
-    shader_info.codeSize = source.pixel_shader_spirv.size() * sizeof(uint32_t);
-    shader_info.pCode = source.pixel_shader_spirv.data();
+    shader_info.codeSize = pixel_shader_spirv.size() * sizeof(uint32_t);
+    shader_info.pCode = pixel_shader_spirv.data();
     result = vkCreateShaderModule(device, &shader_info, nullptr,
                                   &output->pixel_shader);
     if (result != VK_SUCCESS) {
@@ -2015,7 +2036,9 @@ bool submit_mixed_sample_copy_frame(
     CapturedVulkanSourceReadback* source_readback,
     std::vector<CapturedVulkanDrawVisibility>* draw_visibility) {
     if (draws.empty() || draws.front().raster.sample_count != 4 ||
-        copy.single_sample_pixel_shader_spirv.empty()) {
+        copy.single_sample_pixel_shader_spirv.empty() ||
+        (copy.source_gamma &&
+         copy.gamma_single_sample_pixel_shader_spirv.empty())) {
         return fail("mixed captured frame requires 4x-MSAA followed by 1x and a single-sample Copy/Convert shader",
                     error);
     }
@@ -2023,7 +2046,9 @@ bool submit_mixed_sample_copy_frame(
     bool needs_msaa_depth = false;
     bool needs_single_depth = false;
     const CapturedRasterState& target = draws.front().raster;
-    const VkFormat target_format = captured_color_format(target.color_format);
+    const bool linear_rgba8_intermediate = frame_has_gamma_color_target(draws);
+    const VkFormat target_format = captured_color_format(
+        target.color_format, linear_rgba8_intermediate);
     const uint32_t source_width = copy.source_width ? copy.source_width
                                                    : target.width;
     const uint32_t source_height = copy.source_height ? copy.source_height
@@ -2101,7 +2126,8 @@ bool submit_mixed_sample_copy_frame(
         if (raster.width != target.width || raster.height != target.height ||
             raster.color_base_tiles != target.color_base_tiles ||
             raster.depth_base_tiles != target.depth_base_tiles ||
-            captured_color_format(raster.color_format) != target_format ||
+            captured_color_format(raster.color_format,
+                                  linear_rgba8_intermediate) != target_format ||
             raster.depth_format != target.depth_format) {
             std::ostringstream message;
             message << "mixed captured draw " << i
@@ -2394,13 +2420,18 @@ bool submit_mixed_sample_copy_frame(
                                    0,
                                    pipeline_cache,
                                    geometry_shader_enabled, sampler_capabilities,
-                                   &resources.draws[resource_index], error)) {
+                                   &resources.draws[resource_index], error,
+                                   linear_rgba8_intermediate &&
+                                       draws[draw_index].raster.color_format ==
+                                           CapturedColorTargetFormat::Rgba8Gamma)) {
             return false;
         }
     }
     CapturedVulkanDraw copy_draw{};
     copy_draw.vertex_shader_spirv = copy.vertex_shader_spirv;
-    copy_draw.pixel_shader_spirv = copy.single_sample_pixel_shader_spirv;
+    copy_draw.pixel_shader_spirv = copy.source_gamma
+        ? copy.gamma_single_sample_pixel_shader_spirv
+        : copy.single_sample_pixel_shader_spirv;
     copy_draw.auto_index = true;
     copy_draw.index_count = 3;
     copy_draw.texture_width = 1;
@@ -3026,9 +3057,27 @@ bool submit_captured_vulkan_frame(
          copy->state.destination_height != output_height ||
          copy->state.destination_format != 6 ||
          !copy->state.destination_swap_red_blue ||
-         copy->vertex_shader_spirv.empty() || copy->pixel_shader_spirv.empty())) {
+         copy->vertex_shader_spirv.empty() || copy->pixel_shader_spirv.empty() ||
+         (copy->source_gamma && copy->gamma_pixel_shader_spirv.empty()))) {
         return fail("captured Copy/Convert is outside the source-0 sample-0 RGBA8 subset",
                     error);
+    }
+    const bool linear_rgba8_intermediate = copy &&
+        frame_has_gamma_color_target(draws);
+    if (linear_rgba8_intermediate) {
+        VkFormatProperties format_properties{};
+        vkGetPhysicalDeviceFormatProperties(
+            physical_device, VK_FORMAT_R16G16B16A16_UNORM,
+            &format_properties);
+        constexpr VkFormatFeatureFlags required_features =
+            VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT |
+            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT;
+        if ((format_properties.optimalTilingFeatures & required_features) !=
+            required_features) {
+            return fail("captured RGBA8_GAMMA target requires sampled, blendable R16G16B16A16_UNORM",
+                        error);
+        }
     }
     if (mixed_sample_counts) {
         if (!copy) {
@@ -3050,7 +3099,8 @@ bool submit_captured_vulkan_frame(
                                        ? copy->source_height
                                        : frame_target.height;
     const VkFormat raster_color_format =
-        copy ? captured_color_format(frame_target.color_format)
+        copy ? captured_color_format(frame_target.color_format,
+                                     linear_rgba8_intermediate)
              : VK_FORMAT_A2B10G10R10_UNORM_PACK32;
     if (copy &&
         (raster_color_format == VK_FORMAT_UNDEFINED ||
@@ -3058,7 +3108,8 @@ bool submit_captured_vulkan_frame(
          std::any_of(draws.begin(), draws.end(), [&](const CapturedVulkanDraw& draw) {
              return draw.raster.width != frame_target.width ||
                     draw.raster.height != frame_target.height ||
-                    captured_color_format(draw.raster.color_format) !=
+                    captured_color_format(draw.raster.color_format,
+                                          linear_rgba8_intermediate) !=
                         raster_color_format;
          }))) {
         std::ostringstream message;
@@ -3324,7 +3375,9 @@ bool submit_captured_vulkan_frame(
 
         CapturedVulkanDraw copy_draw{};
         copy_draw.vertex_shader_spirv = copy->vertex_shader_spirv;
-        copy_draw.pixel_shader_spirv = copy->pixel_shader_spirv;
+        copy_draw.pixel_shader_spirv = copy->source_gamma
+            ? copy->gamma_pixel_shader_spirv
+            : copy->pixel_shader_spirv;
         copy_draw.auto_index = true;
         copy_draw.index_count = 3;
         copy_draw.texture_width = 1;
@@ -3382,7 +3435,10 @@ bool submit_captured_vulkan_frame(
                                    pass_key,
                                    pipeline_cache,
                                    geometry_shader_enabled, sampler_capabilities,
-                                   &draw, error)) {
+                                   &draw, error,
+                                   linear_rgba8_intermediate &&
+                                       draws[i].raster.color_format ==
+                                           CapturedColorTargetFormat::Rgba8Gamma)) {
             return false;
         }
     }

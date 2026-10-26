@@ -1593,6 +1593,7 @@ bool decode_captured_copy_state(
         destination_height,
         destination_format,
         ((registers.copy_dest_info >> 24) & 1u) != 0,
+        ((registers.color_info >> 16) & 0xFu) == 1u,
     };
     if (error) error->clear();
     return true;

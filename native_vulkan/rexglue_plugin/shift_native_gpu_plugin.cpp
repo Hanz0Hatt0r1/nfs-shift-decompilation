@@ -174,6 +174,39 @@ const std::string kCopyResolveSingleSamplePixelShader =
     "  color = floor(clamp(color, 0.0, 1.0) * 255.0 + 0.5) / 255.0;\n"
     "  shift_color0 = color;\n"
     "}\n";
+std::string copy_resolve_gamma_pixel_shader(bool multisampled) {
+  std::ostringstream source;
+  source << "#version 450\n"
+         << "layout(set=0,binding=15) uniform PixelConstants { vec4 c[256]; } pc;\n"
+         << "layout(set=1,binding=0) uniform "
+         << (multisampled ? "sampler2DMS" : "sampler2D")
+         << " source_image;\n"
+         << "layout(location=0) out vec4 shift_color0;\n"
+         << "vec3 linear_to_xenos_gamma(vec3 linear_rgb) {\n"
+         << "  linear_rgb=clamp(linear_rgb,0.0,1.0);\n"
+         << "  vec3 gamma_scale=mix(vec3(1023.0),vec3(1023.0/2.0),"
+            "step(vec3(64.0/1023.0),linear_rgb));\n"
+         << "  gamma_scale=mix(gamma_scale,vec3(1023.0/4.0),"
+            "step(vec3(128.0/1023.0),linear_rgb));\n"
+         << "  gamma_scale=mix(gamma_scale,vec3(1023.0/8.0),"
+            "step(vec3(512.0/1023.0),linear_rgb));\n"
+         << "  vec3 gamma_offset=mix(vec3(0.0),vec3(32.0),"
+            "step(vec3(64.0/1023.0),linear_rgb));\n"
+         << "  gamma_offset=mix(gamma_offset,vec3(64.0),"
+            "step(vec3(128.0/1023.0),linear_rgb));\n"
+         << "  gamma_offset=mix(gamma_offset,vec3(128.0),"
+            "step(vec3(512.0/1023.0),linear_rgb));\n"
+         << "  return (trunc(linear_rgb*gamma_scale)+gamma_offset)/255.0;\n"
+         << "}\n"
+         << "void main() {\n"
+         << "  ivec2 p = ivec2(gl_FragCoord.xy * pc.c[0].xy);\n"
+         << "  vec4 color = texelFetch(source_image, p, 0);\n"
+         << "  color.rgb = linear_to_xenos_gamma(color.rgb);\n"
+         << "  color = floor(clamp(color, 0.0, 1.0) * 255.0 + 0.5) / 255.0;\n"
+         << "  shift_color0 = color;\n"
+         << "}\n";
+  return source.str();
+}
 
 bool DebugFragmentColorEnabled() {
   static const bool enabled = [] {
@@ -305,7 +338,15 @@ bool CompileCapturedCopyResolveShaders(
                              &copy->pixel_shader_spirv, error) &&
          CompileVulkanShader("copy-resolve-single-sample-pixel", EShLangFragment,
                              kCopyResolveSingleSamplePixelShader,
-                             &copy->single_sample_pixel_shader_spirv, error);
+                             &copy->single_sample_pixel_shader_spirv, error) &&
+         CompileVulkanShader("copy-resolve-gamma-pixel", EShLangFragment,
+                             copy_resolve_gamma_pixel_shader(true),
+                             &copy->gamma_pixel_shader_spirv, error) &&
+         CompileVulkanShader("copy-resolve-gamma-single-sample-pixel",
+                             EShLangFragment,
+                             copy_resolve_gamma_pixel_shader(false),
+                             &copy->gamma_single_sample_pixel_shader_spirv,
+                             error);
 }
 
 class R8ScratchPayloadReleaseGuard {
@@ -812,6 +853,28 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                              &prepared.pixel_shader_spirv, error)) {
       return false;
     }
+    if (raster_state.color_format ==
+        shift::xbox::CapturedColorTargetFormat::Rgba8Gamma) {
+      auto linear_target_options = options;
+      linear_target_options.gamma_color_target = false;
+      shift::xbox::CapturedShaderTranslation linear_target_translation{};
+      if (!shader_translation_cache_.translate(
+              shift::xbox::CapturedShaderStage::Pixel, pixel_program.data(),
+              pixel_program.size(), linear_target_options,
+              &linear_target_translation, error)) {
+        if (error) *error = "captured linear-blend pixel shader: " + *error;
+        return false;
+      }
+      const std::string& linear_target_source = DebugFragmentColorEnabled()
+          ? kDebugFragmentColorShader
+          : linear_target_translation.glsl;
+      if (!CompileVulkanShader("pixel-linear-gamma-target", EShLangFragment,
+                               linear_target_source,
+                               &prepared.pixel_shader_spirv_linear_target,
+                               error)) {
+        return false;
+      }
+    }
     if (draw.topology == shift::xbox::PrimitiveTopology::RectangleList) {
       auto* device = provider_ ? provider_->vulkan_device() : nullptr;
       if (!device || !device->properties().geometryShader) {
@@ -948,6 +1011,61 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
             guest_byte_length < fetch.byte_length) {
           if (error) *error = "captured texture guest memory is unavailable";
           return false;
+        }
+        const char* texture_source_dump_prefix =
+            std::getenv("SHIFT_NATIVE_VULKAN_DUMP_TEXTURE_SOURCE_PREFIX");
+        if (texture_source_dump_prefix && *texture_source_dump_prefix) {
+          const auto dump_texture_source = [&](const std::string& path) {
+            std::ofstream source_file(path,
+                                      std::ios::binary | std::ios::trunc);
+            source_file.write(reinterpret_cast<const char*>(guest_bytes),
+                              static_cast<std::streamsize>(fetch.byte_length));
+            if (source_file) {
+              REXLOG_INFO(
+                  "shift-native: dumped guest texture source frame={} slot={} "
+                  "texture={} address={:08X} format={} bytes={} fnv1a=0x{:016X} "
+                  "path={}",
+                  diagnostic_submitted_frame, draw_slot, i,
+                  fetch.guest_address, fetch.format, fetch.byte_length,
+                  Fnv1a64(guest_bytes, fetch.byte_length), path);
+            } else {
+              REXLOG_WARN("shift-native: could not write guest texture source {}",
+                          path);
+            }
+          };
+          if (diagnostic_submitted_frame != 0) {
+            std::ostringstream source_path;
+            source_path << texture_source_dump_prefix << ".frame"
+                        << diagnostic_submitted_frame << ".slot" << draw_slot
+                        << ".texture" << i << ".source.bin";
+            dump_texture_source(source_path.str());
+          }
+          static const uint32_t selected_guest_address = [] {
+            const char* text = std::getenv(
+                "SHIFT_NATIVE_VULKAN_DUMP_TEXTURE_SOURCE_GUEST_ADDRESS");
+            if (!text || !*text) return uint32_t{0};
+            int base = 10;
+            if (text[0] == '0' &&
+                (text[1] == 'x' || text[1] == 'X')) {
+              text += 2;
+              base = 16;
+            }
+            const char* end = text + std::strlen(text);
+            uint32_t address = 0;
+            const auto parsed = std::from_chars(text, end, address, base);
+            return parsed.ec == std::errc{} && parsed.ptr == end ? address
+                                                                  : uint32_t{0};
+          }();
+          static std::atomic<bool> selected_guest_address_dumped{false};
+          if (selected_guest_address != 0 &&
+              fetch.guest_address == selected_guest_address &&
+              !selected_guest_address_dumped.exchange(
+                  true, std::memory_order_relaxed)) {
+            std::ostringstream source_path;
+            source_path << texture_source_dump_prefix << ".guest" << std::hex
+                        << fetch.guest_address << ".first.source.bin";
+            dump_texture_source(source_path.str());
+          }
         }
         shift::xbox::CapturedVulkanTexture texture{};
         texture.fetch_constant_index =
@@ -2053,9 +2171,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     prepared_copy.state = copy_state;
                     prepared_copy.source_width = captured_target_width;
                     prepared_copy.source_height = captured_target_height;
+                    prepared_copy.source_gamma = copy_state.source_gamma;
                     if (CompileCapturedCopyResolveShaders(&prepared_copy, &error)) {
-                      frame_copy = std::move(prepared_copy);
-                      frame_copy_ready = true;
+                        frame_copy = std::move(prepared_copy);
+                        frame_copy_ready = true;
                       REXLOG_INFO(
                           "shift-native: accepted captured source-0/sample-0 "
                           "Copy/Convert destination {:08X} {}x{} format {} R/B swap {}",
@@ -2408,7 +2527,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                         source_written = static_cast<bool>(source_file);
                       }
                       const uint32_t bytes_per_pixel =
-                          source_readback.format == VK_FORMAT_R16G16B16A16_SFLOAT
+                          (source_readback.format == VK_FORMAT_R16G16B16A16_SFLOAT ||
+                           source_readback.format == VK_FORMAT_R16G16B16A16_UNORM)
                               ? 8u : 4u;
                       const size_t pixel_count =
                           static_cast<size_t>(source_readback.width) *
@@ -2426,7 +2546,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                                                pixel_index * bytes_per_pixel;
                         bool has_color = false;
                         if (source_readback.format ==
-                            VK_FORMAT_R16G16B16A16_SFLOAT) {
+                                VK_FORMAT_R16G16B16A16_SFLOAT ||
+                            source_readback.format ==
+                                VK_FORMAT_R16G16B16A16_UNORM) {
                           for (size_t channel = 0; channel < 3; ++channel) {
                             uint16_t value = 0;
                             std::memcpy(&value, pixel + channel * 2, sizeof(value));
@@ -2449,7 +2571,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                                     VK_FORMAT_A2B10G10R10_UNORM_PACK32
                               ? "VK_FORMAT_A2B10G10R10_UNORM_PACK32"
                           : source_readback.format == VK_FORMAT_R16G16B16A16_SFLOAT
-                              ? "VK_FORMAT_R16G16B16A16_SFLOAT" : "unknown";
+                              ? "VK_FORMAT_R16G16B16A16_SFLOAT"
+                          : source_readback.format == VK_FORMAT_R16G16B16A16_UNORM
+                              ? "VK_FORMAT_R16G16B16A16_UNORM" : "unknown";
                       if (!source_written) {
                         REXLOG_WARN("shift-native: could not write Vulkan pre-Copy source at {}",
                                     source_readback_path);

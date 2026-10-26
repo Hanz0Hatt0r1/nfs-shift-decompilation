@@ -34,6 +34,9 @@ struct CapturedVulkanDraw {
     std::vector<uint32_t> vertex_shader_spirv;
     std::vector<uint32_t> geometry_shader_spirv;
     std::vector<uint32_t> pixel_shader_spirv;
+    // Gamma render targets blend in linear light, so the frame Copy/Convert
+    // path needs a fragment variant that leaves target encoding to the copy.
+    std::vector<uint32_t> pixel_shader_spirv_linear_target;
     std::vector<uint8_t> vertices;
     std::vector<uint8_t> indices;
     std::vector<uint8_t> texture_rgba8;
@@ -51,9 +54,12 @@ struct CapturedVulkanCopy {
     CapturedCopyState state{};
     uint32_t source_width = 0;
     uint32_t source_height = 0;
+    bool source_gamma = false;
     std::vector<uint32_t> vertex_shader_spirv;
     std::vector<uint32_t> pixel_shader_spirv;
     std::vector<uint32_t> single_sample_pixel_shader_spirv;
+    std::vector<uint32_t> gamma_pixel_shader_spirv;
+    std::vector<uint32_t> gamma_single_sample_pixel_shader_spirv;
 };
 
 struct CapturedVulkanSamplerCapabilities {

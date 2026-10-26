@@ -332,6 +332,7 @@ struct CapturedCopyState {
     uint32_t destination_height;
     uint32_t destination_format;
     bool destination_swap_red_blue;
+    bool source_gamma = false;
 };
 
 enum class CapturedDepthTargetFormat : uint8_t {

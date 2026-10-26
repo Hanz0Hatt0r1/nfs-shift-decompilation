@@ -810,6 +810,16 @@ target; the next run should confirm the disclaimer frame number again before
 selecting it. The 14 constituent retail draws have not yet been isolated as
 the source of the strips.
 
+For that comparison, `SHIFT_NATIVE_VULKAN_DUMP_TEXTURE_SOURCE_PREFIX` also
+saves the exact guest-memory bytes read for each texture in the selected
+submit as `.frameN.slotM.textureK.source.bin`. This file preserves Xenos
+tiling and endian layout; it is distinct from the decoded `.rgba8`/`.r8`
+payload. Set `SHIFT_NATIVE_VULKAN_DUMP_TEXTURE_SOURCE_GUEST_ADDRESS` to a
+decimal or `0x`-prefixed guest address to save the first texture match as
+`.guest<address>.first.source.bin`, even when the submit number is not known.
+The selected-draw live-ring regression checks both selection forms against
+the fixture bytes before texture decoding.
+
 ## Exact-current-plugin live Bink capture (2026-10-25)
 
 A later exact-XEX run loaded the current P2 plugin hash `512eb265…278fa98`
@@ -952,11 +962,32 @@ outputs are closely aligned after viewport scaling, but the app's mapped DSO
 could not be verified from Android, and neither output is an independent Xenos
 reference. The capture isolates which draws and texture produce the strips; it
 does not determine whether their pixels are intentional or a decode/blend bug.
-The user reports that the disclaimer frame is malformed. The expected border
-shape/color is not yet available as an independent reference, so no captured
-texture or blend state has been changed; this visual issue remains open.
+At the time of that capture, the expected border shape/color was not available
+as an independent reference, so no captured texture or blend state had been
+changed based on the screenshot alone.
 See the [draw-level record](../../evidence/process2_disclaimer_draw_isolation_20261026.json)
 and [Linux Vulkan readback](../../evidence/process2_linux_disclaimer_frame907_readback_20261026.png).
+
+### Gamma target correction for the disclaimer frame (2026-10-26)
+
+Follow-up review found that a captured `RGBA8_GAMMA` frame could gamma-encode
+each translated draw and then encode it again in the retail Copy/Convert pass.
+When the frame uses the linear `R16G16B16A16_UNORM` intermediate, the renderer
+now selects the linear-target fragment shader for gamma draws and applies the
+captured Xenos gamma conversion once at Copy/Convert. Both regular 4x-MSAA and
+the captured 4x-to-1x resolve path are covered.
+
+The regression uses synthetic shaders to require linear 0.25 in the
+intermediate and approximately 0.498 in the final Xenos 10-bit output. Core
+renderer checks passed 4/4 and plugin checks passed 5/5 with Vulkan validation
+enabled; the Android ARM64 plugin also compiled. The rebuilt binaries were
+passed to Process 1 for a follow-up retail capture. The existing disclaimer
+screenshots predate these binaries, so the reported frame appearance is not
+yet visually confirmed. This regression rules out double gamma encoding in
+the tested paths; it does not establish full disclaimer-frame parity or
+confirm that every visible strip pixel is wrong. Build hashes and test scope
+are recorded in
+[`process2_disclaimer_gamma_target_fix_20261026.json`](../../evidence/process2_disclaimer_gamma_target_fix_20261026.json).
 
 ## Redmi Bink draw replay with the pipeline cache (2026-10-26)
 

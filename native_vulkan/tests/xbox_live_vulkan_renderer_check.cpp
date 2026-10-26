@@ -99,11 +99,13 @@ bool read_spirv(const char* path, std::vector<uint32_t>* output) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 10) {
+    if (argc != 14) {
         std::cerr << "usage: xbox_live_vulkan_renderer_check vertex.spv fragment.spv "
                      "geometry.spv copy-vertex.spv copy-fragment.spv "
                      "copy-single-fragment.spv window-vertex.spv window-fragment.spv "
-                     "black-copy-fragment.spv\n";
+                     "black-copy-fragment.spv gamma-encoded-fragment.spv "
+                     "gamma-linear-fragment.spv gamma-single-copy-fragment.spv "
+                     "gamma-ms-copy-fragment.spv\n";
         return 2;
     }
 
@@ -297,9 +299,21 @@ int main(int argc, char** argv) {
         std::cerr << "could not read valid Vulkan 1.1 sample-zero Copy/Convert shaders\n";
         return 1;
     }
+    draw.pixel_shader_spirv_linear_target = draw.pixel_shader_spirv;
     std::vector<uint32_t> black_copy_fragment_spirv;
     if (!read_spirv(argv[9], &black_copy_fragment_spirv)) {
         std::cerr << "could not read valid Vulkan 1.1 black Copy/Convert shader\n";
+        return 1;
+    }
+    std::vector<uint32_t> gamma_encoded_fragment_spirv;
+    std::vector<uint32_t> gamma_linear_fragment_spirv;
+    std::vector<uint32_t> gamma_copy_single_fragment_spirv;
+    std::vector<uint32_t> gamma_copy_ms_fragment_spirv;
+    if (!read_spirv(argv[10], &gamma_encoded_fragment_spirv) ||
+        !read_spirv(argv[11], &gamma_linear_fragment_spirv) ||
+        !read_spirv(argv[12], &gamma_copy_single_fragment_spirv) ||
+        !read_spirv(argv[13], &gamma_copy_ms_fragment_spirv)) {
+        std::cerr << "could not read Vulkan 1.1 gamma target regression shaders\n";
         return 1;
     }
     std::vector<uint32_t> window_vertex_spirv;
@@ -361,6 +375,8 @@ int main(int argc, char** argv) {
     std::vector<shift::xbox::CapturedVulkanDraw> draws;
     draws.push_back(draw);
     auto captured_alpha_blend = draw;
+    captured_alpha_blend.raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
     captured_alpha_blend.raster.blend_control_0 = 0x07060706u;
     captured_alpha_blend.textures[0].pixels = {255};
     captured_alpha_blend.textures[1].pixels = {0, 255, 0, 255};
@@ -444,20 +460,22 @@ int main(int argc, char** argv) {
         return 1;
     }
     bool colored_source_has_rgb = false;
-    for (size_t pixel = 0; pixel + 3 < colored_source_readback.bytes.size();
-         pixel += 4) {
-        colored_source_has_rgb |= colored_source_readback.bytes[pixel] != 0 ||
-                                  colored_source_readback.bytes[pixel + 1] != 0 ||
-                                  colored_source_readback.bytes[pixel + 2] != 0;
+    for (size_t pixel = 0; pixel + 7 < colored_source_readback.bytes.size();
+         pixel += 8) {
+        for (size_t channel = 0; channel < 3; ++channel) {
+            colored_source_has_rgb |=
+                colored_source_readback.bytes[pixel + channel * 2] != 0 ||
+                colored_source_readback.bytes[pixel + channel * 2 + 1] != 0;
+        }
     }
     if (colored_source_readback.status !=
             shift::xbox::CapturedVulkanSourceReadback::Status::Captured ||
         colored_source_readback.width != 1280 ||
         colored_source_readback.height != 720 ||
-        colored_source_readback.format != VK_FORMAT_R8G8B8A8_UNORM ||
+        colored_source_readback.format != VK_FORMAT_R16G16B16A16_UNORM ||
         colored_source_readback.sample_count != 4 ||
         !colored_source_readback.multisample_average_resolve ||
-        colored_source_readback.bytes.size() != 1280u * 720u * 4u ||
+        colored_source_readback.bytes.size() != 1280u * 720u * 8u ||
         !colored_source_has_rgb || black_final_output.size() != 1280u * 720u ||
         colored_source_visibility.size() != draws.size() ||
         !colored_source_visibility[0].available ||
@@ -487,7 +505,7 @@ int main(int argc, char** argv) {
             &black_source_readback, &black_source_visibility) ||
         black_source_readback.status !=
             shift::xbox::CapturedVulkanSourceReadback::Status::Captured ||
-        black_source_readback.bytes.size() != 1280u * 720u * 4u ||
+        black_source_readback.bytes.size() != 1280u * 720u * 8u ||
         black_source_final_output.size() != 1280u * 720u ||
         black_source_visibility.size() != black_source_draws.size() ||
         !black_source_visibility[0].available ||
@@ -495,11 +513,14 @@ int main(int argc, char** argv) {
         std::cerr << "black source color-target readback failed: " << error << '\n';
         return 1;
     }
-    for (size_t pixel = 0; pixel + 3 < black_source_readback.bytes.size();
-         pixel += 4) {
+    for (size_t pixel = 0; pixel + 7 < black_source_readback.bytes.size();
+         pixel += 8) {
         if (black_source_readback.bytes[pixel] ||
             black_source_readback.bytes[pixel + 1] ||
-            black_source_readback.bytes[pixel + 2]) {
+            black_source_readback.bytes[pixel + 2] ||
+            black_source_readback.bytes[pixel + 3] ||
+            black_source_readback.bytes[pixel + 4] ||
+            black_source_readback.bytes[pixel + 5]) {
             std::cerr << "black source target readback contained RGB color\n";
             return 1;
         }
@@ -717,6 +738,98 @@ int main(int argc, char** argv) {
                      [](uint32_t pixel) { return (pixel & 0x3FFFFFFFu) != 0; })) {
         std::cerr << "captured Gamma-to-Linear target format transition failed: "
                   << gamma_linear_error << '\n';
+        return 1;
+    }
+
+    auto gamma_target_draw = draws[0];
+    gamma_target_draw.raster.sample_count = 4;
+    gamma_target_draw.raster.depth_test_enabled = false;
+    gamma_target_draw.raster.depth_write_enabled = false;
+    gamma_target_draw.raster.stencil_test_enabled = false;
+    gamma_target_draw.topology = shift::xbox::PrimitiveTopology::TriangleList;
+    gamma_target_draw.index_count = 3;
+    gamma_target_draw.pixel_shader_spirv = gamma_encoded_fragment_spirv;
+    gamma_target_draw.pixel_shader_spirv_linear_target =
+        gamma_linear_fragment_spirv;
+    auto gamma_target_copy = copy;
+    gamma_target_copy.source_gamma = true;
+    gamma_target_copy.gamma_single_sample_pixel_shader_spirv =
+        gamma_copy_single_fragment_spirv;
+    gamma_target_copy.gamma_pixel_shader_spirv =
+        gamma_copy_ms_fragment_spirv;
+    shift::xbox::CapturedVulkanSourceReadback gamma_source_readback;
+    std::vector<uint32_t> gamma_target_output;
+    std::string gamma_target_error;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, {gamma_target_draw}, &gamma_target_error,
+            &gamma_target_output, enabled_features.geometryShader,
+            &gamma_target_copy, false, {}, pipeline_cache, nullptr,
+            &gamma_source_readback) ||
+        gamma_source_readback.status !=
+            shift::xbox::CapturedVulkanSourceReadback::Status::Captured ||
+        gamma_source_readback.format != VK_FORMAT_R16G16B16A16_UNORM ||
+        gamma_source_readback.bytes.size() != 1280u * 720u * 8u ||
+        gamma_target_output.size() != 1280u * 720u) {
+        std::cerr << "linear UNORM16 gamma-target replay failed: "
+                  << gamma_target_error << '\n';
+        return 1;
+    }
+    const auto gamma_copy_encoded_once = [](
+        const std::vector<uint32_t>& output,
+        const shift::xbox::CapturedVulkanSourceReadback& source_readback) {
+      for (size_t pixel = 0; pixel < output.size(); ++pixel) {
+        const size_t source = pixel * 8u;
+        const auto read_unorm16 = [&source_readback, source](size_t lane) {
+          return static_cast<uint32_t>(source_readback.bytes[source + lane * 2u]) |
+                 (static_cast<uint32_t>(
+                      source_readback.bytes[source + lane * 2u + 1u]) << 8);
+        };
+        if (read_unorm16(0) < 16300u || read_unorm16(0) > 16450u ||
+            read_unorm16(1) < 16300u || read_unorm16(1) > 16450u ||
+            read_unorm16(2) < 16300u || read_unorm16(2) > 16450u ||
+            read_unorm16(3) < 65400u) {
+          continue;
+        }
+        const uint32_t pixel_output = output[pixel];
+        const uint32_t red = pixel_output & 0x3FFu;
+        const uint32_t green = (pixel_output >> 10) & 0x3FFu;
+        const uint32_t blue = (pixel_output >> 20) & 0x3FFu;
+        const bool encoded_once =
+            red >= 507u && red <= 513u && green >= 507u && green <= 513u &&
+            blue >= 507u && blue <= 513u;
+        return encoded_once;
+      }
+      return false;
+    };
+    if (!gamma_copy_encoded_once(gamma_target_output, gamma_source_readback)) {
+        std::cerr << "gamma target must blend in linear UNORM16 and encode once "
+                     "at Copy/Convert\n";
+        return 1;
+    }
+
+    auto gamma_linear_tail = gamma_target_draw;
+    gamma_linear_tail.raster.sample_count = 1;
+    gamma_linear_tail.raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
+    gamma_linear_tail.pixel_shader_spirv = gamma_linear_fragment_spirv;
+    shift::xbox::CapturedVulkanSourceReadback gamma_mixed_source_readback;
+    std::vector<uint32_t> gamma_mixed_output;
+    std::string gamma_mixed_error;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image, output_view,
+            false, 1280, 720, {gamma_target_draw, gamma_linear_tail},
+            &gamma_mixed_error, &gamma_mixed_output,
+            enabled_features.geometryShader, &gamma_target_copy, false, {},
+            pipeline_cache, nullptr, &gamma_mixed_source_readback) ||
+        gamma_mixed_source_readback.status !=
+            shift::xbox::CapturedVulkanSourceReadback::Status::Captured ||
+        gamma_mixed_source_readback.format != VK_FORMAT_R16G16B16A16_UNORM ||
+        gamma_mixed_source_readback.bytes.size() != 1280u * 720u * 8u ||
+        gamma_mixed_output.size() != 1280u * 720u ||
+        !gamma_copy_encoded_once(gamma_mixed_output, gamma_mixed_source_readback)) {
+        std::cerr << "mixed-sample gamma target must encode once at Copy/Convert: "
+                  << gamma_mixed_error << '\n';
         return 1;
     }
 

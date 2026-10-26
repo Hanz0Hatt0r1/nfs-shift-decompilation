@@ -1131,8 +1131,14 @@ int main() {
                 phone_copy_state.destination_pitch == 1280 &&
                 phone_copy_state.destination_height == 720 &&
                 phone_copy_state.destination_format == 6 &&
-                phone_copy_state.destination_swap_red_blue,
+                phone_copy_state.destination_swap_red_blue &&
+                !phone_copy_state.source_gamma,
             "live Redmi 1280x720 color Copy/Convert state was rejected");
+    phone_copy_registers.color_info = 1u << 16;
+    require(shift::xbox::decode_captured_copy_state(
+                phone_copy_registers, &phone_copy_state, &error) &&
+                phone_copy_state.source_gamma,
+            "Copy/Convert source color format did not retain the captured gamma bit");
     auto unsupported_copy_registers = phone_copy_registers;
     unsupported_copy_registers.copy_valid_mask = 0x7u;
     require(!shift::xbox::decode_captured_copy_state(

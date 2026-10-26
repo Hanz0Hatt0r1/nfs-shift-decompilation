@@ -1,0 +1,72 @@
+{
+  "schema": "shift.process2.disclaimer_gamma_target_fix.v1",
+  "date": "2026-10-26",
+  "process2": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "head_at_build": "3f4a779049410d7e1b48e39cba6c41c0bd794087",
+    "dirty_worktree": true
+  },
+  "retail_reference": {
+    "capture": "process2_disclaimer_draw_isolation_20261026.json",
+    "submit": 907,
+    "draw_ids": [5058, 5059, 5060, 5061],
+    "texture_address": "0x0A24B000",
+    "texture_format": "Xenos format 20 / DXT4-5",
+    "texture_extent": [512, 8],
+    "target_format": "RGBA8_GAMMA"
+  },
+  "correction": {
+    "observed_problem": "Gamma-target translated draw shaders encoded their output before blending into the linear UNORM16 intermediate, then Copy/Convert encoded it again.",
+    "new_behavior": "Use the linear-target shader for RGBA8_GAMMA draws when the frame uses the linear UNORM16 intermediate; apply Xenos gamma encoding once in Copy/Convert.",
+    "covered_paths": [
+      "regular 4x-MSAA gamma target and multisample Copy/Convert",
+      "mixed 4x-to-1x gamma target and single-sample Copy/Convert"
+    ],
+    "untouched": [
+      "captured texture bytes and DXT4-5 decoding",
+      "captured strip vertices, UV coordinates, and blend register values",
+      "Process 1 runtime files"
+    ]
+  },
+  "verification": {
+    "renderer_ctest": {
+      "passed": 4,
+      "total": 4,
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "host": "Linux offscreen Vulkan"
+    },
+    "plugin_ctest": {
+      "passed": 5,
+      "total": 5,
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "host": "Linux offscreen Vulkan"
+    },
+    "gamma_regression": "Synthetic fragment shaders assert that 0.25 stays linear in the UNORM16 intermediate and becomes approximately 0.498 in final Xenos 10-bit output."
+  },
+  "artifacts": {
+    "linux_plugin": {
+      "path": "/home/pes/work/rexglue-sdk-rexui-vulkan-20261023/out/linux-amd64/librexgpu-shift-native.so",
+      "sha256": "1ed00fc4e497f9a815fd5729e80a5ffdb3ee948447e3fd77db9b9e67a92c84db",
+      "build_id": "426e3d67ed2424868f1514154d5b6eac594ed345"
+    },
+    "android_arm64_plugin": {
+      "path": "/home/pes/work/process2-android-inflight-plugin/plugin-output/librexgpu-shift-natived.so",
+      "sha256": "be0d203a2522e3bc7a06e5001521d647bacc3d9b438e15a5ab31a6551030d459",
+      "build_id": "17d82d188418bf8e0698bfd6262357996541d15f",
+      "abi": "arm64-v8a",
+      "minimum_android_api": 29,
+      "build": "success"
+    }
+  },
+  "visual_check": {
+    "status": "pending fresh retail capture",
+    "latest_available_screenshot": "process2_redmi_disclaimer_live_20261026.png",
+    "latest_screenshot_uses_corrected_plugin": false,
+    "process1_handoff": "Both rebuilt plugins were sent to Process 1 for the next safe disclaimer capture; no APK was installed and no active app was restarted."
+  },
+  "limits": [
+    "The shader regressions are synthetic and validate the gamma pipeline, not full retail image parity.",
+    "The saved Linux and Redmi screenshots predate the corrected plugins.",
+    "No independent Xenos reference image was available for the disclaimer strips."
+  ]
+}

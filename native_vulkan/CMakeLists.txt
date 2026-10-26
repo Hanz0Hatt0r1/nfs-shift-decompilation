@@ -137,6 +137,42 @@ if(GLSLANG_VALIDATOR)
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_black.frag
     VERBATIM
   )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_encoded.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/gamma_target_encoded.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_encoded.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/gamma_target_encoded.frag
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_linear.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/gamma_target_linear.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_linear.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/gamma_target_linear.frag
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_gamma_single.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_gamma_single.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_gamma_single.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_gamma_single.frag
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_gamma_ms.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_gamma_ms.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_gamma_ms.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_gamma_ms.frag
+    VERBATIM
+  )
   add_executable(xbox_live_vulkan_renderer_check tests/xbox_live_vulkan_renderer_check.cpp)
   add_dependencies(xbox_live_vulkan_renderer_check shift_xbox_live_vulkan_renderer)
   target_link_libraries(xbox_live_vulkan_renderer_check PRIVATE shift_xbox_live_vulkan_renderer)
@@ -151,6 +187,10 @@ if(GLSLANG_VALIDATOR)
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_single.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_black.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_encoded.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_linear.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_gamma_single.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_gamma_ms.frag.spv
   )
   add_dependencies(xbox_live_vulkan_renderer_check shift_xbox_live_vulkan_renderer_smoke_shaders)
   add_test(
@@ -165,6 +205,10 @@ if(GLSLANG_VALIDATOR)
             ${SHIFT_VULKAN_SHADER_DIR}/clip_disabled_window.vert.spv
             ${SHIFT_VULKAN_SHADER_DIR}/clip_disabled_window.frag.spv
             ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_black.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_encoded.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_linear.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_gamma_single.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_gamma_ms.frag.spv
   )
   set_tests_properties(xbox_live_vulkan_renderer_check PROPERTIES SKIP_RETURN_CODE 77)
 
