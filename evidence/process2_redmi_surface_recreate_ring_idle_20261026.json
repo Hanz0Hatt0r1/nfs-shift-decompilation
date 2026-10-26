@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-26",
+  "process2": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "source_commit": "4a4f33c07",
+    "build_id": "5be60cc87833c1ccfa319bcf151867b5e45161c7"
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "gpu": "ARM Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift"
+  },
+  "artifacts": {
+    "apk": "/home/pes/work/process2-latest-renderer-handover-20261026/android-pm4-interrupt-order-20261026/nfsshift-process2-pm4-interrupt-order-20261026.apk",
+    "apk_sha256": "5d6f68303b299cb57d881127bdb8b7950da1d193de6371afd9859b310d499d94",
+    "arm64_plugin_sha256": "ab6900ab1a4802469c07055a739ecbbe99bf4d90678ca6465fdb4018e3c1eb55",
+    "runtime_dso_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a"
+  },
+  "guest_log": {
+    "repo_path": "evidence/process2_redmi_pm4_live_latest_20261026.log.gz",
+    "original_path": "/tmp/process2_redmi_pm4_live_latest.log",
+    "original_sha256": "a0ddd0520898e931182175e6ce9418f29fa64cf324b3643553d0f599bd555418",
+    "compressed_sha256": "7463b561826af0cfa920e985b6662845efbbcc40ab4b1252d27ddf0c9519a1b6",
+    "original_bytes": 437074,
+    "line_count": 6330,
+    "time_range_local": [
+      "2026-10-26 13:02:38",
+      "2026-10-26 13:06:37.478"
+    ]
+  },
+  "renderer_observations": {
+    "submitted_batches": 515,
+    "submitted_indexed_draw_packets": 2960,
+    "accepted_copy_convert_operations": 515,
+    "presenter_refresh_failure_lines": 0,
+    "first_unresolved_draw": {
+      "draw_index": 0,
+      "reason": "incomplete captured raster register state",
+      "valid_mask": "0x17038",
+      "later_resolved": true
+    },
+    "readback_frame_500": {
+      "extent": "1280x720",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "non_black_pixels": 17951,
+      "fnv1a64": "AA8BC55196A29A73",
+      "visual_contract": "retail legal disclaimer"
+    },
+    "last_guest_batch_local_time": "2026-10-26 13:04:19.932",
+    "last_guest_batch_draw_count": 14,
+    "menu_background_open_failures": [
+      "2026-10-26 13:04:20.290 D:\\tracks\\_data\\instances\\scenes\\menu_background.xml -> 0xc000000f",
+      "2026-10-26 13:04:20.292 D:\\tracks\\_data\\instances\\scenes\\menu_background.xml -> 0xc000000f",
+      "2026-10-26 13:04:20.294 D:\\tracks\\_data\\static\\scenes\\menu_background.xml -> 0xc000000f",
+      "2026-10-26 13:04:20.295 D:\\tracks\\_data\\static\\scenes\\menu_background.xml -> 0xc000000f"
+    ],
+    "later_presenter_result": {
+      "local_time": "2026-10-26 13:06:37.478",
+      "message": "Presentation to the swapchain image has been dropped as the swapchain or the surface has become outdated"
+    }
+  },
+  "surface_lifecycle_trace": {
+    "source": "Process 1 supplied Android log excerpt; not independently pulled by Process 2",
+    "events": [
+      "13:06:36.811 SDL onPause",
+      "13:06:36.870 SDL window focus lost",
+      "13:06:37.441 SDL surfaceDestroyed",
+      "13:06:37.442 SDL nativePause",
+      "13:06:37.475 Vulkan queueBuffer failed: Invalid argument (-22)",
+      "13:08:42.244 SDL surfaceCreated",
+      "13:08:42.253 SDL nativeResume",
+      "13:08:42.327-13:08:42.328 BufferQueue has been abandoned",
+      "13:10:16.620 SDL surfaceCreated",
+      "13:10:16.621 SDL nativeResume"
+    ]
+  },
+  "source_audit": {
+    "sdk_repository": "/home/pes/work/rexglue-sdk-p1-private-unlink-20261026",
+    "sdk_commit_inspected": "d6ed02eea517a34166e3a1d0ef8e5ab9c5ca8253",
+    "relevant_locations": [
+      "thirdparty/sdl3/android-project/app/src/main/java/org/libsdl/app/SDLSurface.java:97-190",
+      "thirdparty/sdl3/src/core/android/SDL_android.c:1240-1321",
+      "thirdparty/sdl3/src/video/android/SDL_androidvideo.c:276-301",
+      "src/ui/window_sdl.cpp:398-406,461-479",
+      "src/ui/window.cpp:456-479,548-565",
+      "src/ui/vulkan/vulkan_presenter.cpp:745-1045,1584-1592,2255-2265",
+      "src/ui/presenter.cpp:1342-1408,1497-1520"
+    ],
+    "core_finding": "Android replaces SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER on surfaceCreated, while the ReX AndroidNativeWindowSurface wrapper stores the original raw ANativeWindow pointer. Same-size resize is not a reliable replacement signal; an outdated presenter retry reuses its current Surface wrapper."
+  },
+  "assessment": {
+    "stale_surface_can_explain_post_resume_black_presentation": "plausible, source-backed, not proven as the sole cause",
+    "surface_loss_explains_guest_submission_stopping_at_13_04_19": false,
+    "menu_background_failures_causal": "unproven; they occur 0.358 seconds after the last batch",
+    "recommended_owner": "Process 1 / shared SDL-window lifecycle integration; Process 2 did not edit shared SDK files",
+    "minimal_fix_direction": "On Android ANativeWindow identity replacement, dispatch a UI-thread surface-replacement callback that detaches and recreates the existing ReX Window surface wrapper from the updated SDL property before re-presenting; dimension-only resize is insufficient.",
+    "regression_direction": "Replace the native window with a different pointer at identical dimensions, then verify old surface disconnection precedes release and presenter reconnect uses the new pointer, including OUT_OF_DATE and SURFACE_LOST recovery."
+  },
+  "limitations": [
+    "The Android lifecycle trace is a Process 1-provided excerpt, not an independently retrieved full log.",
+    "This run proves a retail disclaimer readback and 2960 indexed draw packets reached the presenter; it does not prove menu, race, sustained cutscene, or full retail visual parity.",
+    "The last guest batch precedes surface destruction by about two minutes, so the surface lifecycle defect cannot explain the earlier lack of new guest draw submissions.",
+    "No code, APK, app state, or user input was changed during the source audit."
+  ]
+}

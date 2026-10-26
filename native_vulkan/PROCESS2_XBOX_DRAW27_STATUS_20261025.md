@@ -474,3 +474,22 @@ and [raw top sample](../evidence/process2_redmi_black_idle_top_20261026.log.gz)
 are attached to the current ARM64 APK/plugin hashes. This shifts the next
 cross-process diagnostic toward the guest main/control path while preserving
 Process 2's renderer boundary; it is not a renderer parity result.
+
+## Android surface-recreation source audit (2026-10-26)
+
+A read-only source audit of the shared SDL/ReXGlue Android WSI path found a
+plausible surface-wrapper rebind gap. SDL installs a new native-window pointer
+after Android `surfaceCreated`, while the presenter's `AndroidNativeWindowSurface`
+retains the pointer captured when it was attached. Same-size surface recreation
+does not reliably trigger the current resize path, and outdated Vulkan-present
+recovery retries against the retained wrapper. Process 1 received the source
+references and proposed UI-thread rebind direction; Process 2 changed no shared
+SDK files.
+
+The separate guest-progress evidence remains earlier: the last 14-draw batch
+was at 13:04:19.932, before four `menu_background.xml` open failures at
+13:04:20.290–295; no further batch appears in the run log before the later
+surface teardown at 13:06:37. The stale surface is a plausible reason that
+presentation fails after resume, not an explanation for the guest ring becoming
+idle before surface destruction. See the [source audit and timeline](PROCESS2_ANDROID_SURFACE_RECREATE_ANALYSIS_20261026.md)
+and [run evidence](../evidence/process2_redmi_surface_recreate_ring_idle_20261026.json).
