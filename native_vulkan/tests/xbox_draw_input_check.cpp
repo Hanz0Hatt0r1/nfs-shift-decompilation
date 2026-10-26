@@ -1037,6 +1037,7 @@ int main() {
     captured_rg16_registers.mode_control = 0x00000004u;
     captured_rg16_registers.depth_control = 0x00700730u;
     captured_rg16_registers.color_mask = 0x0000000Fu;
+    captured_rg16_registers.setup_mode_control = 0x00218006u;
     captured_rg16_registers.viewport_x_scale = 0x42F30000u;
     captured_rg16_registers.viewport_x_offset = 0x42F30000u;
     captured_rg16_registers.viewport_y_scale = 0xC2F30000u;
