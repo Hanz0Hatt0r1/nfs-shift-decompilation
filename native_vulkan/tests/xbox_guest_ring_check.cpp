@@ -29,6 +29,17 @@ constexpr std::array<uint8_t, 12> kCapturedIndirectBufferPacket = {
 constexpr std::array<uint8_t, 8> kCapturedInterruptPacket = {
     0xC0, 0x00, 0x54, 0x00, 0x00, 0x00, 0x00, 0x24,
 };
+// First 30 dwords of the retail callback-stream capture. The capture continues
+// with another packet at dword 30; this fixture ends after the complete
+// CALLBACK_ACK write at dword 29.
+constexpr std::array<uint32_t, 30> kCapturedCallbackWaitAckPrefix = {
+    0x00000100, 0x000005C8, 0x00020000, 0x0001057C, 0x823A4758,
+    0x00000208, 0x00000578, 0x00000004, 0xC0043C00, 0x00000013,
+    0x1B964002, 0x00000004, 0xFFFFFFFF, 0x00000100, 0xC0043C00,
+    0x00000013, 0x1B964016, 0x00000208, 0xFFFFFFFF, 0x00000100,
+    0xC0043C00, 0x00000013, 0x1B964012, 0x823A4758, 0xFFFFFFFF,
+    0x00000100, 0xC0005400, 0x00000004, 0x0000045E, 0x00000004,
+};
 constexpr std::array<uint8_t, 16> kCapturedEventWriteShdPacket = {
     0xC0, 0x02, 0x58, 0x00, 0x00, 0x00, 0x00, 0x03,
     0x17, 0xAF, 0x40, 0x06, 0xA9, 0x5D, 0x00, 0xE4,
@@ -119,6 +130,74 @@ int main() {
                 kCapturedInterruptPacket.data(), kCapturedInterruptPacket.size() - 4u,
                 &interrupt_cpu_mask, &error),
             "truncated PM4_INTERRUPT packet was accepted");
+
+    std::array<uint8_t, 128> callback_ring{};
+    for (size_t index = 0; index < kCapturedCallbackWaitAckPrefix.size(); ++index) {
+        const uint32_t dword = kCapturedCallbackWaitAckPrefix[index];
+        callback_ring[index * 4u] = static_cast<uint8_t>(dword >> 24);
+        callback_ring[index * 4u + 1u] = static_cast<uint8_t>(dword >> 16);
+        callback_ring[index * 4u + 2u] = static_cast<uint8_t>(dword >> 8);
+        callback_ring[index * 4u + 3u] = static_cast<uint8_t>(dword);
+    }
+    shift::xbox::GuestRingBatch callback_batch{};
+    require(shift::xbox::snapshot_guest_ring_batch(
+                callback_ring.data(), callback_ring.size(), 0u,
+                static_cast<uint32_t>(kCapturedCallbackWaitAckPrefix.size()),
+                &callback_batch, &error) &&
+                callback_batch.packets.size() == 8u &&
+                callback_batch.bytes.size() == 30u * sizeof(uint32_t),
+            "captured retail wait/interrupt/ack prefix did not frame into eight complete packets");
+
+    const auto decode_callback_register_packet =
+        [&callback_batch, &error](size_t packet_index,
+                                 std::vector<shift::xbox::GuestRegisterWrite>* writes) {
+            const auto& packet = callback_batch.packets[packet_index];
+            return shift::xbox::decode_guest_register_writes(
+                callback_batch.bytes.data() + packet.byte_offset,
+                packet.byte_length, writes, &error);
+        };
+    std::vector<shift::xbox::GuestRegisterWrite> callback_register_writes;
+    require(decode_callback_register_packet(1u, &callback_register_writes) &&
+                callback_register_writes.size() == 3u &&
+                callback_register_writes[0].register_index == 0u &&
+                callback_register_writes[0].value == 0x0001057Cu &&
+                callback_register_writes[1].register_index == 1u &&
+                callback_register_writes[1].value == 0x823A4758u &&
+                callback_register_writes[2].register_index == 2u &&
+                callback_register_writes[2].value == 0x00000208u,
+            "captured Type-0 packet was misread as a CALLBACK_ADDRESS/CONTEXT register write");
+    require(decode_callback_register_packet(2u, &callback_register_writes) &&
+                callback_register_writes.size() == 1u &&
+                callback_register_writes[0].register_index == 0x0578u &&
+                callback_register_writes[0].value == 4u,
+            "captured interrupt-sync scratch register write was decoded incorrectly");
+
+    const auto captured_dword = [&callback_batch](size_t dword_index) {
+        const uint8_t* bytes = callback_batch.bytes.data() + dword_index * 4u;
+        return (uint32_t(bytes[0]) << 24) | (uint32_t(bytes[1]) << 16) |
+               (uint32_t(bytes[2]) << 8) | uint32_t(bytes[3]);
+    };
+    require(callback_batch.packets[3].type == shift::xbox::PacketType::Type3 &&
+                callback_batch.packets[3].opcode == 0x3Cu &&
+                callback_batch.packets[4].opcode == 0x3Cu &&
+                callback_batch.packets[5].opcode == 0x3Cu &&
+                captured_dword(23u) == 0x823A4758u,
+            "captured callback value was not retained as the third WAIT_REG_MEM reference");
+    require(callback_batch.packets[6].type == shift::xbox::PacketType::Type3 &&
+                callback_batch.packets[6].opcode == 0x54u &&
+                callback_batch.packets[6].byte_offset +
+                        callback_batch.packets[6].byte_length ==
+                    callback_batch.packets[7].byte_offset &&
+                shift::xbox::decode_captured_gpu_interrupt(
+                    callback_batch.bytes.data() + callback_batch.packets[6].byte_offset,
+                    callback_batch.packets[6].byte_length, &interrupt_cpu_mask, &error) &&
+                interrupt_cpu_mask == 4u,
+            "captured PM4_INTERRUPT CPU mask or packet order changed");
+    require(decode_callback_register_packet(7u, &callback_register_writes) &&
+                callback_register_writes.size() == 1u &&
+                callback_register_writes[0].register_index == 0x045Eu &&
+                callback_register_writes[0].value == 4u,
+            "captured CALLBACK_ACK register write was not decoded after PM4_INTERRUPT");
 
     shift::xbox::DecodedEventWriteShd event_write{};
     require(shift::xbox::decode_guest_event_write_shd(

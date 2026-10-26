@@ -375,19 +375,40 @@ the SDK header `rex/platform/fpscr.h` about the ARM64 `fpcr` inline-assembly
 operand width. This was a translation-unit compile only; the later Gradle build
 above links and runs the plugin in the complete Android app.
 
-The guest-ring path now decodes the captured `PM4_INTERRUPT` CPU mask and
-dispatches the registered GPU callback through a ReXGlue `XHostThread`, so the
-callback has a guest thread context. The callback is issued after the current
-ring batch is consumed and its read pointer is published; exact ordering at
-each interrupt packet inside a batch is not verified. The decoder regression
-and Android API 33 guest-ring smoke passed on Redmi Note 8 Pro (Mali-G76 MC4),
-and the Linux plugin suite passed 3/3 with the readback regression also passing
-under Vulkan validation. Those earlier checks preceded the complete Android
+The guest-ring path decodes each `PM4_INTERRUPT` CPU mask and now dispatches
+the registered GPU callback through its ReXGlue `XHostThread` at that packet's
+position in the stream. This preserves ordering with following packets instead
+of waiting until the batch ends. The 2026-10-26 exact-XEX callback-stream
+capture is recorded in the Process 1 evidence file
+`xbox360_linux_callback_stream_targeted_20261026.json` (SHA-256
+`e7955956adfdc19fcdf2d80d8bf166ea995173f8702ee71db742ce9683c7de20`). Its
+first 30 complete dwords frame as Type-0 writes to registers `0x0100`, `0..2`,
+`0x0578`, then three `WAIT_REG_MEM` packets, `PM4_INTERRUPT` with CPU mask 4,
+and a Type-0 `CALLBACK_ACK` write of 4 to `0x045E`. The value `0x823A4758` is
+one of the register-1 values in the Type-0 write to registers `0..2`, and is
+also the reference operand of the third `WAIT_REG_MEM`; the captured prefix
+does not write `CALLBACK_ADDRESS` (`0x057C`) or `CALLBACK_CONTEXT` (`0x057D`).
+Accordingly, this evidence does not justify executing `0x823A4758` as a GPU
+callback or treating `CALLBACK_ACK` as a function pointer. The capture is from
+guest stream construction and does not prove that these exact bytes were
+submitted or executed by the retail ring. The targeted
+`shift_xbox_guest_ring_check` fixture locks down this framing and packet order.
+On 2026-10-26, the updated host guest-ring check passed, the Linux plugin and
+its six CTest checks built and passed, and the updated plugin translation unit
+compiled for Android API 29 / ARM64. The full Android plugin target did not link:
+the SDK build stopped earlier in `fiber_posix.cpp` (`getcontext`/
+`makecontext`/`swapcontext`) and `memory_posix.cpp` (`GetAndroidApiLevel`),
+before compiling/linking the plugin target. The Android check is therefore a
+translation-unit compile only, not an APK build or device run.
+
+Earlier Android API 33 guest-ring smoke passed on Redmi Note 8 Pro (Mali-G76
+MC4), and the Linux plugin suite passed 3/3 with the readback regression also
+passing under Vulkan validation. Those checks preceded the complete Android
 game integration; a fresh host CTest run after that integration passed 4/4.
-The current-source Linux rerun described above also consumed the captured
-interrupts and dispatched callbacks. See the
-`gpu_interrupt_routing_update` and `post_scalar_destination_live_rerun` entries
-in the evidence JSON for the build and test details.
+The current-source Linux rerun described above also consumed captured
+interrupts and dispatched callbacks. See the `gpu_interrupt_routing_update`
+and `post_scalar_destination_live_rerun` entries in the evidence JSON for the
+earlier build and test details.
 
 On 2026-10-24, a fresh ADB screenshot of the still-running Redmi Note 8 Pro app
 was fully black. Its latest runtime log records one captured retail draw
