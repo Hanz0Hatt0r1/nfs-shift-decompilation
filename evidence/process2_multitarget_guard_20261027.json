@@ -3,13 +3,18 @@
   "date": "2026-10-27",
   "process2": {
     "branch": "work/process2-xbox-live-ring-20261023",
-    "commit": "296be17faee91f79ef5036d1b282423295d172ac",
-    "change": "Reject one Vulkan submission that contains distinct captured Xenos color or depth base tiles."
+    "commit": "9afec9ead95484a63471912ed2e40c5f043bac46",
+    "change": "Reject one Vulkan submission that combines captured Xenos targets with different bases, extents, copy-path color formats, depth formats, or same-sample surface pitches."
   },
   "regression": {
-    "case": "Two draws share extent and target format but use different color_base_tiles.",
-    "expected": "submit_captured_vulkan_frame rejects before submission and reports the first draw index plus old/new color and depth bases.",
-    "result": "passed"
+    "cases": [
+      "Two draws share extent and target format but use different color_base_tiles.",
+      "Two draws use different target extents.",
+      "Two draws use different Vulkan color formats when Copy/Convert is present.",
+      "Two same-sample draws use different surface pitches."
+    ],
+    "expected": "submit_captured_vulkan_frame rejects before submission and reports the first draw index plus old/new target layout values.",
+    "result": "all passed"
   },
   "verification": {
     "linux_native": {
@@ -19,25 +24,25 @@
     },
     "linux_rexglue_plugin": {
       "build": "passed",
-      "plugin_sha256": "0ccbeab62a7a592fda942083c83172a1536a89246c2ffc903aa2188f106ac7b0",
-      "plugin_build_id": "0cd7bba100ae44b92098b14dc5e691b13f995fb2",
+      "plugin_sha256": "01a2908cfec4492cb6702a0217343d58a8c9d7618e836bef8e598bdfbdc2c0e7",
+      "plugin_build_id": "e16e929fc7a5ad5080c55709bc80b81747e14c13",
       "ctest": "6/6 passed",
       "vulkan_validation": "VK_LAYER_KHRONOS_validation"
     },
     "android_arm64_renderer_check": {
       "build": "passed with NDK r28c, Android API 26, arm64-v8a",
-      "binary_sha256": "7c70eebc72d5fa978a83814b9676b0c902c45faaf00e5cdece106942851efa53",
-      "build_id": "6fb8f992c23b456f98298117cb72ff919c97492a",
+      "binary_sha256": "ee39ccfaf410f28de1c06509573db8945eff3c9f616c32ff5f5e0d141d4bfab5",
+      "build_id": "030b4227e15f99f613c4d4960bcfaa3401ff6ec9",
       "device": "Redmi Note 8 Pro / Android 13 / Mali-G76 MC4 / Vulkan 1.1.131",
       "execution": "Offscreen checker process; captured disclaimer draws plus existing renderer regressions.",
-      "result": "passed",
+      "result": "passed; captured disclaimer draws remained continuous, including the new extent/format/pitch rejection regressions",
       "vulkan_validation": "Android validation layer was unavailable/not enabled."
     },
     "android_arm64_plugin": {
       "build": "passed with NDK r28c, Android API 29, arm64-v8a",
       "link_mode": "Used the exact prebuilt ReXGlue runtime DSO from the installed APK.",
-      "plugin_sha256": "38831e3425059a40673cb8b92c3e2a49ea3aaef269a9e8a550555f31ee1a683f",
-      "plugin_build_id": "71881665aee8f6dd2035442fdc27dc7e060e6dc7",
+      "plugin_sha256": "21a41b3f7cd2d1cbe1b663723eca7664dfd4441509eb0ba8a1ae98ca7b1d556a",
+      "plugin_build_id": "062cfff218a6d30ebaaf525bd9fb7dbdb19c1e71",
       "runtime_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
       "needed_runtime_soname": "librexruntimed.so",
       "installed": false
@@ -45,11 +50,10 @@
   },
   "phone_app_state": {
     "package": "com.hanz0hatt0r.nfsshift",
-    "activity_top_resumed_before_and_after": true,
+    "activity_top_resumed_after_renderer_check": true,
     "last_update_time": "2026-10-26 22:40:04",
-    "screenshot_before_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
     "screenshot_after_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
-    "interpretation": "The renderer check did not change or close the running game. This screenshot matches the archived live disclaimer capture."
+    "interpretation": "The new ARM64 checker ran offscreen and did not modify the game package. The app was subsequently launched for a separate startup observation, documented in process2_redmi_disclaimer_to_bink_blocker_20261027.json."
   },
   "clean_android_sdk_runtime_rebuild": {
     "status": "blocked by external ReXGlue SDK Android sources; plugin build passed using the packaged runtime",
@@ -62,6 +66,6 @@
   "limits": [
     "The guard does not implement Xenos EDRAM target switching or the captured intermediate Copy/Convert chain.",
     "The Android check ran the renderer library directly; it did not load the new plugin into the APK.",
-    "The current screenshot shows two horizontal rules, but no independent Xbox image proves different geometry or appearance is expected."
+    "The new guard reports incompatible target layouts and does not fix the disclaimer appearance or establish retail border parity."
   ]
 }

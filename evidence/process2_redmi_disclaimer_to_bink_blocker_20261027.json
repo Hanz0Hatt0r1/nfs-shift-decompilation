@@ -1,0 +1,86 @@
+{
+  "schema": "shift.process2.redmi_disclaimer_to_bink_blocker.v1",
+  "date": "2026-10-27",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": 13,
+    "api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615"
+  },
+  "installed_app": {
+    "package": "com.hanz0hatt0r.nfsshift",
+    "version_name": "1.0",
+    "last_update_time": "2026-10-26 22:40:04",
+    "activity": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity",
+    "apk_or_plugin_replaced": false,
+    "process_left_running": true
+  },
+  "live_observation": {
+    "started_at_local": "2026-10-27 02:30:30",
+    "language_selector": {
+      "observation": "The Language Select heading, English and other labels, list selection, and A prompt were visible.",
+      "screenshot": "process2_redmi_language_select_live_20261027.png",
+      "screenshot_sha256": "09129ccc3de369c6b16253ebe708ac1c0cd1670b598585e2629d9767090bf5e8"
+    },
+    "disclaimer": {
+      "observation": "The English safety text and two gray horizontal rules were visible. The screen hash remained unchanged in repeated captures through 2026-10-27 02:38:58.",
+      "screenshot": "process2_redmi_disclaimer_waiting_video_20261027.png",
+      "screenshot_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8"
+    },
+    "input_probes_after_disclaimer": [
+      "Android KEYCODE_BUTTON_A (96)",
+      "Android KEYCODE_ENTER (66)",
+      "touch at the center of the landscape viewport"
+    ],
+    "input_result": "No observed transition after these probes; no claim is made that these injected events match the game's expected controller route.",
+    "visible_video_frame": false,
+    "crash": false
+  },
+  "renderer_log": {
+    "device_log": "files/nfs_shift/user/logs/nfs_shift_032.log",
+    "device_log_sha256_at_capture": "0a3971597fa0e576980f156b9893161f7b72655b2f1e8cebb7832cc085cbbf8e",
+    "excerpt": "process2_redmi_disclaimer_to_bink_log_excerpt_20261027.txt",
+    "excerpt_sha256": "98e86bbcad5742ef7089213d68d44106e74dec7296bf29fe8d675d10e759b6c9",
+    "transition_failure": {
+      "time_local": "2026-10-27 02:32:12.614",
+      "message": "mixed captured frame has an unsupported target format or Copy/Convert source extent",
+      "captured_draw_count": 14,
+      "observed_registers": "First mode-6 packet uses Xenos color format 12, 4x MSAA and sample-select-all Copy/Convert to format 26 at 1280x720; following mode-6 packets include seven distinct format-31 intermediate destinations before the final presenter copy.",
+      "relationship_to_video_stop": "Not established. The failure is recorded as a renderer gap, not as the proven cause of the app remaining on the disclaimer."
+    },
+    "repeated_disclaimer_submissions": {
+      "count": 737,
+      "draw_packets_per_submission": 13,
+      "first_local_time": "2026-10-27 02:32:13.186",
+      "last_local_time": "2026-10-27 02:39:06.955",
+      "mean_log_interval_seconds": 0.562,
+      "interpretation": "The presenter kept receiving 13-draw, 1280x720 submissions while the captured phone image remained the disclaimer. The log does not hash or prove identical draw inputs. This is a log interval, not a measured display FPS."
+    }
+  },
+  "renderer_status": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "source_commit": "9afec9ead95484a63471912ed2e40c5f043bac46",
+    "installed_plugin_matches_source": false,
+    "prior_evidence": [
+      "process2_redmi_bink_stream_replay_20261025.json",
+      "process2_redmi_bink_retail_draw_replay_20261025.json",
+      "process2_redmi_cutscene_progress_followup_20261025.json"
+    ],
+    "scope_note": "Previous evidence verifies isolated captured retail Bink draw replay and earlier slow live Bink output. This run did not reach a visible Bink frame."
+  },
+  "disclaimer_geometry": {
+    "captured_draws": [5058, 5059, 5060, 5061],
+    "captured_geometry": "Two horizontal rules, each split into left and right draws.",
+    "vertical_rule_draw_captured": false,
+    "reference_limit": "No independent Xbox screenshot establishes different border geometry, color, thickness, or position."
+  },
+  "limits": [
+    "This used the already installed 2026-10-26 Android package and plugin; the current branch build was not installed.",
+    "No Bink frame was visible in this session, so this is not evidence of successful live video playback.",
+    "The failed 14-draw Copy/Convert sequence may be a separate transition-path gap; its causal relation to video startup is unproven.",
+    "The full device log was read from the app's private files directory and is not committed; the selected diagnostic excerpt is committed."
+  ]
+}
