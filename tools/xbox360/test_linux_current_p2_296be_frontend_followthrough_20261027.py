@@ -50,5 +50,8 @@ assert any("main-menu entry" in item for item in interpretation["not_proven"])
 assert "Keep P1 retail wait and input semantics unchanged" in interpretation[
     "next_step"
 ]
+assert "xbox360_linux_current_p2_296be_frontend_followthrough_20261027.json" in (
+    ROOT / "xbox360/README.md"
+).read_text()
 
 print("latest exact-XEX run remains at the renderer-blocked black-frame frontier")
