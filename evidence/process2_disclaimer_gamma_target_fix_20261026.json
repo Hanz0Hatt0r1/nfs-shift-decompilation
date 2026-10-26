@@ -62,7 +62,24 @@
     "status": "pending fresh retail capture",
     "latest_available_screenshot": "process2_redmi_disclaimer_live_20261026.png",
     "latest_screenshot_uses_corrected_plugin": false,
-    "process1_handoff": "Both rebuilt plugins were sent to Process 1 for the next safe disclaimer capture; no APK was installed and no active app was restarted."
+    "process1_handoff": "Linux and Android ARM64 plugin binaries were sent to Process 1; the Android package needs a fresh retail capture."
+  },
+  "android_install_attempt": {
+    "status": "failed_insufficient_storage",
+    "device": "Redmi Note 8 Pro / Android 13 / Mali-G76 MC4",
+    "internal_free_before_attempt_mb": 488,
+    "internal_free_after_data_preserving_uninstall_mb": 619,
+    "external_storage": "Public SD volume 6FF5-35AA has 19 GB free but is not adoptable for application installation.",
+    "actions": [
+      "Two signed APK install attempts failed with INSTALL_FAILED_INSUFFICIENT_STORAGE.",
+      "The existing package was uninstalled with `cmd package uninstall -k`; package data/cache were retained.",
+      "Reinstall of the updated package still failed; pm trim-caches did not reclaim space."
+    ],
+    "package_currently_registered": false,
+    "app_data_cleared": false,
+    "previous_signed_apk_backup": "/home/pes/work/process2-latest-renderer-handover-20261026/android-pm4-interrupt-order-20261026/nfsshift-process2-pm4-interrupt-order-20261026.apk",
+    "updated_signed_apk": "/home/pes/work/process2-latest-renderer-handover-20261026/android-disclaimer-gamma-target-20261026/nfsshift-disclaimer-gamma-target-20261026.apk",
+    "updated_apk_sha256": "69150ffaa64bf2d2ab75942651b5fe7bbee982e3a64622d68b312eeb4a5eeded"
   },
   "limits": [
     "The shader regressions are synthetic and validate the gamma pipeline, not full retail image parity.",

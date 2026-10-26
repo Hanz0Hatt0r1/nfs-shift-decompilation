@@ -988,6 +988,11 @@ the tested paths; it does not establish full disclaimer-frame parity or
 confirm that every visible strip pixel is wrong. Build hashes and test scope
 are recorded in
 [`process2_disclaimer_gamma_target_fix_20261026.json`](../../evidence/process2_disclaimer_gamma_target_fix_20261026.json).
+The Redmi install attempt was blocked by insufficient internal storage; the
+package is temporarily unregistered after `uninstall -k`, which retained its
+data/cache. The updated signed APK and the previous signed APK backup are in
+the handoff directory recorded by that evidence. A device screenshot with the
+corrected plugin remains pending.
 
 ## Redmi Bink draw replay with the pipeline cache (2026-10-26)
 
