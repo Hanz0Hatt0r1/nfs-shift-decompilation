@@ -106,7 +106,7 @@ if(GLSLANG_VALIDATOR)
   add_executable(xbox_live_vulkan_renderer_check ../tests/xbox_live_vulkan_renderer_check.cpp)
   add_dependencies(xbox_live_vulkan_renderer_check shift_android_live_draw_smoke_shaders)
   target_link_libraries(xbox_live_vulkan_renderer_check PRIVATE
-    shift_xbox_live_vulkan_renderer ${SHIFT_VULKAN_LIB})
+    shift_xbox_live_vulkan_renderer shift_xbox_draw_input ${SHIFT_VULKAN_LIB})
 endif()
 
 add_executable(shift_xbox_guest_ring_check ../tests/xbox_guest_ring_check.cpp)
