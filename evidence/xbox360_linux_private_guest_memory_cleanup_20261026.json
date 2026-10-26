@@ -1,0 +1,64 @@
+{
+  "schema": "shift.xbox360.linux-private-guest-memory-cleanup.v1",
+  "captured_at_local": "2026-10-26T02:06:27+03:00",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "sdk_change": {
+    "repository": "ReXGlue SDK",
+    "branch": "work/p1-private-guest-memory-unlink-20261026",
+    "commit": "d6ed02eea517a34166e3a1d0ef8e5ab9c5ca8253",
+    "behavior": "Unlink the private POSIX shared-memory name immediately after opening; preserve default named mapping behavior and the open descriptor."
+  },
+  "unit_test": {
+    "command": "out/linux-amd64/Release/unit_tests '[memory][posix]' --reporter compact",
+    "result": "passed",
+    "test_cases": 2,
+    "assertions": 10,
+    "coverage": [
+      "An unlinked shared-memory descriptor remains usable for MapFileView read/write.",
+      "The default mapping name remains openable until CloseFileMappingHandle."
+    ]
+  },
+  "runtime_smoke": {
+    "platform": "Linux AMD64",
+    "duration_seconds": 20,
+    "termination": "SIGKILL after the process remained live for the full bounded interval",
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_sha256": "f5e5b53a9fb8d8ba7ec45e210e5bedd4d819fd9cc93c70126747657cc45c6254",
+    "renderer_plugin_sha256": "dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1",
+    "loaded_libraries_confirmed_in_proc_maps": [
+      "/home/pes/work/nfs-p1-shm-cleanup-20261026/bin/librexruntime.so",
+      "/home/pes/work/nfs-p1-shm-cleanup-20261026/bin/librexgpu-shift-native.so"
+    ],
+    "named_guest_memory_objects": {
+      "before_run": [],
+      "observed_while_running": [],
+      "after_sigkill": []
+    },
+    "renderer_log_observations": {
+      "copy_convert_accepts": 277,
+      "indexed_draw_submissions": 276,
+      "guest_faults": 0,
+      "vulkan_frame_refresh_failures": 0,
+      "menu_background_xml_misses": 0,
+      "other_missing_resource_notes": ["One cameraconfig.xml miss"]
+    },
+    "runtime_log": {
+      "external_path": "/home/pes/work/nfs-p1-shm-cleanup-20261026/bin/logs/nfs_shift_001.log",
+      "sha256": "7b4bc6efe4ab439a226b4b9ffaae85494671d6fdbe41d4e8a2052f4025ef80f3",
+      "bytes": 256952
+    },
+    "stdout_log": {
+      "external_path": "/home/pes/work/nfs-p1-shm-cleanup-20261026/exact-xex-sigkill-smoke.log",
+      "sha256": "c848530a35e0d41b82034e1221ea6ce931b239251fb36b13b8769e6ed8776aea",
+      "bytes": 40
+    },
+    "limitations": [
+      "The bounded run verifies startup and abrupt-stop cleanup only; it does not prove menu entry, race entry, graceful shutdown, Vulkan 1.1 compatibility, ARM64 or Android execution.",
+      "Draw submission counts are not evidence of a playable game."
+    ]
+  }
+}

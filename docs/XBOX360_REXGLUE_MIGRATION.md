@@ -146,3 +146,28 @@ No new Xbox runtime should depend on the PC Win32 shim by default. Reuse neutral
 - Avoid mass-closing PC PRs or moving source trees until the new Xbox compiler/bootstrap gates are independently demonstrated.
 - At X1, X2 and X6, reconsider feasibility against the existing PC path if unresolved blockers dominate the budget.
 - The archived original PC roadmap and README live in `docs/PC_RECOMPILATION_ROADMAP_20261022.md` and `docs/PC_RECOMPILATION_README_20261022.md`.
+
+
+## Linux AMD64 frontend follow-through (2026-10-26)
+
+A 180.01-second no-GDB run of the exact retail XEX remained live and shut down cleanly after the bounded harness sent SIGINT. The P1 host, ReXGlue runtime, and P2 plugin hashes are recorded in [the ringtrace evidence](../evidence/xbox360_linux_ringtrace_frontend_followthrough_20261026.json). PID-scoped Wayland captures alternated between the retail driving-safety warning and a black viewport after 44 A/Start uinput edges. The runtime recorded 1,529 wake/snapshot/complete cycles and guest RPTR 0x1F1F, with no guest faults or Vulkan frame-refresh failures. The run does not prove same-run frontend input consumption, entry to the main menu or an offline race, or that the single unresolved draw or missing XML requests caused the output changes. It used Vulkan 1.4.312 on Linux AMD64 and does not validate Vulkan 1.1, ARM64, or Android.
+
+The next P1 investigation is the exact retail deferred-callback registration and expected first indirect invocation around 0x823A4758, preserving retail queue and wait semantics.
+
+## Retail queue wait with the shader-cache plugin (2026-10-26)
+
+A 53.4-second exact-XEX run used the current host, ReXGlue runtime, and P2 shader-cache plugin; `/proc/<pid>/maps` verified both shared libraries. A single read-only GDB snapshot found the main guest thread in the original `0x823B34A0` wait path. At return site `0x823B3560`, `0x823A0310` had returned 1; the wait target was 4975, between head 4967 and tail 4977, while predicate byte `object+0x2ABD` was `0x04` and mask `0x02` was clear. The `SHIFT Native GP` thread was asleep in `pthread_cond_wait` at that same snapshot. This confirms the wait frontier with the current plugin but does not establish which component should advance the software queue or set the predicate. The game stayed live until SIGINT and shut down with exit code 0; no controller input was sent. Full hashes, stack, and limits are recorded in [the current retail wait evidence](../evidence/xbox360_linux_retail_wait_shader_cache_20261026.json).
+
+Keep the retail queue and predicate behavior unchanged. The next bounded P1 trace is the original guest producer/completion callback and its scheduling conditions; a sleeping graphics worker at one snapshot is not sufficient evidence of a renderer or scheduler defect.
+
+
+## Retail deferred-callback stream trace (2026-10-26)
+
+A 40-second bounded GDB run of the exact XEX with the current mapped P2 renderer/runtime pair (SHA-256 dec87581… and 127181ad…) entered retail function 0x823A4908 on object 0xB7365F00. The candidate producer 0x823A4758 and registered callback 0x82649B68 had no hits in that window. A separate guest-side stream probe recorded 0x823B3598 receiving sign-extended 0x823A4758 in r6 and appending that value in the guest stream; that probe accidentally loaded the older renderer from the executable directory, so it documents retail stream construction only and makes no claim about current plugin behavior. Exact logs, hashes, and limits are in [the callback-stream evidence](../evidence/xbox360_linux_callback_stream_targeted_20261026.json). These traces do not identify why the producer is not reached or show menu/race progress.
+
+A follow-up 45-second GDB run used the same current runtime/plugin hashes, enabled the plugin's ring trace, and captured the same 32-dword retail stream prefix from guest address 0xA95D05D0, with 0x823A4758 at dword indexes 4 and 23. In that same run, the renderer logged 1,116 ring wake/snapshot/complete cycles, 899 Copy/Convert accepts, and 899 draw-submission entries; neither the 0x823A4758 nor 0x82649B68 breakpoint fired. This correlates stream construction with concurrent ring progress, but does not prove that this particular stream was consumed by those snapshots or explain the missing callback. The title's main menu and offline race remain unverified. Details are in the [updated callback-stream evidence](../evidence/xbox360_linux_callback_stream_targeted_20261026.json).
+
+
+## POSIX private guest-memory cleanup (2026-10-26)
+
+The isolated SDK branch `work/p1-private-guest-memory-unlink-20261026` adds an opt-in unlink-after-open for the private POSIX guest-memory mapping (`d6ed02ee`). The SDK `unit_tests '[memory][posix]'` build passed both lifecycle cases (10 assertions): an unlinked descriptor still maps read/write, while the default named mapping remains discoverable until close. A 20-second exact-XEX smoke run used the rebuilt runtime (SHA-256 `f5e5b53a…c6254`) with the current P2 plugin; `/proc/<pid>/maps` confirmed both libraries, the process remained live until SIGKILL, and no `/dev/shm/xenia_memory_*` name appeared before, during or after. The renderer logged 277 Copy/Convert accepts and 276 draw submissions, which do not prove a menu or race. Full hashes and bounded-run limits are in [the private guest-memory evidence](../evidence/xbox360_linux_private_guest_memory_cleanup_20261026.json). This changes no retail wait, queue, frontend or renderer behavior.
