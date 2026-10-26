@@ -244,6 +244,30 @@ int main() {
                         wait, kWaitReferences[i] ^ 1u),
                 "captured equality WAIT_REG_MEM condition was evaluated incorrectly");
     }
+    constexpr std::array<uint32_t, 6> kCapturedCoherencyWaitWords = {
+        0xC0043C00u, 0x00000003u, 0x00000A31u,
+        0x00000000u, 0x80000000u, 0x00000008u,
+    };
+    std::array<uint8_t, kCapturedCoherencyWaitWords.size() * sizeof(uint32_t)>
+        captured_coherency_wait_bytes{};
+    for (size_t i = 0; i < kCapturedCoherencyWaitWords.size(); ++i) {
+        write_be32(captured_coherency_wait_bytes.data() + i * sizeof(uint32_t),
+                   kCapturedCoherencyWaitWords[i]);
+    }
+    shift::xbox::DecodedWaitRegMem coherency_wait{};
+    require(shift::xbox::decode_captured_wait_reg_mem(
+                captured_coherency_wait_bytes.data(),
+                captured_coherency_wait_bytes.size(), &coherency_wait, &error) &&
+                coherency_wait.control == 0x03u && !coherency_wait.memory &&
+                coherency_wait.poll_address == 0x0A31u &&
+                coherency_wait.reference == 0u &&
+                coherency_wait.mask == 0x80000000u &&
+                coherency_wait.poll_interval == 8u &&
+                shift::xbox::captured_wait_reg_mem_condition_met(
+                    coherency_wait, 0u) &&
+                !shift::xbox::captured_wait_reg_mem_condition_met(
+                    coherency_wait, 0x80000000u),
+            "captured COHER_STATUS_HOST register wait was misdecoded");
     shift::xbox::DecodedWaitRegMem wait_compare{};
     wait_compare.reference = 4u;
     wait_compare.mask = 0xFu;

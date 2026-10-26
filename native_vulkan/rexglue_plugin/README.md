@@ -467,6 +467,29 @@ seconds, but cannot observe device/DMA writes or other aliases. See
 [`process2_retail_wait_pre_wait_shader_effect_20261026.json`](../../evidence/process2_retail_wait_pre_wait_shader_effect_20261026.json)
 and the preserved outer/nested IB binaries beside it.
 
+### Captured COHER_STATUS_HOST register wait (2026-10-26)
+
+The same retail outer IB contains four register-space waits with
+`control=0x03`, `poll_address=0xA31`, reference 0, mask `0x80000000`, and
+interval 8. Preceding Type-0 writes set `COHER_STATUS_HOST` and its base/size
+registers (`0xA31`, `0xA2F`, `0xA30`). The plugin now tracks that captured
+register state, marks the host-coherency status dirty on a status write, drains
+in-flight Vulkan frame fences on the presenter thread, and clears the status
+only after the drain succeeds and no newer register write raced it. Uploaded
+guest data is copied into renderer-owned buffers on each draw, so the fence
+drain preserves the original guest wait boundary without exposing mapped guest
+memory to Vulkan.
+
+The exact register-wait packet has a decoder regression. The live-ring smoke
+places that form before the captured memory waits in three submitted batches;
+it verifies status clearing and retained base/size values each time. Native
+Vulkan checks passed 4/4, Linux plugin checks passed 5/5 with
+`VK_LAYER_KHRONOS_validation`, and the Android ARM64 plugin linked. This does
+not demonstrate a new exact-XEX run, satisfy the separate memory wait on
+`0x1B964004`, or prove a menu/race transition. Process 1 files were not
+modified. See
+[`process2_coher_status_host_wait_20261026.json`](../../evidence/process2_coher_status_host_wait_20261026.json).
+
 On 2026-10-24, a fresh ADB screenshot of the still-running Redmi Note 8 Pro app
 was fully black. Its latest runtime log records one captured retail draw
 translated and submitted to the Vulkan presenter, but the
@@ -998,6 +1021,26 @@ package is temporarily unregistered after `uninstall -k`, which retained its
 data/cache. The updated signed APK and the previous signed APK backup are in
 the handoff directory recorded by that evidence. A device screenshot with the
 corrected plugin remains pending.
+
+### Packed-mip offset correction for the disclaimer border (2026-10-26)
+
+The captured 512x8 DXT4/5 texture used by retail draws #5058-#5061 has the
+packed-mip flag set, with the mip tail beginning at level 0. Its base image
+therefore begins four DXT block rows into the tiled allocation. The previous
+decode started at block row 0, which produced broken purple/gray fragments in
+the thin upper and lower border. The tiled DXT and RGBA8 paths now apply the
+captured level-0 packed offset; unsupported packed-linear layouts still fail
+closed.
+
+The exact four captured retail draws were replayed offscreen on the Redmi Note
+8 Pro / Mali-G76. Their border rows are now continuous across the captured
+920-pixel span. The Linux native checks and captured-draw replay passed with
+Vulkan validation, and the same capture fixture passed in the Android ARM64
+renderer check. This establishes the texture-address correction for those
+draws; no independent original-console image was available to establish exact
+border color or thickness. See
+[`process2_disclaimer_packed_mip0_fix_20261026.json`](../../evidence/process2_disclaimer_packed_mip0_fix_20261026.json)
+and the [Mali replay](../../evidence/process2_disclaimer_packed_mip0_replay_mali_20261026.png).
 
 ## Redmi Bink draw replay with the pipeline cache (2026-10-26)
 

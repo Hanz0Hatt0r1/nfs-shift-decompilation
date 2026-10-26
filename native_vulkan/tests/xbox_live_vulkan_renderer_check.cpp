@@ -639,6 +639,17 @@ int main(int argc, char** argv) {
         return 1;
       }
     }
+    const size_t coherent_pipeline_count =
+        asynchronous_cache.cached_pipeline_count();
+    const size_t coherent_texture_count = asynchronous_cache.size();
+    if (!asynchronous_cache.wait_for_guest_memory_coherency(&error) ||
+        asynchronous_cache.cached_pipeline_count() != coherent_pipeline_count ||
+        asynchronous_cache.size() != coherent_texture_count) {
+      std::cerr << "guest memory coherency drain failed or discarded reusable "
+                   "Vulkan resources: "
+                << error << '\n';
+      return 1;
+    }
     std::vector<uint32_t> asynchronous_readback;
     if (!shift::xbox::submit_captured_vulkan_frame(
             physical_device, device, queue, queue_family, output_image,

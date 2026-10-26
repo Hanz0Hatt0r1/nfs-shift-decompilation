@@ -64,6 +64,10 @@ constexpr uint32_t kGpuMmioSize = 0x0000FFFFu;
 constexpr uint32_t kRingWritePointerRegister = 0x01C5u;
 constexpr uint32_t kRingReadPointerRegister = 0x01C4u;
 constexpr uint32_t kVblankStatusRegister = 0x1951u;
+constexpr uint32_t kCoherSizeHostRegister = 0x0A2Fu;
+constexpr uint32_t kCoherBaseHostRegister = 0x0A30u;
+constexpr uint32_t kCoherStatusHostRegister = 0x0A31u;
+constexpr uint32_t kCoherStatusHostDirty = 0x80000000u;
 constexpr uint32_t kVgtEventInitiatorRegister =
     rex::graphics::XE_GPU_REG_VGT_EVENT_INITIATOR;
 constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
@@ -598,7 +602,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
   static void WriteRegisterThunk(void*, void* context, uint32_t address, uint32_t value) {
     try {
-      static_cast<ShiftNativeGraphicsSystem*>(context)->NotifyWritePointer(address, value);
+      static_cast<ShiftNativeGraphicsSystem*>(context)->NotifyWriteRegister(address, value);
     } catch (const std::exception& e) {
       REXLOG_ERROR("shift-native: guest PM4 batch failed: {}", e.what());
     } catch (...) {
@@ -1369,6 +1373,14 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (index == kVgtEventInitiatorRegister) {
       return event_initiator_.load(std::memory_order_acquire);
     }
+    if (index == kCoherSizeHostRegister ||
+        index == kCoherBaseHostRegister ||
+        index == kCoherStatusHostRegister) {
+      std::lock_guard<std::mutex> lock(guest_coherency_mutex_);
+      if (index == kCoherSizeHostRegister) return coher_size_host_;
+      if (index == kCoherBaseHostRegister) return coher_base_host_;
+      return coher_status_host_;
+    }
     std::lock_guard<std::mutex> lock(ring_mutex_);
     if (index == kRingReadPointerRegister) return ring_read_pointer_;
     if (index == kRingWritePointerRegister) return ring_write_pointer_;
@@ -1429,8 +1441,41 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     }
   }
 
-  void NotifyWritePointer(uint32_t address, uint32_t value) {
+  void ApplyCoherencyRegisterWrite(uint32_t index, uint32_t value) {
+    if (index != kCoherSizeHostRegister &&
+        index != kCoherBaseHostRegister &&
+        index != kCoherStatusHostRegister) {
+      return;
+    }
+    std::lock_guard<std::mutex> lock(guest_coherency_mutex_);
+    if (index == kCoherSizeHostRegister) {
+      coher_size_host_ = value;
+    } else if (index == kCoherBaseHostRegister) {
+      coher_base_host_ = value;
+    } else {
+      // Xenos marks host data dirty on every COHER_STATUS_HOST write. The
+      // captured register wait clears it only after prior renderer work drains.
+      coher_status_host_ = value | kCoherStatusHostDirty;
+    }
+    ++coherency_generation_;
+  }
+
+  bool WaitForGuestMemoryCoherency(std::string* error) {
+    bool completed = false;
+    const auto drain = [this, &completed, error] {
+      completed = texture_cache_.wait_for_guest_memory_coherency(error);
+    };
+    if (app_context_) {
+      app_context_->CallInUIThreadSynchronous(drain);
+    } else {
+      drain();
+    }
+    return completed;
+  }
+
+  void NotifyWriteRegister(uint32_t address, uint32_t value) {
     const uint32_t index = (address & 0xFFFFu) / sizeof(uint32_t);
+    ApplyCoherencyRegisterWrite(index, value);
     if (index != kRingWritePointerRegister) return;
 
     uint32_t previous_write_pointer = 0;
@@ -1918,10 +1963,19 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                             error);
                 continue;
               }
-              if (!wait.memory ||
-                  wait.compare != shift::xbox::GuestWaitCompare::Equal ||
-                  wait.mask != UINT32_MAX || wait.endian_mode != 2u ||
-                  wait.poll_interval != 0x100u) {
+              const bool coherency_register_wait =
+                  !wait.memory && wait.control == 0x03u &&
+                  wait.poll_address == kCoherStatusHostRegister &&
+                  wait.compare == shift::xbox::GuestWaitCompare::Equal &&
+                  wait.reference == 0u &&
+                  wait.mask == kCoherStatusHostDirty &&
+                  wait.poll_interval == 8u;
+              const bool captured_memory_wait =
+                  wait.memory &&
+                  wait.compare == shift::xbox::GuestWaitCompare::Equal &&
+                  wait.mask == UINT32_MAX && wait.endian_mode == 2u &&
+                  wait.poll_interval == 0x100u;
+              if (!coherency_register_wait && !captured_memory_wait) {
                 ++unsupported_draws;
                 REXLOG_WARN(
                     "shift-native: unsupported WAIT_REG_MEM form control={:08X} "
@@ -1935,44 +1989,90 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     resolved.nesting_depth, packet.byte_offset);
                 continue;
               }
-              if (!physical_span_valid(wait.guest_address, sizeof(uint32_t))) {
-                ++unsupported_draws;
-                REXLOG_WARN(
-                    "shift-native: WAIT_REG_MEM address {:08X} is outside "
-                    "physical memory",
+              uint32_t* poll_word = nullptr;
+              if (wait.memory) {
+                if (!physical_span_valid(wait.guest_address, sizeof(uint32_t))) {
+                  ++unsupported_draws;
+                  REXLOG_WARN(
+                      "shift-native: WAIT_REG_MEM address {:08X} is outside "
+                      "physical memory",
+                      wait.guest_address);
+                  continue;
+                }
+                poll_word = memory_->TranslatePhysical<uint32_t*>(
                     wait.guest_address);
-                continue;
-              }
-              auto* poll_word = memory_->TranslatePhysical<uint32_t*>(
-                  wait.guest_address);
-              if (!poll_word) {
-                ++unsupported_draws;
-                REXLOG_WARN(
-                    "shift-native: could not translate WAIT_REG_MEM address {:08X}",
-                    wait.guest_address);
-                continue;
+                if (!poll_word) {
+                  ++unsupported_draws;
+                  REXLOG_WARN(
+                      "shift-native: could not translate WAIT_REG_MEM address {:08X}",
+                      wait.guest_address);
+                  continue;
+                }
               }
               const auto wait_started = std::chrono::steady_clock::now();
               static std::atomic<uint32_t> wait_log_count{0};
               const uint32_t wait_log_index =
                   wait_log_count.fetch_add(1, std::memory_order_relaxed);
               if (wait_log_index < 16u) {
-                REXLOG_INFO(
-                    "shift-native: entering captured WAIT_REG_MEM guest={:08X} "
-                    "reference={:08X} mask={:08X} endian={} compare={} "
-                    "source={:08X} depth={} byte-offset={}",
-                    wait.guest_address, wait.reference, wait.mask,
-                    wait.endian_mode, static_cast<uint32_t>(wait.compare),
-                    resolved.source_guest_address, resolved.nesting_depth,
-                    packet.byte_offset);
+                if (wait.memory) {
+                  REXLOG_INFO(
+                      "shift-native: entering captured WAIT_REG_MEM guest={:08X} "
+                      "reference={:08X} mask={:08X} endian={} compare={} "
+                      "source={:08X} depth={} byte-offset={}",
+                      wait.guest_address, wait.reference, wait.mask,
+                      wait.endian_mode, static_cast<uint32_t>(wait.compare),
+                      resolved.source_guest_address, resolved.nesting_depth,
+                      packet.byte_offset);
+                } else {
+                  REXLOG_INFO(
+                      "shift-native: entering captured COHER_STATUS_HOST wait "
+                      "source={:08X} depth={} byte-offset={}",
+                      resolved.source_guest_address, resolved.nesting_depth,
+                      packet.byte_offset);
+                }
               }
               uint32_t poll_count = 0;
               for (;;) {
-                const uint32_t raw_value =
-                    __atomic_load_n(poll_word, __ATOMIC_ACQUIRE);
-                const uint32_t observed_value = rex::graphics::xenos::GpuSwap(
-                    raw_value,
-                    static_cast<rex::graphics::xenos::Endian>(wait.endian_mode));
+                uint32_t observed_value = 0;
+                uint32_t coher_base = 0;
+                uint32_t coher_size = 0;
+                if (wait.memory) {
+                  const uint32_t raw_value =
+                      __atomic_load_n(poll_word, __ATOMIC_ACQUIRE);
+                  observed_value = rex::graphics::xenos::GpuSwap(
+                      raw_value,
+                      static_cast<rex::graphics::xenos::Endian>(wait.endian_mode));
+                } else {
+                  uint64_t generation = 0;
+                  {
+                    std::lock_guard<std::mutex> lock(guest_coherency_mutex_);
+                    observed_value = coher_status_host_;
+                    coher_base = coher_base_host_;
+                    coher_size = coher_size_host_;
+                    generation = coherency_generation_;
+                  }
+                  if ((observed_value & kCoherStatusHostDirty) != 0u) {
+                    std::string coherency_error;
+                    if (!WaitForGuestMemoryCoherency(&coherency_error)) {
+                      REXLOG_ERROR(
+                          "shift-native: failed to drain Vulkan work for "
+                          "COHER_STATUS_HOST base={:08X} size={:08X}: {}",
+                          coher_base, coher_size, coherency_error);
+                      return;
+                    }
+                    {
+                      std::lock_guard<std::mutex> lock(guest_coherency_mutex_);
+                      if (generation != coherency_generation_) continue;
+                      coher_status_host_ = 0;
+                      ++coherency_generation_;
+                      observed_value = coher_status_host_;
+                    }
+                    REXLOG_INFO(
+                        "shift-native: completed captured COHER_STATUS_HOST wait "
+                        "base={:08X} size={:08X} status=00000000",
+                        coher_base, coher_size);
+                  }
+                }
                 if (shift::xbox::captured_wait_reg_mem_condition_met(
                         wait, observed_value)) {
                   break;
@@ -1984,7 +2084,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 ++poll_count;
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
               }
-              if (wait_log_index < 16u) {
+              if (wait.memory && wait_log_index < 16u) {
                 const auto elapsed = std::chrono::duration_cast<
                     std::chrono::milliseconds>(
                     std::chrono::steady_clock::now() - wait_started);
@@ -2001,6 +2101,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                       packet_bytes, packet.byte_length, &writes, &error)) {
                 raw_register_writes += static_cast<uint32_t>(writes.size());
                 for (const shift::xbox::GuestRegisterWrite& write : writes) {
+                  ApplyCoherencyRegisterWrite(write.register_index, write.value);
                   raster_register_state.apply(write);
                   shader_register_state.apply(write);
                 }
@@ -2019,6 +2120,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   shift::xbox::decode_captured_constant_load_data(
                       load, source_bytes, load.byte_length, &writes, &error)) {
                 for (const shift::xbox::GuestRegisterWrite& write : writes) {
+                  ApplyCoherencyRegisterWrite(write.register_index, write.value);
                   raster_register_state.apply(write);
                   shader_register_state.apply(write);
                 }
@@ -2794,8 +2896,13 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   std::atomic<uint32_t> event_initiator_{0};
   rex::system::object_ref<rex::system::XHostThread> vblank_host_worker_;
   std::mutex interrupt_mutex_;
+  std::mutex guest_coherency_mutex_;
   uint32_t interrupt_callback_ = 0;
   uint32_t interrupt_callback_data_ = 0;
+  uint32_t coher_size_host_ = 0;
+  uint32_t coher_base_host_ = 0;
+  uint32_t coher_status_host_ = 0;
+  uint64_t coherency_generation_ = 0;
   uint32_t ring_guest_address_ = 0;
   size_t ring_byte_length_ = 0;
   uint32_t ring_read_pointer_ = 0;

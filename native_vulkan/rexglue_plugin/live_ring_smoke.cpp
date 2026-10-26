@@ -31,6 +31,9 @@ constexpr uint32_t kRingSizeLog2 = 9u;
 constexpr uint32_t kWritePointerRegister = 0x7FC80714u;
 constexpr uint32_t kReadPointerRegister = 0x7FC80710u;
 constexpr uint32_t kVblankStatusAddress = 0x7FC86544u;
+constexpr uint32_t kCoherStatusHostAddress = 0x7FC828C4u;
+constexpr uint32_t kCoherBaseHostAddress = 0x7FC828C0u;
+constexpr uint32_t kCoherSizeHostAddress = 0x7FC828BCu;
 constexpr uint32_t kIndexAddress = 0x0975D7B0u;
 constexpr uint32_t kVertexAddress = 0x0975DFD0u;
 constexpr uint32_t kPixelShaderAddress = 0x09D50460u;
@@ -189,6 +192,13 @@ std::vector<uint8_t> make_pm4_stream() {
   append_type3(&stream, 0x36u, {0x00060004u, kIndexAddress, 0x40000006u});
   // The captured AutoIndex rectangle-list form consumes three fetched vertices.
   append_type3(&stream, 0x36u, {0x00030088u});
+  // Exact retail COHER_STATUS_HOST register and WAIT_REG_MEM form from the
+  // pre-wait capture. Each batch exercises the fence drain after the previous
+  // batch has submitted its Vulkan frame.
+  append_type0(&stream, 0x0A31u, 0x02000000u);
+  append_type0(&stream, 0x0A2Fu, {0x00002000u, 0x1B962000u});
+  append_type3(&stream, 0x3Cu,
+               {0x03u, 0x0A31u, 0u, 0x80000000u, 8u});
   // These wait/interrupt/ack operands are from the captured retail stream
   // builder. The two EVENT_WRITE_SHD markers let the smoke test prove that
   // the consumer pauses at the captured waits until their memory conditions
@@ -431,6 +441,17 @@ int main(int argc, char** argv) {
       consumed_all_batches = false;
       break;
     }
+    uint32_t coher_status = UINT32_MAX;
+    uint32_t coher_base = 0;
+    uint32_t coher_size = 0;
+    if (!mmio->CheckLoad(kCoherStatusHostAddress, &coher_status) ||
+        !mmio->CheckLoad(kCoherBaseHostAddress, &coher_base) ||
+        !mmio->CheckLoad(kCoherSizeHostAddress, &coher_size) ||
+        coher_status != 0u || coher_base != 0x1B962000u ||
+        coher_size != 0x2000u) {
+      consumed_all_batches = false;
+      break;
+    }
   }
   uint32_t read_pointer = 0;
   const bool consumed = consumed_all_batches &&
@@ -585,8 +606,18 @@ int main(int argc, char** argv) {
        offset += std::strlen(interrupt_marker)) {
     ++interrupt_count;
   }
+  constexpr const char* const coherency_marker =
+      "completed captured COHER_STATUS_HOST wait ";
+  size_t coherency_wait_count = 0;
+  for (size_t offset = 0;
+       (offset = diagnostics.find(coherency_marker, offset)) !=
+       std::string::npos;
+       offset += std::strlen(coherency_marker)) {
+    ++coherency_wait_count;
+  }
   if (submission_count != kSubmittedBatches ||
       interrupt_count != kSubmittedBatches ||
+      coherency_wait_count != kSubmittedBatches ||
       diagnostics.find("2 pointer-loaded shader programs (0 unresolved)") ==
           std::string::npos ||
       diagnostics.find(

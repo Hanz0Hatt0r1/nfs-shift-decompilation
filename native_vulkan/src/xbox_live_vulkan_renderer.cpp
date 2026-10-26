@@ -2953,6 +2953,12 @@ void CapturedVulkanTextureCache::clear() {
     if (impl_) clear_texture_cache(&impl_->state);
 }
 
+bool CapturedVulkanTextureCache::wait_for_guest_memory_coherency(
+    std::string* error) {
+    if (error) error->clear();
+    return !impl_ || wait_for_all_frames(&impl_->state, error);
+}
+
 size_t CapturedVulkanTextureCache::size() const {
     return impl_ ? impl_->state.textures.size() : 0;
 }
