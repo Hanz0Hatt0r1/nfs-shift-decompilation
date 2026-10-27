@@ -1,0 +1,92 @@
+{
+  "schema": "shift.xbox360.linux-exact-runtime-post-bink-worker-tokens.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "movie_frame_target": 281
+  },
+  "binaries": {
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "p1_runtime_sha256": "6c56ca970160d9e3e6e28155c48ee11556763f206f6a49b78fdad2ca3f02ebb2",
+    "p2_linux_plugin_sha256": "771201891a6ae28c0745f57beccf9c6474ce175c7bb3f5edadcce4c457a8a12b",
+    "input_files_hash_verified": true,
+    "inferior_mapped_hashes_verified": false
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "duration_seconds": 68.436,
+    "guest_memory_modified_by_probe": false,
+    "termination": "The bounded GDB harness detached and sent SIGINT to the still-live title; clean shutdown was not observed.",
+    "controller_input_sent": [
+      {"elapsed_seconds": 5.618, "button": "Start", "duration_ms": 3000},
+      {"elapsed_seconds": 11.618, "button": "A", "duration_ms": 3000},
+      {"elapsed_seconds": 17.618, "button": "Start", "duration_ms": 3000}
+    ],
+    "bink_target_reached": {"elapsed_seconds": 21.411, "progress": 281, "target": 281},
+    "gdb_trace": {
+      "path": "tools/xbox360/trace_linux_exact_runtime_post_bink_worker_tokens_20261027.gdb",
+      "sha256": "e1351b0e4241fd36abdf3a1fa9bc9d3d7c4b8e4dfccf8b0c7f0e6b0af49bb0c5",
+      "log_path_outside_git": "/tmp/nfs-shift-p1-worker-token-trace-20261027/gdb.log",
+      "log_bytes": 34190,
+      "log_sha256": "56a6b233381d53471edd1ff9e4facc67e3d7e926219614be05b05b549c1837cf"
+    },
+    "runner_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-worker-token-trace-20261027/runner-input.log",
+      "bytes": 34342,
+      "sha256": "60921ec821bbfc5b0719d0eed7b0c87454d3f8095e0d412a1bdcfda27d7962f5"
+    }
+  },
+  "retail_worker": {
+    "counter_manager_guest_object": "0xB7365F00",
+    "counter_manager_offset": 11012,
+    "counter_guest_address": "0xB7368A04",
+    "worker_object_guest_address": "0xB73689C4",
+    "worker_counter_offset": 64,
+    "worker_counter_guest_address": "0xB7368A04",
+    "queue_guest_object": "0xB7368BE0",
+    "first_counter_writes": ["0x00000001", "0x00000000", "0xFFFFFFFF"],
+    "first_counter_write_stacks": [
+      ["sub_823B31A0", "sub_823B8EE8", "sub_823A7478", "sub_8267BEC8"],
+      ["sub_823B85D0", "sub_823B87B0", "sub_823B8AC8", "sub_82706AE0"],
+      ["sub_823B85D0", "sub_823B87B0", "sub_823B8AC8", "sub_82706AE0"]
+    ],
+    "matching_worker_entry_count": 1811,
+    "entry_token_counts": {"0xC0000000": 1811},
+    "stream_addresses": ["0xB7368A18", "0xC9630EFC"],
+    "sampled_entries": [
+      {"hit": 1, "stream": "0xB7368A18", "token": "0xC0000000", "counter": "0x00000001", "field72": "0xC9624514"},
+      {"hit": 2, "stream": "0xC9630EFC", "token": "0xC0000000", "counter": "0x00000001", "field72": "0x00000000"},
+      {"hit": 3, "stream": "0xB7368A18", "token": "0xC0000000", "counter": "0x00000000", "field72": "0xC9624514"},
+      {"hit": 4, "stream": "0xC9630EFC", "token": "0xC0000000", "counter": "0x00000000", "field72": "0x00000000"},
+      {"hit": 5, "stream": "0xB7368A18", "token": "0xC0000000", "counter": "0xFFFFFFFF", "field72": "0xC9624514"},
+      {"hit": 6, "stream": "0xC9630EFC", "token": "0xC0000000", "counter": "0xFFFFFFFF", "field72": "0x00000000"}
+    ],
+    "retail_static_crosscheck": {
+      "parser": "sub_823B87B0",
+      "completion_handler": "sub_823B85D0",
+      "call_condition": "The parser calls the completion handler only when the current word equals 0xC0000000.",
+      "decrement_condition": "The handler decrements worker+64 only when worker+72 is zero.",
+      "generated_sources_outside_git": [
+        "/home/pes/work/nfsshift-rex/generated/default/nfs_shift_recomp.127.cpp:sub_823B87B0",
+        "/home/pes/work/nfsshift-rex/generated/default/nfs_shift_recomp.139.cpp:sub_823B85D0"
+      ]
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail worker object+64 aliases the main thread's watched manager+11012 field.",
+      "All 1811 sampled handler entries read the 0xC0000000 sentinel; two stream addresses recur in alternating order.",
+      "In the first six entries, the zero field72 guard alternates with the nonzero guard; the counter changes 1 to 0 and then underflows to 0xFFFFFFFF through the retail worker path.",
+      "This run reached the retail Bink frame target, but does not establish a frontend scene transition."
+    ],
+    "not_proven": [
+      "Whether the repeated sentinel entries are expected fence traffic or stale/duplicate queue work.",
+      "Which producer publishes the two streams or whether the queue consumer advances as intended.",
+      "That the host event or scheduler implementation is defective; no runtime or retail semantics were changed.",
+      "A visible menu, race entry, gameplay, clean shutdown, ARM64 execution, or Vulkan compatibility."
+    ],
+    "next_p1_step": "Trace the producer and queue indices for both sentinel streams, plus the worker event signal/wait state, to distinguish normal repeated fence packets from replayed queue work before changing any scheduler behavior."
+  }
+}

@@ -40,7 +40,7 @@
       },
       "reproduction_runner": {
         "path": "tools/xbox360/capture_linux_exact_runtime_controller_pipeline_20261027.py",
-        "sha256": "2410f47f2d14b6679ae640e00bcaf9413f77aac5c2c5d2e0aae7f496f08aea38"
+        "sha256": "c10209424c95a3bde879b9f240dcfe6e766a1ef7309a898fa4583526fd55e675"
       },
       "gdb_log": {
         "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-controller-pipeline-20261027/gdb.log",
