@@ -494,6 +494,7 @@ int main(int argc, char** argv) {
     retail_layout_4x_hdr.depth_base_tiles = 1024;
     retail_layout_4x_hdr.color_format =
         shift::xbox::CapturedColorTargetFormat::Rgb10A2Float;
+    retail_layout_4x_hdr.guest_color_format = 12u;
     auto retail_layout_4x_rgba8 = retail_layout_4x_hdr;
     retail_layout_4x_rgba8.width = 1280;
     retail_layout_4x_rgba8.height = 720;
@@ -501,11 +502,13 @@ int main(int argc, char** argv) {
     retail_layout_4x_rgba8.depth_base_tiles = 720;
     retail_layout_4x_rgba8.color_format =
         shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
+    retail_layout_4x_rgba8.guest_color_format = 0u;
     auto retail_layout_1x_gamma = retail_layout_4x_rgba8;
     retail_layout_1x_gamma.surface_pitch = 1280;
     retail_layout_1x_gamma.sample_count = 1;
     retail_layout_1x_gamma.color_format =
         shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
+    retail_layout_1x_gamma.guest_color_format = 1u;
     const std::array<shift::xbox::CapturedRasterState, 4>
         retail_transition_layouts{{retail_layout_4x_hdr,
                                    retail_layout_4x_rgba8,
@@ -529,6 +532,7 @@ int main(int argc, char** argv) {
         retail_transition_error.find(
             "at draw 1 (color_base=0 -> 0, depth_base=1024 -> 720, "
             "extent=2560x1440 -> 1280x720, color_format=3 -> 0, "
+            "guest_color_format=12 -> 0, "
             "pitch=1280 -> 640)") == std::string::npos ||
         retail_transition_error.find(
             "Xenos color sample 0 aliases at EDRAM byte offset 0") ==
@@ -549,6 +553,7 @@ int main(int argc, char** argv) {
                       << layout.color_base_tiles << ",depth_base="
                       << layout.depth_base_tiles << ",color_format="
                       << static_cast<unsigned>(layout.color_format)
+                      << ",guest_color_format=" << layout.guest_color_format
                       << ",depth_format="
                       << static_cast<unsigned>(layout.depth_format)
                       << ",pitch=" << layout.surface_pitch << '}';
@@ -648,6 +653,25 @@ int main(int argc, char** argv) {
       std::cerr << "distinct captured target formats were merged into one "
                    "Vulkan pass: "
                 << changed_format_error << '\n';
+      return 1;
+    }
+    auto aliased_vk_color_format_draws = draws;
+    aliased_vk_color_format_draws[0].raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgb10A2Float;
+    aliased_vk_color_format_draws[0].raster.guest_color_format = 3u;
+    aliased_vk_color_format_draws[1].raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgb10A2Float;
+    aliased_vk_color_format_draws[1].raster.guest_color_format = 12u;
+    std::string aliased_vk_color_format_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, aliased_vk_color_format_draws,
+            &aliased_vk_color_format_error, nullptr,
+            enabled_features.geometryShader, &copy) ||
+        aliased_vk_color_format_error.find(
+            "guest_color_format=3 -> 12") == std::string::npos) {
+      std::cerr << "Distinct Xenos formats sharing a Vulkan format were merged: "
+                << aliased_vk_color_format_error << '\n';
       return 1;
     }
     auto changed_pitch_draws = draws;

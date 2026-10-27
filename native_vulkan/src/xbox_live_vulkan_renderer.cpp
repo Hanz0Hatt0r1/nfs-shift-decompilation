@@ -2190,6 +2190,7 @@ bool submit_mixed_sample_copy_frame(
         if (raster.width != target.width || raster.height != target.height ||
             raster.color_base_tiles != target.color_base_tiles ||
             raster.depth_base_tiles != target.depth_base_tiles ||
+            raster.guest_color_format != target.guest_color_format ||
             captured_color_format(raster.color_format,
                                   linear_rgba8_intermediate) != target_format ||
             raster.depth_format != target.depth_format) {
@@ -3161,6 +3162,7 @@ bool submit_captured_vulkan_frame(
         const CapturedRasterState& raster = draws[draw_index].raster;
         const bool target_layout_changed =
             raster.color_base_tiles != frame_target.color_base_tiles ||
+            raster.guest_color_format != frame_target.guest_color_format ||
             raster.depth_base_tiles != frame_target.depth_base_tiles ||
             raster.width != frame_target.width ||
             raster.height != frame_target.height ||
@@ -3180,7 +3182,9 @@ bool submit_captured_vulkan_frame(
                     << 'x' << frame_target.height << " -> " << raster.width << 'x'
                     << raster.height << ", color_format="
                     << static_cast<unsigned>(frame_target.color_format) << " -> "
-                    << static_cast<unsigned>(raster.color_format) << ", pitch="
+                    << static_cast<unsigned>(raster.color_format)
+                    << ", guest_color_format=" << frame_target.guest_color_format
+                    << " -> " << raster.guest_color_format << ", pitch="
                     << frame_target.surface_pitch << " -> " << raster.surface_pitch
                     << "); ordered target layouts=";
             constexpr size_t kMaxLoggedTargetLayouts = 64;
@@ -3196,6 +3200,7 @@ bool submit_captured_vulkan_frame(
                         << layout.color_base_tiles << ",depth_base="
                         << layout.depth_base_tiles << ",color_format="
                         << static_cast<unsigned>(layout.color_format)
+                        << ",guest_color_format=" << layout.guest_color_format
                         << ",depth_format="
                         << static_cast<unsigned>(layout.depth_format)
                         << ",pitch=" << layout.surface_pitch << '}';
@@ -3313,6 +3318,8 @@ bool submit_captured_vulkan_frame(
          std::any_of(draws.begin(), draws.end(), [&](const CapturedVulkanDraw& draw) {
              return draw.raster.width != frame_target.width ||
                     draw.raster.height != frame_target.height ||
+                    draw.raster.guest_color_format !=
+                        frame_target.guest_color_format ||
                     captured_color_format(draw.raster.color_format,
                                           linear_rgba8_intermediate) !=
                         raster_color_format;

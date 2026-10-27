@@ -1249,7 +1249,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
              << " color_base_tiles=" << raster_state.color_base_tiles
              << " depth_base_tiles=" << raster_state.depth_base_tiles
              << " color_format="
-             << static_cast<uint32_t>(raster_state.color_format) << " scissor=["
+             << static_cast<uint32_t>(raster_state.color_format)
+             << " guest_color_format=" << raster_state.guest_color_format
+             << " scissor=["
              << raster_state.scissor_x0 << ',' << raster_state.scissor_y0 << ','
              << raster_state.scissor_x1 << ',' << raster_state.scissor_y1
              << "] depth={test:" << raster_state.depth_test_enabled

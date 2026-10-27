@@ -1740,3 +1740,20 @@ and PID remained unchanged, and no input was sent. No live speedup or automatic
 transition is claimed. See
 [`process2_redmi_coherency_wait_coalescing_20261027.json`](../../evidence/process2_redmi_coherency_wait_coalescing_20261027.json)
 for hashes and limits.
+
+## Raw Xenos render-target format in EDRAM layout checks (2026-10-27)
+
+The Redmi transition capture includes `RB_COLOR_INFO.COLOR_FORMAT=12`
+(`color_info=0x000C0000`). The renderer maps it and format 3 to the same
+Vulkan attachment format, so target-layout checks now also retain and compare
+the raw guest format. EDRAM sample addressing uses the Xenos storage width:
+the decoder-supported format 12 follows the 32bpp sample layout, while true
+64bpp Xenos formats remain rejected by the address helper. This distinction is
+cross-checked against [Xenia's format definitions](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h).
+
+The Linux regression checks format-12 sample, tile-row, and wrap addresses,
+true 64bpp rejection, and two raw formats that share one Vulkan format. This
+does not add EDRAM persistence or execute the captured ordered mode-6 copies;
+the 14-draw transition still cannot be presented as retail parity. Details and
+validation results are in
+[`process2_xenos_guest_color_format_contract_20261027.json`](../../evidence/process2_xenos_guest_color_format_contract_20261027.json).

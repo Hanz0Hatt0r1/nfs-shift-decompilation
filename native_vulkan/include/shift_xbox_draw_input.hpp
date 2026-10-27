@@ -432,18 +432,22 @@ struct CapturedRasterState {
     float viewport_y = 0.0f;
     float viewport_width = 0.0f;
     float viewport_height = 0.0f;
+    // Raw RB_COLOR_INFO.COLOR_FORMAT. Guest formats 3 and 12 share one Vulkan
+    // representation but remain distinct guest formats.
+    uint32_t guest_color_format = 0;
 };
 
 struct CapturedEdramSampleAddress {
     uint32_t tile_index = 0;
     uint32_t sample_index_in_tile = 0;
     uint32_t byte_offset = 0;
+    uint32_t bytes_per_sample = 4;
 };
 
-// Maps one captured target pixel/sample to the Xenos 32bpp EDRAM word space.
+// Maps one captured target pixel/sample to its Xenos EDRAM byte address.
 // x/y are logical pixels before the MSAA sample expansion; sample_index uses
-// the Xenos row-major sample order. 64bpp color targets are rejected because
-// their paired-tile addressing is not yet implemented.
+// the Xenos row-major sample order. The currently decoded color formats use
+// 32bpp EDRAM samples; true 64bpp color targets remain unsupported.
 bool captured_xenos_edram_sample_address(
     const CapturedRasterState& raster,
     bool depth_target,

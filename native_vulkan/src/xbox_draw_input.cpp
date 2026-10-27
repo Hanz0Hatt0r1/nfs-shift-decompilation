@@ -1621,6 +1621,7 @@ bool decode_captured_raster_state(
         (registers.setup_mode_control & 4u) == 0,
         registers.setup_mode_control,
     };
+    output->guest_color_format = color_format;
     output->viewport_x = viewport_x;
     output->viewport_y = viewport_y;
     output->viewport_width = viewport_width_pixels;
@@ -1658,11 +1659,19 @@ bool captured_xenos_edram_sample_address(
          raster.sample_count != 4)) {
         return fail("invalid captured Xenos EDRAM target layout", error);
     }
-    if (!depth_target &&
-        raster.color_format == CapturedColorTargetFormat::Rg16Float) {
+    // Xenos render-target format 12 uses a 64-bit Vulkan representation in
+    // this renderer but remains a 32bpp EDRAM format. The true 64bpp Xenos
+    // render-target codes are 5, 7, and 15; the current draw decoder does not
+    // admit them, so keep this helper fail-closed if a caller supplies one.
+    const bool color_64bpp = !depth_target &&
+        (raster.guest_color_format == 5u ||
+         raster.guest_color_format == 7u ||
+         raster.guest_color_format == 15u);
+    if (color_64bpp) {
         return fail("captured 64bpp Xenos EDRAM color addressing is unsupported",
                     error);
     }
+    constexpr uint32_t bytes_per_sample = 4;
 
     const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
     const uint32_t sample_height = raster.sample_count / sample_width;
@@ -1704,12 +1713,12 @@ bool captured_xenos_edram_sample_address(
         tile_sample_x;
     const uint64_t byte_offset =
         (static_cast<uint64_t>(tile_index) * kTileSamples + sample_in_tile) *
-        sizeof(uint32_t);
-    if (byte_offset + sizeof(uint32_t) > kEdramBytes) {
+        bytes_per_sample;
+    if (byte_offset + bytes_per_sample > kEdramBytes) {
         return fail("captured Xenos EDRAM address exceeds backing store", error);
     }
     *output = {tile_index, sample_in_tile,
-               static_cast<uint32_t>(byte_offset)};
+               static_cast<uint32_t>(byte_offset), bytes_per_sample};
     if (error) error->clear();
     return true;
 }

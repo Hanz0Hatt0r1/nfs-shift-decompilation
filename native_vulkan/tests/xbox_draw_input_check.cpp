@@ -1077,12 +1077,12 @@ int main() {
                 live_raster_state.scissor_y1 == 243,
             "captured Redmi 16_16_FLOAT render target tuple was rejected or misdecoded");
     shift::xbox::CapturedEdramSampleAddress rg16_edram_address{};
-    require(!shift::xbox::captured_xenos_edram_sample_address(
+    require(shift::xbox::captured_xenos_edram_sample_address(
                 live_raster_state, false, 0, 0, 0, &rg16_edram_address,
                 &error) &&
-                error ==
-                    "captured 64bpp Xenos EDRAM color addressing is unsupported",
-            "unsupported 64bpp Xenos EDRAM color mapping was accepted");
+                rg16_edram_address.byte_offset == 0 &&
+                rg16_edram_address.bytes_per_sample == 4,
+            "captured 16_16_FLOAT target was not mapped as 32bpp EDRAM");
     const std::array<std::array<uint32_t, 4>, 6> captured_downsample_extents = {{
         {0x018000A0u, 0x42220000u, 0x00510051u, 81u},
         {0x00080050u, 0x41580000u, 0x001B001Bu, 27u},
@@ -1142,13 +1142,16 @@ int main() {
                 live_raster_state.viewport_width == 1280.0f &&
                 live_raster_state.viewport_height == -256.0f,
             "captured 4x float target/viewport from the Redmi draw was decoded incorrectly");
+    require(live_raster_state.guest_color_format == 3u,
+            "captured Xenos color format 3 was not retained separately from its Vulkan format");
 
     shift::xbox::CapturedEdramSampleAddress edram_address{};
     require(shift::xbox::captured_xenos_edram_sample_address(
                 live_raster_state, false, 0, 0, 0, &edram_address, &error) &&
                 edram_address.tile_index == 0 &&
                 edram_address.sample_index_in_tile == 0 &&
-                edram_address.byte_offset == 0,
+                edram_address.byte_offset == 0 &&
+                edram_address.bytes_per_sample == 4,
             "captured 4x Xenos color sample 0 did not map to EDRAM base");
     require(shift::xbox::captured_xenos_edram_sample_address(
                 live_raster_state, false, 0, 0, 1, &edram_address, &error) &&
@@ -1214,6 +1217,59 @@ int main() {
                 live_raster_state, false, 0, 0, 4, &edram_address, &error) &&
                 error == "captured Xenos EDRAM pixel or sample is out of bounds",
             "out-of-range Xenos MSAA sample was accepted");
+
+    auto format12_registers = captured_float_target_registers;
+    format12_registers.color_info = 0x000C0000u;
+    shift::xbox::CapturedRasterState format12_target{};
+    require(shift::xbox::decode_captured_raster_state(
+                format12_registers, &format12_target, &error,
+                2560, 1440) &&
+                format12_target.guest_color_format == 12u &&
+                format12_target.color_format ==
+                    shift::xbox::CapturedColorTargetFormat::Rgb10A2Float,
+            "captured Xenos color format 12 lost its raw guest format");
+    require(shift::xbox::captured_xenos_edram_sample_address(
+                format12_target, false, 0, 0, 0, &edram_address, &error) &&
+                edram_address.tile_index == 0 &&
+                edram_address.sample_index_in_tile == 0 &&
+                edram_address.byte_offset == 0 &&
+                edram_address.bytes_per_sample == 4,
+            "captured format-12 sample 0 did not map to a 32bpp EDRAM sample");
+    require(shift::xbox::captured_xenos_edram_sample_address(
+                format12_target, false, 0, 0, 1, &edram_address, &error) &&
+                edram_address.sample_index_in_tile == 1 &&
+                edram_address.byte_offset == 4,
+            "captured format-12 X sample did not advance by one 32bpp sample");
+    require(shift::xbox::captured_xenos_edram_sample_address(
+                format12_target, false, 0, 0, 2, &edram_address, &error) &&
+                edram_address.sample_index_in_tile == 80 &&
+                edram_address.byte_offset == 320,
+            "captured format-12 Y sample did not advance in the 32bpp tile");
+    require(shift::xbox::captured_xenos_edram_sample_address(
+                format12_target, false, 40, 0, 0, &edram_address, &error) &&
+                edram_address.tile_index == 1 &&
+                edram_address.byte_offset == 5120,
+            "captured format-12 target did not advance to the next 32bpp EDRAM tile");
+    require(shift::xbox::captured_xenos_edram_sample_address(
+                format12_target, false, 0, 8, 0, &edram_address, &error) &&
+                edram_address.tile_index == 32 &&
+                edram_address.byte_offset == 32u * 5120u,
+            "captured format-12 target did not retain the 32bpp tile-row pitch");
+    auto wrapped_format12_target = format12_target;
+    wrapped_format12_target.color_base_tiles = 2047;
+    require(shift::xbox::captured_xenos_edram_sample_address(
+                wrapped_format12_target, false, 40, 0, 0, &edram_address, &error) &&
+                edram_address.tile_index == 0 &&
+                edram_address.byte_offset == 0,
+            "captured format-12 Xenos tile addressing did not wrap at tile 2048");
+    auto unsupported_64bpp_target = format12_target;
+    unsupported_64bpp_target.guest_color_format = 7u;
+    require(!shift::xbox::captured_xenos_edram_sample_address(
+                unsupported_64bpp_target, false, 0, 0, 0, &edram_address,
+                &error) &&
+                error ==
+                    "captured 64bpp Xenos EDRAM color addressing is unsupported",
+            "true 64bpp Xenos EDRAM color addressing was accepted");
 
     shift::xbox::GuestRasterRegisterState raster_register_state;
     shift::xbox::CapturedRasterRegisters tracked_raster_registers{};
