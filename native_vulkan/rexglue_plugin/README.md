@@ -847,6 +847,18 @@ includes its fetch-constant index and all four decoded channel signs. This
 retains the exact descriptor-side blocker for the next selected draw without
 guessing signed or unsigned-biased sample behavior.
 
+The v45 log also identifies pixel draw 12 failing at control-flow opcode 7
+(`LoopStart`). The PM4 loader already decoded loop-constant bank 3, but the
+shader register snapshot did not retain it. Selected shader diagnostics now
+record the loop-bank validity mask and raw values, plus the count, initial aL,
+and signed aL step fields, before translation can fail. The encoding follows
+[Xenia's Xenos loop-constant definition](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h)
+and the opcode identity follows its
+[control-flow opcode table](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/ucode.h).
+This is input capture only: LoopStart/LoopEnd execution remains unsupported,
+and the existing v45 run used the previous plugin. See
+[`loop-constant capture evidence`](../../evidence/process2_loop_constant_capture_20261028.json).
+
 The selected shader/raster dump path was rebuilt from commit `f92ba76b` and
 verified on Linux on 2026-10-28: renderer CTest passed 4/4 and plugin CTest
 passed 6/6 with `VK_LAYER_KHRONOS_validation`. The selected-draw regression

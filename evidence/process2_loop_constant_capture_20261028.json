@@ -1,0 +1,55 @@
+{
+  "schema": "SHIFT.Process2LoopConstantCapture/1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "implementation_commit": "a1a829c39f0fefc3424a95d95868ea2b866c00d6",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "retail_observation": {
+    "capture": "P1 v45 same-XEX Linux run",
+    "capture_log": "bin/logs/nfs_shift_001.1.log",
+    "capture_log_sha256": "0da95f17c69b41e6f1f47b5e775974ebb9c1c2e27985333a2acf23d34e172117",
+    "plugin_sha256_used_by_capture": "a0026207902f5fd3a0578138d0c0edd8875cecbd98119d33b26a65a4382b5ccf",
+    "draw": 12,
+    "stage": "pixel",
+    "control_flow_opcode": 7,
+    "opcode_name": "LoopStart",
+    "instruction": 1,
+    "old_failure": "captured pixel shader: unsupported captured shader control-flow opcode 7 at instruction 1"
+  },
+  "implementation": {
+    "register_range": "0x4908..0x4927",
+    "bank": "CapturedConstantBank::Loop (PM4_LOAD_ALU_CONSTANT bank type 3)",
+    "captured_value": "one raw dword and a per-register loaded bit, retained independently from the bool and float banks",
+    "selected_dump": "for SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME plus SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX, log loaded-mask and raw loop words before shader translation",
+    "decoded_fields": {
+      "count": "bits 0..7",
+      "aL_start": "bits 8..15",
+      "aL_step": "signed bits 16..23",
+      "reserved": "bits 24..31"
+    },
+    "primary_references": [
+      "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h",
+      "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/ucode.h"
+    ]
+  },
+  "verification": {
+    "linux_native": {
+      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-native-vulkan-20261028 --output-on-failure",
+      "result": "passed 4/4",
+      "coverage": "PM4 loop-bank destination/data decoding, state tracking and reset"
+    },
+    "linux_plugin": {
+      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
+      "result": "passed 6/6",
+      "selected_fixture": "loop constant 7 raw=0x00FE0503 logged as count=3, start=5, step=-2 before translation",
+      "plugin_sha256": "bb0284b0258c289d3b8e43e231ee5f88910455eab23947e757f93b5be1875139",
+      "build_id": "6c1ef53ad104bfe971dc0e68d434c6e4ef79ce37",
+      "vulkan_minimum": "1.1"
+    }
+  },
+  "limitations": [
+    "The new diagnostic has not yet run against retail shader bytes; the v45 capture used the previous plugin.",
+    "This change captures loop constants only. It does not translate or execute LoopStart/LoopEnd, and it does not establish draw 12 rendering or pixel parity.",
+    "No Android device was attached for runtime verification."
+  ]
+}
