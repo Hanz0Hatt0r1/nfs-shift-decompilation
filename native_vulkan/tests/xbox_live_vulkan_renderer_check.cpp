@@ -1194,6 +1194,108 @@ int main(int argc, char** argv) {
                      "ordered Draw/Copy execution: " << packet49_error << '\n';
         return 1;
       }
+      // v45 also changes from the captured 1x gamma view back to its 4x,
+      // pitch-640 depth-only view before Copy/Convert packet 54. The draw
+      // payload is synthetic; this checks ordered routing and executor parity.
+      auto packet29_depth_only = packet24_to_53_draws.back();
+      packet29_depth_only.raster.depth_only = true;
+      packet29_depth_only.raster.color_format =
+          shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
+      packet29_depth_only.raster.guest_color_format = 0;
+      packet29_depth_only.raster.color_write_mask = 0;
+      packet29_depth_only.raster.sample_count = 4;
+      packet29_depth_only.raster.surface_pitch = 640;
+      packet29_depth_only.raster.depth_test_enabled = false;
+      packet29_depth_only.raster.depth_write_enabled = false;
+      packet29_depth_only.raster.stencil_test_enabled = false;
+      auto packet24_to_54_draws = packet24_to_53_draws;
+      packet24_to_54_draws.push_back(packet29_depth_only);
+      auto packet24_to_54_operations = packet24_to_53_operations;
+      packet24_to_54_operations.pop_back();
+      shift::xbox::CapturedVulkanOperation packet29_operation{};
+      packet29_operation.type =
+          shift::xbox::CapturedVulkanOperation::Type::Draw;
+      packet29_operation.packet_index = 29;
+      packet29_operation.draw_index = 5;
+      packet24_to_54_operations.push_back(packet29_operation);
+      auto packet54_copy_operation = packet53_copy_operation;
+      packet54_copy_operation.packet_index = 54;
+      packet24_to_54_operations.push_back(packet54_copy_operation);
+      std::vector<uint32_t> packet24_to_54_direct_readback;
+      std::vector<uint32_t> packet24_to_54_ordered_readback;
+      if (!shift::xbox::submit_captured_vulkan_frame(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, packet24_to_54_draws,
+              &packet49_error, &packet24_to_54_direct_readback,
+              enabled_features.geometryShader, &packet49_copy, false, {},
+              pipeline_cache, nullptr) ||
+          !shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, packet24_to_54_draws,
+              packet24_to_54_operations, &packet49_error,
+              &packet24_to_54_ordered_readback,
+              enabled_features.geometryShader, &packet49_copy, false, {},
+              pipeline_cache, nullptr) ||
+          packet24_to_54_ordered_readback != packet24_to_54_direct_readback) {
+        std::cerr << "ordered packet 24..29 mixed-sample depth-only view failed: "
+                  << packet49_error << '\n';
+        return 1;
+      }
+
+      // Another v45 transition starts on a 4x depth-only view and returns to
+      // its 1x gamma color view. The Copy/Convert reads that last color view.
+      auto packet24_depth_only = packet29_depth_only;
+      auto packet26_gamma = packet24_to_53_draws[1];
+      const std::vector<shift::xbox::CapturedVulkanDraw>
+          packet24_to_72_draws{packet24_depth_only, packet26_gamma};
+      auto packet24_operation = packet49_draw_operation;
+      packet24_operation.packet_index = 24;
+      auto packet26_operation = depth_only_operation;
+      packet26_operation.packet_index = 26;
+      packet26_operation.draw_index = 1;
+      auto packet72_copy_operation = packet49_copy_operation;
+      packet72_copy_operation.packet_index = 72;
+      const std::vector<shift::xbox::CapturedVulkanOperation>
+          packet24_to_72_operations{packet24_operation, packet26_operation,
+                                    packet72_copy_operation};
+      std::vector<uint32_t> packet24_to_72_direct_readback;
+      std::vector<uint32_t> packet24_to_72_ordered_readback;
+      if (!shift::xbox::submit_captured_vulkan_frame(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, packet24_to_72_draws,
+              &packet49_error, &packet24_to_72_direct_readback,
+              enabled_features.geometryShader, &packet49_copy, false, {},
+              pipeline_cache, nullptr) ||
+          !shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, packet24_to_72_draws,
+              packet24_to_72_operations, &packet49_error,
+              &packet24_to_72_ordered_readback,
+              enabled_features.geometryShader, &packet49_copy, false, {},
+              pipeline_cache, nullptr) ||
+          packet24_to_72_ordered_readback != packet24_to_72_direct_readback) {
+        std::cerr << "ordered packet 24..26 depth-only-to-gamma transition failed: "
+                  << packet49_error << '\n';
+        return 1;
+      }
+
+      auto unsupported_packet29_layout = packet24_to_54_draws;
+      unsupported_packet29_layout.back().raster.surface_pitch = 636;
+      std::string unsupported_packet29_error;
+      if (shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, unsupported_packet29_layout,
+              packet24_to_54_operations, &unsupported_packet29_error, nullptr,
+              enabled_features.geometryShader, &packet49_copy, false, {},
+              pipeline_cache, nullptr) ||
+          unsupported_packet29_error.find(
+              "draw packet 29 changes target layout before a Copy/Convert boundary") ==
+              std::string::npos) {
+        std::cerr << "ordered executor accepted an unmatched packet-29 depth-only "
+                     "pitch: " << unsupported_packet29_error << '\n';
+        return 1;
+      }
+
       auto unsupported_depth_only_view = captured_depth_only_view;
       ++unsupported_depth_only_view.raster.depth_base_tiles;
       std::string unsupported_depth_only_error;

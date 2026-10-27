@@ -1352,6 +1352,28 @@ bool frame_has_gamma_color_target(
     });
 }
 
+bool is_captured_gamma_depth_only_view_alias(
+    const CapturedRasterState& first, const CapturedRasterState& second) {
+    if (first.depth_only == second.depth_only) return false;
+    const CapturedRasterState& color = first.depth_only ? second : first;
+    const CapturedRasterState& depth = first.depth_only ? first : second;
+    const bool captured_4x_layout = color.sample_count == 4 &&
+        depth.sample_count == 4 && color.surface_pitch == depth.surface_pitch;
+    const bool captured_1x_to_4x_layout = color.sample_count == 1 &&
+        depth.sample_count == 4 && depth.surface_pitch <= UINT32_MAX / 2u &&
+        color.surface_pitch == depth.surface_pitch * 2u;
+    return color.color_write_mask != 0 && depth.color_write_mask == 0 &&
+        (captured_4x_layout || captured_1x_to_4x_layout) &&
+        color.color_base_tiles == depth.color_base_tiles &&
+        color.depth_base_tiles == depth.depth_base_tiles &&
+        color.width == depth.width && color.height == depth.height &&
+        color.depth_format == depth.depth_format &&
+        color.guest_color_format == 1 &&
+        color.color_format == CapturedColorTargetFormat::Rgba8Gamma &&
+        depth.guest_color_format == 0 &&
+        depth.color_format == CapturedColorTargetFormat::Rgba8Linear;
+}
+
 VkFormat captured_color_format(CapturedColorTargetFormat format,
                                bool linear_rgba8_intermediate) {
     switch (format) {
@@ -2714,6 +2736,8 @@ bool submit_mixed_sample_copy_frame(
     for (size_t i = 0; i < draws.size(); ++i) {
         const CapturedVulkanDraw& draw = draws[i];
         const CapturedRasterState& raster = draw.raster;
+        const bool depth_only_view =
+            is_captured_gamma_depth_only_view_alias(target, raster);
         const bool skip_trailing_msaa_draw =
             i >= first_single_sample_draw && raster.sample_count == 4;
         if (skip_trailing_msaa_draw) {
@@ -2758,9 +2782,11 @@ bool submit_mixed_sample_copy_frame(
         if (raster.width != target.width || raster.height != target.height ||
             raster.color_base_tiles != target.color_base_tiles ||
             raster.depth_base_tiles != target.depth_base_tiles ||
-            raster.guest_color_format != target.guest_color_format ||
-            captured_color_format(raster.color_format,
-                                  linear_rgba8_intermediate) != target_format ||
+            (!depth_only_view &&
+             raster.guest_color_format != target.guest_color_format) ||
+            (!depth_only_view &&
+             captured_color_format(raster.color_format,
+                                   linear_rgba8_intermediate) != target_format) ||
             raster.depth_format != target.depth_format) {
             std::ostringstream message;
             message << "mixed captured draw " << i
@@ -3746,25 +3772,10 @@ bool submit_captured_vulkan_frame(
         frame_has_gamma_color_target(draws);
     const VkFormat frame_target_format = captured_color_format(
         frame_target.color_format, linear_rgba8_intermediate);
-    const auto is_depth_only_view_of_frame_target =
-        [](const CapturedRasterState& target,
-           const CapturedRasterState& view) {
-            return view.depth_only && view.color_write_mask == 0 &&
-                target.sample_count == view.sample_count &&
-                target.surface_pitch == view.surface_pitch &&
-                target.color_base_tiles == view.color_base_tiles &&
-                target.depth_base_tiles == view.depth_base_tiles &&
-                target.width == view.width && target.height == view.height &&
-                target.depth_format == view.depth_format &&
-                target.guest_color_format == 1 &&
-                target.color_format == CapturedColorTargetFormat::Rgba8Gamma &&
-                view.guest_color_format == 0 &&
-                view.color_format == CapturedColorTargetFormat::Rgba8Linear;
-        };
     for (size_t draw_index = 1; draw_index < draws.size(); ++draw_index) {
         const CapturedRasterState& raster = draws[draw_index].raster;
         const bool depth_only_view =
-            is_depth_only_view_of_frame_target(frame_target, raster);
+            is_captured_gamma_depth_only_view_alias(frame_target, raster);
         const bool target_layout_changed =
             raster.color_base_tiles != frame_target.color_base_tiles ||
             (!depth_only_view &&
@@ -3985,7 +3996,8 @@ bool submit_captured_vulkan_frame(
          source_width != frame_target.width || source_height != frame_target.height ||
          std::any_of(draws.begin(), draws.end(), [&](const CapturedVulkanDraw& draw) {
              const bool depth_only_view =
-                 is_depth_only_view_of_frame_target(frame_target, draw.raster);
+                 is_captured_gamma_depth_only_view_alias(frame_target,
+                                                        draw.raster);
              return draw.raster.width != frame_target.width ||
                     draw.raster.height != frame_target.height ||
                     (!depth_only_view &&
@@ -4916,23 +4928,7 @@ bool submit_captured_vulkan_operation_stream(
     const auto is_captured_depth_only_view_transition =
         [](const CapturedRasterState& before,
            const CapturedRasterState& after) {
-            if (before.depth_only == after.depth_only) return false;
-            const CapturedRasterState& color =
-                before.depth_only ? after : before;
-            const CapturedRasterState& depth =
-                before.depth_only ? before : after;
-            return depth.color_write_mask == 0 &&
-                color.color_write_mask != 0 &&
-                color.sample_count == depth.sample_count &&
-                color.surface_pitch == depth.surface_pitch &&
-                color.color_base_tiles == depth.color_base_tiles &&
-                color.depth_base_tiles == depth.depth_base_tiles &&
-                color.width == depth.width && color.height == depth.height &&
-                color.depth_format == depth.depth_format &&
-                color.guest_color_format == 1 &&
-                color.color_format == CapturedColorTargetFormat::Rgba8Gamma &&
-                depth.guest_color_format == 0 &&
-                depth.color_format == CapturedColorTargetFormat::Rgba8Linear;
+            return is_captured_gamma_depth_only_view_alias(before, after);
         };
     const auto compatible_ordered_target_layout =
         [&](const CapturedRasterState& before,
@@ -4967,6 +4963,26 @@ bool submit_captured_vulkan_operation_stream(
                 draw.surface_pitch <= UINT32_MAX / 2u &&
                 source.surface_pitch == draw.surface_pitch * 2u;
         };
+    const auto is_gamma_1x_to_linear_1x_source =
+        [](const CapturedRasterState& draw,
+           const CapturedRasterState& source,
+           const CapturedCopyState& copy) {
+            return copy.source_select == 0 && copy.sample_select == 0 &&
+                copy.command == CapturedCopyCommand::Convert &&
+                copy.destination_format == 6 && !copy.color_clear_enable &&
+                !copy.depth_clear_enable && !draw.depth_only &&
+                !source.depth_only && draw.sample_count == 1 &&
+                source.sample_count == 1 && draw.color_write_mask != 0 &&
+                draw.color_format == CapturedColorTargetFormat::Rgba8Gamma &&
+                source.color_format == CapturedColorTargetFormat::Rgba8Linear &&
+                draw.guest_color_format == 1 &&
+                source.guest_color_format == 0 &&
+                draw.color_base_tiles == source.color_base_tiles &&
+                draw.depth_base_tiles == source.depth_base_tiles &&
+                draw.depth_format == source.depth_format &&
+                draw.width == source.width && draw.height == source.height &&
+                draw.surface_pitch == source.surface_pitch;
+        };
     const auto describe_target_layout = [](const CapturedRasterState& raster) {
         std::ostringstream description;
         description << "{color_base=0x" << std::hex
@@ -4986,6 +5002,7 @@ bool submit_captured_vulkan_operation_stream(
 
     size_t preflight_draw_count = 0;
     uint32_t preflight_first_draw = std::numeric_limits<uint32_t>::max();
+    uint32_t preflight_color_source_draw = std::numeric_limits<uint32_t>::max();
     uint32_t preflight_layout_draw = std::numeric_limits<uint32_t>::max();
     uint32_t preflight_layout_packet = std::numeric_limits<uint32_t>::max();
     std::vector<CapturedRasterState> preflight_targets;
@@ -5046,6 +5063,9 @@ bool submit_captured_vulkan_operation_stream(
                 preflight_first_draw = operation.draw_index;
                 preflight_layout_draw = operation.draw_index;
                 preflight_layout_packet = operation.packet_index;
+            }
+            if (!draw_raster.depth_only && draw_raster.color_write_mask != 0) {
+                preflight_color_source_draw = operation.draw_index;
             }
             ++preflight_draw_count;
             continue;
@@ -5108,22 +5128,26 @@ bool submit_captured_vulkan_operation_stream(
                 }
             }
             if (!known_layout) preflight_targets.push_back(operation.source_raster);
-        } else if (operation.source_raster_ready &&
-                   !same_target_layout(
-                       draws[preflight_first_draw].raster,
-                       operation.source_raster) &&
-                   !is_sample0_gamma_4x_to_linear_1x_source(
-                       draws[preflight_first_draw].raster,
-                       operation.source_raster, operation.copy_state)) {
-            std::ostringstream message;
-            message << "Copy/Convert packet " << operation.packet_index
-                    << " reinterprets the active draw segment's EDRAM source layout; "
-                       "only exact-layout copies are supported; active draw="
-                    << describe_target_layout(
-                           draws[preflight_first_draw].raster)
-                    << ", copy source="
-                    << describe_target_layout(operation.source_raster);
-            return fail(message.str(), error);
+        } else if (operation.source_raster_ready) {
+            const uint32_t source_draw_index =
+                preflight_color_source_draw != std::numeric_limits<uint32_t>::max()
+                    ? preflight_color_source_draw : preflight_first_draw;
+            const CapturedRasterState& source_draw =
+                draws[source_draw_index].raster;
+            if (!same_target_layout(source_draw, operation.source_raster) &&
+                !is_sample0_gamma_4x_to_linear_1x_source(
+                    source_draw, operation.source_raster, operation.copy_state) &&
+                !is_gamma_1x_to_linear_1x_source(
+                    source_draw, operation.source_raster, operation.copy_state)) {
+                std::ostringstream message;
+                message << "Copy/Convert packet " << operation.packet_index
+                        << " reinterprets the active draw segment's EDRAM source layout; "
+                           "only exact-layout copies are supported; active draw="
+                        << describe_target_layout(source_draw)
+                        << ", copy source="
+                        << describe_target_layout(operation.source_raster);
+                return fail(message.str(), error);
+            }
         }
         const bool writes_presenter = presenter_copy &&
             operation.copy_state.destination_format ==
@@ -5137,6 +5161,7 @@ bool submit_captured_vulkan_operation_stream(
         found_presenter_copy |= writes_presenter;
         preflight_draw_count = 0;
         preflight_first_draw = std::numeric_limits<uint32_t>::max();
+        preflight_color_source_draw = std::numeric_limits<uint32_t>::max();
         preflight_layout_draw = std::numeric_limits<uint32_t>::max();
         preflight_layout_packet = std::numeric_limits<uint32_t>::max();
     }

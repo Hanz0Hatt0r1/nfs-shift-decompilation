@@ -1973,3 +1973,36 @@ has the new Linux DSO path, SHA-256, and Build ID for a same-run retail replay.
 The full 14-draw operation package, intermediate target persistence, retail
 readback, presentation, and the one-event PM4 interrupt/callback count mismatch
 remain unverified.
+
+## v45 mixed-sample depth-only target views (2026-10-28)
+
+P1's v45 same-XEX capture shows two additional ordered layout changes on the
+same `0x0` color / `0x2d0` depth bases and 1280x720 extent. One stream reaches
+draw 29 after a 1x gamma, pitch-1280 draw, then switches to a depth-only 4x,
+pitch-640 view before Copy/Convert packet 54. Another stream begins in a
+depth-only 4x, pitch-640 view and changes to a gamma 1x, pitch-1280 view at draw
+26 before packet 72. The retained run log records both transitions, but does
+not include the per-draw color mask, depth/stencil enables, or stencil write
+mask; see
+[`process2_v45_depth_only_4x_transition_20261028.json`](../../evidence/process2_v45_depth_only_4x_transition_20261028.json).
+
+The ordered executor now accepts only these captured gamma/depth-only aliases:
+matching bases, extent, depth format and color/depth write masks, with either
+the same 4x pitch or a 1x gamma pitch exactly twice the depth-only 4x pitch.
+For Copy/Convert source matching, it tracks the most recent color-writing draw
+so an initial depth-only view does not hide the later 1x gamma source. The
+existing mixed-sample executor still rejects a trailing 4x draw that writes
+color and requires the provider-confirmed Vulkan depth/stencil resolve when a
+4x depth/stencil result feeds a later 1x test. Unmatched pitches and bases
+remain fail-closed.
+
+Synthetic captured-shaped regressions cover both transition directions,
+Draw/Copy ordering, readback equality between direct and ordered Vulkan paths,
+and an unmatched packet-29 pitch. Linux renderer CTest passed 4/4 and plugin
+CTest passed 6/6 with `VK_LAYER_KHRONOS_validation`; the Android ARM64/API 26
+renderer and check executable compile. These are routing/executor checks, not
+retail image parity. P1's v45 run used the preceding plugin build and stopped
+before exercising this change; the new build has not yet been replayed. The
+full EDRAM backing/sample mapping and the captured packets' actual depth/stencil
+effects remain unverified because that run did not retain their raster flags.
+No Android device was attached for this build.
