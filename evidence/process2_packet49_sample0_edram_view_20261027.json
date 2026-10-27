@@ -84,7 +84,7 @@
       "command": "cmake --build /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --target rexgpu-shift-native -j2 && VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
       "result": "passed",
       "tests": "6/6",
-      "plugin_sha256": "d4feb4968ba496b625a578205f2c0b09a7b73e9ea54ecc9af2b36a42ee4184ff",
+      "plugin_sha256": "4feb8ba496b625a578205f2c0b09a7b73e9ea54ecc9af2b36a42ee4184ff91d7",
       "build_id": "563c64eb612333d04d54df1f08fba302e9ab5b12"
     },
     "android_arm64_api26": {

@@ -1923,7 +1923,7 @@ the ordered executor and direct Vulkan submission and requires identical
 readback. Native Linux CTest passed 4/4, plugin CTest passed 6/6, both with
 `VK_LAYER_KHRONOS_validation`; the Android ARM64/API 26 renderer core also
 compiled. Linux plugin SHA-256 is
-`d4feb4968ba496b625a578205f2c0b09a7b73e9ea54ecc9af2b36a42ee4184ff`, Build ID
+`4feb8ba496b625a578205f2c0b09a7b73e9ea54ecc9af2b36a42ee4184ff91d7`, Build ID
 `563c64eb612333d04d54df1f08fba302e9ab5b12`.
 
 This only validates ordered submission equivalence inside the renderer; it
