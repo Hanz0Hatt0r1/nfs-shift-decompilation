@@ -534,6 +534,20 @@ int main() {
                 translated.glsl.find("r[0].x = alu_7.x") != std::string::npos,
             "captured Xenos vector opcode 0 ADD did not translate component-wise");
 
+    std::vector<uint8_t> retail_vector_min_shader = retail_vector_add_shader;
+    write_be32(retail_vector_min_shader.data() + 7 * 12 + 8,
+               (3u << 24) | (1u << 31) | (1u << 30) |
+                   (1u << 16) | (2u << 8) | 68u);
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                retail_vector_min_shader.data(), retail_vector_min_shader.size(),
+                options, &translated, &error) &&
+                translated.glsl.find(
+                    "mix(r[2].xyzw, r[1].xyzw, lessThan(r[1].xyzw, r[2].xyzw))") !=
+                    std::string::npos &&
+                translated.glsl.find("r[0].x = alu_7.x") != std::string::npos,
+            "captured Xenos vector opcode 3 MIN did not preserve component-wise source selection");
+
     std::vector<uint8_t> retail_scalar_floor_shader = shader;
     write_be32(retail_scalar_floor_shader.data() + 7 * 12,
                (13u << 26) | (1u << 20));

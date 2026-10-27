@@ -1,0 +1,73 @@
+{
+  "schema": "shift.process2.retail_transition_min_alu.v1",
+  "date": "2026-10-27",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "base_commit": "6bb89e52a0e6f721090f51ad1c0d5d37c804e64e"
+  },
+  "retail_evidence": {
+    "device_log": "nfs_shift_033.12.log (read from the app private directory; not committed)",
+    "timestamp_local": "2026-10-27 03:53:25.717",
+    "observation": "A pixel shader in the transition sequence failed translation on Xenos vector ALU opcode 3 at instruction 12.",
+    "raw_shader_bytes_retained": false
+  },
+  "change": {
+    "opcode": 3,
+    "operation": "component-wise MIN: src0 < src1 ? src0 : src1",
+    "translation": "GLSL mix(src1, src0, lessThan(src0, src1))",
+    "files": [
+      "native_vulkan/src/xbox_shader_translate.cpp",
+      "native_vulkan/tests/xbox_shader_translate_check.cpp"
+    ]
+  },
+  "regression": {
+    "fixture": "Synthetic captured ALU instruction using the same opcode, vector operands, write mask, and destination form.",
+    "verified": [
+      "The translator emits the component-wise Xenos MIN operand selection.",
+      "The vector result writes to the captured destination mask."
+    ],
+    "retail_shader_replay": false
+  },
+  "validation": {
+    "native_linux": {
+      "result": "passed",
+      "ctest": "4/4",
+      "vulkan_validation_layer": "VK_LAYER_KHRONOS_validation"
+    },
+    "linux_plugin": {
+      "result": "passed",
+      "ctest": "7/7",
+      "vulkan_validation_layer": "VK_LAYER_KHRONOS_validation",
+      "plugin_sha256": "da63116954ef253542ab0fa386d09e0e935e8fefd5f67ed4501eecdd00ad64bc"
+    },
+    "android_arm64": {
+      "result": "passed",
+      "test": "shift_xbox_shader_translate_check",
+      "abi": "arm64-v8a",
+      "android_api": 26,
+      "device": "Redmi Note 8 Pro / Mali-G76 MC4",
+      "vulkan_api": "1.1.131",
+      "test_binary_sha256": "7eafe8d817f51aacadd2a641787623071291dc29b744a1e51c6e8069f69e40b6"
+    }
+  },
+  "device_state": {
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 6382,
+    "screen_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+    "screen": "Disclaimer, unchanged",
+    "game_apk_or_plugin_replaced": false,
+    "game_restarted": false,
+    "test_binary_uploaded_to_data_local_tmp": true
+  },
+  "remaining_blockers": [
+    "The captured 14-draw frame still fails when its Xenos render-target layout changes.",
+    "Other shader and texture forms in the transition remain unsupported.",
+    "No new retail video frame or video parity result was observed."
+  ],
+  "limits": [
+    "The regression synthesizes an ALU instruction because the retail shader bytes were not retained.",
+    "The Android check covers shader translation only and does not execute Vulkan draws.",
+    "The opcode fix has not been installed into the running game."
+  ]
+}

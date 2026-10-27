@@ -392,6 +392,12 @@ bool emit_alu(std::ostringstream& glsl,
             case 0: operation = "(" + a + " + " + b + ")"; break;
             case 1: operation = "(" + a + " * " + b + ")"; break;
             case 2: operation = "max(" + a + ", " + b + ")"; break;
+            case 3:
+                // Xenos MIN selects src0 only when src0 < src1, including
+                // the source operand choice when either value is unordered.
+                operation = "mix(" + b + ", " + a + ", lessThan(" + a +
+                            ", " + b + "))";
+                break;
             case 6:
                 operation = "mix(vec4(0.0), vec4(1.0), greaterThanEqual(" + a + ", " + b + "))";
                 break;

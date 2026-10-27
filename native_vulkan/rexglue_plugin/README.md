@@ -1679,3 +1679,20 @@ transition. The game APK and loaded plugin were not changed; its PID and
 screenshot hash remained unchanged. Device log hash, binary hashes, and exact
 limits are in
 [`process2_redmi_disclaimer_followup_arm64_check_20261027.json`](../../evidence/process2_redmi_disclaimer_followup_arm64_check_20261027.json).
+
+## Retail transition shader MIN instruction (2026-10-27)
+
+The Redmi transition log reports an unsupported Xenos vector ALU opcode 3 at
+pixel-shader instruction 12. Opcode 3 is component-wise MIN; the translator now
+emits the captured `src0 < src1 ? src0 : src1` selection and has a regression
+for its vector result and destination mask. The selection also keeps Xenos'
+operand choice when a comparison is unordered.
+
+The native Vulkan suite passed 4/4 and the Linux plugin suite passed 7/7 with
+Khronos validation enabled. The ARM64 shader-translation checker passed on the
+Redmi Note 8 Pro. The running game was not restarted or modified; its PID and
+screenshot hash stayed unchanged. This closes one shader translation case,
+not the captured transition: its 14-draw frame still fails on changing Xenos
+target layouts, and other shader/resource errors remain. No retail video frame
+or parity result is claimed. Details and limits are in
+[`process2_retail_transition_min_alu_20261027.json`](../../evidence/process2_retail_transition_min_alu_20261027.json).
