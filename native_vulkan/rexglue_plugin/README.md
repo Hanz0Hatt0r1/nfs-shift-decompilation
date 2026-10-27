@@ -1893,8 +1893,9 @@ link attempt stopped in the external ReXGlue SDK at `fiber_posix.cpp`
 build). ADB currently lists no device, so this version has not been exercised
 on the phone. The Vulkan regression uses synthetic indexed rectangle geometry,
 checks that missing geometry is rejected, and verifies that a zero-area
-captured scissor preserves an initialized non-black destination. It does not
-establish retail Copy/Convert pixel parity.
+captured scissor preserves an initialized non-black destination. It also
+checks that a Copy source-layout rejection reports both active and source
+EDRAM layouts. It does not establish retail Copy/Convert pixel parity.
 
 P1's latest capture reports one captured draw followed by Copy/Convert packet
 49 failing because its decoded source EDRAM layout differs from the active draw

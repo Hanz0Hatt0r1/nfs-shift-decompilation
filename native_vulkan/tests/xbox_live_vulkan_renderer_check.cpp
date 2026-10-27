@@ -979,6 +979,30 @@ int main(int argc, char** argv) {
         return 1;
       }
 
+      auto mismatched_copy_source = copy0;
+      mismatched_copy_source.packet_index = 202;
+      mismatched_copy_source.source_raster_ready = true;
+      mismatched_copy_source.source_raster = format31_source.raster;
+      ++mismatched_copy_source.source_raster.color_base_tiles;
+      std::string mismatched_layout_error;
+      if (shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, {format31_source},
+              {draw0, mismatched_copy_source}, &mismatched_layout_error,
+              nullptr, enabled_features.geometryShader, &copy, false, {},
+              pipeline_cache, nullptr) ||
+          mismatched_layout_error.find(
+              "Copy/Convert packet 202 reinterprets the active draw segment") ==
+              std::string::npos ||
+          mismatched_layout_error.find("active draw={color_base=0x") ==
+              std::string::npos ||
+          mismatched_layout_error.find(", copy source={color_base=0x") ==
+              std::string::npos) {
+        std::cerr << "Copy/Convert EDRAM mismatch diagnostic omitted its source layouts: "
+                  << mismatched_layout_error << '\n';
+        return 1;
+      }
+
       auto copy_without_source = copy0;
       copy_without_source.packet_index = 200;
       auto draw_after_copy = draw0;

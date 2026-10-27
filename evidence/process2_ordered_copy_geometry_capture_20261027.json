@@ -27,7 +27,8 @@
       "regressions": [
         "Synthetic indexed rectangle-list Copy/Convert uses captured geometry.",
         "Ordered stream refuses Copy/Convert with missing captured geometry.",
-        "A zero-area captured scissor preserves the initialized non-black destination."
+        "A zero-area captured scissor preserves the initialized non-black destination.",
+        "A mismatched Copy source layout diagnostic reports both source and active draw EDRAM layouts."
       ]
     },
     "linux_plugin": {
@@ -49,7 +50,7 @@
       ],
       "guest_ring_object_sha256": "63899ba768a64651cdb339888306385978c40ba674ab72cb776e6ea6f4a6574d",
       "renderer_object_sha256": "b91938c5db10051646c088217e67f9516e905d55be2bb22ffe10449382ec9461",
-      "renderer_check_object_sha256": "571e5c170668c721d18a0d68614a21c9bc70196ca758f0ac7798f12322c97ebe",
+      "renderer_check_object_sha256": "2e69f3ad307770ebc19086e670993c592d719b44287bc4d5360738c1414da413",
       "plugin_translation_unit_built_this_run": false,
       "prior_full_plugin_link_attempt": {
         "result": "failed in external ReXGlue SDK dependency",
@@ -67,7 +68,7 @@
     "interrupt_join": "P1 reports 2,205 source=1 ExecuteInterrupt calls with CPU mask 0x04 and callback 0x823B37B8; exact PM4 packet-to-guest-entry attribution remains unproven."
   },
   "regression_scope": {
-    "renderer_case": "Synthetic indexed rectangle-list geometry, absent-geometry rejection, and scissor-preserved partial output.",
+    "renderer_case": "Synthetic indexed rectangle-list geometry, absent-geometry rejection, scissor-preserved partial output, and precise active/source EDRAM layout diagnostics.",
     "vulkan_validation": "Enabled for all Linux native and plugin tests.",
     "retail_parity": false
   },
