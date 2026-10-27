@@ -1971,8 +1971,10 @@ Native Linux tests passed 4/4 and plugin tests passed 6/6 with
 regression executable compiled, but no device was attached for execution. P1
 has the new Linux DSO path, SHA-256, and Build ID for a same-run retail replay.
 The full 14-draw operation package, intermediate target persistence, retail
-readback, presentation, and the one-event PM4 interrupt/callback count mismatch
-remain unverified.
+readback, and presentation remain unverified. The v44 source-1 interrupt trace
+now has a continuous timestamp/order join for all 962 P1 callback records to
+P2 PM4 interrupt IDs 1101–2062; callback target and CPU wrapper addresses are
+different layers, so payload-level guest equivalence remains open.
 
 ## v45 mixed-sample depth-only target views (2026-10-28)
 
@@ -1985,9 +1987,17 @@ depth-only 4x, pitch-640 view and changes to a gamma 1x, pitch-1280 view at draw
 not include the per-draw color mask, depth/stencil enables, or stencil write
 mask; see
 [`process2_v45_depth_only_4x_transition_20261028.json`](../../evidence/process2_v45_depth_only_4x_transition_20261028.json).
+The same run's interrupt trace has an ordered timestamp join for all 881 P1
+source-1 callback rows to P2 PM4 interrupt IDs 969–1849 (0–77 ms delta,
+0x04 CPU mask). The final P2 event is 8 ms beyond the P1 callback time window;
+P1 records registered guest callback targets while P2 records the outer CPU
+wrapper, so payload-level equivalence remains unproven. The full row-by-row
+packet ordinal, ring generation, read/write pointers, and callback mapping is
+in [`process2_v45_source1_interrupt_join_20261028.json`](../../evidence/process2_v45_source1_interrupt_join_20261028.json).
 
 The ordered executor now accepts only these captured gamma/depth-only aliases:
-matching bases, extent, depth format and color/depth write masks, with either
+matching bases, extent, depth format, a nonzero gamma color write mask, and a
+zero depth-only color write mask, with either
 the same 4x pitch or a 1x gamma pitch exactly twice the depth-only 4x pitch.
 For Copy/Convert source matching, it tracks the most recent color-writing draw
 so an initial depth-only view does not hide the later 1x gamma source. The

@@ -35,7 +35,7 @@
     "raster_side_effect_fields": "not retained in this run: color write mask, depth/stencil enables, and stencil write mask are unavailable; no draw-side effects are inferred"
   },
   "implementation": {
-    "accepted_depth_only_aliases": "same 0x0 color and 0x2d0 depth bases, 1280x720 extent, matching depth format, gamma color format and linear depth-only format, nonzero color mask and zero depth-only color mask; either same 4x pitch or 1x gamma pitch exactly twice the depth-only 4x pitch",
+    "accepted_depth_only_aliases": "matching bases, 1280x720 extent, depth format, gamma color format and linear depth-only format, nonzero gamma color write mask and zero depth-only color write mask; either the same 4x pitch or 1x gamma pitch exactly twice the depth-only 4x pitch",
     "copy_source_selection": "uses the most recent color-writing draw in the ordered segment, allowing the observed 1x gamma draw to match the 1x linear Copy/Convert source after an earlier depth-only draw",
     "fail_closed_cases": [
       "unmatched bases, extent, depth format, format, or pitch",
@@ -71,10 +71,17 @@
     },
     "interrupt_trace": {
       "p1_source1_guest_callback_events": 881,
-      "p2_source1_pm4_interrupts_in_correlated_time_window": 880,
+      "p2_source1_pm4_interrupt_ids_correlated": [969, 1849],
+      "ordered_timestamp_join": "881/881 P1 callbacks map in order to continuous P2 PM4_INTERRUPT IDs; absolute delta is 0..77 ms, median 22 ms",
+      "exact_p1_timestamp_span_count": 880,
+      "boundary_note": "P2 PM4_INTERRUPT #1849 is 8 ms after the final P1 callback, so only 880 PM4 timestamps lie inside the inclusive P1 first/last timestamp span; including that boundary event yields the complete 881-row ordered join",
       "p2_cpu_mask": "0x04",
-      "join": "timestamp/order-correlated with one event delta; exact packet-to-guest callback match remains unproven",
-      "callback_layer_note": "P1 callback_function 0x823A4758 is the registered guest target; P2 callback_dispatches callback 0x823B37B8 is the outer CPU-dispatched wrapper"
+      "p1_registered_guest_callback_targets": {
+        "0x823A4758": 357,
+        "0x823B8C60": 524
+      },
+      "callback_layer_note": "P1 callback_function records the registered guest target; P2 callback_dispatches records outer CPU-dispatched wrapper 0x823B37B8. Sequence/time correspondence is continuous, but callback payload and guest-side semantic equivalence are not proven.",
+      "row_level_evidence": "process2_v45_source1_interrupt_join_20261028.json"
     }
   },
   "limitations": [

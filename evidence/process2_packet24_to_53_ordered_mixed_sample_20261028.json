@@ -72,14 +72,17 @@
     },
     "p1_interrupt_trace": {
       "p1_source_1_guest_callback_entries": 962,
-      "p1_callback": "0x823b37b8",
-      "p1_data": "0xb7365f00",
-      "p2_unique_source_1_pm4_interrupts": 961,
-      "p2_interrupt_id_range": [1101, 2061],
+      "p1_registered_guest_callback_targets": {
+        "0x823A4758": 374,
+        "0x823B8C60": 588
+      },
+      "p2_callback_dispatch": "0x823B37B8 (outer CPU-dispatched wrapper)",
+      "p2_unique_source_1_pm4_interrupts": 962,
+      "p2_interrupt_id_range": [1101, 2062],
       "p2_cpu_mask": "0x04",
       "p2_wait_reg_mem_samples": 12602,
-      "event_count_delta_p2_minus_p1": -1,
-      "packet_to_guest_callback_join": "not exact; one-event count mismatch remains and raw sequence correlation is still needed"
+      "event_count_delta_p2_minus_p1": 0,
+      "packet_to_guest_callback_join": "all 962 P1 source-1 callback rows timestamp/order-correlate with P2 PM4_INTERRUPT IDs 1101..2062; callback target and outer wrapper are different layers, so this does not prove payload-level guest semantic equivalence"
     }
   },
   "limitations": [
