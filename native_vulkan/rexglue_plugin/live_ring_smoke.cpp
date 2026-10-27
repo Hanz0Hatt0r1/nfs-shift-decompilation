@@ -546,6 +546,24 @@ int main(int argc, char** argv) {
     }
     std::cout << "selected-frame raw vertex/index dump matches decoded fixture buffers\n";
   }
+  const char* shader_dump_prefix =
+      std::getenv("SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX");
+  if (shader_dump_prefix && *shader_dump_prefix) {
+    const auto read_shader_dump = [](const std::string& path) {
+      std::ifstream file(path, std::ios::binary);
+      return std::vector<uint8_t>(std::istreambuf_iterator<char>(file), {});
+    };
+    const auto dumped_vertex_shader = read_shader_dump(
+        std::string(shader_dump_prefix) + ".frame1.packet0.vs.bin");
+    const auto dumped_pixel_shader = read_shader_dump(
+        std::string(shader_dump_prefix) + ".frame1.packet0.ps.bin");
+    if (dumped_vertex_shader != vertex_shader ||
+        dumped_pixel_shader != pixel_shader) {
+      std::cerr << diagnostics << '\n';
+      return fail("selected-frame shader dumps differ from fixture bytecode");
+    }
+    std::cout << "selected-frame raw VS/PS dump matches fixture bytecode\n";
+  }
   const char* texture_dump_prefix =
       std::getenv("SHIFT_NATIVE_VULKAN_DUMP_TEXTURES_PREFIX");
   if (texture_dump_prefix && *texture_dump_prefix) {

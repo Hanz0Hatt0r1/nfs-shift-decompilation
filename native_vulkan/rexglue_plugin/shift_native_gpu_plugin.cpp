@@ -933,6 +933,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       const std::vector<uint8_t>& pixel_program,
       const std::vector<shift::xbox::CapturedVulkanOperation>& prior_operations,
       uint32_t diagnostic_submitted_frame,
+      uint32_t diagnostic_draw_packet_index,
       shift::xbox::CapturedVulkanDraw* prepared_draw,
       bool* inputs_ready,
       bool* shaders_translated,
@@ -940,6 +941,33 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (!prepared_draw || !inputs_ready || !shaders_translated) return false;
     *inputs_ready = false;
     *shaders_translated = false;
+
+    const char* shader_dump_prefix =
+        std::getenv("SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX");
+    if (diagnostic_submitted_frame != 0u && shader_dump_prefix &&
+        *shader_dump_prefix) {
+      const auto dump_shader = [&](const char* stage,
+                                   const std::vector<uint8_t>& bytes) {
+        std::ostringstream path;
+        path << shader_dump_prefix << ".frame" << diagnostic_submitted_frame
+             << ".packet" << diagnostic_draw_packet_index << '.' << stage
+             << ".bin";
+        std::ofstream file(path.str(), std::ios::binary | std::ios::trunc);
+        if (!bytes.empty()) {
+          file.write(reinterpret_cast<const char*>(bytes.data()),
+                     static_cast<std::streamsize>(bytes.size()));
+        }
+        if (!file) {
+          REXLOG_WARN("shift-native: selected {} shader dump failed: {}",
+                      stage, path.str());
+          return;
+        }
+        REXLOG_INFO("shift-native: saved selected {} shader bytes={} path={}",
+                    stage, bytes.size(), path.str());
+      };
+      dump_shader("vs", vertex_program);
+      dump_shader("ps", pixel_program);
+    }
 
     if (raster_state.color_format !=
             shift::xbox::CapturedColorTargetFormat::Rgba8Gamma &&
@@ -3027,6 +3055,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                                                  vertex_shader_program, pixel_shader_program,
                                                  frame_operations,
                                                  diagnostic_submitted_frame,
+                                                 draw_packet_index,
                                                  &prepared_draw, &shader_inputs_ready,
                                                  &shaders_translated, &error);
                 if (shader_inputs_ready) {

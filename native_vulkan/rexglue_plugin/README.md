@@ -833,6 +833,13 @@ target; the next run should confirm the disclaimer frame number again before
 selecting it. The 14 constituent retail draws have not yet been isolated as
 the source of the strips.
 
+Set `SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX` with the selected draw frame to
+write the original guest VS/PS bytes as `.frameN.packetM.vs.bin` and
+`.frameN.packetM.ps.bin`. This capture occurs before translation, so it also
+retains programs rejected by the current shader subset. The live-ring selected
+draw regression compares both files byte-for-byte with its synthetic shader
+fixtures.
+
 For that comparison, `SHIFT_NATIVE_VULKAN_DUMP_TEXTURE_SOURCE_PREFIX` also
 saves the exact guest-memory bytes read for each texture in the selected
 submit as `.frameN.slotM.textureK.source.bin`. This file preserves Xenos
