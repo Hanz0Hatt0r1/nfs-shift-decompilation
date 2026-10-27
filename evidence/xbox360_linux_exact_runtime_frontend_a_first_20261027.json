@@ -1,0 +1,132 @@
+{
+  "schema": "shift.xbox360.linux-exact-runtime-frontend-a-first-controller.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "movie": {
+      "guest_object": "0xE6795040",
+      "frame_target": 281
+    }
+  },
+  "binaries": {
+    "p1_host": {
+      "path_outside_git": "/home/pes/work/nfsshift-rex-lwsync-20261027/out/build/linux-amd64-release/nfs_shift",
+      "sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178"
+    },
+    "rexglue_runtime": {
+      "path_outside_git": "/home/pes/work/rexglue-sdk-retail-lwsync-20261027/out/linux-amd64/librexruntime.so",
+      "sha256": "4d0fb82223695d3e2b76bbc6d6c9a93bad525a4c051a8a2eb585b5422d2373bc"
+    },
+    "p2_linux_plugin": {
+      "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-20261027-detached/bin/librexgpu-shift-native.so",
+      "sha256": "771201891a6ae28c0745f57beccf9c6474ce175c7bb3f5edadcce4c457a8a12b"
+    },
+    "inferior_mapped_hashes_verified": true
+  },
+  "run": {
+    "platform": "Linux x86_64, Clang 20 Release",
+    "duration_seconds": 63.159,
+    "termination": "GDB detached and sent SIGINT after bounded input pulses; clean title shutdown was not observed.",
+    "guest_memory_modified_by_probe": false,
+    "controller": {
+      "device": "Linux uinput Xbox 360 pad, VID:PID 045e:028e",
+      "retail_controller_object": "0xBCAEB260",
+      "controller_update_ready_seconds": 15.371,
+      "bink_target_reached_seconds": 46.623,
+      "pulses": [
+        {
+          "button": "A",
+          "down_seconds": 47.945,
+          "up_seconds": 50.946
+        },
+        {
+          "button": "Start",
+          "down_seconds": 53.945,
+          "up_seconds": 56.945
+        },
+        {
+          "button": "A",
+          "down_seconds": 59.945,
+          "up_seconds": 62.945
+        }
+      ],
+      "all_pulses_after_bink_target": true,
+      "retail_input_observation": {
+        "A_current_mask": "0x1000",
+        "A_button_bytes_observed": [
+          "0x80",
+          "0xC0"
+        ],
+        "A_predicate_samples": 18,
+        "first_six_logged_A_predicate_results": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "Start_mask_change_observed": false,
+        "Start_predicate_samples": 0
+      }
+    },
+    "frontend": {
+      "bink_progress": "281/281",
+      "scene_update_calls": 196,
+      "scene_update_returns": 1,
+      "child_calls": {
+        "sub_82E2C5A8": {
+          "entries": 1,
+          "returns": 1
+        },
+        "sub_82E2CD10": {
+          "entries": 131,
+          "returns": 2
+        }
+      },
+      "main_menu_observed": false,
+      "race_observed": false
+    },
+    "final_threads": {
+      "retail_main": {
+        "thread_name": "Core 0/0: Main",
+        "top_frame": "sub_823B3850"
+      }
+    },
+    "trace_artifacts": {
+      "runner": {
+        "path": "tools/xbox360/capture_linux_exact_runtime_frontend_a_first_20261027.py",
+        "sha256": "4ddbd240590ce5a8ddd57903184a642bf2b32bd3cf51214072a7d3b34c9da7f3",
+        "path_used_at_capture_outside_git": "/tmp/nfs-shift-p1-a-first-controller-20261027/runner.py"
+      },
+      "gdb_script": {
+        "path": "tools/xbox360/trace_linux_exact_runtime_frontend_after_bink_20261027.gdb",
+        "sha256": "f8454d3a634e97a036409ff722754bc9013ffd6348a201a7ec84d90b71d292bc"
+      },
+      "gdb_log": {
+        "path_outside_git": "/tmp/nfs-shift-p1-a-first-controller-20261027/gdb.log",
+        "sha256": "1e0bb1b6898c081bf7d1e0aedd127d46019c73a5da9582ff79da6583c3f7d15f"
+      },
+      "runner_log": {
+        "path_outside_git": "/tmp/nfs-shift-p1-a-first-controller-20261027/runner.log",
+        "sha256": "f2d8912bc42b1eb17425ae233a64b45d0a94ca30fd4900cb25050609619dffda"
+      }
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail XEX reached Bink 281/281 before input was sent.",
+      "The first A pulse changed the retail controller mask to 0x1000 and set the retail A byte to 0x80; sampled original digital predicates returned true.",
+      "The title continues to receive A through its retail input path when A is sent first after Bink.",
+      "The main retail thread remained in sub_823B3850; no main menu or race was observed."
+    ],
+    "not_proven": [
+      "A frontend action or menu transition from the successful A predicate samples.",
+      "Why later Start/A pulses after the initial A were not sampled by the recorded retail predicates.",
+      "Whether the retail wait-loop counter underflow is the only blocker to frontend progress.",
+      "A playable Linux port or clean title shutdown."
+    ]
+  }
+}
