@@ -2104,3 +2104,20 @@ counts, and formats remains unsupported; no transition packet, retail image,
 or pixel-parity claim is made. Clear effects and depth/stencil alias
 preservation also remain open. Build identity and exact check results are in
 [`process2_ordered_disjoint_edram_segments_20261028.json`](../../evidence/process2_ordered_disjoint_edram_segments_20261028.json).
+
+## P1 v42 plugin provenance audit (2026-10-28)
+
+The later v42 Linux capture loaded plugin SHA-256
+`72baae3d59432727e1e366259ec8a9b6641b7b60d623d8389274d74e368815de`, not the
+branch-HEAD candidate `763163fa73e07a0c936760b4c3cd549e7daa17c3115eb86a9954e4af880ddacc`.
+Its seven repeated packet-72 failures report that depth/stencil resolve was
+not provider-enabled, so this run does not exercise the current candidate's
+resolve path. The log has 110 successful draw-submission records and 932
+accepted Copy/Convert records, but no 14-draw refresh and no PM4_INTERRUPT
+packet trace. It does not change the aliasing or interrupt conclusions above.
+Run metadata, hashes, counts, and qualifications are in
+[`process2_p1_v42_plugin_provenance_audit_20261028.json`](../../evidence/process2_p1_v42_plugin_provenance_audit_20261028.json).
+The branch-HEAD DSO was rebuilt with the recorded SHA-256 and Build ID; Linux
+native CTest passed 4/4 and plugin CTest passed 6/6 with Vulkan validation,
+and the Android ARM64 renderer/check targets compiled. No ADB device was
+connected for device execution.
