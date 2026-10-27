@@ -1,0 +1,3198 @@
+{
+  "schema": "shift.xbox360.linux-pm4-irq-worker-counter.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "bink_sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c"
+  },
+  "binaries": {
+    "p1_branch_head": "0286f355f6b20a4362f8b849cbc50b61b0fe90cf",
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "p1_runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+    "p2_code_commit": "73a61c069091d3d2a30e05f084b211103fe93904",
+    "p2_latest_remote_commit_at_review": "6bb89e52a0e6f721090f51ad1c0d5d37c804e64e",
+    "p2_latest_remote_code_delta_from_dso_source": "No native_vulkan code changes; latest commit adds README/evidence only.",
+    "p2_linux_plugin_sha256": "8bd81eaf4d61a61d1a56cf6c2624f575f9c44a3ff7fd48e1c3d09783c835d9e3"
+  },
+  "ring_to_guest_callback": {
+    "trace_cap": 128,
+    "p2_interrupts_logged": 128,
+    "p1_source_1_callbacks_in_full_run": 2095,
+    "unique_time_matches": 128,
+    "match_window_ms": 10,
+    "max_abs_delta_ms": 5.168,
+    "all_cpu_masks_equal_dispatched_masks": true,
+    "all_cpu_masks": "0x04",
+    "all_p1_sources": "0x1",
+    "p1_callback_functions": [
+      "0x823a4758"
+    ],
+    "records": [
+      {
+        "p2_interrupt": {
+          "index": 0,
+          "timestamp": "2026-10-27 04:46:04.750",
+          "generation": 1,
+          "batch_rptr": 28,
+          "batch_wptr": 31,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 104,
+          "packet_source": "0x095D0120",
+          "packet_byte_offset": 1304,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 70,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x208",
+          "wall_unix_seconds": 1793065564.750108
+        },
+        "p2_log_wall_unix_seconds": 1793065564.75,
+        "delta_ms": -0.108
+      },
+      {
+        "p2_interrupt": {
+          "index": 1,
+          "timestamp": "2026-10-27 04:46:04.782",
+          "generation": 1,
+          "batch_rptr": 31,
+          "batch_wptr": 73,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 966,
+          "packet_source": "0x095DC240",
+          "packet_byte_offset": 1268,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 73,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x208",
+          "wall_unix_seconds": 1793065564.782089
+        },
+        "p2_log_wall_unix_seconds": 1793065564.782,
+        "delta_ms": -0.089
+      },
+      {
+        "p2_interrupt": {
+          "index": 2,
+          "timestamp": "2026-10-27 04:46:04.807",
+          "generation": 1,
+          "batch_rptr": 73,
+          "batch_wptr": 85,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 149,
+          "packet_source": "0x095E83C0",
+          "packet_byte_offset": 1268,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 75,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x208",
+          "wall_unix_seconds": 1793065564.807301
+        },
+        "p2_log_wall_unix_seconds": 1793065564.807,
+        "delta_ms": -0.301
+      },
+      {
+        "p2_interrupt": {
+          "index": 3,
+          "timestamp": "2026-10-27 04:46:04.893",
+          "generation": 1,
+          "batch_rptr": 88,
+          "batch_wptr": 97,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 289,
+          "packet_source": "0x095F4500",
+          "packet_byte_offset": 19184,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 81,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x208",
+          "wall_unix_seconds": 1793065564.893144
+        },
+        "p2_log_wall_unix_seconds": 1793065564.893,
+        "delta_ms": -0.144
+      },
+      {
+        "p2_interrupt": {
+          "index": 4,
+          "timestamp": "2026-10-27 04:46:04.961",
+          "generation": 1,
+          "batch_rptr": 97,
+          "batch_wptr": 109,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09600640",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 86,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x208",
+          "wall_unix_seconds": 1793065564.958779
+        },
+        "p2_log_wall_unix_seconds": 1793065564.961,
+        "delta_ms": 2.221
+      },
+      {
+        "p2_interrupt": {
+          "index": 5,
+          "timestamp": "2026-10-27 04:46:05.006",
+          "generation": 1,
+          "batch_rptr": 109,
+          "batch_wptr": 121,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x0960C780",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 90,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x208",
+          "wall_unix_seconds": 1793065565.00664
+        },
+        "p2_log_wall_unix_seconds": 1793065565.006,
+        "delta_ms": -0.64
+      },
+      {
+        "p2_interrupt": {
+          "index": 6,
+          "timestamp": "2026-10-27 04:46:05.063",
+          "generation": 1,
+          "batch_rptr": 121,
+          "batch_wptr": 133,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096188C0",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 94,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x208",
+          "wall_unix_seconds": 1793065565.062403
+        },
+        "p2_log_wall_unix_seconds": 1793065565.063,
+        "delta_ms": 0.597
+      },
+      {
+        "p2_interrupt": {
+          "index": 7,
+          "timestamp": "2026-10-27 04:46:05.098",
+          "generation": 1,
+          "batch_rptr": 133,
+          "batch_wptr": 145,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09624A00",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 97,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x208",
+          "wall_unix_seconds": 1793065565.096884
+        },
+        "p2_log_wall_unix_seconds": 1793065565.098,
+        "delta_ms": 1.116
+      },
+      {
+        "p2_interrupt": {
+          "index": 8,
+          "timestamp": "2026-10-27 04:46:05.146",
+          "generation": 1,
+          "batch_rptr": 145,
+          "batch_wptr": 157,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09630B40",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 101,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x208",
+          "wall_unix_seconds": 1793065565.146083
+        },
+        "p2_log_wall_unix_seconds": 1793065565.146,
+        "delta_ms": -0.083
+      },
+      {
+        "p2_interrupt": {
+          "index": 9,
+          "timestamp": "2026-10-27 04:46:05.193",
+          "generation": 1,
+          "batch_rptr": 157,
+          "batch_wptr": 169,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x0963CC80",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 105,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x208",
+          "wall_unix_seconds": 1793065565.192801
+        },
+        "p2_log_wall_unix_seconds": 1793065565.193,
+        "delta_ms": 0.199
+      },
+      {
+        "p2_interrupt": {
+          "index": 10,
+          "timestamp": "2026-10-27 04:46:05.237",
+          "generation": 1,
+          "batch_rptr": 169,
+          "batch_wptr": 181,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09648DC0",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 109,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.236817
+        },
+        "p2_log_wall_unix_seconds": 1793065565.237,
+        "delta_ms": 0.183
+      },
+      {
+        "p2_interrupt": {
+          "index": 11,
+          "timestamp": "2026-10-27 04:46:05.284",
+          "generation": 1,
+          "batch_rptr": 181,
+          "batch_wptr": 193,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09654F00",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 113,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.28301
+        },
+        "p2_log_wall_unix_seconds": 1793065565.284,
+        "delta_ms": 0.99
+      },
+      {
+        "p2_interrupt": {
+          "index": 12,
+          "timestamp": "2026-10-27 04:46:05.337",
+          "generation": 1,
+          "batch_rptr": 193,
+          "batch_wptr": 205,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09661040",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 117,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.335246
+        },
+        "p2_log_wall_unix_seconds": 1793065565.337,
+        "delta_ms": 1.754
+      },
+      {
+        "p2_interrupt": {
+          "index": 13,
+          "timestamp": "2026-10-27 04:46:05.385",
+          "generation": 1,
+          "batch_rptr": 205,
+          "batch_wptr": 217,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x0966D180",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 121,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.385259
+        },
+        "p2_log_wall_unix_seconds": 1793065565.385,
+        "delta_ms": -0.259
+      },
+      {
+        "p2_interrupt": {
+          "index": 14,
+          "timestamp": "2026-10-27 04:46:05.433",
+          "generation": 1,
+          "batch_rptr": 217,
+          "batch_wptr": 229,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096792C0",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 125,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.432093
+        },
+        "p2_log_wall_unix_seconds": 1793065565.433,
+        "delta_ms": 0.907
+      },
+      {
+        "p2_interrupt": {
+          "index": 15,
+          "timestamp": "2026-10-27 04:46:05.485",
+          "generation": 1,
+          "batch_rptr": 229,
+          "batch_wptr": 241,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09685400",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 129,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.483576
+        },
+        "p2_log_wall_unix_seconds": 1793065565.485,
+        "delta_ms": 1.424
+      },
+      {
+        "p2_interrupt": {
+          "index": 16,
+          "timestamp": "2026-10-27 04:46:05.536",
+          "generation": 1,
+          "batch_rptr": 241,
+          "batch_wptr": 253,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09691540",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 133,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.535358
+        },
+        "p2_log_wall_unix_seconds": 1793065565.536,
+        "delta_ms": 0.642
+      },
+      {
+        "p2_interrupt": {
+          "index": 17,
+          "timestamp": "2026-10-27 04:46:05.590",
+          "generation": 1,
+          "batch_rptr": 253,
+          "batch_wptr": 265,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x0969D680",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 137,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.586354
+        },
+        "p2_log_wall_unix_seconds": 1793065565.59,
+        "delta_ms": 3.646
+      },
+      {
+        "p2_interrupt": {
+          "index": 18,
+          "timestamp": "2026-10-27 04:46:05.630",
+          "generation": 1,
+          "batch_rptr": 265,
+          "batch_wptr": 277,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096A97C0",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 141,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.629758
+        },
+        "p2_log_wall_unix_seconds": 1793065565.63,
+        "delta_ms": 0.242
+      },
+      {
+        "p2_interrupt": {
+          "index": 19,
+          "timestamp": "2026-10-27 04:46:05.678",
+          "generation": 1,
+          "batch_rptr": 277,
+          "batch_wptr": 289,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096B5900",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 144,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.678349
+        },
+        "p2_log_wall_unix_seconds": 1793065565.678,
+        "delta_ms": -0.349
+      },
+      {
+        "p2_interrupt": {
+          "index": 20,
+          "timestamp": "2026-10-27 04:46:05.725",
+          "generation": 1,
+          "batch_rptr": 289,
+          "batch_wptr": 301,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096C1A40",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 148,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.725058
+        },
+        "p2_log_wall_unix_seconds": 1793065565.725,
+        "delta_ms": -0.058
+      },
+      {
+        "p2_interrupt": {
+          "index": 21,
+          "timestamp": "2026-10-27 04:46:05.771",
+          "generation": 1,
+          "batch_rptr": 301,
+          "batch_wptr": 313,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096CDB80",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 152,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.770695
+        },
+        "p2_log_wall_unix_seconds": 1793065565.771,
+        "delta_ms": 0.305
+      },
+      {
+        "p2_interrupt": {
+          "index": 22,
+          "timestamp": "2026-10-27 04:46:05.811",
+          "generation": 1,
+          "batch_rptr": 313,
+          "batch_wptr": 325,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096D9CC0",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 155,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.809961
+        },
+        "p2_log_wall_unix_seconds": 1793065565.811,
+        "delta_ms": 1.039
+      },
+      {
+        "p2_interrupt": {
+          "index": 23,
+          "timestamp": "2026-10-27 04:46:05.856",
+          "generation": 1,
+          "batch_rptr": 325,
+          "batch_wptr": 337,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096E5E00",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 159,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.856016
+        },
+        "p2_log_wall_unix_seconds": 1793065565.856,
+        "delta_ms": -0.016
+      },
+      {
+        "p2_interrupt": {
+          "index": 24,
+          "timestamp": "2026-10-27 04:46:05.888",
+          "generation": 1,
+          "batch_rptr": 337,
+          "batch_wptr": 349,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096F1F40",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 162,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.888485
+        },
+        "p2_log_wall_unix_seconds": 1793065565.888,
+        "delta_ms": -0.485
+      },
+      {
+        "p2_interrupt": {
+          "index": 25,
+          "timestamp": "2026-10-27 04:46:05.924",
+          "generation": 1,
+          "batch_rptr": 349,
+          "batch_wptr": 361,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096FE080",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 165,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.923966
+        },
+        "p2_log_wall_unix_seconds": 1793065565.924,
+        "delta_ms": 0.034
+      },
+      {
+        "p2_interrupt": {
+          "index": 26,
+          "timestamp": "2026-10-27 04:46:05.971",
+          "generation": 1,
+          "batch_rptr": 361,
+          "batch_wptr": 373,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x0970A1C0",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 169,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065565.970908
+        },
+        "p2_log_wall_unix_seconds": 1793065565.971,
+        "delta_ms": 0.092
+      },
+      {
+        "p2_interrupt": {
+          "index": 27,
+          "timestamp": "2026-10-27 04:46:06.024",
+          "generation": 1,
+          "batch_rptr": 373,
+          "batch_wptr": 385,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09716300",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 173,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.02392
+        },
+        "p2_log_wall_unix_seconds": 1793065566.024,
+        "delta_ms": 0.08
+      },
+      {
+        "p2_interrupt": {
+          "index": 28,
+          "timestamp": "2026-10-27 04:46:06.060",
+          "generation": 1,
+          "batch_rptr": 385,
+          "batch_wptr": 397,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09722440",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 176,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.05941
+        },
+        "p2_log_wall_unix_seconds": 1793065566.06,
+        "delta_ms": 0.59
+      },
+      {
+        "p2_interrupt": {
+          "index": 29,
+          "timestamp": "2026-10-27 04:46:06.097",
+          "generation": 1,
+          "batch_rptr": 397,
+          "batch_wptr": 409,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x0972E580",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 179,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.095448
+        },
+        "p2_log_wall_unix_seconds": 1793065566.097,
+        "delta_ms": 1.552
+      },
+      {
+        "p2_interrupt": {
+          "index": 30,
+          "timestamp": "2026-10-27 04:46:06.172",
+          "generation": 1,
+          "batch_rptr": 409,
+          "batch_wptr": 421,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x0973A6C0",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 185,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.171479
+        },
+        "p2_log_wall_unix_seconds": 1793065566.172,
+        "delta_ms": 0.521
+      },
+      {
+        "p2_interrupt": {
+          "index": 31,
+          "timestamp": "2026-10-27 04:46:06.245",
+          "generation": 1,
+          "batch_rptr": 421,
+          "batch_wptr": 433,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x095D0000",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 190,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.241634
+        },
+        "p2_log_wall_unix_seconds": 1793065566.245,
+        "delta_ms": 3.366
+      },
+      {
+        "p2_interrupt": {
+          "index": 32,
+          "timestamp": "2026-10-27 04:46:06.303",
+          "generation": 1,
+          "batch_rptr": 433,
+          "batch_wptr": 445,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x095DC140",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 195,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.303214
+        },
+        "p2_log_wall_unix_seconds": 1793065566.303,
+        "delta_ms": -0.214
+      },
+      {
+        "p2_interrupt": {
+          "index": 33,
+          "timestamp": "2026-10-27 04:46:06.365",
+          "generation": 1,
+          "batch_rptr": 445,
+          "batch_wptr": 457,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x095E8280",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 200,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.365397
+        },
+        "p2_log_wall_unix_seconds": 1793065566.365,
+        "delta_ms": -0.397
+      },
+      {
+        "p2_interrupt": {
+          "index": 34,
+          "timestamp": "2026-10-27 04:46:06.413",
+          "generation": 1,
+          "batch_rptr": 457,
+          "batch_wptr": 469,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x095F43C0",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 203,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.412716
+        },
+        "p2_log_wall_unix_seconds": 1793065566.413,
+        "delta_ms": 0.284
+      },
+      {
+        "p2_interrupt": {
+          "index": 35,
+          "timestamp": "2026-10-27 04:46:06.445",
+          "generation": 1,
+          "batch_rptr": 469,
+          "batch_wptr": 481,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09600500",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 206,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.444891
+        },
+        "p2_log_wall_unix_seconds": 1793065566.445,
+        "delta_ms": 0.109
+      },
+      {
+        "p2_interrupt": {
+          "index": 36,
+          "timestamp": "2026-10-27 04:46:06.493",
+          "generation": 1,
+          "batch_rptr": 481,
+          "batch_wptr": 493,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x0960C640",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 210,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.492084
+        },
+        "p2_log_wall_unix_seconds": 1793065566.493,
+        "delta_ms": 0.916
+      },
+      {
+        "p2_interrupt": {
+          "index": 37,
+          "timestamp": "2026-10-27 04:46:06.535",
+          "generation": 1,
+          "batch_rptr": 493,
+          "batch_wptr": 505,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09618780",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 214,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.534765
+        },
+        "p2_log_wall_unix_seconds": 1793065566.535,
+        "delta_ms": 0.235
+      },
+      {
+        "p2_interrupt": {
+          "index": 38,
+          "timestamp": "2026-10-27 04:46:06.570",
+          "generation": 1,
+          "batch_rptr": 505,
+          "batch_wptr": 517,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096248C0",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 217,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.569749
+        },
+        "p2_log_wall_unix_seconds": 1793065566.57,
+        "delta_ms": 0.251
+      },
+      {
+        "p2_interrupt": {
+          "index": 39,
+          "timestamp": "2026-10-27 04:46:06.613",
+          "generation": 1,
+          "batch_rptr": 517,
+          "batch_wptr": 529,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09630A00",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 221,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.613397
+        },
+        "p2_log_wall_unix_seconds": 1793065566.613,
+        "delta_ms": -0.397
+      },
+      {
+        "p2_interrupt": {
+          "index": 40,
+          "timestamp": "2026-10-27 04:46:06.644",
+          "generation": 1,
+          "batch_rptr": 529,
+          "batch_wptr": 541,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x0963CB40",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 223,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.643973
+        },
+        "p2_log_wall_unix_seconds": 1793065566.644,
+        "delta_ms": 0.027
+      },
+      {
+        "p2_interrupt": {
+          "index": 41,
+          "timestamp": "2026-10-27 04:46:06.678",
+          "generation": 1,
+          "batch_rptr": 541,
+          "batch_wptr": 553,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09648C80",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 226,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.672832
+        },
+        "p2_log_wall_unix_seconds": 1793065566.678,
+        "delta_ms": 5.168
+      },
+      {
+        "p2_interrupt": {
+          "index": 42,
+          "timestamp": "2026-10-27 04:46:06.710",
+          "generation": 1,
+          "batch_rptr": 553,
+          "batch_wptr": 565,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09654DC0",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 229,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.709849
+        },
+        "p2_log_wall_unix_seconds": 1793065566.71,
+        "delta_ms": 0.151
+      },
+      {
+        "p2_interrupt": {
+          "index": 43,
+          "timestamp": "2026-10-27 04:46:06.750",
+          "generation": 1,
+          "batch_rptr": 565,
+          "batch_wptr": 577,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09660F00",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 233,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.749783
+        },
+        "p2_log_wall_unix_seconds": 1793065566.75,
+        "delta_ms": 0.217
+      },
+      {
+        "p2_interrupt": {
+          "index": 44,
+          "timestamp": "2026-10-27 04:46:06.787",
+          "generation": 1,
+          "batch_rptr": 577,
+          "batch_wptr": 589,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x0966D040",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 236,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.787354
+        },
+        "p2_log_wall_unix_seconds": 1793065566.787,
+        "delta_ms": -0.354
+      },
+      {
+        "p2_interrupt": {
+          "index": 45,
+          "timestamp": "2026-10-27 04:46:06.839",
+          "generation": 1,
+          "batch_rptr": 589,
+          "batch_wptr": 601,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09679180",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 240,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.839367
+        },
+        "p2_log_wall_unix_seconds": 1793065566.839,
+        "delta_ms": -0.367
+      },
+      {
+        "p2_interrupt": {
+          "index": 46,
+          "timestamp": "2026-10-27 04:46:06.893",
+          "generation": 1,
+          "batch_rptr": 601,
+          "batch_wptr": 613,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096852C0",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 244,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.893403
+        },
+        "p2_log_wall_unix_seconds": 1793065566.893,
+        "delta_ms": -0.403
+      },
+      {
+        "p2_interrupt": {
+          "index": 47,
+          "timestamp": "2026-10-27 04:46:06.949",
+          "generation": 1,
+          "batch_rptr": 613,
+          "batch_wptr": 625,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x09691400",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 249,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065566.948111
+        },
+        "p2_log_wall_unix_seconds": 1793065566.949,
+        "delta_ms": 0.889
+      },
+      {
+        "p2_interrupt": {
+          "index": 48,
+          "timestamp": "2026-10-27 04:46:07.006",
+          "generation": 1,
+          "batch_rptr": 625,
+          "batch_wptr": 637,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x0969D540",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 253,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.00608
+        },
+        "p2_log_wall_unix_seconds": 1793065567.006,
+        "delta_ms": -0.08
+      },
+      {
+        "p2_interrupt": {
+          "index": 49,
+          "timestamp": "2026-10-27 04:46:07.064",
+          "generation": 1,
+          "batch_rptr": 637,
+          "batch_wptr": 649,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096A9680",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 258,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.064638
+        },
+        "p2_log_wall_unix_seconds": 1793065567.064,
+        "delta_ms": -0.638
+      },
+      {
+        "p2_interrupt": {
+          "index": 50,
+          "timestamp": "2026-10-27 04:46:07.130",
+          "generation": 1,
+          "batch_rptr": 649,
+          "batch_wptr": 661,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096B57C0",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 262,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.129796
+        },
+        "p2_log_wall_unix_seconds": 1793065567.13,
+        "delta_ms": 0.204
+      },
+      {
+        "p2_interrupt": {
+          "index": 51,
+          "timestamp": "2026-10-27 04:46:07.201",
+          "generation": 1,
+          "batch_rptr": 661,
+          "batch_wptr": 673,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 237,
+          "packet_source": "0x096C1900",
+          "packet_byte_offset": 18352,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 268,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.199319
+        },
+        "p2_log_wall_unix_seconds": 1793065567.201,
+        "delta_ms": 1.681
+      },
+      {
+        "p2_interrupt": {
+          "index": 52,
+          "timestamp": "2026-10-27 04:46:07.298",
+          "generation": 1,
+          "batch_rptr": 682,
+          "batch_wptr": 685,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 10,
+          "packet_source": "0x096CDB20",
+          "packet_byte_offset": 140,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 275,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.296826
+        },
+        "p2_log_wall_unix_seconds": 1793065567.298,
+        "delta_ms": 1.174
+      },
+      {
+        "p2_interrupt": {
+          "index": 53,
+          "timestamp": "2026-10-27 04:46:07.331",
+          "generation": 1,
+          "batch_rptr": 688,
+          "batch_wptr": 691,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096D9B00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 278,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.3318
+        },
+        "p2_log_wall_unix_seconds": 1793065567.331,
+        "delta_ms": -0.8
+      },
+      {
+        "p2_interrupt": {
+          "index": 54,
+          "timestamp": "2026-10-27 04:46:07.366",
+          "generation": 1,
+          "batch_rptr": 694,
+          "batch_wptr": 697,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096E5B80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 281,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.366174
+        },
+        "p2_log_wall_unix_seconds": 1793065567.366,
+        "delta_ms": -0.174
+      },
+      {
+        "p2_interrupt": {
+          "index": 55,
+          "timestamp": "2026-10-27 04:46:07.401",
+          "generation": 1,
+          "batch_rptr": 697,
+          "batch_wptr": 703,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 21,
+          "packet_source": "0x096F1C00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 284,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.401031
+        },
+        "p2_log_wall_unix_seconds": 1793065567.401,
+        "delta_ms": -0.031
+      },
+      {
+        "p2_interrupt": {
+          "index": 56,
+          "timestamp": "2026-10-27 04:46:07.438",
+          "generation": 1,
+          "batch_rptr": 706,
+          "batch_wptr": 709,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096FDC80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 287,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.438093
+        },
+        "p2_log_wall_unix_seconds": 1793065567.438,
+        "delta_ms": -0.093
+      },
+      {
+        "p2_interrupt": {
+          "index": 57,
+          "timestamp": "2026-10-27 04:46:07.474",
+          "generation": 1,
+          "batch_rptr": 712,
+          "batch_wptr": 715,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09709D00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 290,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.474653
+        },
+        "p2_log_wall_unix_seconds": 1793065567.474,
+        "delta_ms": -0.653
+      },
+      {
+        "p2_interrupt": {
+          "index": 58,
+          "timestamp": "2026-10-27 04:46:07.511",
+          "generation": 1,
+          "batch_rptr": 718,
+          "batch_wptr": 721,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09715D80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 293,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.511501
+        },
+        "p2_log_wall_unix_seconds": 1793065567.511,
+        "delta_ms": -0.501
+      },
+      {
+        "p2_interrupt": {
+          "index": 59,
+          "timestamp": "2026-10-27 04:46:07.545",
+          "generation": 1,
+          "batch_rptr": 724,
+          "batch_wptr": 727,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09721E00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 297,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.5458
+        },
+        "p2_log_wall_unix_seconds": 1793065567.545,
+        "delta_ms": -0.8
+      },
+      {
+        "p2_interrupt": {
+          "index": 60,
+          "timestamp": "2026-10-27 04:46:07.580",
+          "generation": 1,
+          "batch_rptr": 730,
+          "batch_wptr": 733,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x0972DE80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 300,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.580179
+        },
+        "p2_log_wall_unix_seconds": 1793065567.58,
+        "delta_ms": -0.179
+      },
+      {
+        "p2_interrupt": {
+          "index": 61,
+          "timestamp": "2026-10-27 04:46:07.617",
+          "generation": 1,
+          "batch_rptr": 736,
+          "batch_wptr": 739,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09739F00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 303,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.616955
+        },
+        "p2_log_wall_unix_seconds": 1793065567.617,
+        "delta_ms": 0.045
+      },
+      {
+        "p2_interrupt": {
+          "index": 62,
+          "timestamp": "2026-10-27 04:46:07.648",
+          "generation": 1,
+          "batch_rptr": 742,
+          "batch_wptr": 745,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x095D0000",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 306,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.647845
+        },
+        "p2_log_wall_unix_seconds": 1793065567.648,
+        "delta_ms": 0.155
+      },
+      {
+        "p2_interrupt": {
+          "index": 63,
+          "timestamp": "2026-10-27 04:46:07.682",
+          "generation": 1,
+          "batch_rptr": 748,
+          "batch_wptr": 751,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x095DC0C0",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 309,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.682238
+        },
+        "p2_log_wall_unix_seconds": 1793065567.682,
+        "delta_ms": -0.238
+      },
+      {
+        "p2_interrupt": {
+          "index": 64,
+          "timestamp": "2026-10-27 04:46:07.718",
+          "generation": 1,
+          "batch_rptr": 754,
+          "batch_wptr": 757,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x095E8180",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 312,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.718117
+        },
+        "p2_log_wall_unix_seconds": 1793065567.718,
+        "delta_ms": -0.117
+      },
+      {
+        "p2_interrupt": {
+          "index": 65,
+          "timestamp": "2026-10-27 04:46:07.753",
+          "generation": 1,
+          "batch_rptr": 760,
+          "batch_wptr": 763,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x095F4240",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 315,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.752849
+        },
+        "p2_log_wall_unix_seconds": 1793065567.753,
+        "delta_ms": 0.151
+      },
+      {
+        "p2_interrupt": {
+          "index": 66,
+          "timestamp": "2026-10-27 04:46:07.787",
+          "generation": 1,
+          "batch_rptr": 766,
+          "batch_wptr": 769,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09600300",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 318,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.787119
+        },
+        "p2_log_wall_unix_seconds": 1793065567.787,
+        "delta_ms": -0.119
+      },
+      {
+        "p2_interrupt": {
+          "index": 67,
+          "timestamp": "2026-10-27 04:46:07.820",
+          "generation": 1,
+          "batch_rptr": 769,
+          "batch_wptr": 775,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 21,
+          "packet_source": "0x0960C380",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 321,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.819556
+        },
+        "p2_log_wall_unix_seconds": 1793065567.82,
+        "delta_ms": 0.444
+      },
+      {
+        "p2_interrupt": {
+          "index": 68,
+          "timestamp": "2026-10-27 04:46:07.857",
+          "generation": 1,
+          "batch_rptr": 778,
+          "batch_wptr": 781,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09618400",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 324,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.856685
+        },
+        "p2_log_wall_unix_seconds": 1793065567.857,
+        "delta_ms": 0.315
+      },
+      {
+        "p2_interrupt": {
+          "index": 69,
+          "timestamp": "2026-10-27 04:46:07.893",
+          "generation": 1,
+          "batch_rptr": 784,
+          "batch_wptr": 787,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09624480",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 327,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.89351
+        },
+        "p2_log_wall_unix_seconds": 1793065567.893,
+        "delta_ms": -0.51
+      },
+      {
+        "p2_interrupt": {
+          "index": 70,
+          "timestamp": "2026-10-27 04:46:07.930",
+          "generation": 1,
+          "batch_rptr": 787,
+          "batch_wptr": 793,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 21,
+          "packet_source": "0x09630500",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 331,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.930277
+        },
+        "p2_log_wall_unix_seconds": 1793065567.93,
+        "delta_ms": -0.277
+      },
+      {
+        "p2_interrupt": {
+          "index": 71,
+          "timestamp": "2026-10-27 04:46:07.966",
+          "generation": 1,
+          "batch_rptr": 796,
+          "batch_wptr": 799,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x0963C580",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 334,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065567.965837
+        },
+        "p2_log_wall_unix_seconds": 1793065567.966,
+        "delta_ms": 0.163
+      },
+      {
+        "p2_interrupt": {
+          "index": 72,
+          "timestamp": "2026-10-27 04:46:08.002",
+          "generation": 1,
+          "batch_rptr": 802,
+          "batch_wptr": 805,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09648600",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 337,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.002629
+        },
+        "p2_log_wall_unix_seconds": 1793065568.002,
+        "delta_ms": -0.629
+      },
+      {
+        "p2_interrupt": {
+          "index": 73,
+          "timestamp": "2026-10-27 04:46:08.036",
+          "generation": 1,
+          "batch_rptr": 808,
+          "batch_wptr": 811,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09654680",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 340,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.036365
+        },
+        "p2_log_wall_unix_seconds": 1793065568.036,
+        "delta_ms": -0.365
+      },
+      {
+        "p2_interrupt": {
+          "index": 74,
+          "timestamp": "2026-10-27 04:46:08.071",
+          "generation": 1,
+          "batch_rptr": 814,
+          "batch_wptr": 817,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09660700",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 343,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.071586
+        },
+        "p2_log_wall_unix_seconds": 1793065568.071,
+        "delta_ms": -0.586
+      },
+      {
+        "p2_interrupt": {
+          "index": 75,
+          "timestamp": "2026-10-27 04:46:08.115",
+          "generation": 1,
+          "batch_rptr": 820,
+          "batch_wptr": 823,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x0966C780",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 346,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.112202
+        },
+        "p2_log_wall_unix_seconds": 1793065568.115,
+        "delta_ms": 2.798
+      },
+      {
+        "p2_interrupt": {
+          "index": 76,
+          "timestamp": "2026-10-27 04:46:08.155",
+          "generation": 1,
+          "batch_rptr": 826,
+          "batch_wptr": 829,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09678800",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 350,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.151126
+        },
+        "p2_log_wall_unix_seconds": 1793065568.155,
+        "delta_ms": 3.874
+      },
+      {
+        "p2_interrupt": {
+          "index": 77,
+          "timestamp": "2026-10-27 04:46:08.194",
+          "generation": 1,
+          "batch_rptr": 829,
+          "batch_wptr": 835,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 21,
+          "packet_source": "0x09684880",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 353,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.194484
+        },
+        "p2_log_wall_unix_seconds": 1793065568.194,
+        "delta_ms": -0.484
+      },
+      {
+        "p2_interrupt": {
+          "index": 78,
+          "timestamp": "2026-10-27 04:46:08.234",
+          "generation": 1,
+          "batch_rptr": 838,
+          "batch_wptr": 841,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09690900",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 357,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.234598
+        },
+        "p2_log_wall_unix_seconds": 1793065568.234,
+        "delta_ms": -0.598
+      },
+      {
+        "p2_interrupt": {
+          "index": 79,
+          "timestamp": "2026-10-27 04:46:08.266",
+          "generation": 1,
+          "batch_rptr": 844,
+          "batch_wptr": 847,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x0969C980",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 360,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.266279
+        },
+        "p2_log_wall_unix_seconds": 1793065568.266,
+        "delta_ms": -0.279
+      },
+      {
+        "p2_interrupt": {
+          "index": 80,
+          "timestamp": "2026-10-27 04:46:08.301",
+          "generation": 1,
+          "batch_rptr": 850,
+          "batch_wptr": 853,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096A8A00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 363,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.301065
+        },
+        "p2_log_wall_unix_seconds": 1793065568.301,
+        "delta_ms": -0.065
+      },
+      {
+        "p2_interrupt": {
+          "index": 81,
+          "timestamp": "2026-10-27 04:46:08.340",
+          "generation": 1,
+          "batch_rptr": 856,
+          "batch_wptr": 859,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096B4A80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 366,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.340326
+        },
+        "p2_log_wall_unix_seconds": 1793065568.34,
+        "delta_ms": -0.326
+      },
+      {
+        "p2_interrupt": {
+          "index": 82,
+          "timestamp": "2026-10-27 04:46:08.376",
+          "generation": 1,
+          "batch_rptr": 862,
+          "batch_wptr": 865,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096C0B00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 369,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.376564
+        },
+        "p2_log_wall_unix_seconds": 1793065568.376,
+        "delta_ms": -0.564
+      },
+      {
+        "p2_interrupt": {
+          "index": 83,
+          "timestamp": "2026-10-27 04:46:08.412",
+          "generation": 1,
+          "batch_rptr": 868,
+          "batch_wptr": 871,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096CCB80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 373,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.412274
+        },
+        "p2_log_wall_unix_seconds": 1793065568.412,
+        "delta_ms": -0.274
+      },
+      {
+        "p2_interrupt": {
+          "index": 84,
+          "timestamp": "2026-10-27 04:46:08.447",
+          "generation": 1,
+          "batch_rptr": 874,
+          "batch_wptr": 877,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096D8C00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 376,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.447421
+        },
+        "p2_log_wall_unix_seconds": 1793065568.447,
+        "delta_ms": -0.421
+      },
+      {
+        "p2_interrupt": {
+          "index": 85,
+          "timestamp": "2026-10-27 04:46:08.480",
+          "generation": 1,
+          "batch_rptr": 877,
+          "batch_wptr": 883,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 21,
+          "packet_source": "0x096E4C80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 379,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.480714
+        },
+        "p2_log_wall_unix_seconds": 1793065568.48,
+        "delta_ms": -0.714
+      },
+      {
+        "p2_interrupt": {
+          "index": 86,
+          "timestamp": "2026-10-27 04:46:08.516",
+          "generation": 1,
+          "batch_rptr": 883,
+          "batch_wptr": 889,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 21,
+          "packet_source": "0x096F0D00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 382,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.516231
+        },
+        "p2_log_wall_unix_seconds": 1793065568.516,
+        "delta_ms": -0.231
+      },
+      {
+        "p2_interrupt": {
+          "index": 87,
+          "timestamp": "2026-10-27 04:46:08.555",
+          "generation": 1,
+          "batch_rptr": 892,
+          "batch_wptr": 895,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096FCD80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 385,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.554527
+        },
+        "p2_log_wall_unix_seconds": 1793065568.555,
+        "delta_ms": 0.473
+      },
+      {
+        "p2_interrupt": {
+          "index": 88,
+          "timestamp": "2026-10-27 04:46:08.593",
+          "generation": 1,
+          "batch_rptr": 898,
+          "batch_wptr": 901,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09708E00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 388,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.593328
+        },
+        "p2_log_wall_unix_seconds": 1793065568.593,
+        "delta_ms": -0.328
+      },
+      {
+        "p2_interrupt": {
+          "index": 89,
+          "timestamp": "2026-10-27 04:46:08.635",
+          "generation": 1,
+          "batch_rptr": 904,
+          "batch_wptr": 907,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09714E80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 392,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.635462
+        },
+        "p2_log_wall_unix_seconds": 1793065568.635,
+        "delta_ms": -0.462
+      },
+      {
+        "p2_interrupt": {
+          "index": 90,
+          "timestamp": "2026-10-27 04:46:08.677",
+          "generation": 1,
+          "batch_rptr": 910,
+          "batch_wptr": 913,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09720F00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 395,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.677152
+        },
+        "p2_log_wall_unix_seconds": 1793065568.677,
+        "delta_ms": -0.152
+      },
+      {
+        "p2_interrupt": {
+          "index": 91,
+          "timestamp": "2026-10-27 04:46:08.715",
+          "generation": 1,
+          "batch_rptr": 916,
+          "batch_wptr": 919,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x0972CF80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 399,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.715414
+        },
+        "p2_log_wall_unix_seconds": 1793065568.715,
+        "delta_ms": -0.414
+      },
+      {
+        "p2_interrupt": {
+          "index": 92,
+          "timestamp": "2026-10-27 04:46:08.748",
+          "generation": 1,
+          "batch_rptr": 922,
+          "batch_wptr": 925,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09739000",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 402,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.748609
+        },
+        "p2_log_wall_unix_seconds": 1793065568.748,
+        "delta_ms": -0.609
+      },
+      {
+        "p2_interrupt": {
+          "index": 93,
+          "timestamp": "2026-10-27 04:46:08.783",
+          "generation": 1,
+          "batch_rptr": 928,
+          "batch_wptr": 931,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x095D0000",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 405,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.783424
+        },
+        "p2_log_wall_unix_seconds": 1793065568.783,
+        "delta_ms": -0.424
+      },
+      {
+        "p2_interrupt": {
+          "index": 94,
+          "timestamp": "2026-10-27 04:46:08.819",
+          "generation": 1,
+          "batch_rptr": 934,
+          "batch_wptr": 937,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x095DC080",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 408,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.818658
+        },
+        "p2_log_wall_unix_seconds": 1793065568.819,
+        "delta_ms": 0.342
+      },
+      {
+        "p2_interrupt": {
+          "index": 95,
+          "timestamp": "2026-10-27 04:46:08.856",
+          "generation": 1,
+          "batch_rptr": 940,
+          "batch_wptr": 943,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x095E8100",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 411,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.856288
+        },
+        "p2_log_wall_unix_seconds": 1793065568.856,
+        "delta_ms": -0.288
+      },
+      {
+        "p2_interrupt": {
+          "index": 96,
+          "timestamp": "2026-10-27 04:46:08.891",
+          "generation": 1,
+          "batch_rptr": 946,
+          "batch_wptr": 949,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x095F4180",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 414,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.890796
+        },
+        "p2_log_wall_unix_seconds": 1793065568.891,
+        "delta_ms": 0.204
+      },
+      {
+        "p2_interrupt": {
+          "index": 97,
+          "timestamp": "2026-10-27 04:46:08.927",
+          "generation": 1,
+          "batch_rptr": 952,
+          "batch_wptr": 955,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09600200",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 417,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.927228
+        },
+        "p2_log_wall_unix_seconds": 1793065568.927,
+        "delta_ms": -0.228
+      },
+      {
+        "p2_interrupt": {
+          "index": 98,
+          "timestamp": "2026-10-27 04:46:08.967",
+          "generation": 1,
+          "batch_rptr": 958,
+          "batch_wptr": 961,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x0960C280",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 421,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065568.967124
+        },
+        "p2_log_wall_unix_seconds": 1793065568.967,
+        "delta_ms": -0.124
+      },
+      {
+        "p2_interrupt": {
+          "index": 99,
+          "timestamp": "2026-10-27 04:46:09.002",
+          "generation": 1,
+          "batch_rptr": 964,
+          "batch_wptr": 967,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09618300",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 424,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.001837
+        },
+        "p2_log_wall_unix_seconds": 1793065569.002,
+        "delta_ms": 0.163
+      },
+      {
+        "p2_interrupt": {
+          "index": 100,
+          "timestamp": "2026-10-27 04:46:09.036",
+          "generation": 1,
+          "batch_rptr": 970,
+          "batch_wptr": 973,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09624380",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 427,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.036321
+        },
+        "p2_log_wall_unix_seconds": 1793065569.036,
+        "delta_ms": -0.321
+      },
+      {
+        "p2_interrupt": {
+          "index": 101,
+          "timestamp": "2026-10-27 04:46:09.073",
+          "generation": 1,
+          "batch_rptr": 976,
+          "batch_wptr": 979,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09630400",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 430,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.073024
+        },
+        "p2_log_wall_unix_seconds": 1793065569.073,
+        "delta_ms": -0.024
+      },
+      {
+        "p2_interrupt": {
+          "index": 102,
+          "timestamp": "2026-10-27 04:46:09.112",
+          "generation": 1,
+          "batch_rptr": 982,
+          "batch_wptr": 985,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x0963C480",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 433,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.110814
+        },
+        "p2_log_wall_unix_seconds": 1793065569.112,
+        "delta_ms": 1.186
+      },
+      {
+        "p2_interrupt": {
+          "index": 103,
+          "timestamp": "2026-10-27 04:46:09.154",
+          "generation": 1,
+          "batch_rptr": 988,
+          "batch_wptr": 991,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09648500",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 437,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.152973
+        },
+        "p2_log_wall_unix_seconds": 1793065569.154,
+        "delta_ms": 1.027
+      },
+      {
+        "p2_interrupt": {
+          "index": 104,
+          "timestamp": "2026-10-27 04:46:09.191",
+          "generation": 1,
+          "batch_rptr": 994,
+          "batch_wptr": 997,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09654580",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 440,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.190376
+        },
+        "p2_log_wall_unix_seconds": 1793065569.191,
+        "delta_ms": 0.624
+      },
+      {
+        "p2_interrupt": {
+          "index": 105,
+          "timestamp": "2026-10-27 04:46:09.234",
+          "generation": 1,
+          "batch_rptr": 1000,
+          "batch_wptr": 1003,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09660600",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 444,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.233738
+        },
+        "p2_log_wall_unix_seconds": 1793065569.234,
+        "delta_ms": 0.262
+      },
+      {
+        "p2_interrupt": {
+          "index": 106,
+          "timestamp": "2026-10-27 04:46:09.271",
+          "generation": 1,
+          "batch_rptr": 1006,
+          "batch_wptr": 1009,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x0966C680",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 447,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.271353
+        },
+        "p2_log_wall_unix_seconds": 1793065569.271,
+        "delta_ms": -0.353
+      },
+      {
+        "p2_interrupt": {
+          "index": 107,
+          "timestamp": "2026-10-27 04:46:09.311",
+          "generation": 1,
+          "batch_rptr": 1012,
+          "batch_wptr": 1015,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09678700",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 450,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.311507
+        },
+        "p2_log_wall_unix_seconds": 1793065569.311,
+        "delta_ms": -0.507
+      },
+      {
+        "p2_interrupt": {
+          "index": 108,
+          "timestamp": "2026-10-27 04:46:09.348",
+          "generation": 1,
+          "batch_rptr": 1018,
+          "batch_wptr": 1021,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09684780",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 454,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.348576
+        },
+        "p2_log_wall_unix_seconds": 1793065569.348,
+        "delta_ms": -0.576
+      },
+      {
+        "p2_interrupt": {
+          "index": 109,
+          "timestamp": "2026-10-27 04:46:09.381",
+          "generation": 1,
+          "batch_rptr": 1024,
+          "batch_wptr": 1027,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09690800",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 457,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.381107
+        },
+        "p2_log_wall_unix_seconds": 1793065569.381,
+        "delta_ms": -0.107
+      },
+      {
+        "p2_interrupt": {
+          "index": 110,
+          "timestamp": "2026-10-27 04:46:09.419",
+          "generation": 1,
+          "batch_rptr": 1027,
+          "batch_wptr": 1033,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 21,
+          "packet_source": "0x0969C880",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 460,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.418988
+        },
+        "p2_log_wall_unix_seconds": 1793065569.419,
+        "delta_ms": 0.012
+      },
+      {
+        "p2_interrupt": {
+          "index": 111,
+          "timestamp": "2026-10-27 04:46:09.451",
+          "generation": 1,
+          "batch_rptr": 1036,
+          "batch_wptr": 1039,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096A8900",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 463,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.451501
+        },
+        "p2_log_wall_unix_seconds": 1793065569.451,
+        "delta_ms": -0.501
+      },
+      {
+        "p2_interrupt": {
+          "index": 112,
+          "timestamp": "2026-10-27 04:46:09.488",
+          "generation": 1,
+          "batch_rptr": 1042,
+          "batch_wptr": 1045,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096B4980",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 466,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.487701
+        },
+        "p2_log_wall_unix_seconds": 1793065569.488,
+        "delta_ms": 0.299
+      },
+      {
+        "p2_interrupt": {
+          "index": 113,
+          "timestamp": "2026-10-27 04:46:09.526",
+          "generation": 1,
+          "batch_rptr": 1048,
+          "batch_wptr": 1051,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096C0A00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 469,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.525614
+        },
+        "p2_log_wall_unix_seconds": 1793065569.526,
+        "delta_ms": 0.386
+      },
+      {
+        "p2_interrupt": {
+          "index": 114,
+          "timestamp": "2026-10-27 04:46:09.566",
+          "generation": 1,
+          "batch_rptr": 1054,
+          "batch_wptr": 1057,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096CCA80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 473,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.565739
+        },
+        "p2_log_wall_unix_seconds": 1793065569.566,
+        "delta_ms": 0.261
+      },
+      {
+        "p2_interrupt": {
+          "index": 115,
+          "timestamp": "2026-10-27 04:46:09.602",
+          "generation": 1,
+          "batch_rptr": 1060,
+          "batch_wptr": 1063,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096D8B00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 476,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.601729
+        },
+        "p2_log_wall_unix_seconds": 1793065569.602,
+        "delta_ms": 0.271
+      },
+      {
+        "p2_interrupt": {
+          "index": 116,
+          "timestamp": "2026-10-27 04:46:09.639",
+          "generation": 1,
+          "batch_rptr": 1066,
+          "batch_wptr": 1069,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096E4B80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 479,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.639479
+        },
+        "p2_log_wall_unix_seconds": 1793065569.639,
+        "delta_ms": -0.479
+      },
+      {
+        "p2_interrupt": {
+          "index": 117,
+          "timestamp": "2026-10-27 04:46:09.675",
+          "generation": 1,
+          "batch_rptr": 1072,
+          "batch_wptr": 1075,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096F0C00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 482,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.675308
+        },
+        "p2_log_wall_unix_seconds": 1793065569.675,
+        "delta_ms": -0.308
+      },
+      {
+        "p2_interrupt": {
+          "index": 118,
+          "timestamp": "2026-10-27 04:46:09.713",
+          "generation": 1,
+          "batch_rptr": 1078,
+          "batch_wptr": 1081,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x096FCC80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 486,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.712947
+        },
+        "p2_log_wall_unix_seconds": 1793065569.713,
+        "delta_ms": 0.053
+      },
+      {
+        "p2_interrupt": {
+          "index": 119,
+          "timestamp": "2026-10-27 04:46:09.748",
+          "generation": 1,
+          "batch_rptr": 1084,
+          "batch_wptr": 1087,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09708D00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 489,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.748315
+        },
+        "p2_log_wall_unix_seconds": 1793065569.748,
+        "delta_ms": -0.315
+      },
+      {
+        "p2_interrupt": {
+          "index": 120,
+          "timestamp": "2026-10-27 04:46:09.780",
+          "generation": 1,
+          "batch_rptr": 1090,
+          "batch_wptr": 1093,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09714D80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 492,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.780355
+        },
+        "p2_log_wall_unix_seconds": 1793065569.78,
+        "delta_ms": -0.355
+      },
+      {
+        "p2_interrupt": {
+          "index": 121,
+          "timestamp": "2026-10-27 04:46:09.817",
+          "generation": 1,
+          "batch_rptr": 1096,
+          "batch_wptr": 1099,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09720E00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 495,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.817234
+        },
+        "p2_log_wall_unix_seconds": 1793065569.817,
+        "delta_ms": -0.234
+      },
+      {
+        "p2_interrupt": {
+          "index": 122,
+          "timestamp": "2026-10-27 04:46:09.857",
+          "generation": 1,
+          "batch_rptr": 1102,
+          "batch_wptr": 1105,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x0972CE80",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 498,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.857681
+        },
+        "p2_log_wall_unix_seconds": 1793065569.857,
+        "delta_ms": -0.681
+      },
+      {
+        "p2_interrupt": {
+          "index": 123,
+          "timestamp": "2026-10-27 04:46:09.896",
+          "generation": 1,
+          "batch_rptr": 1108,
+          "batch_wptr": 1111,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x09738F00",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 502,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.895934
+        },
+        "p2_log_wall_unix_seconds": 1793065569.896,
+        "delta_ms": 0.066
+      },
+      {
+        "p2_interrupt": {
+          "index": 124,
+          "timestamp": "2026-10-27 04:46:09.935",
+          "generation": 1,
+          "batch_rptr": 1114,
+          "batch_wptr": 1117,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x095D0000",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 505,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.935461
+        },
+        "p2_log_wall_unix_seconds": 1793065569.935,
+        "delta_ms": -0.461
+      },
+      {
+        "p2_interrupt": {
+          "index": 125,
+          "timestamp": "2026-10-27 04:46:09.975",
+          "generation": 1,
+          "batch_rptr": 1120,
+          "batch_wptr": 1123,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x095DC080",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 508,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065569.975349
+        },
+        "p2_log_wall_unix_seconds": 1793065569.975,
+        "delta_ms": -0.349
+      },
+      {
+        "p2_interrupt": {
+          "index": 126,
+          "timestamp": "2026-10-27 04:46:10.014",
+          "generation": 1,
+          "batch_rptr": 1126,
+          "batch_wptr": 1129,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x095E8100",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 512,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065570.014472
+        },
+        "p2_log_wall_unix_seconds": 1793065570.014,
+        "delta_ms": -0.472
+      },
+      {
+        "p2_interrupt": {
+          "index": 127,
+          "timestamp": "2026-10-27 04:46:10.059",
+          "generation": 1,
+          "batch_rptr": 1132,
+          "batch_wptr": 1135,
+          "ring_guest": "0x09752580",
+          "packet_ordinal": 17,
+          "packet_source": "0x095F4180",
+          "packet_byte_offset": 204,
+          "cpu_mask": 4,
+          "dispatched_cpu_mask": 4
+        },
+        "p1_callback": {
+          "sequence": 515,
+          "source": "0x1",
+          "function": "0x823a4758",
+          "argument": "0x8",
+          "wall_unix_seconds": 1793065570.058969
+        },
+        "p2_log_wall_unix_seconds": 1793065570.059,
+        "delta_ms": 0.031
+      }
+    ]
+  },
+  "worker_queue_followthrough": {
+    "retail_source_1_callbacks_to_823B8C60": 823,
+    "guest_queue_enqueues": 823,
+    "guest_worker_executions": 823,
+    "KeSetEvent_queue_publications": 823,
+    "callback_target_and_argument": "0x823B8C60(0xC9600280)",
+    "claim_limit": "Counts prove enqueue/dequeue correspondence only; they do not prove menu visibility or race readiness."
+  },
+  "worker_count_followup": {
+    "capture_duration_seconds": 100,
+    "guest_memory_modified_by_probe": false,
+    "controller_input_sent": false,
+    "field": "manager+11012 (same address as worker+64 in sub_823B85D0)",
+    "initial_value": 0,
+    "transitions": [
+      {
+        "wall_unix_seconds": 1793066197.117849,
+        "elapsed_seconds": 82.93,
+        "old": 0,
+        "new": 1
+      },
+      {
+        "wall_unix_seconds": 1793066197.133779,
+        "elapsed_seconds": 82.946,
+        "old": 1,
+        "new": 0
+      },
+      {
+        "wall_unix_seconds": 1793066197.150514,
+        "elapsed_seconds": 82.963,
+        "old": 0,
+        "new": 4294967295
+      }
+    ],
+    "callback_target_changed_at_irq_sequence": 1075,
+    "callback_target": "0x823B8C60",
+    "callback_argument": "0xC9720F00",
+    "first_negative_after": {
+      "guest_irq_callbacks": 1078,
+      "queue_enqueues": 4,
+      "worker_executions": 4
+    },
+    "first_negative_writer": "0x823B85D0",
+    "writer_generated_source": "generated/default/nfs_shift_recomp.139.cpp:5008",
+    "stack": [
+      "sub_823B85D0",
+      "sub_823B87B0",
+      "sub_823B8AC8",
+      "sub_82706AE0"
+    ],
+    "interpretation": "Observed unsigned 0 to 0xFFFFFFFF wrap through the retail worker path. Whether a negative count is an error or an intended queue/waiter state is unresolved; no semantic patch was made."
+  },
+  "captures": {
+    "crosswalk_gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-ring-irq-crosswalk-20261027/gdb.log",
+      "sha256": "cdbeafd8607709ca9f098ef43698d8194f92195f8f6e0ccd27ecbf91b6eb6519"
+    },
+    "crosswalk_gdb_script_sha256": "f20edf44cc47f697dddf9f26b735074382c81192da5ab082d8302804cffba47e",
+    "p2_logs": [
+      {
+        "path_outside_git": "/tmp/nfs-shift-p1-ring-irq-crosswalk-20261027/bin/logs/nfs_shift_001.1.log",
+        "sha256": "4dceba920eafe06269dbab077e096b7316fce520f0ed41d1207b3420911c8b44"
+      },
+      {
+        "path_outside_git": "/tmp/nfs-shift-p1-ring-irq-crosswalk-20261027/bin/logs/nfs_shift_001.log",
+        "sha256": "fde96adc8e1f9693f3b5809cb73d92e3cf3a9b798d03e6fb63853537a6336f92"
+      }
+    ],
+    "counter_gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-worker-count-underflow-followup-20261027/gdb.log",
+      "sha256": "af17cd257186624700cadb1ff054920470c354e00a453ac4758549244f351795"
+    },
+    "counter_gdb_script": {
+      "path": "tools/xbox360/trace_linux_irq_worker_count_wrap_20261027.gdb",
+      "sha256": "150b864c15e31645045058e6185971cead2e81449827c7447a0fceade0e07a81"
+    },
+    "counter_p2_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-ring-irq-crosswalk-20261027/bin/logs/nfs_shift_003.log",
+      "sha256": "f236b60fe2dc44a686f68d6e4eb9dae67d7dde554d638d40622320de833efc1a"
+    }
+  },
+  "interpretation": {
+    "finding": "The first 128 Process 2 PM4_INTERRUPT records each coincide with one retail source-1 callback; all carry CPU mask 0x04 and dispatch CPU 2. Later, the registered retail callback switches to 0x823B8C60 and its worker queue drains every observed queued item.",
+    "not_proven": [
+      "A visible main menu.",
+      "An offline race or complete Linux port.",
+      "That manager+11012 wrapping to 0xFFFFFFFF is a defect.",
+      "That submission, interrupt, or worker counts prove rendered gameplay."
+    ],
+    "next_step": "Trace the consumer predicate and its readers around the callback-target switch; classify the signed count semantics before considering any scheduler change."
+  }
+}
