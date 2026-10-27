@@ -365,6 +365,12 @@ bool validate_captured_operation_stream(
                     << operation.packet_index;
             return fail(message.str(), error);
         }
+        if (operation.type == CapturedVulkanOperation::Type::UnresolvedCopy) {
+            std::ostringstream message;
+            message << "captured operation stream contains unresolved Copy/Convert packet "
+                    << operation.packet_index;
+            return fail(message.str(), error);
+        }
         if (operation.type == CapturedVulkanOperation::Type::CopyConvert) {
             if (operation.source_width == 0 || operation.source_height == 0 ||
                 operation.copy_state.destination_base == 0 ||
@@ -373,6 +379,18 @@ bool validate_captured_operation_stream(
                 std::ostringstream message;
                 message << "captured Copy/Convert packet " << operation.packet_index
                         << " has incomplete source or destination extent";
+                return fail(message.str(), error);
+            }
+            const bool has_pixel_shader =
+                !operation.copy.pixel_shader_spirv.empty() ||
+                !operation.copy.single_sample_pixel_shader_spirv.empty() ||
+                !operation.copy.gamma_pixel_shader_spirv.empty() ||
+                !operation.copy.gamma_single_sample_pixel_shader_spirv.empty();
+            if (!operation.copy_shaders_ready ||
+                operation.copy.vertex_shader_spirv.empty() || !has_pixel_shader) {
+                std::ostringstream message;
+                message << "captured Copy/Convert packet " << operation.packet_index
+                        << " has no prepared Vulkan shader payload";
                 return fail(message.str(), error);
             }
             continue;
@@ -1104,12 +1122,22 @@ VkFormat captured_color_format(CapturedColorTargetFormat format,
     return VK_FORMAT_UNDEFINED;
 }
 
+VkFormat captured_copy_destination_format(uint32_t format) {
+    switch (format) {
+        case 6: return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+        case 26: return VK_FORMAT_R16G16B16A16_UINT;
+        case 31: return VK_FORMAT_R16G16_SFLOAT;
+        default: return VK_FORMAT_UNDEFINED;
+    }
+}
+
 uint32_t color_format_bytes(VkFormat format) {
     switch (format) {
         case VK_FORMAT_R8G8B8A8_UNORM:
         case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
         case VK_FORMAT_R16G16_SFLOAT:
             return 4;
+        case VK_FORMAT_R16G16B16A16_UINT:
         case VK_FORMAT_R16G16B16A16_UNORM:
         case VK_FORMAT_R16G16B16A16_SFLOAT:
             return 8;
@@ -3058,10 +3086,16 @@ std::string describe_captured_vulkan_operations(
                         << ",clear=" << operation.copy_state.color_clear_enable
                         << '/' << operation.copy_state.depth_clear_enable
                         << ",swap_rb="
-                        << operation.copy_state.destination_swap_red_blue << ')';
+                        << operation.copy_state.destination_swap_red_blue
+                        << ",shaders="
+                        << (operation.copy_shaders_ready ? "prepared" : "missing")
+                        << ')';
                 break;
             case CapturedVulkanOperation::Type::UnresolvedDraw:
                 message << "unresolved(packet=" << operation.packet_index << ')';
+                break;
+            case CapturedVulkanOperation::Type::UnresolvedCopy:
+                message << "unresolved-copy(packet=" << operation.packet_index << ')';
                 break;
         }
     }
@@ -3282,24 +3316,63 @@ bool submit_captured_vulkan_frame(
             return draw.raster.sample_count != samples;
         });
     const bool single_sample_copy = !mixed_sample_counts && samples == 1;
-    if (copy &&
-        ((!mixed_sample_counts && samples != 1 && samples != 4) ||
-         copy->state.source_select != 0 ||
-         copy->state.sample_select != 0 ||
-         copy->state.command != CapturedCopyCommand::Convert ||
-         copy->state.destination_pitch != output_width ||
-         copy->state.destination_height != output_height ||
-         copy->state.destination_format != 6 ||
-         !copy->state.destination_swap_red_blue ||
-         copy->vertex_shader_spirv.empty() ||
-         (single_sample_copy ? copy->single_sample_pixel_shader_spirv.empty()
-                             : copy->pixel_shader_spirv.empty()) ||
-         (copy->source_gamma &&
-          (single_sample_copy
-               ? copy->gamma_single_sample_pixel_shader_spirv.empty()
-               : copy->gamma_pixel_shader_spirv.empty())))) {
-        return fail("captured Copy/Convert is outside the source-0 sample-0 RGBA8 subset",
-                    error);
+    const VkFormat copy_destination_format = copy
+        ? captured_copy_destination_format(copy->state.destination_format)
+        : VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    if (copy) {
+        const CapturedCopyState& state = copy->state;
+        const bool common_valid =
+            (mixed_sample_counts || samples == 1 || samples == 4) &&
+            state.source_select == 0 &&
+            state.command == CapturedCopyCommand::Convert &&
+            state.destination_pitch == output_width &&
+            state.destination_height == output_height &&
+            copy_destination_format != VK_FORMAT_UNDEFINED &&
+            !copy->vertex_shader_spirv.empty();
+        const bool rgba8_valid = state.destination_format == 6 &&
+            state.sample_select == 0 && state.destination_swap_red_blue &&
+            (single_sample_copy
+                 ? !copy->single_sample_pixel_shader_spirv.empty()
+                 : !copy->pixel_shader_spirv.empty()) &&
+            (!copy->source_gamma ||
+             (single_sample_copy
+                  ? !copy->gamma_single_sample_pixel_shader_spirv.empty()
+                  : !copy->gamma_pixel_shader_spirv.empty()));
+        const bool all_sample_u16_valid = state.destination_format == 26 &&
+            !mixed_sample_counts && samples == 4 && state.sample_select == 6 &&
+            state.destination_number_format == 2 &&
+            state.destination_endian == 1 && state.destination_exp_bias == 11 &&
+            state.color_clear_enable && state.depth_clear_enable &&
+            !state.destination_swap_red_blue && !copy->source_gamma &&
+            !copy->pixel_shader_spirv.empty();
+        const bool sample0_rg16f_valid = state.destination_format == 31 &&
+            !mixed_sample_counts && (samples == 1 || samples == 4) &&
+            state.sample_select == 0 && state.destination_number_format == 7 &&
+            state.destination_endian == 2 && state.destination_exp_bias == 0 &&
+            state.color_clear_enable && !state.depth_clear_enable &&
+            !state.destination_swap_red_blue && !copy->source_gamma &&
+            (single_sample_copy
+                 ? !copy->single_sample_pixel_shader_spirv.empty()
+                 : !copy->pixel_shader_spirv.empty());
+        if (!common_valid ||
+            !(rgba8_valid || all_sample_u16_valid || sample0_rg16f_valid)) {
+            return fail("captured Copy/Convert is outside the implemented format-6, format-26, and format-31 Vulkan subsets",
+                        error);
+        }
+        if (state.destination_format != 6) {
+            VkFormatProperties destination_properties{};
+            vkGetPhysicalDeviceFormatProperties(
+                physical_device, copy_destination_format,
+                &destination_properties);
+            constexpr VkFormatFeatureFlags required_features =
+                VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT |
+                VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+            if ((destination_properties.optimalTilingFeatures &
+                 required_features) != required_features) {
+                return fail("captured intermediate Copy/Convert destination format is not color-attachable and sampleable on this Vulkan device",
+                            error);
+            }
+        }
     }
     if (linear_rgba8_intermediate) {
         VkFormatProperties format_properties{};
@@ -3319,6 +3392,10 @@ bool submit_captured_vulkan_frame(
     if (mixed_sample_counts) {
         if (!copy) {
             return fail("mixed captured sample counts require a captured Copy/Convert target",
+                        error);
+        }
+        if (copy->state.destination_format != 6) {
+            return fail("mixed sample-count Copy/Convert currently supports only format 6",
                         error);
         }
         const bool submitted = submit_mixed_sample_copy_frame(
@@ -3478,11 +3555,17 @@ bool submit_captured_vulkan_frame(
     VkDeviceSize output_readback_size = 0;
     if (output_readback) {
         const uint64_t pixel_count = static_cast<uint64_t>(output_width) * output_height;
-        if (pixel_count > std::numeric_limits<size_t>::max() / sizeof(uint32_t) ||
-            pixel_count > std::numeric_limits<VkDeviceSize>::max() / sizeof(uint32_t)) {
+        const uint32_t output_bytes_per_pixel = color_format_bytes(
+            copy ? copy_destination_format : VK_FORMAT_A2B10G10R10_UNORM_PACK32);
+        if (!output_bytes_per_pixel ||
+            pixel_count > std::numeric_limits<size_t>::max() /
+                              output_bytes_per_pixel ||
+            pixel_count > std::numeric_limits<VkDeviceSize>::max() /
+                              output_bytes_per_pixel) {
             return fail("captured output extent is too large for Vulkan readback", error);
         }
-        output_readback_size = static_cast<VkDeviceSize>(pixel_count * sizeof(uint32_t));
+        output_readback_size = static_cast<VkDeviceSize>(
+            pixel_count * output_bytes_per_pixel);
         if (!create_buffer(memory_properties, device, output_readback_size,
                            VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr,
                            &resources.output_readback, error)) {
@@ -3582,7 +3665,7 @@ bool submit_captured_vulkan_frame(
 
     if (copy) {
         VkAttachmentDescription copy_attachment{};
-        copy_attachment.format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+        copy_attachment.format = copy_destination_format;
         copy_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
         copy_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         copy_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -4099,8 +4182,8 @@ bool submit_captured_vulkan_frame(
                 return vk_fail("vkInvalidateMappedMemoryRanges(output readback)", result, error);
             }
         }
-        const size_t pixel_count = static_cast<size_t>(output_width) * output_height;
-        output_readback->resize(pixel_count);
+        output_readback->resize(static_cast<size_t>(
+            output_readback_size / sizeof(uint32_t)));
         std::memcpy(output_readback->data(), mapped,
                     static_cast<size_t>(output_readback_size));
         vkUnmapMemory(device, resources.output_readback.memory);

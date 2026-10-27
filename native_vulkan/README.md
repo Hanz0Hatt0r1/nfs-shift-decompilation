@@ -412,6 +412,28 @@ phone remained on the legal disclaimer, so this change establishes no video
 or retail-frame parity. Full capture and test details are in
 [`process2_xenos_edram_sample_mapping_20261027.json`](../evidence/process2_xenos_edram_sample_mapping_20261027.json).
 
+## Intermediate Copy/Convert output primitives (2026-10-27)
+
+The renderer now has narrowly gated Vulkan fragment paths for the captured
+format-26 all-four-sample conversion to `R16G16B16A16_UINT` and format-31
+sample-zero copy to `R16G16_SFLOAT`. Format 31 is exercised with both 1x and
+4x source images. The Vulkan smoke supplies a full-screen synthetic source and
+checks exact destination texel values; it does not use this result as retail
+parity evidence. The new shaders compile for `vulkan1.1` and pass
+`spirv-val --target-env vulkan1.1`. Host renderer CTest passed 4/4 with
+`VK_LAYER_KHRONOS_validation` on NVIDIA GeForce GTX 950.
+
+These paths render to a caller-owned Vulkan image. They do not apply guest
+destination endianness as bytes in guest memory, perform the Copy/Convert
+color/depth-clear side effects, cache the result by guest GPU address/layout,
+or preserve aliased EDRAM across target changes. The plugin still does not
+execute the captured 14-draw operation stream. PM4 capture now retains each
+Copy/Convert packet's own compiled shaders and raw source registers, and the
+renderer rejects a copy packet without a prepared payload. This prepares the
+operation boundary but does not submit its intermediate image. See
+[`process2_copy_convert_primitives_20261027.json`](../evidence/process2_copy_convert_primitives_20261027.json)
+for the exact tested tuple and limits.
+
 ## Retail conditional-jump rejection detail (2026-10-27)
 
 The Redmi capture also rejects shader translation at draw #14 for a conditional

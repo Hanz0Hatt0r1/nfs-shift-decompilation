@@ -1,0 +1,47 @@
+{
+  "schema": "shift.process2.copy_convert_primitives.v1",
+  "date": "2026-10-27",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "retail_capture": "process2_redmi_transition_copy_chain_20261026.json",
+  "implemented_subset": {
+    "format_26": {
+      "source_samples": 4,
+      "sample_select": 6,
+      "destination_vk_format": "VK_FORMAT_R16G16B16A16_UINT",
+      "destination_number_format": 2,
+      "destination_endian": 1,
+      "destination_exp_bias": 11,
+      "conversion": "average four sampled source values, multiply by 2^11, clamp and round to unsigned 16-bit lanes"
+    },
+    "format_31": {
+      "source_sample_counts_tested": [
+        1,
+        4
+      ],
+      "sample_select": 0,
+      "destination_vk_format": "VK_FORMAT_R16G16_SFLOAT",
+      "destination_number_format": 7,
+      "destination_endian": 2,
+      "destination_exp_bias": 0
+    }
+  },
+  "verification": {
+    "host_renderer_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation",
+    "vulkan_device": "NVIDIA GeForce GTX 950",
+    "format_26_synthetic_texel": "input (0.5, 0.25, 0.125, 1.0) produced unsigned lanes (1024, 512, 256, 2048)",
+    "format_31_synthetic_texel": "input (0.5, 0.25) produced half-float lanes with bit patterns (0x3800, 0x3400), for both 1x and 4x source images",
+    "spirv_validation": "all three Copy/Convert fragment shaders and the constant test shader passed spirv-val --target-env vulkan1.1",
+    "linux_plugin_translation_unit": "Clang object compilation passed in the isolated plugin build tree",
+    "android_arm64_objects": "NDK r28c compiled the plugin and Vulkan renderer translation units in an isolated build directory; the plugin DSO was not linked or installed"
+  },
+  "operation_capture": "Each PM4 Copy/Convert operation now retains its own compiled shader payload and source register snapshot. Unsupported compilation is recorded as unresolved and rejected by renderer preflight. The payload is not yet submitted in operation order.",
+  "not_implemented": [
+    "The live plugin captures and prepares format-26/format-31 operation shader payloads, but the renderer does not submit them as ordered intermediate copies.",
+    "The renderer does not record the 14-draw operation stream in PM4 order.",
+    "No guest-address/layout cache receives these destination images, and no guest-memory writeback occurs.",
+    "The color/depth clear side effects, aliased EDRAM persistence, and depth/stencil preservation are not implemented.",
+    "Destination endian modes have not been validated against guest-memory texture fetches.",
+    "No Android package with these changes was installed, and the phone game was not restarted."
+  ],
+  "limits": "The readback comes from a deterministic synthetic Vulkan source, not a retail game frame. This verifies fragment output formats and arithmetic only; it does not establish that the captured retail operations produce correct guest-visible resources or advance the game transition."
+}

@@ -129,6 +129,42 @@ if(GLSLANG_VALIDATOR)
     VERBATIM
   )
   add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_4x_u16x4.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_4x_u16x4.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_4x_u16x4.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_4x_u16x4.frag
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_rg16f_ms.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0_rg16f_ms.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_rg16f_ms.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0_rg16f_ms.frag
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_rg16f_single.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0_rg16f_single.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_rg16f_single.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0_rg16f_single.frag
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/copy_constant.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/copy_constant.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/copy_constant.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/copy_constant.frag
+    VERBATIM
+  )
+  add_custom_command(
     OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_black.frag.spv
     COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
     COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
@@ -216,6 +252,10 @@ if(GLSLANG_VALIDATOR)
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.vert.spv
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_single.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_4x_u16x4.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_rg16f_ms.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_rg16f_single.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/copy_constant.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_black.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_encoded.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_linear.frag.spv
@@ -251,6 +291,10 @@ if(GLSLANG_VALIDATOR)
             ${CMAKE_CURRENT_SOURCE_DIR}/../evidence/process2_disclaimer_frame907_draw5059_vertices_20261026.bin
             ${CMAKE_CURRENT_SOURCE_DIR}/../evidence/process2_disclaimer_frame907_draw5060_vertices_20261026.bin
             ${CMAKE_CURRENT_SOURCE_DIR}/../evidence/process2_disclaimer_frame907_draw5061_vertices_20261026.bin
+            ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_4x_u16x4.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_rg16f_ms.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0_rg16f_single.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/copy_constant.frag.spv
   )
   set_tests_properties(xbox_live_vulkan_renderer_check PROPERTIES SKIP_RETURN_CODE 77)
 

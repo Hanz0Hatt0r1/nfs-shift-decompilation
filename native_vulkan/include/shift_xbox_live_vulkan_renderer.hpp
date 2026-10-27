@@ -76,6 +76,7 @@ struct CapturedVulkanOperation {
         Draw,
         CopyConvert,
         UnresolvedDraw,
+        UnresolvedCopy,
     };
 
     Type type = Type::Draw;
@@ -92,6 +93,10 @@ struct CapturedVulkanOperation {
     uint32_t source_color_info = 0;
     uint32_t source_depth_info = 0;
     uint32_t source_mode_control = 0;
+    // Copy/Convert packets carry their own compiled shaders so an executor can
+    // replay the PM4 stream without borrowing the final presenter copy.
+    bool copy_shaders_ready = false;
+    CapturedVulkanCopy copy{};
 };
 
 std::string describe_captured_vulkan_operations(

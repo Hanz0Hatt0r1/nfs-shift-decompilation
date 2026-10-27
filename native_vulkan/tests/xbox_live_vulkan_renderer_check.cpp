@@ -87,6 +87,70 @@ uint32_t find_memory_type(
     return fallback;
 }
 
+struct TestColorImage {
+    VkImage image = VK_NULL_HANDLE;
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    VkImageView view = VK_NULL_HANDLE;
+};
+
+bool create_test_color_image(
+    VkDevice device,
+    const VkPhysicalDeviceMemoryProperties& memory_properties,
+    VkFormat format,
+    uint32_t width,
+    uint32_t height,
+    TestColorImage* output) {
+    if (!output || !width || !height) return false;
+    *output = {};
+    VkImageCreateInfo image_info{};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.format = format;
+    image_info.extent = {width, height, 1};
+    image_info.mipLevels = 1;
+    image_info.arrayLayers = 1;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                       VK_IMAGE_USAGE_SAMPLED_BIT |
+                       VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    if (vkCreateImage(device, &image_info, nullptr, &output->image) != VK_SUCCESS) {
+        return false;
+    }
+    VkMemoryRequirements requirements{};
+    vkGetImageMemoryRequirements(device, output->image, &requirements);
+    const uint32_t memory_type = find_memory_type(
+        memory_properties, requirements.memoryTypeBits, 0,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (memory_type == UINT32_MAX) return false;
+    VkMemoryAllocateInfo allocation{};
+    allocation.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocation.allocationSize = requirements.size;
+    allocation.memoryTypeIndex = memory_type;
+    if (vkAllocateMemory(device, &allocation, nullptr, &output->memory) != VK_SUCCESS ||
+        vkBindImageMemory(device, output->image, output->memory, 0) != VK_SUCCESS) {
+        return false;
+    }
+    VkImageViewCreateInfo view_info{};
+    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view_info.image = output->image;
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.format = format;
+    view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    view_info.subresourceRange.levelCount = 1;
+    view_info.subresourceRange.layerCount = 1;
+    return vkCreateImageView(device, &view_info, nullptr, &output->view) == VK_SUCCESS;
+}
+
+void destroy_test_color_image(VkDevice device, TestColorImage* image) {
+    if (!image) return;
+    if (image->view) vkDestroyImageView(device, image->view, nullptr);
+    if (image->image) vkDestroyImage(device, image->image, nullptr);
+    if (image->memory) vkFreeMemory(device, image->memory, nullptr);
+    *image = {};
+}
+
 bool read_spirv(const char* path, std::vector<uint32_t>* output) {
     std::ifstream file(path, std::ios::binary);
     if (!file) return false;
@@ -109,7 +173,8 @@ bool read_bytes(const char* path, std::vector<uint8_t>* output) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 14 && argc != 23) {
+    const bool has_copy_destination_shaders = argc == 18 || argc == 27;
+    if (argc != 14 && argc != 18 && argc != 23 && argc != 27) {
         std::cerr << "usage: xbox_live_vulkan_renderer_check vertex.spv fragment.spv "
                      "geometry.spv copy-vertex.spv copy-fragment.spv "
                      "copy-single-fragment.spv window-vertex.spv window-fragment.spv "
@@ -329,12 +394,30 @@ int main(int argc, char** argv) {
     std::vector<uint32_t> disclaimer_vertex_spirv;
     std::vector<uint32_t> disclaimer_encoded_fragment_spirv;
     std::vector<uint32_t> disclaimer_linear_fragment_spirv;
-    if (argc == 23 &&
+    if ((argc == 23 || argc == 27) &&
         (!read_spirv(argv[14], &disclaimer_vertex_spirv) ||
          !read_spirv(argv[15], &disclaimer_encoded_fragment_spirv) ||
          !read_spirv(argv[16], &disclaimer_linear_fragment_spirv))) {
         std::cerr << "could not read captured disclaimer Vulkan 1.1 shaders\n";
         return 1;
+    }
+    std::vector<uint32_t> copy_4x_u16x4_spirv;
+    std::vector<uint32_t> copy_sample0_rg16f_ms_spirv;
+    std::vector<uint32_t> copy_sample0_rg16f_single_spirv;
+    std::vector<uint32_t> copy_constant_fragment_spirv;
+    if (has_copy_destination_shaders) {
+        const int first_copy_destination_shader = argc == 27 ? 23 : 14;
+        if (!read_spirv(argv[first_copy_destination_shader],
+                        &copy_4x_u16x4_spirv) ||
+            !read_spirv(argv[first_copy_destination_shader + 1],
+                        &copy_sample0_rg16f_ms_spirv) ||
+            !read_spirv(argv[first_copy_destination_shader + 2],
+                        &copy_sample0_rg16f_single_spirv) ||
+            !read_spirv(argv[first_copy_destination_shader + 3],
+                        &copy_constant_fragment_spirv)) {
+            std::cerr << "could not read Vulkan 1.1 intermediate Copy/Convert shaders\n";
+            return 1;
+        }
     }
     std::vector<uint32_t> window_vertex_spirv;
     std::vector<uint32_t> window_fragment_spirv;
@@ -428,6 +511,170 @@ int main(int argc, char** argv) {
         &texture_cache);
     if (!submitted) {
       std::cerr << "captured Vulkan draw submission failed: " << error << '\n';
+      return 1;
+    }
+
+    // These are synthetic Copy/Convert primitive checks. They exercise the
+    // destination attachment formats and the captured sample-select modes;
+    // they are not evidence that the retail transition packet is complete.
+    auto format26_source = draw;
+    format26_source.raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgb10A2Float;
+    format26_source.raster.guest_color_format = 12;
+    format26_source.vertex_shader_spirv = copy.vertex_shader_spirv;
+    format26_source.pixel_shader_spirv = copy_constant_fragment_spirv;
+    format26_source.topology = shift::xbox::PrimitiveTopology::TriangleList;
+    format26_source.index_count = 3;
+    format26_source.auto_index = true;
+    format26_source.vertex_stride_bytes = 0;
+    format26_source.vertices.clear();
+    format26_source.vertex_input_attributes.clear();
+    format26_source.raster.depth_test_enabled = false;
+    format26_source.raster.depth_write_enabled = false;
+    format26_source.raster.stencil_test_enabled = false;
+    format26_source.raster.depth_control = 0;
+    std::vector<shift::xbox::CapturedVulkanDraw> format26_source_draws{
+        format26_source};
+    auto format31_source = draw;
+    format31_source.raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgb10A2Float;
+    format31_source.raster.guest_color_format = 12;
+    format31_source.raster.sample_count = 1;
+    format31_source.vertex_shader_spirv = copy.vertex_shader_spirv;
+    format31_source.pixel_shader_spirv = copy_constant_fragment_spirv;
+    format31_source.topology = shift::xbox::PrimitiveTopology::TriangleList;
+    format31_source.index_count = 3;
+    format31_source.auto_index = true;
+    format31_source.vertex_stride_bytes = 0;
+    format31_source.vertices.clear();
+    format31_source.vertex_input_attributes.clear();
+    format31_source.raster.depth_test_enabled = false;
+    format31_source.raster.depth_write_enabled = false;
+    format31_source.raster.stencil_test_enabled = false;
+    format31_source.raster.depth_control = 0;
+    std::vector<shift::xbox::CapturedVulkanDraw> format31_source_draws{
+        format31_source};
+    auto format31_ms_source = format31_source;
+    format31_ms_source.raster.sample_count = 4;
+    std::vector<shift::xbox::CapturedVulkanDraw> format31_ms_source_draws{
+        format31_ms_source};
+    const auto exercise_intermediate_copy = [&](uint32_t destination_format,
+                                                VkFormat vk_format,
+                                                uint32_t destination_width,
+                                                uint32_t destination_height,
+                                                const std::vector<
+                                                    shift::xbox::CapturedVulkanDraw>&
+                                                    source_draws,
+                                                const std::vector<uint32_t>&
+                                                    multisample_shader,
+                                                const std::vector<uint32_t>&
+                                                    single_sample_shader) {
+      VkFormatProperties format_properties{};
+      vkGetPhysicalDeviceFormatProperties(physical_device, vk_format,
+                                          &format_properties);
+      constexpr VkFormatFeatureFlags required_features =
+          VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT |
+          VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+          VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
+      if ((format_properties.optimalTilingFeatures & required_features) !=
+          required_features) {
+        std::cerr << "SKIP intermediate Copy/Convert format "
+                  << destination_format << ": Vulkan device lacks required format features\n";
+        return true;
+      }
+      TestColorImage target{};
+      if (!create_test_color_image(device, memory_properties,
+                                   vk_format, destination_width,
+                                   destination_height, &target)) {
+        destroy_test_color_image(device, &target);
+        error = "could not create synthetic intermediate Copy/Convert target";
+        return false;
+      }
+      auto intermediate_copy = copy;
+      intermediate_copy.state.destination_format = destination_format;
+      intermediate_copy.state.destination_pitch = destination_width;
+      intermediate_copy.state.destination_height = destination_height;
+      intermediate_copy.state.destination_swap_red_blue = false;
+      intermediate_copy.state.source_gamma = false;
+      intermediate_copy.state.destination_base = 0x0CC87000u;
+      intermediate_copy.state.destination_number_format =
+          destination_format == 26 ? 2u : 7u;
+      intermediate_copy.state.destination_endian =
+          destination_format == 26 ? 1u : 2u;
+      intermediate_copy.state.destination_exp_bias =
+          destination_format == 26 ? 11 : 0;
+      intermediate_copy.state.sample_select = destination_format == 26 ? 6u : 0u;
+      intermediate_copy.state.color_clear_enable = true;
+      intermediate_copy.state.depth_clear_enable = destination_format == 26;
+      intermediate_copy.source_width = source_draws.front().raster.width;
+      intermediate_copy.source_height = source_draws.front().raster.height;
+      intermediate_copy.pixel_shader_spirv = multisample_shader;
+      intermediate_copy.single_sample_pixel_shader_spirv = single_sample_shader;
+      std::vector<uint32_t> converted;
+      const bool converted_ok = shift::xbox::submit_captured_vulkan_frame(
+          physical_device, device, queue, queue_family, target.image, target.view,
+          false, destination_width, destination_height, source_draws, &error,
+          &converted, false, &intermediate_copy);
+      bool payload_ok = converted_ok && !converted.empty();
+      if (payload_ok && destination_format == 26) {
+        const auto* components =
+            reinterpret_cast<const uint16_t*>(converted.data());
+        const size_t component_count = converted.size() * 2;
+        payload_ok = component_count ==
+                     static_cast<size_t>(destination_width) *
+                         destination_height * 4;
+        for (size_t i = 0; payload_ok && i < component_count; i += 4) {
+          payload_ok = components[i] == 1024 &&
+                       components[i + 1] == 512 &&
+                       components[i + 2] == 256 &&
+                       components[i + 3] == 2048;
+        }
+      } else if (payload_ok) {
+        payload_ok = converted.size() ==
+                         static_cast<size_t>(destination_width) *
+                             destination_height &&
+                     std::all_of(converted.begin(), converted.end(),
+                                 [](uint32_t texel) {
+                                   return texel == 0x34003800u;
+                                 });
+      }
+      destroy_test_color_image(device, &target);
+      if (!payload_ok) {
+        if (converted_ok) {
+          std::ostringstream detail;
+          detail << "format " << destination_format
+                 << " readback size " << converted.size()
+                 << " had an unexpected extent or empty payload";
+          if (destination_format == 26 && !converted.empty()) {
+            const auto* components =
+                reinterpret_cast<const uint16_t*>(converted.data());
+            const size_t component_count = converted.size() * 2;
+            uint16_t max_alpha = 0;
+            for (size_t i = 3; i < component_count; i += 4) {
+              max_alpha = std::max(max_alpha, components[i]);
+            }
+            detail << ", max alpha=" << max_alpha;
+          }
+          error = detail.str();
+        }
+        return false;
+      }
+      return true;
+    };
+    if (has_copy_destination_shaders &&
+        (!exercise_intermediate_copy(
+             26, VK_FORMAT_R16G16B16A16_UINT, 1280, 720,
+             format26_source_draws, copy_4x_u16x4_spirv, {}) ||
+         !exercise_intermediate_copy(
+             31, VK_FORMAT_R16G16_SFLOAT, 256, 243,
+             format31_source_draws, copy_sample0_rg16f_ms_spirv,
+             copy_sample0_rg16f_single_spirv) ||
+         !exercise_intermediate_copy(
+             31, VK_FORMAT_R16G16_SFLOAT, 256, 243,
+             format31_ms_source_draws, copy_sample0_rg16f_ms_spirv,
+             copy_sample0_rg16f_single_spirv))) {
+      std::cerr << "synthetic intermediate Copy/Convert primitive failed: "
+                << error << '\n';
       return 1;
     }
     const size_t cached_sampler_count = texture_cache.cached_sampler_count();
@@ -587,6 +834,13 @@ int main(int argc, char** argv) {
         copy_operation.copy_state.destination_number_format = 7;
         copy_operation.copy_state.destination_endian = 2;
         copy_operation.copy_state.color_clear_enable = true;
+        copy_operation.copy = copy;
+        copy_operation.copy.state = copy_operation.copy_state;
+        copy_operation.copy.pixel_shader_spirv =
+            copy_sample0_rg16f_ms_spirv;
+        copy_operation.copy.single_sample_pixel_shader_spirv =
+            copy_sample0_rg16f_single_spirv;
+        copy_operation.copy_shaders_ready = true;
         ordered_operations.push_back(copy_operation);
       }
       shift::xbox::CapturedVulkanOperation draw_operation{};
@@ -603,11 +857,27 @@ int main(int argc, char** argv) {
             &copy, false, {}, VK_NULL_HANDLE, nullptr, nullptr, nullptr,
             &ordered_operations) ||
         ordered_operations_error.find(
-            "ordered operations=draw(packet=100,index=0);copy(packet=101,source=1280x720,source_regs=0x14020500/0xc0000/0x400/0x6,destination=0xcc87000,256x243,format=31/7,endian=2,exp_bias=0,samples=0,clear=1/0,swap_rb=0);draw(packet=102,index=1)") ==
+            "ordered operations=draw(packet=100,index=0);copy(packet=101,source=1280x720,source_regs=0x14020500/0xc0000/0x400/0x6,destination=0xcc87000,256x243,format=31/7,endian=2,exp_bias=0,samples=0,clear=1/0,swap_rb=0,shaders=prepared);draw(packet=102,index=1)") ==
             std::string::npos) {
       std::cerr << "ordered draw/copy operations were lost from the target-layout "
                    "diagnostic: "
                 << ordered_operations_error << '\n';
+      return 1;
+    }
+    auto unprepared_copy_operations = ordered_operations;
+    unprepared_copy_operations[1].copy_shaders_ready = false;
+    std::string unprepared_copy_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, changed_extent_draws,
+            &unprepared_copy_error, nullptr, enabled_features.geometryShader,
+            &copy, false, {}, VK_NULL_HANDLE, nullptr, nullptr, nullptr,
+            &unprepared_copy_operations) ||
+        unprepared_copy_error.find(
+            "Copy/Convert packet 101 has no prepared Vulkan shader payload") ==
+            std::string::npos) {
+      std::cerr << "Copy/Convert without its operation-local shaders was accepted: "
+                << unprepared_copy_error << '\n';
       return 1;
     }
     auto reordered_operations = ordered_operations;
@@ -673,6 +943,23 @@ int main(int argc, char** argv) {
             std::string::npos) {
       std::cerr << "unresolved captured draw was accepted: "
                 << unresolved_draw_error << '\n';
+      return 1;
+    }
+    auto unresolved_copy_operations = ordered_operations;
+    unresolved_copy_operations[1].type =
+        shift::xbox::CapturedVulkanOperation::Type::UnresolvedCopy;
+    std::string unresolved_copy_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, changed_extent_draws,
+            &unresolved_copy_error, nullptr, enabled_features.geometryShader,
+            &copy, false, {}, VK_NULL_HANDLE, nullptr, nullptr, nullptr,
+            &unresolved_copy_operations) ||
+        unresolved_copy_error.find(
+            "captured operation stream contains unresolved Copy/Convert packet 101") ==
+            std::string::npos) {
+      std::cerr << "unresolved captured Copy/Convert was accepted: "
+                << unresolved_copy_error << '\n';
       return 1;
     }
     auto oversized_target_draws = changed_extent_draws;
@@ -1639,7 +1926,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (argc == 23) {
+    if (argc == 23 || argc == 27) {
         std::vector<uint8_t> disclaimer_texture_source;
         std::vector<uint8_t> disclaimer_texture;
         std::vector<uint8_t> expected_disclaimer_texture;
@@ -1919,7 +2206,8 @@ int main(int argc, char** argv) {
               << (anisotropy_sampler_path_ran ? " and 4:1 anisotropy sampler"
                                              : " with anisotropy fallback")
               << " with R16G16_SFLOAT target and captured sample-zero "
-                 "Copy/Convert passed on "
+                 "Copy/Convert plus synthetic format-26 all-sample and "
+                 "format-31 sample-zero conversions passed on "
               << device_properties.deviceName
               << (use_validation ? " with validation enabled\n" : "\n");
     return 0;

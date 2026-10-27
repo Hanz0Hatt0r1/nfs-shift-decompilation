@@ -201,6 +201,33 @@ const std::string kCopyResolveSingleSamplePixelShader =
     "  color = floor(clamp(color, 0.0, 1.0) * 255.0 + 0.5) / 255.0;\n"
     "  shift_color0 = color;\n"
     "}\n";
+const std::string kCopyResolveAllSamplesU16x4PixelShader =
+    "#version 450\n"
+    "layout(set=0,binding=15) uniform PixelConstants { vec4 c[256]; } pc;\n"
+    "layout(set=1,binding=0) uniform sampler2DMS source_image;\n"
+    "layout(location=0) out uvec4 shift_color0;\n"
+    "void main() {\n"
+    "  ivec2 p=ivec2(gl_FragCoord.xy*pc.c[0].xy);\n"
+    "  vec4 average=(texelFetch(source_image,p,0)+"
+    "texelFetch(source_image,p,1)+texelFetch(source_image,p,2)+"
+    "texelFetch(source_image,p,3))*0.25;\n"
+    "  vec4 scaled=clamp(average*2048.0,vec4(0.0),vec4(65535.0));\n"
+    "  shift_color0=uvec4(floor(scaled+0.5));\n"
+    "}\n";
+const std::string kCopyResolveSample0Rg16fPixelShader =
+    "#version 450\n"
+    "layout(set=0,binding=15) uniform PixelConstants { vec4 c[256]; } pc;\n"
+    "layout(set=1,binding=0) uniform sampler2DMS source_image;\n"
+    "layout(location=0) out vec4 shift_color0;\n"
+    "void main() { ivec2 p=ivec2(gl_FragCoord.xy*pc.c[0].xy); "
+    "shift_color0=texelFetch(source_image,p,0); }\n";
+const std::string kCopyResolveSample0Rg16fSingleSamplePixelShader =
+    "#version 450\n"
+    "layout(set=0,binding=15) uniform PixelConstants { vec4 c[256]; } pc;\n"
+    "layout(set=1,binding=0) uniform sampler2D source_image;\n"
+    "layout(location=0) out vec4 shift_color0;\n"
+    "void main() { ivec2 p=ivec2(gl_FragCoord.xy*pc.c[0].xy); "
+    "shift_color0=texelFetch(source_image,p,0); }\n";
 std::string copy_resolve_gamma_pixel_shader(bool multisampled) {
   std::ostringstream source;
   source << "#version 450\n"
@@ -356,24 +383,47 @@ bool CompileVulkanShader(
 bool CompileCapturedCopyResolveShaders(
     shift::xbox::CapturedVulkanCopy* copy,
     std::string* error) {
-  return copy &&
-         CompileVulkanShader("copy-resolve-vertex", EShLangVertex,
-                             kCopyResolveVertexShader,
-                             &copy->vertex_shader_spirv, error) &&
-         CompileVulkanShader("copy-resolve-pixel", EShLangFragment,
-                             kCopyResolvePixelShader,
-                             &copy->pixel_shader_spirv, error) &&
-         CompileVulkanShader("copy-resolve-single-sample-pixel", EShLangFragment,
-                             kCopyResolveSingleSamplePixelShader,
-                             &copy->single_sample_pixel_shader_spirv, error) &&
-         CompileVulkanShader("copy-resolve-gamma-pixel", EShLangFragment,
-                             copy_resolve_gamma_pixel_shader(true),
-                             &copy->gamma_pixel_shader_spirv, error) &&
-         CompileVulkanShader("copy-resolve-gamma-single-sample-pixel",
-                             EShLangFragment,
-                             copy_resolve_gamma_pixel_shader(false),
-                             &copy->gamma_single_sample_pixel_shader_spirv,
-                             error);
+  if (!copy ||
+      !CompileVulkanShader("copy-resolve-vertex", EShLangVertex,
+                           kCopyResolveVertexShader,
+                           &copy->vertex_shader_spirv, error)) {
+    return false;
+  }
+  switch (copy->state.destination_format) {
+    case 6:
+      return CompileVulkanShader("copy-resolve-pixel", EShLangFragment,
+                                 kCopyResolvePixelShader,
+                                 &copy->pixel_shader_spirv, error) &&
+             CompileVulkanShader("copy-resolve-single-sample-pixel",
+                                 EShLangFragment,
+                                 kCopyResolveSingleSamplePixelShader,
+                                 &copy->single_sample_pixel_shader_spirv, error) &&
+             CompileVulkanShader("copy-resolve-gamma-pixel", EShLangFragment,
+                                 copy_resolve_gamma_pixel_shader(true),
+                                 &copy->gamma_pixel_shader_spirv, error) &&
+             CompileVulkanShader("copy-resolve-gamma-single-sample-pixel",
+                                 EShLangFragment,
+                                 copy_resolve_gamma_pixel_shader(false),
+                                 &copy->gamma_single_sample_pixel_shader_spirv,
+                                 error);
+    case 26:
+      return CompileVulkanShader(
+          "copy-resolve-all-samples-u16x4-pixel", EShLangFragment,
+          kCopyResolveAllSamplesU16x4PixelShader,
+          &copy->pixel_shader_spirv, error);
+    case 31:
+      return CompileVulkanShader(
+                 "copy-resolve-sample0-rg16f-pixel", EShLangFragment,
+                 kCopyResolveSample0Rg16fPixelShader,
+                 &copy->pixel_shader_spirv, error) &&
+             CompileVulkanShader(
+                 "copy-resolve-sample0-rg16f-single-pixel", EShLangFragment,
+                 kCopyResolveSample0Rg16fSingleSamplePixelShader,
+                 &copy->single_sample_pixel_shader_spirv, error);
+    default:
+      if (error) *error = "unsupported captured Copy/Convert destination format";
+      return false;
+  }
 }
 
 class R8ScratchPayloadReleaseGuard {
@@ -2596,6 +2646,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     if (intermediate_copy) {
                       ++recognized_intermediate_copies;
                     }
+                    shift::xbox::CapturedVulkanCopy prepared_copy{};
+                    prepared_copy.state = copy_state;
+                    prepared_copy.source_width = captured_target_width;
+                    prepared_copy.source_height = captured_target_height;
+                    prepared_copy.source_gamma = copy_state.source_gamma;
                     shift::xbox::CapturedVulkanOperation operation{};
                     operation.type =
                         shift::xbox::CapturedVulkanOperation::Type::CopyConvert;
@@ -2607,27 +2662,39 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     operation.source_color_info = raster_registers.color_info;
                     operation.source_depth_info = raster_registers.depth_info;
                     operation.source_mode_control = raster_registers.mode_control;
-                    frame_operations.push_back(std::move(operation));
-                    if (intermediate_copy) continue;
-                    shift::xbox::CapturedVulkanCopy prepared_copy{};
-                    prepared_copy.state = copy_state;
-                    prepared_copy.source_width = captured_target_width;
-                    prepared_copy.source_height = captured_target_height;
-                    prepared_copy.source_gamma = copy_state.source_gamma;
-                    if (CompileCapturedCopyResolveShaders(&prepared_copy, &error)) {
-                        frame_copy = std::move(prepared_copy);
-                        frame_copy_ready = true;
-                      REXLOG_INFO(
-                          "shift-native: accepted captured source-0/sample-0 "
-                          "Copy/Convert destination {:08X} {}x{} format {} R/B swap {}",
-                          copy_state.destination_base, copy_state.destination_pitch,
-                          copy_state.destination_height, copy_state.destination_format,
-                          copy_state.destination_swap_red_blue);
-                    } else {
+                    if (!CompileCapturedCopyResolveShaders(&prepared_copy, &error)) {
+                      operation.type =
+                          shift::xbox::CapturedVulkanOperation::Type::UnresolvedCopy;
+                      frame_operations.push_back(std::move(operation));
                       frame_copy_ready = false;
-                      REXLOG_WARN("shift-native: could not compile captured Copy/Convert "
-                                  "resolve shaders: {}", error);
+                      REXLOG_WARN(
+                          "shift-native: could not prepare captured Copy/Convert "
+                          "packet #{} format {}: {}",
+                          draw_packet_index, copy_state.destination_format, error);
+                      continue;
                     }
+                    operation.copy = prepared_copy;
+                    operation.copy_shaders_ready = true;
+                    frame_operations.push_back(std::move(operation));
+                    if (intermediate_copy) {
+                      REXLOG_INFO(
+                          "shift-native: prepared ordered Copy/Convert packet #{} "
+                          "destination {:08X} {}x{} format {} sample-select {}",
+                          draw_packet_index, copy_state.destination_base,
+                          copy_state.destination_pitch,
+                          copy_state.destination_height,
+                          copy_state.destination_format,
+                          copy_state.sample_select);
+                      continue;
+                    }
+                    frame_copy = std::move(prepared_copy);
+                    frame_copy_ready = true;
+                    REXLOG_INFO(
+                        "shift-native: accepted captured source-0/sample-0 "
+                        "Copy/Convert destination {:08X} {}x{} format {} R/B swap {}",
+                        copy_state.destination_base, copy_state.destination_pitch,
+                        copy_state.destination_height, copy_state.destination_format,
+                        copy_state.destination_swap_red_blue);
                     continue;
                   } else if (error ==
                              "unsupported captured Xenos color Copy/Convert state") {
