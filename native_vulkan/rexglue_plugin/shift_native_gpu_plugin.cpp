@@ -1612,6 +1612,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   }
 
   bool WaitForGuestMemoryCoherency(std::string* error) {
+    if (!texture_cache_.has_in_flight_frames()) {
+      if (error) error->clear();
+      return true;
+    }
     bool completed = false;
     const auto drain = [this, &completed, error] {
       completed = texture_cache_.wait_for_guest_memory_coherency(error);

@@ -133,6 +133,9 @@ class CapturedVulkanTextureCache {
     // Waits for every submitted frame that may still read guest-uploaded data.
     // Guest memory is copied into renderer-owned upload buffers on each draw.
     bool wait_for_guest_memory_coherency(std::string* error);
+    // Safe to query off the Vulkan thread; false means a coherency drain can
+    // return without dispatching to the thread that owns the cache.
+    bool has_in_flight_frames() const noexcept;
     void clear();
     size_t size() const;
     size_t cached_pipeline_count() const;

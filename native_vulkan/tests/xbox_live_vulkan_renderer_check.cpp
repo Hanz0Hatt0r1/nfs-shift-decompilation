@@ -835,6 +835,10 @@ int main(int argc, char** argv) {
     }
 
     shift::xbox::CapturedVulkanTextureCache asynchronous_cache;
+    if (asynchronous_cache.has_in_flight_frames()) {
+      std::cerr << "new Vulkan texture cache unexpectedly has in-flight frames\n";
+      return 1;
+    }
     size_t reusable_draw_buffer_count = 0;
     for (uint32_t frame = 0; frame < 4; ++frame) {
       if (!shift::xbox::submit_captured_vulkan_frame(
@@ -844,6 +848,10 @@ int main(int argc, char** argv) {
               &asynchronous_cache)) {
         std::cerr << "asynchronous cached Vulkan frame " << frame
                   << " failed: " << error << '\n';
+        return 1;
+      }
+      if (!asynchronous_cache.has_in_flight_frames()) {
+        std::cerr << "asynchronous cached frame was not tracked as in flight\n";
         return 1;
       }
       const size_t draw_buffer_count =
@@ -865,6 +873,7 @@ int main(int argc, char** argv) {
         asynchronous_cache.cached_pipeline_count();
     const size_t coherent_texture_count = asynchronous_cache.size();
     if (!asynchronous_cache.wait_for_guest_memory_coherency(&error) ||
+        asynchronous_cache.has_in_flight_frames() ||
         asynchronous_cache.cached_pipeline_count() != coherent_pipeline_count ||
         asynchronous_cache.size() != coherent_texture_count) {
       std::cerr << "guest memory coherency drain failed or discarded reusable "

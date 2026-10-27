@@ -1,0 +1,84 @@
+{
+  "schema": "shift.process2.redmi_coherency_wait_coalescing.v1",
+  "captured_at_local": "2026-10-27 06:39:34 +03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "gpu": "ARM Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 6382,
+    "installed_last_update_time": "2026-10-27 03:51:13",
+    "screenshot_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+    "input_sent": false
+  },
+  "baseline_observation": {
+    "source": "app-private nfs_shift_033.log, read-only via run-as",
+    "log_local_copy": "/home/pes/work/process2-redmi-live-log-20261027.log",
+    "log_bytes": 189707,
+    "log_lines": 914,
+    "log_sha256": "dbb1f5f8eade45fa79e456b2760861fa6467858423ec0a21740a7c7585d97918",
+    "window_local": [
+      "2026-10-27 06:38:55.560",
+      "2026-10-27 06:39:08.668"
+    ],
+    "submitted_13_draw_batches": 22,
+    "submit_time_range_local": [
+      "2026-10-27 06:38:55.999",
+      "2026-10-27 06:39:08.422"
+    ],
+    "submission_rate_hz": 1.69,
+    "completed_coher_status_host_waits": 467,
+    "waits_per_submitted_batch": 21.23,
+    "logged_vulkan_refresh_or_submit_failures": 0,
+    "screen_changed": false,
+    "interpretation": "The running game repeatedly submits its 13-draw disclaimer frame. The log counts completed COHER_STATUS_HOST waits; it does not directly count UI-thread dispatches or establish the cause of the unchanged screen."
+  },
+  "change": {
+    "files": [
+      "native_vulkan/include/shift_xbox_live_vulkan_renderer.hpp",
+      "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
+      "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp"
+    ],
+    "behavior": "Track retained asynchronous Vulkan frames atomically. A COHER_STATUS_HOST drain returns immediately, without a UI-thread dispatch, only when the renderer cache has no in-flight frames; otherwise it still drains every retained frame.",
+    "expected_effect": "Avoid repeated synchronous UI-thread handoffs for dirty coherency writes after the renderer queue has already drained.",
+    "live_performance_measurement": false
+  },
+  "validation": {
+    "linux": {
+      "ctest": "4/4 passed",
+      "validation_layer": "VK_LAYER_KHRONOS_validation forced",
+      "renderer_device": "NVIDIA GeForce GTX 950",
+      "result": "captured disclaimer and offscreen Vulkan 1.1 renderer checks passed"
+    },
+    "android_arm64_plugin": {
+      "ndk": "r28c / 28.2.13676358",
+      "api": 26,
+      "plugin_sha256": "d6595c9929a7edf566fe920dea1c24ffa458279a1993b8fdac217f9212b68a88",
+      "plugin_build_id": "8f6f0387d37adffe6540452f29741ffc74e70a0c",
+      "result": "built successfully; one pre-existing asm operand-width warning in the SDK"
+    },
+    "android_mali_offscreen_check": {
+      "binary_sha256": "539b391f22a7b4230819880ddc1cea81277df992a6e7b5f3bc57691ec33f032f",
+      "binary_build_id": "962a4101da32e1204a8642ac15a049ed01af3b95",
+      "device": "Redmi Note 8 Pro / Mali-G76 MC4",
+      "result": "captured disclaimer strip and offscreen Vulkan 1.1 renderer/cache checks passed",
+      "validation_layer_enabled": false
+    }
+  },
+  "apk_update": {
+    "diagnostic_apk_sha256": "88a160c092c4eb11900abc92f2b8c26726c344ecc1ec882f763bfa46aacd6a90",
+    "install_result": "INSTALL_FAILED_INSUFFICIENT_STORAGE with 1.3 GiB free before install",
+    "game_apk_or_plugin_replaced": false,
+    "game_restarted": false,
+    "game_data_changed": false,
+    "process_and_screenshot_unchanged": true
+  },
+  "limits": [
+    "The running game still uses the pre-change plugin. The phone was not updated because Android rejected the APK for insufficient storage.",
+    "The offscreen Mali check exercises the renderer cache counter and wait path, but not the plugin's UI-thread dispatch on the live game.",
+    "No live speedup, disclaimer transition, new video frame, or retail parity is claimed."
+  ]
+}

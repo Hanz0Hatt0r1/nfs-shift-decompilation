@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cstring>
 #include <deque>
 #include <functional>
@@ -337,6 +338,7 @@ struct TextureCacheState {
   std::unordered_map<SamplerCacheKey, VkSampler, SamplerCacheKeyHash> samplers;
   size_t descriptor_layout_cache_hits = 0;
   std::deque<std::unique_ptr<FrameResources>> in_flight;
+  std::atomic<size_t> in_flight_frame_count{0};
 };
 
 bool fail(const char* message, std::string* error) {
@@ -699,9 +701,11 @@ bool retire_reusable_frames(TextureCacheState* cache, uint32_t upload_slot,
         if (status == VK_SUCCESS) {
             frame.submitted = false;
             it = cache->in_flight.erase(it);
+            cache->in_flight_frame_count.fetch_sub(1, std::memory_order_release);
         } else if (status == VK_NOT_READY && frame.upload_slot == upload_slot) {
             if (!wait_for_frame(frame, error)) return false;
             it = cache->in_flight.erase(it);
+            cache->in_flight_frame_count.fetch_sub(1, std::memory_order_release);
         } else if (status == VK_NOT_READY) {
             ++it;
         } else {
@@ -711,6 +715,7 @@ bool retire_reusable_frames(TextureCacheState* cache, uint32_t upload_slot,
     while (cache->in_flight.size() >= kFramesInFlight) {
         if (!wait_for_frame(*cache->in_flight.front(), error)) return false;
         cache->in_flight.pop_front();
+        cache->in_flight_frame_count.fetch_sub(1, std::memory_order_release);
     }
     return true;
 }
@@ -719,6 +724,7 @@ bool wait_for_all_frames(TextureCacheState* cache, std::string* error) {
     while (!cache->in_flight.empty()) {
         if (!wait_for_frame(*cache->in_flight.front(), error)) return false;
         cache->in_flight.pop_front();
+        cache->in_flight_frame_count.fetch_sub(1, std::memory_order_release);
     }
     return true;
 }
@@ -2927,6 +2933,7 @@ bool submit_mixed_sample_copy_frame(
         if (!wait_for_frame(resources, error)) return false;
     } else {
         texture_cache->in_flight.push_back(std::move(resources_owner));
+        texture_cache->in_flight_frame_count.fetch_add(1, std::memory_order_release);
     }
     collect_draw_visibility_queries(resources, draw_visibility);
     if (output_readback) {
@@ -3059,7 +3066,13 @@ void CapturedVulkanTextureCache::clear() {
 bool CapturedVulkanTextureCache::wait_for_guest_memory_coherency(
     std::string* error) {
     if (error) error->clear();
-    return !impl_ || wait_for_all_frames(&impl_->state, error);
+    return !impl_ || !has_in_flight_frames() ||
+           wait_for_all_frames(&impl_->state, error);
+}
+
+bool CapturedVulkanTextureCache::has_in_flight_frames() const noexcept {
+    return impl_ &&
+           impl_->state.in_flight_frame_count.load(std::memory_order_acquire) != 0;
 }
 
 size_t CapturedVulkanTextureCache::size() const {
@@ -4030,6 +4043,7 @@ bool submit_captured_vulkan_frame(
         if (!wait_for_frame(resources, error)) return false;
     } else {
         texture_cache_state->in_flight.push_back(std::move(resources_owner));
+        texture_cache_state->in_flight_frame_count.fetch_add(1, std::memory_order_release);
     }
     collect_draw_visibility_queries(resources, draw_visibility);
     if (output_readback) {

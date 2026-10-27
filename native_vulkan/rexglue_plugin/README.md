@@ -1720,3 +1720,23 @@ it does not prove that mapping or advance the game. The raw shader is absent,
 and the transition still has separate texture-descriptor, branch-predicate,
 and changing-target-layout failures. Build identities and exact evidence are
 in [`process2_retail_cond_exec_20261027.json`](../../evidence/process2_retail_cond_exec_20261027.json).
+
+## Vulkan coherency wait fast path (2026-10-27)
+
+The active Redmi log recorded 22 submissions of the same 13-draw disclaimer
+batch and 467 completed `COHER_STATUS_HOST` waits over 12.4 seconds (about 21
+wait completions per submitted batch). The renderer cache now exposes an
+atomic in-flight-frame count. The P2 ring worker skips the synchronous UI-thread
+handoff only when that count is zero; a nonempty queue still receives the full
+fence drain. This avoids empty repeated handoffs without changing queued Vulkan
+work or presenting synthetic output.
+
+Linux CTest passed 4/4 with the Khronos validation layer forced on the GTX 950.
+The Android ARM64 plugin compiled for API 26, and the renderer/cache regression
+passed on the Redmi Mali-G76 MC4. The installed APK remains unchanged: updating
+it failed with `INSTALL_FAILED_INSUFFICIENT_STORAGE` despite 1.3 GiB free, so
+the live process did not exercise the plugin fast path. The disclaimer screenshot
+and PID remained unchanged, and no input was sent. No live speedup or automatic
+transition is claimed. See
+[`process2_redmi_coherency_wait_coalescing_20261027.json`](../../evidence/process2_redmi_coherency_wait_coalescing_20261027.json)
+for hashes and limits.
