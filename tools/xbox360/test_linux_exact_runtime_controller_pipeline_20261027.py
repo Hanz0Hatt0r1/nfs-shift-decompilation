@@ -30,7 +30,7 @@ assert trace["execution_runner"]["sha256"] == (
     "bb282e4b157a16be839da66ef1539e9b1161d5b1e61a3b8fffcb6d44c8938a8f"
 )
 assert trace["reproduction_runner"]["sha256"] == (
-    "2410f47f2d14b6679ae640e00bcaf9413f77aac5c2c5d2e0aae7f496f08aea38"
+    "c10209424c95a3bde879b9f240dcfe6e766a1ef7309a898fa4583526fd55e675"
 )
 
 path = evidence["retail_input_path"]

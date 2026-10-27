@@ -1,0 +1,526 @@
+{
+  "schema": "shift.xbox360.linux-exact-runtime-post-bink-queue-event-contract.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "movie": {
+      "guest_object": "0xE6795040",
+      "asset": "Movies/Franchise_Ident.bik",
+      "frame_target": 281
+    }
+  },
+  "binaries": {
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "p1_runtime_sha256": "6c56ca970160d9e3e6e28155c48ee11556763f206f6a49b78fdad2ca3f02ebb2",
+    "p2_linux_plugin_sha256": "771201891a6ae28c0745f57beccf9c6474ce175c7bb3f5edadcce4c457a8a12b",
+    "input_files_sha256_verified": true,
+    "runtime_and_plugin_inferior_mapped_hashes_verified": true
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "duration_seconds": 40.739,
+    "guest_memory_modified_by_probe": false,
+    "termination": "GDB detached and sent SIGINT to the still-live title after the bounded input hold; clean title shutdown was not observed.",
+    "controller": {
+      "device": "Linux uinput Xbox 360 pad, VID:PID 045e:028e",
+      "pulses_sent": [
+        {
+          "at_seconds": 9.723,
+          "button": "Start",
+          "duration_ms": 3000
+        },
+        {
+          "at_seconds": 15.724,
+          "button": "A",
+          "duration_ms": 3000
+        },
+        {
+          "at_seconds": 21.723,
+          "button": "Start",
+          "duration_ms": 3000
+        }
+      ],
+      "all_pulses_preceded_bink_target": true,
+      "retail_action_consumption_traced": false
+    },
+    "gdb_trace": {
+      "path": "tools/xbox360/trace_linux_exact_runtime_post_bink_queue_event_contract_20261027.gdb",
+      "sha256": "e2f8a8a401835f337f006d10862c897bc90735a3a185b7dbf968a202332a624a",
+      "log_path_outside_git": "/tmp/nfs-shift-p1-queue-event-contract-enqueue-slots-clean-20261027/gdb.log",
+      "log_sha256": "b8c68bb067c870853bfc89dbe7180cd0be84567198c77260af792428dd827bbe"
+    },
+    "runner": {
+      "path": "tools/xbox360/capture_linux_exact_runtime_controller_pipeline_20261027.py",
+      "sha256": "c10209424c95a3bde879b9f240dcfe6e766a1ef7309a898fa4583526fd55e675",
+      "log_path_outside_git": "/tmp/nfs-shift-p1-queue-event-contract-enqueue-slots-clean-20261027/runner.log",
+      "log_sha256": "99a861c32079e6a6b7c960989fd6621390df7b50ab6c89e01f3243290c64a554"
+    }
+  },
+  "retail_queue": {
+    "bink_target_reached": {
+      "elapsed_seconds": 25.367,
+      "progress": 281,
+      "target": 281
+    },
+    "manager_guest_object": "0xB7365F00",
+    "manager_counter_offset": 11012,
+    "worker_guest_object": "0xB73689C4",
+    "worker_counter_offset": 64,
+    "counter_guest_address": "0xB7368A04",
+    "worker_and_manager_counter_alias_confirmed": true,
+    "producer": {
+      "function": "sub_823B31A0",
+      "entry_count": 772,
+      "entries_with_nonzero_counter_delta": 2,
+      "nonzero_delta_sample": {
+        "entry": 754,
+        "delta": 1,
+        "stream_guest_address": "0xB736934C",
+        "elapsed_seconds": 34.279,
+        "call_path": [
+          "sub_823B31A0",
+          "sub_823B8EE8"
+        ]
+      },
+      "nonzero_delta_samples": [
+        {
+          "entry": 754,
+          "delta": 1,
+          "stream_guest_address": "0xB736934C",
+          "elapsed_seconds": 34.279,
+          "call_path": [
+            "sub_823B31A0",
+            "sub_823B8EE8"
+          ]
+        },
+        {
+          "entry": 765,
+          "delta": 1,
+          "stream_guest_address": "0xB736934C",
+          "stream_head": "0xA96912F0",
+          "stream_tail": "0xA96912FC",
+          "elapsed_seconds": 34.338,
+          "call_path": [
+            "sub_823B31A0",
+            "sub_823B8EE8"
+          ]
+        }
+      ]
+    },
+    "worker": {
+      "loop_guest_objects_and_events": [
+        {
+          "queue": "0xB7368BE0",
+          "event": "0xB7368C00"
+        },
+        {
+          "queue": "0xB7368C30",
+          "event": "0xB7368C50"
+        }
+      ],
+      "ring_queue": {
+        "guest_object": "0xB7368BE0",
+        "producer_index_offset": 56,
+        "consumer_index_offset": 60,
+        "index_roles_static_crosscheck": "sub_823B87B0 compares +56 with +60, reads the four-slot ring at +60 modulo 4, then increments +60 when it dequeues a slot.",
+        "sampled_handler_entries": [
+          {
+            "hit": 1,
+            "producer": 1,
+            "consumer": 1,
+            "stream": "0xB7368A18",
+            "token": "0xC0000000",
+            "stream_words": [
+              "0xC0000000",
+              "0x00000000",
+              "0x00000000",
+              "0x00000000"
+            ],
+            "field72": "0xC9684914",
+            "counter": "0x00000001",
+            "ring_slots": [
+              "0x00000000",
+              "0x00000000",
+              "0xC0000102",
+              "0x7F000100"
+            ],
+            "parser24_28_32_36": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000",
+              "0x00000000"
+            ]
+          },
+          {
+            "hit": 2,
+            "producer": 2,
+            "consumer": 2,
+            "stream": "0xC9691278",
+            "token": "0xC0000000",
+            "stream_words": [
+              "0xC0000000",
+              "0x00000000",
+              "0x1001C400",
+              "0x22000000"
+            ],
+            "field72": "0x00000000",
+            "counter": "0x00000001",
+            "ring_slots": [
+              "0x00000000",
+              "0x00000000",
+              "0xC0000102",
+              "0x7F000100"
+            ],
+            "parser24_28_32_36": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000",
+              "0xB7368A18"
+            ]
+          },
+          {
+            "hit": 3,
+            "producer": 3,
+            "consumer": 2,
+            "stream": "0xC967E654",
+            "token": "0xC969D2EC",
+            "stream_words": [
+              "0xC969D2EC",
+              "0x3FBB18D9",
+              "0xFFFFFFFF",
+              "0x3D300000"
+            ],
+            "field72": "0x00000000",
+            "counter": "0x00000001",
+            "ring_slots": [
+              "0x00000000",
+              "0x00000000",
+              "0xC0000102",
+              "0x7F000100"
+            ],
+            "parser24_28_32_36": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000",
+              "0xB7368A18"
+            ]
+          },
+          {
+            "hit": 4,
+            "producer": 4,
+            "consumer": 2,
+            "stream": "0xC969D2F8",
+            "token": "0xC96912F0",
+            "stream_words": [
+              "0xC96912F0",
+              "0x00000000",
+              "0x00000000",
+              "0x00000000"
+            ],
+            "field72": "0x00000000",
+            "counter": "0x00000001",
+            "ring_slots": [
+              "0x00000000",
+              "0x00000000",
+              "0xC0000102",
+              "0x7F000100"
+            ],
+            "parser24_28_32_36": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000",
+              "0xB7368A18"
+            ]
+          },
+          {
+            "hit": 5,
+            "producer": 4,
+            "consumer": 2,
+            "stream": "0xC96912FC",
+            "token": "0xC0000000",
+            "stream_words": [
+              "0xC0000000",
+              "0x20002000",
+              "0x00054800",
+              "0x0969CE13"
+            ],
+            "field72": "0x00000000",
+            "counter": "0x00000001",
+            "ring_slots": [
+              "0x00000000",
+              "0x00000000",
+              "0xC0000102",
+              "0x7F000100"
+            ],
+            "parser24_28_32_36": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000",
+              "0xB7368A18"
+            ]
+          },
+          {
+            "hit": 6,
+            "producer": 4,
+            "consumer": 3,
+            "stream": "0xB7368A18",
+            "token": "0xC0000000",
+            "stream_words": [
+              "0xC0000000",
+              "0x00000000",
+              "0x00000000",
+              "0x00000000"
+            ],
+            "field72": "0xC9684914",
+            "counter": "0x00000000",
+            "ring_slots": [
+              "0x00000000",
+              "0x00000000",
+              "0xC0000102",
+              "0x7F000100"
+            ],
+            "parser24_28_32_36": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000",
+              "0xC96912FC"
+            ]
+          },
+          {
+            "hit": 7,
+            "producer": 5,
+            "consumer": 4,
+            "stream": "0xC96912FC",
+            "token": "0xC0000000",
+            "stream_words": [
+              "0xC0000000",
+              "0x00022080",
+              "0x00000000",
+              "0x00000000"
+            ],
+            "field72": "0x00000000",
+            "counter": "0x00000000",
+            "ring_slots": [
+              "0x00000000",
+              "0x00000000",
+              "0xC0000102",
+              "0x7F000100"
+            ],
+            "parser24_28_32_36": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000",
+              "0xB7368A18"
+            ]
+          },
+          {
+            "hit": 8,
+            "producer": 7,
+            "consumer": 5,
+            "stream": "0xB7368A18",
+            "token": "0xC0000000",
+            "stream_words": [
+              "0xC0000000",
+              "0x00000000",
+              "0x00000000",
+              "0x00000000"
+            ],
+            "field72": "0xC9684914",
+            "counter": "0x00000000",
+            "ring_slots": [
+              "0x00000000",
+              "0x00000000",
+              "0xC0000102",
+              "0x7F000100"
+            ],
+            "parser24_28_32_36": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000",
+              "0xC96912FC"
+            ]
+          },
+          {
+            "hit": 9,
+            "producer": 7,
+            "consumer": 6,
+            "stream": "0xC96912FC",
+            "token": "0xC0000000",
+            "stream_words": [
+              "0xC0000000",
+              "0x00022080",
+              "0x00000000",
+              "0x00000000"
+            ],
+            "field72": "0x00000000",
+            "counter": "0x00000000",
+            "ring_slots": [
+              "0x00000000",
+              "0x00000000",
+              "0xC0000102",
+              "0x7F000100"
+            ],
+            "parser24_28_32_36": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000",
+              "0xB7368A18"
+            ]
+          },
+          {
+            "hit": 10,
+            "producer": 7,
+            "consumer": 7,
+            "stream": "0xB7368A18",
+            "token": "0xC0000000",
+            "stream_words": [
+              "0xC0000000",
+              "0x00000000",
+              "0x00000000",
+              "0x00000000"
+            ],
+            "field72": "0xC9684914",
+            "counter": "0xFFFFFFFF",
+            "ring_slots": [
+              "0x00000000",
+              "0x00000000",
+              "0xC0000102",
+              "0x7F000100"
+            ],
+            "parser24_28_32_36": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000",
+              "0xC96912FC"
+            ]
+          },
+          {
+            "hit": 11,
+            "producer": 8,
+            "consumer": 8,
+            "stream": "0xC96912FC",
+            "token": "0xC0000000",
+            "stream_words": [
+              "0xC0000000",
+              "0x00022080",
+              "0x00000000",
+              "0x00000000"
+            ],
+            "field72": "0x00000000",
+            "counter": "0xFFFFFFFF",
+            "ring_slots": [
+              "0x00000000",
+              "0x00000000",
+              "0xC0000102",
+              "0x7F000100"
+            ],
+            "parser24_28_32_36": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000",
+              "0xB7368A18"
+            ]
+          },
+          {
+            "hit": 12,
+            "producer": 9,
+            "consumer": 9,
+            "stream": "0xB7368A18",
+            "token": "0xC0000000",
+            "stream_words": [
+              "0xC0000000",
+              "0x00000000",
+              "0x00000000",
+              "0x00000000"
+            ],
+            "field72": "0xC9684914",
+            "counter": "0xFFFFFFFE",
+            "ring_slots": [
+              "0x00000000",
+              "0x00000000",
+              "0xC0000102",
+              "0x7F000100"
+            ],
+            "parser24_28_32_36": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000",
+              "0xC96912FC"
+            ]
+          }
+        ]
+      },
+      "matching_completion_handler_entries": 218,
+      "entry_token_counts": {
+        "0xC0000000": 216,
+        "0xC969D2EC": 1,
+        "0xC96912F0": 1
+      },
+      "counter_watchpoint_write_count": 109,
+      "first_counter_writes": [
+        "0x00000001",
+        "0x00000000",
+        "0x00000000",
+        "0x00000000",
+        "0xFFFFFFFF"
+      ],
+      "event_api_entry_counts": {
+        "KeSetEvent": 214,
+        "KeResetEvent": 214,
+        "KeWaitForSingleObject": 171
+      },
+      "retail_static_crosscheck": {
+        "parser": "sub_823B87B0",
+        "completion_handler": "sub_823B85D0",
+        "token_condition": "The parser calls the completion handler when the current word is 0xC0000000.",
+        "counter_condition": "The handler decrements worker+64 only when worker+72 is zero.",
+        "queue_index_condition": "The parser compares producer index +56 with consumer index +60, selects the ring slot at consumer index modulo four, then increments +60.",
+        "generated_sources_outside_git": [
+          "/home/pes/work/nfsshift-rex/generated/default/nfs_shift_recomp.127.cpp:sub_823B87B0",
+          "/home/pes/work/nfsshift-rex/generated/default/nfs_shift_recomp.139.cpp:sub_823B85D0"
+        ]
+      }
+    },
+    "final_thread_snapshot": {
+      "host_thread": "Core 0/0: Main",
+      "guest_function": "sub_823B3850",
+      "host_frame": "generated/default/nfs_shift_recomp.167.cpp:4994",
+      "retail_loop": "Load manager+11012 and branch back while it is nonzero.",
+      "counter_value_read_at_final_snapshot": false
+    },
+    "callback_enqueue": {
+      "entry_count": 215,
+      "first_queue_event_pair_matches": 24,
+      "queue_selection_static_crosscheck": "sub_823B8C60 selects manager + cpu * 80 + 11328 and publishes with KeSetEvent(queue + 32)."
+    },
+    "gpu_thread_snapshot": {
+      "host_thread": "SHIFT Native GP",
+      "host_frame": "ioctl in libc, then libnvidia-glcore.so.580.178.04"
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail Bink object reached frame 281/281.",
+      "The retail producer made 772 traced entries; two observed entries passed a nonzero counter delta of +1 before the wait loop.",
+      "The first 24 traced callback enqueue calls matched the expected CPU queue and event-object pair.",
+      "The worker handler processed 218 sampled entries: 216 with token 0xC0000000 and two with non-sentinel stream tokens.",
+      "The first 12 worker samples show producer and consumer indices advancing while the queue worker processes callbacks.",
+      "The aliased counter recorded 109 writes; the captured prefix transitions 1, 0, 0, 0, 0xFFFFFFFF.",
+      "The trace recorded 214 KeSetEvent entries, 214 KeResetEvent entries, and 171 KeWaitForSingleObject entries for the worker events.",
+      "At the final debugger snapshot the retail main thread was in the sub_823B3850 nonzero-counter loop.",
+      "The separate SHIFT Native GP thread was blocked in ioctl through the NVIDIA GL driver at the same final snapshot."
+    ],
+    "not_proven": [
+      "Why 109 counter writes followed two observed +1 producer deltas, and how the two counted streams relate to all worker records.",
+      "The complete item-by-item relationship between all 215 callback enqueues, all 218 worker entries, and ring slots.",
+      "Whether the wait mismatch comes from P1 event/scheduler emulation, repeated retail GPU work, or P2 interrupt/completion traffic.",
+      "The host event state after each call; signal-state samples were taken at function entry only.",
+      "That the sent controller pulses were consumed by retail or changed the frontend.",
+      "A visible main menu, race entry, gameplay, clean shutdown, ARM64 execution, or Vulkan compatibility."
+    ],
+    "next_p1_step": "Trace writes to the worker ring's four slots and the callback that enqueues them, then map every zero-guard stream record to producer sub_823B31A0. The current capture shows the ring drains but does not yet explain why one +1 producer delta is followed by repeated zero-guard decrements. Keep guest event and counter semantics unchanged until that mapping is established."
+  },
+  "next_p1_step": "Trace the writes to all four worker ring slots and correlate the two counted sub_823B31A0 stream records with the callback enqueues and zero-guard worker decrements. Keep retail counter and event semantics unchanged until that mapping is established."
+}

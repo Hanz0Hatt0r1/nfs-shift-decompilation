@@ -13,8 +13,14 @@ from evdev import AbsInfo, UInput, ecodes
 
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = Path("/tmp/nfs-shift-p1-exact-runtime-controller-pipeline-20261027")
-GDB_SCRIPT = ROOT / "tools/xbox360/trace_linux_exact_runtime_controller_pipeline_20261027.gdb"
+OUT = Path(os.environ.get(
+    "SHIFT_CONTROLLER_TRACE_OUT",
+    "/tmp/nfs-shift-p1-exact-runtime-controller-pipeline-20261027",
+))
+GDB_SCRIPT = Path(os.environ.get(
+    "SHIFT_CONTROLLER_TRACE_GDB",
+    ROOT / "tools/xbox360/trace_linux_exact_runtime_controller_pipeline_20261027.gdb",
+))
 RUNTIME = Path("/tmp/nfs-shift-p1-exact-runtime-20261027-detached/bin/nfs_shift")
 SOURCE_BIN = RUNTIME.parent
 BIN = OUT / "bin"
@@ -70,7 +76,8 @@ with console_path.open("w", encoding="utf-8") as console:
     started = time.monotonic()
     print(f"gdb_pid={process.pid} uinput={device.device.path} output={OUT}", flush=True)
     poll_ready = None
-    poll_deadline = started + 205.0
+    poll_deadline = started + float(
+        os.environ.get("SHIFT_CONTROLLER_TRACE_READY_TIMEOUT_SECONDS", "205"))
     while time.monotonic() < poll_deadline and process.poll() is None:
         try:
             trace_text = console_path.read_text(encoding="utf-8", errors="replace")
@@ -84,12 +91,15 @@ with console_path.open("w", encoding="utf-8") as console:
     else:
         print(f"retail_controller_update_not_observed_after={time.monotonic() - started:.3f}s", file=console, flush=True)
     if poll_ready is not None:
-        for at, code, label in [
-            (1, ecodes.BTN_START, "Start"),
-            (7, ecodes.BTN_SOUTH, "A"),
-            (13, ecodes.BTN_START, "Start"),
+        first_pulse_seconds = float(
+            os.environ.get("SHIFT_CONTROLLER_TRACE_FIRST_PULSE_SECONDS", "1"))
+        for index, code, label in [
+            (0, ecodes.BTN_START, "Start"),
+            (1, ecodes.BTN_SOUTH, "A"),
+            (2, ecodes.BTN_START, "Start"),
         ]:
-            time.sleep(max(0, poll_ready + at - time.monotonic()))
+            at = poll_ready + first_pulse_seconds + index * 6.0
+            time.sleep(max(0, at - time.monotonic()))
             device.write(ecodes.EV_KEY, code, 1)
             device.syn()
             print(f"input {label} down at {time.monotonic() - started:.3f}s", file=console, flush=True)
@@ -97,9 +107,17 @@ with console_path.open("w", encoding="utf-8") as console:
             device.write(ecodes.EV_KEY, code, 0)
             device.syn()
             print(f"input {label} up at {time.monotonic() - started:.3f}s", file=console, flush=True)
+        hold_seconds = float(os.environ.get("SHIFT_CONTROLLER_TRACE_HOLD_SECONDS", "0"))
+        if hold_seconds > 0:
+            time.sleep(hold_seconds)
+            print(f"post_input_hold_seconds={hold_seconds}", file=console, flush=True)
         if process.poll() is None:
             process.send_signal(signal.SIGINT)
             print("stopped bounded GDB trace after controller pulses", file=console, flush=True)
+    elif process.poll() is None:
+        process.send_signal(signal.SIGINT)
+        print("stopped bounded GDB trace because controller update was not observed",
+              file=console, flush=True)
     try:
         code = process.wait(timeout=155)
     except subprocess.TimeoutExpired:
