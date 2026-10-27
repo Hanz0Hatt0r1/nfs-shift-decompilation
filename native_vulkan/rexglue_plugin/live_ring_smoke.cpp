@@ -638,6 +638,25 @@ int main(int argc, char** argv) {
     std::cerr << diagnostics << '\n';
     return fail("bounded ring trace did not retain raw guest IB bytes");
   }
+  if (ring_trace_enabled) {
+    constexpr const char* const interrupt_trace_marker =
+        "ring trace PM4_INTERRUPT #";
+    size_t interrupt_trace_count = 0;
+    for (size_t offset = 0;
+         (offset = diagnostics.find(interrupt_trace_marker, offset)) !=
+         std::string::npos;
+         offset += std::strlen(interrupt_trace_marker)) {
+      ++interrupt_trace_count;
+    }
+    if (interrupt_trace_count != kSubmittedBatches ||
+        diagnostics.find("ring trace PM4_INTERRUPT #0 source=1 generation=") ==
+            std::string::npos ||
+        diagnostics.find("cpu_mask=0x04 dispatched_cpu_mask=0x00") ==
+            std::string::npos) {
+      std::cerr << diagnostics << '\n';
+      return fail("PM4_INTERRUPT trace lost its packet, CPU mask, or dispatch count");
+    }
+  }
   const char* const submission_marker =
       "submitted 3 captured indexed draw packets to the Vulkan presenter";
   size_t submission_count = 0;

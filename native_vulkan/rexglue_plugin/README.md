@@ -1617,11 +1617,18 @@ matched retail frame, and scope limits are in
 The ring frontend now passes a frame-local operation stream alongside the
 prepared draw resources. It retains packet order for prepared draws, recognized
 Copy/Convert operations (including their captured destination state and source
-extent), and unresolved draw packets. The Vulkan renderer checks that draw
-references remain ordered and complete, and includes the captured sequence in
-target-layout, copy-extent, and mixed-sample failure diagnostics. The host
-renderer regression exercises Draw → Copy/Convert → Draw and rejects reordered
-draw references.
+extent and raw source surface/color/depth/mode registers), and unresolved draw
+packets. The Vulkan renderer checks that draw references remain ordered and
+complete, and includes the captured sequence in target-layout, copy-extent,
+and mixed-sample failure diagnostics. The host renderer regression exercises
+Draw → Copy/Convert → Draw, preserves the raw mode-6 source-target registers,
+and rejects reordered draw references.
+
+When ring tracing is enabled, each PM4_INTERRUPT is also logged with its ring
+generation, batch read/write pointers, expanded packet ordinal, source IB and
+byte offset, CPU mask, and CPUs whose guest callbacks were dispatched. This
+helps distinguish multiple guest interrupt packets from multiple callbacks
+requested by one packet; it does not coalesce interrupts.
 
 This stream does not execute intermediate copies or persist Xenos EDRAM targets;
 those remain the required graphics work for the captured transition/video path.
@@ -1632,3 +1639,24 @@ ARM64 plugin linked successfully; it was not installed over the active Redmi
 game because this instrumentation does not change rendered output. Build and
 test details are in
 [`process2_ordered_operation_stream_20261027.json`](../../evidence/process2_ordered_operation_stream_20261027.json).
+
+## Mode-6 source registers and PM4 interrupt trace (2026-10-27)
+
+The operation stream now retains the raw Xenos source surface, color, depth,
+and mode registers for every recognized Copy/Convert packet. This captures the
+mode-6 source contract seen in the 14-packet disclaimer-to-video transition
+failure (`surface_info=0x14020500`, `color_info=0xC0000`, `depth_info=0x400`,
+`mode_control=6`) for the next ordered-copy implementation step.
+
+When ring tracing is enabled, PM4_INTERRUPT diagnostics include each packet's
+generation, batch pointers, expanded packet ordinal, source IB and byte offset,
+CPU mask, and dispatched CPU mask. P2 dispatches once per asserted CPU bit and
+does not retry or coalesce callbacks. The supplied P1 watchpoint lacks the
+packet masks and identities needed to attribute its two callback entries; no
+interrupt fix or retail-video causality claim is made here.
+
+The native Vulkan tests passed 4/4 and the Linux plugin tests passed 7/7 with
+Khronos validation enabled. The Android plugin was not rebuilt or installed in
+this iteration, and the active Redmi game was left running on the disclaimer.
+Evidence and limits are in
+[`process2_mode6_sources_and_interrupt_trace_20261027.json`](../../evidence/process2_mode6_sources_and_interrupt_trace_20261027.json).

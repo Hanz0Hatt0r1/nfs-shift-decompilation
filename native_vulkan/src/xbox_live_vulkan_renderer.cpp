@@ -3006,7 +3006,11 @@ std::string describe_captured_vulkan_operations(
             case CapturedVulkanOperation::Type::CopyConvert:
                 message << "copy(packet=" << operation.packet_index
                         << ",source=" << operation.source_width << 'x'
-                        << operation.source_height << ",destination=0x" << std::hex
+                        << operation.source_height << ",source_regs=0x" << std::hex
+                        << operation.source_surface_info << "/0x"
+                        << operation.source_color_info << "/0x"
+                        << operation.source_depth_info << "/0x"
+                        << operation.source_mode_control << ",destination=0x"
                         << operation.copy_state.destination_base << std::dec << ','
                         << operation.copy_state.destination_pitch << 'x'
                         << operation.copy_state.destination_height << ",format="

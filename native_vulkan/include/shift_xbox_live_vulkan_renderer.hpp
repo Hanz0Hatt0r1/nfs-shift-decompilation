@@ -78,6 +78,12 @@ struct CapturedVulkanOperation {
     CapturedCopyState copy_state{};
     uint32_t source_width = 0;
     uint32_t source_height = 0;
+    // Raw Xenos source-target registers are needed to resolve the address,
+    // format, and sample layout of mode-6 Copy/Convert operations.
+    uint32_t source_surface_info = 0;
+    uint32_t source_color_info = 0;
+    uint32_t source_depth_info = 0;
+    uint32_t source_mode_control = 0;
 };
 
 std::string describe_captured_vulkan_operations(

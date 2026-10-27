@@ -1891,7 +1891,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         bool logged_autoindex_state = false;
         uint32_t rectangle_raster_diagnostics = 0;
         if (expanded_ok) {
+          size_t expanded_packet_ordinal = 0;
           for (const shift::xbox::ResolvedGuestPacket& resolved : expanded.packets) {
+            const size_t packet_ordinal = expanded_packet_ordinal++;
             const shift::xbox::PacketSpan& packet = resolved.packet;
             if (packet.type == shift::xbox::PacketType::Type3) {
               ++type3_opcode_counts[packet.opcode & 0xFFu];
@@ -2573,6 +2575,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     operation.copy_state = copy_state;
                     operation.source_width = captured_target_width;
                     operation.source_height = captured_target_height;
+                    operation.source_surface_info = raster_registers.surface_info;
+                    operation.source_color_info = raster_registers.color_info;
+                    operation.source_depth_info = raster_registers.depth_info;
+                    operation.source_mode_control = raster_registers.mode_control;
                     frame_operations.push_back(std::move(operation));
                     if (intermediate_copy) continue;
                     shift::xbox::CapturedVulkanCopy prepared_copy{};
@@ -3062,12 +3068,14 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 continue;
               }
               ++interrupt_packets;
+              uint32_t dispatched_cpu_mask = 0;
               try {
                 for (uint32_t cpu = 0; cpu < 6u; ++cpu) {
                   if ((cpu_mask & (1u << cpu)) != 0 &&
                       DispatchGuestInterrupt(1u, cpu,
                                              ring_host_worker_.get())) {
                     ++dispatched_interrupt_callbacks;
+                    dispatched_cpu_mask |= 1u << cpu;
                   }
                 }
               } catch (const std::exception& e) {
@@ -3075,6 +3083,22 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                              e.what());
               } catch (...) {
                 REXLOG_ERROR("shift-native: guest GPU interrupt callback failed");
+              }
+              if (GuestRingTraceEnabled()) {
+                static std::atomic<uint32_t> interrupt_trace_count{0};
+                const uint32_t trace_index = interrupt_trace_count.fetch_add(
+                    1, std::memory_order_relaxed);
+                if (trace_index < 128u) {
+                  REXLOG_INFO(
+                      "shift-native: ring trace PM4_INTERRUPT #{} source=1 "
+                      "generation={} batch_rptr={} batch_wptr={} ring_guest={:08X} "
+                      "packet={} packet_source={:08X}+{} cpu_mask=0x{:02X} "
+                      "dispatched_cpu_mask=0x{:02X}",
+                      trace_index, ring_generation, read_pointer, write_pointer,
+                      ring_guest_address, packet_ordinal,
+                      resolved.source_guest_address, packet.byte_offset,
+                      cpu_mask, dispatched_cpu_mask);
+                }
               }
             }
           }

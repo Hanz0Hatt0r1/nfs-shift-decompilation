@@ -489,6 +489,10 @@ int main(int argc, char** argv) {
         copy_operation.packet_index = 101;
         copy_operation.source_width = 1280;
         copy_operation.source_height = 720;
+        copy_operation.source_surface_info = 0x14020500u;
+        copy_operation.source_color_info = 0x000C0000u;
+        copy_operation.source_depth_info = 0x00000400u;
+        copy_operation.source_mode_control = 6u;
         copy_operation.copy_state.destination_base = 0x0CC87000u;
         copy_operation.copy_state.destination_pitch = 256;
         copy_operation.copy_state.destination_height = 243;
@@ -512,7 +516,7 @@ int main(int argc, char** argv) {
             &copy, false, {}, VK_NULL_HANDLE, nullptr, nullptr, nullptr,
             &ordered_operations) ||
         ordered_operations_error.find(
-            "ordered operations=draw(packet=100,index=0);copy(packet=101,source=1280x720,destination=0xcc87000,256x243,format=31/7,endian=2,exp_bias=0,samples=0,clear=1/0,swap_rb=0);draw(packet=102,index=1)") ==
+            "ordered operations=draw(packet=100,index=0);copy(packet=101,source=1280x720,source_regs=0x14020500/0xc0000/0x400/0x6,destination=0xcc87000,256x243,format=31/7,endian=2,exp_bias=0,samples=0,clear=1/0,swap_rb=0);draw(packet=102,index=1)") ==
             std::string::npos) {
       std::cerr << "ordered draw/copy operations were lost from the target-layout "
                    "diagnostic: "
