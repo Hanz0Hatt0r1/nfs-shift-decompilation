@@ -2485,16 +2485,22 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                           std::chrono::steady_clock::now() - wait_started);
                   REXLOG_INFO(
                       "shift-native: ring trace WAIT_REG_MEM sample "
+                      "generation={} batch_rptr={} batch_wptr={} "
+                      "ring_guest={:08X} packet={} source={:08X} depth={} "
+                      "byte-offset={} "
                       "guest={:08X} poll-address={:08X} reference={:08X} "
                       "mask={:08X} endian={} compare={} poll={} raw={:08X} "
                       "observed={:08X} condition={} elapsed_ms={} "
-                      "source={:08X} byte-offset={}",
+                      "reader=guest-physical-memory",
+                      ring_generation, read_pointer, write_pointer,
+                      ring_guest_address, packet_ordinal,
+                      resolved.source_guest_address, resolved.nesting_depth,
+                      packet.byte_offset,
                       wait.guest_address, wait.poll_address, wait.reference,
                       wait.mask, wait.endian_mode,
                       static_cast<uint32_t>(wait.compare), poll_count,
                       raw_value, observed_value, wait_condition_met,
-                      elapsed.count(), resolved.source_guest_address,
-                      packet.byte_offset);
+                      elapsed.count());
                   ++wait_value_samples;
                 }
                 previous_wait_value = observed_value;

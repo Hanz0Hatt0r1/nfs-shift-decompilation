@@ -461,6 +461,22 @@ storage, partial-copy clear effects, depth/stencil persistence, and full
 resolve behavior remain open. Build hashes and limits are in
 [`process2_ordered_edram_tile_disjoint_20261027.json`](../evidence/process2_ordered_edram_tile_disjoint_20261027.json).
 
+### Reverse EDRAM sample coordinates (2026-10-27)
+
+The address layer now reverses an unwrapped EDRAM tile coordinate and
+tile-local sample slot to the logical pixel and MSAA lane for a captured
+layout. It inverts the depth half-tile swap and rejects padding samples in a
+partial edge tile. The regression includes the retail draw-0/draw-1 layouts:
+physical color tile 16, sample slot 0 maps to pixel `(640, 0)` in draw 0 and
+`(0, 8)` in draw 1. This makes the aliased coordinate relationship explicit
+for a future shared EDRAM transfer path.
+
+This change only maps addresses. The Vulkan renderer still does not populate a
+physical EDRAM backing store, transfer samples between aliased layouts, or
+preserve depth/stencil across the full retail sequence. The captured transition
+is not rendered end to end. Details and CPU regression scope are in
+[`process2_edram_reverse_sample_mapping_20261027.json`](../evidence/process2_edram_reverse_sample_mapping_20261027.json).
+
 ## Retail conditional-jump rejection detail (2026-10-27)
 
 The Redmi capture also rejects shader translation at draw #14 for a conditional

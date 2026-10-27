@@ -1368,6 +1368,107 @@ int main() {
                 edram_address.tile_index == 32 &&
                 edram_address.byte_offset == 32u * 5120u,
             "captured format-12 target did not retain the 32bpp tile-row pitch");
+    shift::xbox::CapturedEdramSampleCoordinates edram_coordinates{};
+    require(shift::xbox::captured_xenos_edram_sample_coordinates(
+                format12_target, false, 0, 0, 81, &edram_coordinates, &error) &&
+                edram_coordinates.x == 0 && edram_coordinates.y == 0 &&
+                edram_coordinates.sample_index == 3 &&
+                shift::xbox::captured_xenos_edram_sample_address(
+                    format12_target, false, edram_coordinates.x,
+                    edram_coordinates.y, edram_coordinates.sample_index,
+                    &edram_address, &error) &&
+                edram_address.tile_index == 0 &&
+                edram_address.sample_index_in_tile == 81,
+            "4x color EDRAM reverse mapping did not round trip all sample lanes");
+    require(shift::xbox::captured_xenos_edram_sample_coordinates(
+                format12_target, false, 1, 0, 0, &edram_coordinates, &error) &&
+                edram_coordinates.x == 40 && edram_coordinates.y == 0 &&
+                edram_coordinates.sample_index == 0,
+            "4x color EDRAM reverse mapping did not advance across tile columns");
+    require(shift::xbox::captured_xenos_edram_sample_coordinates(
+                format12_target, false, 31, 89, 1279,
+                &edram_coordinates, &error) &&
+                edram_coordinates.x == 1279 && edram_coordinates.y == 719 &&
+                edram_coordinates.sample_index == 3 &&
+                shift::xbox::captured_xenos_edram_sample_address(
+                    format12_target, false, edram_coordinates.x,
+                    edram_coordinates.y, edram_coordinates.sample_index,
+                    &edram_address, &error) &&
+                edram_address.tile_index == 831 &&
+                edram_address.sample_index_in_tile == 1279,
+            "4x EDRAM reverse mapping did not preserve the captured transition's wrapped tail tile");
+    auto captured_next_target = format12_target;
+    captured_next_target.width = 1280;
+    captured_next_target.height = 720;
+    captured_next_target.surface_pitch = 640;
+    captured_next_target.color_base_tiles = 0;
+    captured_next_target.depth_base_tiles = 720;
+    captured_next_target.sample_count = 4;
+    captured_next_target.guest_color_format = 0;
+    captured_next_target.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
+    shift::xbox::CapturedEdramSampleCoordinates previous_layout_coordinates{};
+    require(shift::xbox::captured_xenos_edram_sample_coordinates(
+                format12_target, false, 16, 0, 0,
+                &previous_layout_coordinates, &error) &&
+                previous_layout_coordinates.x == 640 &&
+                previous_layout_coordinates.y == 0 &&
+                shift::xbox::captured_xenos_edram_sample_address(
+                    format12_target, false,
+                    previous_layout_coordinates.x,
+                    previous_layout_coordinates.y,
+                    previous_layout_coordinates.sample_index,
+                    &edram_address, &error) &&
+                edram_address.tile_index == 16 &&
+                shift::xbox::captured_xenos_edram_sample_coordinates(
+                    captured_next_target, false, 0, 1, 0,
+                    &edram_coordinates, &error) &&
+                edram_coordinates.x == 0 && edram_coordinates.y == 8 &&
+                shift::xbox::captured_xenos_edram_sample_address(
+                    captured_next_target, false, edram_coordinates.x,
+                    edram_coordinates.y, edram_coordinates.sample_index,
+                    &edram_address, &error) &&
+                edram_address.tile_index == 16 &&
+                edram_address.sample_index_in_tile == 0,
+            "captured draw-0/draw-1 layouts did not map their shared tile sample to both logical coordinates");
+    require(shift::xbox::captured_xenos_edram_sample_coordinates(
+                format12_target, true, 0, 0, 40, &edram_coordinates, &error) &&
+                edram_coordinates.x == 0 && edram_coordinates.y == 0 &&
+                edram_coordinates.sample_index == 0 &&
+                shift::xbox::captured_xenos_edram_sample_address(
+                    format12_target, true, edram_coordinates.x,
+                    edram_coordinates.y, edram_coordinates.sample_index,
+                    &edram_address, &error) &&
+                edram_address.tile_index == 1024 &&
+                edram_address.sample_index_in_tile == 40,
+            "depth EDRAM reverse mapping did not invert the half-tile swap");
+    auto two_sample_edram_coordinates_target = format12_target;
+    two_sample_edram_coordinates_target.width = 1280;
+    two_sample_edram_coordinates_target.height = 1440;
+    two_sample_edram_coordinates_target.surface_pitch = 1280;
+    two_sample_edram_coordinates_target.sample_count = 2;
+    require(shift::xbox::captured_xenos_edram_sample_coordinates(
+                two_sample_edram_coordinates_target, false, 0, 0, 80,
+                &edram_coordinates, &error) &&
+                edram_coordinates.x == 0 && edram_coordinates.y == 0 &&
+                edram_coordinates.sample_index == 1,
+            "2x EDRAM reverse mapping did not recover its vertical sample lane");
+    auto partial_edram_target = format12_target;
+    partial_edram_target.width = 320;
+    partial_edram_target.height = 243;
+    partial_edram_target.surface_pitch = 320;
+    partial_edram_target.sample_count = 1;
+    require(shift::xbox::captured_xenos_edram_sample_coordinates(
+                partial_edram_target, false, 0, 15, 2u * 80u,
+                &edram_coordinates, &error) &&
+                edram_coordinates.x == 0 && edram_coordinates.y == 242 &&
+                edram_coordinates.sample_index == 0,
+            "single-sample EDRAM reverse mapping mishandled the partial bottom tile");
+    require(!shift::xbox::captured_xenos_edram_sample_coordinates(
+                partial_edram_target, false, 0, 15, 3u * 80u,
+                &edram_coordinates, &error) &&
+                error == "captured Xenos EDRAM sample lies outside the partial edge tile",
+            "single-sample EDRAM reverse mapping accepted a sample beyond the target edge");
     auto mode6_copy_source_registers = format12_registers;
     mode6_copy_source_registers.mode_control = 6u;
     shift::xbox::CapturedRasterState mode6_copy_source{};

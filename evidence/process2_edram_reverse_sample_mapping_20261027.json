@@ -1,0 +1,79 @@
+{
+  "schema": "shift.process2.edram_reverse_sample_mapping.v1",
+  "date": "2026-10-27",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "change": {
+    "files": [
+      "native_vulkan/include/shift_xbox_draw_input.hpp",
+      "native_vulkan/src/xbox_draw_input.cpp",
+      "native_vulkan/tests/xbox_draw_input_check.cpp"
+    ],
+    "api": "captured_xenos_edram_sample_coordinates",
+    "maps": "Unwrapped tile-grid X/Y plus tile-local sample slot to logical pixel X/Y and MSAA sample index; the existing forward mapper applies 2048-tile wrap.",
+    "addressing": [
+      "1x, 2x, and 4x sample expansion",
+      "depth target half-tile X swap",
+      "partial edge tile bounds"
+    ]
+  },
+  "retail_transition_fixture": {
+    "source": "evidence/process2_xenos_edram_sample_mapping_20261027.json",
+    "layout_a_draw": 0,
+    "layout_a": {
+      "extent": [2560, 1440],
+      "samples": 4,
+      "surface_pitch": 1280,
+      "color_base_tiles": 0
+    },
+    "layout_b_draw": 1,
+    "layout_b": {
+      "extent": [1280, 720],
+      "samples": 4,
+      "surface_pitch": 640,
+      "color_base_tiles": 0
+    },
+    "shared_sample": {
+      "physical_tile": 16,
+      "sample_index_in_tile": 0,
+      "layout_a_pixel_sample": [640, 0, 0],
+      "layout_b_pixel_sample": [0, 8, 0]
+    },
+    "wrapped_tail_sample": {
+      "layout_a_unwrapped_tile": [31, 89],
+      "physical_tile_after_wrap": 831,
+      "sample_index_in_tile": 1279,
+      "pixel_sample": [1279, 719, 3]
+    }
+  },
+  "verification": {
+    "build": "cmake --build native_vulkan/build -j2",
+    "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir native_vulkan/build --output-on-failure",
+    "result": "passed",
+    "suite": "4/4 passed",
+    "test_with_new_regressions": "shift_xbox_draw_input_check",
+    "vulkan_validation_layer": "VK_LAYER_KHRONOS_validation enabled for the full Linux native suite",
+    "android_arm64_compile": {
+      "result": "passed",
+      "ndk": "r28c / 28.2.13676358",
+      "api": 26,
+      "target": "shift_guest_ring",
+      "object_sha256": "20a4bedc05ec53c3c6b3c1e3a80ad1906bae3363d9d1fe603414cfe99991c829",
+      "renderer_core": "also compiled with target shift_xbox_live_vulkan_renderer",
+      "renderer_object_sha256": "1ba73859629d11527e6861bd5d244d582724c8f0107bb17faea7cbdd2ef89600",
+      "device_execution": "not run; ADB listed no connected device"
+    },
+    "coverage": [
+      "4x color sample-lane reverse/forward round trip",
+      "draw-0/draw-1 shared physical tile maps to each layout's distinct pixel",
+      "captured 4x layout tile wrap at the transition tail",
+      "depth half-tile reverse/forward round trip",
+      "2x vertical sample lane",
+      "partial 1x edge-tile valid and padding samples"
+    ]
+  },
+  "limitations": [
+    "This is CPU address mapping only; it does not allocate or populate a physical EDRAM backing store.",
+    "No Vulkan sample transfer, format reinterpretation, clear side effects, or depth/stencil persistence was added.",
+    "The captured retail 14-draw transition still fails closed at its aliased target switch; no retail frame parity is claimed."
+  ]
+}

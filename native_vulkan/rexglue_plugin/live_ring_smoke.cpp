@@ -620,8 +620,13 @@ int main(int argc, char** argv) {
     return fail("EVENT_WRITE_SHD was missing from the bounded memory-write trace");
   }
   if (ring_trace_enabled &&
-      (diagnostics.find("ring trace WAIT_REG_MEM sample guest=1B964004 "
-                        "poll-address=1B964006 reference=00000001") ==
+      (diagnostics.find(
+           "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=6 "
+           "batch_wptr=9 ring_guest=00010000 packet=40 source=00030000 "
+           "depth=1 byte-offset=548 guest=1B964004 "
+           "poll-address=1B964006 reference=00000001") ==
+           std::string::npos ||
+       diagnostics.find("reader=guest-physical-memory") ==
            std::string::npos ||
        diagnostics.find("observed=00000000 condition=false") ==
            std::string::npos ||

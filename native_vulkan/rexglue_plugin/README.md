@@ -1724,6 +1724,22 @@ post-Bink window. A new retail run is still required to confirm its actual
 interrupt rate and capture the queue/event/counter interval. See
 [`process2_interrupt_trace_window_20261027.json`](../../evidence/process2_interrupt_trace_window_20261027.json).
 
+## WAIT_REG_MEM backing and packet join (2026-10-27)
+
+Memory-mode `WAIT_REG_MEM` validates the physical guest span, obtains its word
+through `memory_->TranslatePhysical`, and polls that word with an acquire
+atomic load. `GpuSwap` converts the raw guest value for the packet's endian
+mode. This branch does not read or update a renderer-side shadow; only the
+separate `COHER_STATUS_HOST` branch uses renderer-owned status state. The
+bounded WAIT sample now includes the ring generation and batch pointers, ring
+guest address, expanded packet ordinal, indirect-buffer source/depth/offset,
+physical guest wait address, raw and endian-adjusted values, and the backing
+reader label. The live-ring trace regression checks that join tuple. This
+identifies what Process 2 reads, but it does not identify which guest CPU or GPU
+writer produced a value transition. The Redmi v38 CPU watchpoint result and
+the one-record interrupt-count discrepancy remain un-attributed; see
+[`process2_wait_reg_mem_packet_join_20261027.json`](../../evidence/process2_wait_reg_mem_packet_join_20261027.json).
+
 ## Exact Process 1 runtime build (2026-10-27)
 
 For a reproducible Linux trace build, CMake accepts a prebuilt-runtime

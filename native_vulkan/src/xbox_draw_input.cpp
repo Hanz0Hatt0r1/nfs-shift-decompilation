@@ -1746,6 +1746,62 @@ bool captured_xenos_edram_sample_address(
     return true;
 }
 
+bool captured_xenos_edram_sample_coordinates(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    uint32_t tile_x,
+    uint32_t tile_y,
+    uint32_t sample_index_in_tile,
+    CapturedEdramSampleCoordinates* output,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    constexpr uint32_t kSamplesPerTile = kTileWidthSamples * kTileHeightSamples;
+    if (!output || !raster.width || !raster.height || !raster.surface_pitch ||
+        (raster.sample_count != 1 && raster.sample_count != 2 &&
+         raster.sample_count != 4) || sample_index_in_tile >= kSamplesPerTile) {
+        return fail("invalid captured Xenos EDRAM reverse-address request", error);
+    }
+    const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+    const uint32_t sample_height = raster.sample_count / sample_width;
+    if (raster.width % sample_width || raster.height % sample_height) {
+        return fail("captured Xenos EDRAM extent is not sample aligned", error);
+    }
+    const uint32_t logical_width = raster.width / sample_width;
+    const uint32_t logical_height = raster.height / sample_height;
+    const uint32_t tile_logical_width = kTileWidthSamples / sample_width;
+    const uint32_t tile_logical_height = kTileHeightSamples / sample_height;
+    const uint64_t tile_columns =
+        (static_cast<uint64_t>(logical_width) + tile_logical_width - 1u) /
+        tile_logical_width;
+    const uint64_t tile_rows =
+        (static_cast<uint64_t>(logical_height) + tile_logical_height - 1u) /
+        tile_logical_height;
+    if (tile_x >= tile_columns || tile_y >= tile_rows) {
+        return fail("captured Xenos EDRAM tile coordinate is out of bounds", error);
+    }
+
+    const uint32_t tile_sample_x = sample_index_in_tile % kTileWidthSamples;
+    const uint32_t tile_sample_y = sample_index_in_tile / kTileWidthSamples;
+    const uint32_t sample_x = depth_target
+        ? (tile_sample_x + kTileWidthSamples / 2u) % kTileWidthSamples
+        : tile_sample_x;
+    const uint64_t pixel_x = static_cast<uint64_t>(tile_x) * tile_logical_width +
+                             sample_x / sample_width;
+    const uint64_t pixel_y = static_cast<uint64_t>(tile_y) * tile_logical_height +
+                             tile_sample_y / sample_height;
+    if (pixel_x >= logical_width || pixel_y >= logical_height) {
+        return fail("captured Xenos EDRAM sample lies outside the partial edge tile",
+                    error);
+    }
+    const uint32_t sample_x_in_pixel = sample_x % sample_width;
+    const uint32_t sample_y_in_pixel = tile_sample_y % sample_height;
+    *output = {static_cast<uint32_t>(pixel_x), static_cast<uint32_t>(pixel_y),
+               sample_y_in_pixel * sample_width + sample_x_in_pixel};
+    if (error) error->clear();
+    return true;
+}
+
 bool captured_xenos_edram_layouts_are_tile_disjoint(
     const CapturedRasterState& a,
     const CapturedRasterState& b,
