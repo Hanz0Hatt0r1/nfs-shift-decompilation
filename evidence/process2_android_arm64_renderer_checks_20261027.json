@@ -1,0 +1,42 @@
+{
+  "schema": "shift.process2.android_arm64_renderer_checks.v1",
+  "date": "2026-10-27",
+  "source_commit": "6dd33b12",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "android": "Android 13",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "validation_layer": "VK_LAYER_KHRONOS_validation unavailable on device"
+  },
+  "checks": {
+    "xbox_draw_input_check": {
+      "result": "passed",
+      "binary_sha256": "03addae35f5bccb52ede91f41636a36bf7a7823c5a7e7c242fdaf5bb50da68b5"
+    },
+    "xbox_guest_ring_check": {
+      "result": "passed",
+      "binary_sha256": "51efda98b312d80e48f69da1d47c329a8387972b4dcc965f2ebf1255ed3b17f9"
+    },
+    "xbox_shader_translate_check": {
+      "result": "passed",
+      "binary_sha256": "6f6b900f1eb984bd8cc21bdd3c93473b13496d77f7328434c9ba1d2176e6037d"
+    },
+    "xbox_live_vulkan_renderer_check": {
+      "result": "passed",
+      "binary_sha256": "2c36898a398f6ef5a5892f7ab19001fffc6bf656d1bde1b01c2db39c4d7469ed",
+      "scope": "Synthetic offscreen Vulkan 1.1 rendering and captured format-31 cached-copy sampling; not retail frame parity."
+    }
+  },
+  "spirv": {
+    "target_environment": "vulkan1.1",
+    "modules_validated": 17,
+    "tool": "spirv-val --target-env vulkan1.1",
+    "gamma_target_encoded_fixture_sha256": "3e2d10716d381c42e6cda1e23d474a8abb21c80b829d7e4912f7a2a0206aabe6"
+  },
+  "limits": [
+    "The offscreen Vulkan check uses deterministic synthetic input and does not execute the retail 14-draw transition.",
+    "Android Khronos validation was unavailable.",
+    "These binaries are renderer checks, not a current-branch plugin installation or proof of retail parity."
+  ]
+}

@@ -447,6 +447,34 @@ ARM64 translator check passed on the Redmi while the game remained running.
 The plugin was built but not installed. See
 [`process2_retail_cjmp_diagnostic_20261027.json`](../evidence/process2_retail_cjmp_diagnostic_20261027.json).
 
+## Current Redmi language-selector observation (2026-10-27)
+
+The currently installed older Android build is running on the Redmi Note 8 Pro
+at the original language selector. English, French, Italian, German, Spanish,
+and Dutch labels are readable. No input was sent; the app was left open. The
+installed APK/plugin/runtime hashes and screenshot are recorded in
+[`process2_redmi_language_selector_current_installed_20261027.json`](../evidence/process2_redmi_language_selector_current_installed_20261027.json).
+This does not verify the current P2 branch or the retail 14-draw transition.
+
+The latest ARM64 draw-input, guest-ring, shader-translation, and offscreen
+renderer checks passed on this device. Seventeen generated SPIR-V modules also
+passed `spirv-val --target-env vulkan1.1`. These checks use synthetic fixtures;
+the Android Vulkan validation layer is unavailable, and the transition is not
+yet rendered end to end. Hashes and scope are recorded in
+[`process2_android_arm64_renderer_checks_20261027.json`](../evidence/process2_android_arm64_renderer_checks_20261027.json).
+
+## Exact-runtime Process 1 PM4 trace build (2026-10-27)
+
+The Linux plugin now builds against the exact ReXGlue runtime used by the
+Process 1 host even though that older SDK shape has no separate
+`rexui-vulkan` target. The instrumented plugin records PM4 interrupt packet
+identity, ring context, requested/dispatched CPU masks, and per-CPU callback
+address/data/status, with the bounded ring trace enabled for this build. Its
+SHA-256, build ID, exact host/XEX/runtime identity, and smoke result are in
+[`process2_p1_exact_pm4_trace_plugin_20261027.json`](../evidence/process2_p1_exact_pm4_trace_plugin_20261027.json).
+Process 1 has not yet run this DSO with the identified host and XEX, so it has
+not produced new callback-attribution evidence.
+
 ## Commands
 
 ```bash

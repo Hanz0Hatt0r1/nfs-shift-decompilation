@@ -1,0 +1,38 @@
+{
+  "schema": "shift.process2.p1_exact_pm4_trace_plugin.v1",
+  "date": "2026-10-27",
+  "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "source_commit": "6dd33b12",
+  "source_worktree_change": "native_vulkan/rexglue_plugin/CMakeLists.txt accepts the older SDK shape when an exact prebuilt ReXGlue runtime is supplied; the provider remains in rexruntime.",
+  "target_run_identity": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "p1_host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "sdk_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6"
+  },
+  "build": {
+    "platform": "Linux x86-64",
+    "configuration": "Clang 22.1.8 Release, -march=x86-64-v2",
+    "prebuilt_runtime": "/home/pes/work/rexglue-sdk-retail-lwsync-20261027/out/linux-amd64/Release/librexruntime.so",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "plugin_path": "/home/pes/work/process2-p1-exact-pm4-trace-20261027/librexgpu-shift-native.so",
+    "plugin_sha256": "bec4c074f765f82fa9da1258c7b8e86353750c9dd14fe94d5e5df4f25b71167b",
+    "plugin_build_id": "0195297bd3486bdd49ad9cece30d474f7bed9fb7",
+    "ring_trace_default": true,
+    "trace_environment": "Leave SHIFT_NATIVE_VULKAN_TRACE_RING unset or set it to 1 for capture."
+  },
+  "trace_fields": [
+    "PM4_INTERRUPT source, ring generation, batch read/write pointers, ring guest address, expanded packet ordinal, source IB and byte offset",
+    "requested and dispatched CPU masks",
+    "callback guest address, callback data, and dispatch status for every asserted CPU",
+    "WAIT_REG_MEM samples"
+  ],
+  "verification": {
+    "plugin_factory_smoke": "passed against the exact prebuilt runtime",
+    "ldd_r": "resolved; no undefined symbols",
+    "provider_build_shape": "The older SDK does not define rexui-vulkan; this build uses its existing rexui/rexruntime provider arrangement."
+  },
+  "capture_status": "This instrumented DSO has not yet been run with the identified Process 1 host and XEX. No new guest callback trace or synchronization result is claimed.",
+  "behavioral_scope": "The change enables reproducible plugin construction against this exact runtime and builds the existing opt-in bounded trace. It does not change guest scheduling or PM4 dispatch semantics."
+}

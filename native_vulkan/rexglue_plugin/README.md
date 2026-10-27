@@ -1724,6 +1724,17 @@ post-Bink window. A new retail run is still required to confirm its actual
 interrupt rate and capture the queue/event/counter interval. See
 [`process2_interrupt_trace_window_20261027.json`](../../evidence/process2_interrupt_trace_window_20261027.json).
 
+## Exact Process 1 runtime build (2026-10-27)
+
+For a reproducible Linux trace build, CMake accepts a prebuilt-runtime
+integration when the matching older SDK keeps the Vulkan provider in
+`rexruntime` rather than defining a separate `rexui-vulkan` target. The
+instrumented DSO was factory-smoke-tested and has no unresolved symbols. It is
+built against the exact Process 1 runtime and host/XEX identity, with bounded
+ring tracing enabled by default. The DSO has been handed to Process 1 for a
+same-run capture; callback attribution remains pending that run. See
+[`process2_p1_exact_pm4_trace_plugin_20261027.json`](../../evidence/process2_p1_exact_pm4_trace_plugin_20261027.json).
+
 ## Redmi disclaimer follow-up and ARM64 renderer check (2026-10-27)
 
 The user confirmed that the legal disclaimer advances automatically and does

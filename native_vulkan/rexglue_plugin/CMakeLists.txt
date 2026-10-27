@@ -40,10 +40,11 @@ if(NOT TARGET rexruntime)
   message(FATAL_ERROR "ReXGlue SDK was not added and has no rexruntime target")
 elseif(TARGET rexui-vulkan)
   set(SHIFT_REXGLUE_VULKAN_PROVIDER_TARGET rexui-vulkan)
-elseif(TARGET rexui AND ANDROID)
-  # ReXGlue 0.10.0 keeps the Vulkan provider in rexruntime.
+elseif(TARGET rexui AND (ANDROID OR SHIFT_REXGLUE_PREBUILT_RUNTIME))
+  # Older ReXGlue 0.10.0 runtimes keep the Vulkan provider in rexruntime.
 else()
-  message(FATAL_ERROR "ReXGlue checkout must define rexui-vulkan")
+  message(FATAL_ERROR
+    "ReXGlue checkout must define rexui-vulkan or use an Android/prebuilt-runtime provider")
 endif()
 file(READ "${SHIFT_REXGLUE_SDK_ROOT}/include/rex/ui/vulkan/provider.h"
      SHIFT_REXGLUE_VULKAN_PROVIDER_HEADER)
