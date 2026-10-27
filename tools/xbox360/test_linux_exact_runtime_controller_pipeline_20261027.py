@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Guard exact-runtime retail controller pipeline evidence."""
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -29,9 +30,15 @@ trace = run["tracing"]
 assert trace["execution_runner"]["sha256"] == (
     "bb282e4b157a16be839da66ef1539e9b1161d5b1e61a3b8fffcb6d44c8938a8f"
 )
+assert trace["reproduction_runner"]["path"] == (
+    "tools/xbox360/capture_linux_exact_runtime_controller_pipeline_20261027_pre_runtime_override.py"
+)
 assert trace["reproduction_runner"]["sha256"] == (
     "c10209424c95a3bde879b9f240dcfe6e766a1ef7309a898fa4583526fd55e675"
 )
+assert hashlib.sha256(
+    (ROOT / trace["reproduction_runner"]["path"]).read_bytes()
+).hexdigest() == trace["reproduction_runner"]["sha256"]
 
 path = evidence["retail_input_path"]
 counts = path["counts"]

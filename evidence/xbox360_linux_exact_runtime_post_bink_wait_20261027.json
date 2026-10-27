@@ -33,7 +33,7 @@
       "host_state_masks_observed": ["0x0000"]
     },
     "runner": {
-      "path": "tools/xbox360/capture_linux_exact_runtime_controller_pipeline_20261027.py",
+      "path": "tools/xbox360/capture_linux_exact_runtime_controller_pipeline_20261027_pre_runtime_override.py",
       "sha256": "c10209424c95a3bde879b9f240dcfe6e766a1ef7309a898fa4583526fd55e675",
       "log_path_outside_git": "/tmp/nfs-shift-p1-writer-trace-20261027/runner.log",
       "log_sha256": "b02055cc45eaffa38cdf88b6924fbe3d7fe42958cb957eeed3205c11111a4dde"

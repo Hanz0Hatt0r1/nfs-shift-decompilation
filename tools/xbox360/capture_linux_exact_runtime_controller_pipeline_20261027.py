@@ -21,7 +21,10 @@ GDB_SCRIPT = Path(os.environ.get(
     "SHIFT_CONTROLLER_TRACE_GDB",
     ROOT / "tools/xbox360/trace_linux_exact_runtime_controller_pipeline_20261027.gdb",
 ))
-RUNTIME = Path("/tmp/nfs-shift-p1-exact-runtime-20261027-detached/bin/nfs_shift")
+RUNTIME = Path(os.environ.get(
+    "SHIFT_CONTROLLER_TRACE_RUNTIME",
+    "/tmp/nfs-shift-p1-exact-runtime-20261027-detached/bin/nfs_shift",
+))
 SOURCE_BIN = RUNTIME.parent
 BIN = OUT / "bin"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -91,29 +94,55 @@ with console_path.open("w", encoding="utf-8") as console:
     else:
         print(f"retail_controller_update_not_observed_after={time.monotonic() - started:.3f}s", file=console, flush=True)
     if poll_ready is not None:
-        first_pulse_seconds = float(
-            os.environ.get("SHIFT_CONTROLLER_TRACE_FIRST_PULSE_SECONDS", "1"))
-        for index, code, label in [
-            (0, ecodes.BTN_START, "Start"),
-            (1, ecodes.BTN_SOUTH, "A"),
-            (2, ecodes.BTN_START, "Start"),
-        ]:
-            at = poll_ready + first_pulse_seconds + index * 6.0
-            time.sleep(max(0, at - time.monotonic()))
-            device.write(ecodes.EV_KEY, code, 1)
-            device.syn()
-            print(f"input {label} down at {time.monotonic() - started:.3f}s", file=console, flush=True)
-            time.sleep(3.0)
-            device.write(ecodes.EV_KEY, code, 0)
-            device.syn()
-            print(f"input {label} up at {time.monotonic() - started:.3f}s", file=console, flush=True)
-        hold_seconds = float(os.environ.get("SHIFT_CONTROLLER_TRACE_HOLD_SECONDS", "0"))
-        if hold_seconds > 0:
-            time.sleep(hold_seconds)
-            print(f"post_input_hold_seconds={hold_seconds}", file=console, flush=True)
-        if process.poll() is None:
+        pulse_origin = poll_ready
+        wait_marker = os.environ.get("SHIFT_CONTROLLER_TRACE_WAIT_MARKER")
+        marker_seen = not wait_marker
+        if wait_marker:
+            marker_deadline = time.monotonic() + float(
+                os.environ.get("SHIFT_CONTROLLER_TRACE_MARKER_TIMEOUT_SECONDS", "90"))
+            while time.monotonic() < marker_deadline and process.poll() is None:
+                try:
+                    trace_text = console_path.read_text(encoding="utf-8", errors="replace")
+                except OSError:
+                    trace_text = ""
+                if wait_marker in trace_text:
+                    marker_seen = True
+                    pulse_origin = time.monotonic()
+                    print(f"wait_marker_seen={wait_marker!r} after={pulse_origin - started:.3f}s",
+                          file=console, flush=True)
+                    break
+                time.sleep(0.1)
+            if not marker_seen:
+                print(f"wait_marker_not_observed={wait_marker!r} after={time.monotonic() - started:.3f}s",
+                      file=console, flush=True)
+        if marker_seen:
+            first_pulse_seconds = float(
+                os.environ.get("SHIFT_CONTROLLER_TRACE_FIRST_PULSE_SECONDS", "1"))
+            for index, code, label in [
+                (0, ecodes.BTN_START, "Start"),
+                (1, ecodes.BTN_SOUTH, "A"),
+                (2, ecodes.BTN_START, "Start"),
+            ]:
+                at = pulse_origin + first_pulse_seconds + index * 6.0
+                time.sleep(max(0, at - time.monotonic()))
+                device.write(ecodes.EV_KEY, code, 1)
+                device.syn()
+                print(f"input {label} down at {time.monotonic() - started:.3f}s", file=console, flush=True)
+                time.sleep(3.0)
+                device.write(ecodes.EV_KEY, code, 0)
+                device.syn()
+                print(f"input {label} up at {time.monotonic() - started:.3f}s", file=console, flush=True)
+            hold_seconds = float(os.environ.get("SHIFT_CONTROLLER_TRACE_HOLD_SECONDS", "0"))
+            if hold_seconds > 0:
+                time.sleep(hold_seconds)
+                print(f"post_input_hold_seconds={hold_seconds}", file=console, flush=True)
+            if process.poll() is None:
+                process.send_signal(signal.SIGINT)
+                print("stopped bounded GDB trace after controller pulses", file=console, flush=True)
+        elif process.poll() is None:
             process.send_signal(signal.SIGINT)
-            print("stopped bounded GDB trace after controller pulses", file=console, flush=True)
+            print("stopped bounded GDB trace because wait marker was not observed",
+                  file=console, flush=True)
     elif process.poll() is None:
         process.send_signal(signal.SIGINT)
         print("stopped bounded GDB trace because controller update was not observed",

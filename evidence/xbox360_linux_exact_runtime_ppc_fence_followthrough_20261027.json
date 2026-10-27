@@ -1,0 +1,129 @@
+{
+  "schema": "shift.xbox360.linux-exact-runtime-ppc-fence-followthrough.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "codegen": {
+    "sdk_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6",
+    "generated_source_tree": "/home/pes/work/nfsshift-rex-lwsync-20261027/generated/default",
+    "generated_translation_units_with_fences": 224,
+    "generated_fence_expressions": 2615,
+    "lwsync_expression": "std::atomic_thread_fence(std::memory_order_acq_rel)",
+    "sync_expression": "std::atomic_thread_fence(std::memory_order_seq_cst)"
+  },
+  "binaries": {
+    "p1_host": {
+      "path_outside_git": "/home/pes/work/nfsshift-rex-lwsync-20261027/out/build/linux-amd64-release/nfs_shift",
+      "sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178"
+    },
+    "rexglue_runtime": {
+      "path_outside_git": "/home/pes/work/rexglue-sdk-retail-lwsync-20261027/out/linux-amd64/librexruntime.so",
+      "sha256": "4d0fb82223695d3e2b76bbc6d6c9a93bad525a4c051a8a2eb585b5422d2373bc"
+    },
+    "gpu_plugin": {
+      "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-20261027-detached/bin/librexgpu-shift-native.so",
+      "sha256": "771201891a6ae28c0745f57beccf9c6474ce175c7bb3f5edadcce4c457a8a12b"
+    }
+  },
+  "run": {
+    "platform": "Linux x86_64, Clang 20 Release",
+    "duration_seconds": 39.18,
+    "termination": "GDB detached and sent SIGINT to the live title; clean title shutdown was not observed.",
+    "controller_input_sent": [
+      {
+        "button": "Start",
+        "down_seconds": 5.016,
+        "up_seconds": 8.016
+      },
+      {
+        "button": "A",
+        "down_seconds": 11.016,
+        "up_seconds": 14.016
+      },
+      {
+        "button": "Start",
+        "down_seconds": 17.016,
+        "up_seconds": 20.016
+      }
+    ],
+    "guest_memory_written_by_probe": false,
+    "mapped_library_hashes_verified_in_inferior": true,
+    "gdb_script": {
+      "path": "tools/xbox360/trace_linux_exact_runtime_post_bink_queue_event_contract_lwsync_20261027.gdb",
+      "sha256": "33c30b1e41e5f670bdbb01faa09d0678d75801c85018f1bdff1cf1451c69ff91"
+    },
+    "runner": {
+      "path": "tools/xbox360/capture_linux_exact_runtime_controller_pipeline_20261027_runtime_override.py",
+      "sha256": "10ca64174e0ade034d8c37a4e82b14e8a7e6a0ff96e8c89888a5397e16bdb949"
+    },
+    "logs": {
+      "gdb_log": {
+        "path_outside_git": "/tmp/nfs-shift-p1-queue-event-contract-lwsync-20261027/gdb.log",
+        "sha256": "0c52f20eddec30ec8b678d44e0688e306302cc77fe5d13edadd91fdc420ed052"
+      },
+      "runner_log": {
+        "path_outside_git": "/tmp/nfs-shift-p1-queue-event-contract-lwsync-20261027/runner.log",
+        "sha256": "b7864e88a5c682d159140e9f87a7dcecef993c1db5bda0431360d78ccf04aeb6"
+      }
+    },
+    "bink": {
+      "frame_target": 281,
+      "observed_frames": 281,
+      "elapsed_seconds": 20.734
+    },
+    "retail_queue": {
+      "manager": "0xB7365F00",
+      "counter_address": "0x1B7368A04",
+      "producer_entries": 759,
+      "producer_counted_entries": 1,
+      "counted_producer_entry": 752,
+      "counted_delta": 1,
+      "callback_enqueue_entries": 415,
+      "callback_queue_matches_in_sample": 24,
+      "worker_entries": 415,
+      "worker_tokens": {
+        "0xC0000000": 415
+      },
+      "counter_writes": 208,
+      "first_counter_values": [
+        "0x00000001",
+        "0x00000000",
+        "0xFFFFFFFF",
+        "0xFFFFFFFE",
+        "0xFFFFFFFD"
+      ],
+      "event_api_entries": {
+        "KeSetEvent": 414,
+        "KeResetEvent": 414,
+        "KeWaitForSingleObject": 296
+      }
+    },
+    "final_threads": {
+      "retail_main": {
+        "thread_name": "Core 0/0: Main",
+        "frame": "sub_823B3850"
+      },
+      "graphics": {
+        "thread_name": "SHIFT Native GP",
+        "blocked_host_call": "ioctl in NVIDIA GL driver"
+      }
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "Generated retail C++ contains the PPC sync and lwsync fence expressions and compiled into the P1 Linux host.",
+      "The exact retail XEX reached the original Bink frame target and the two original worker loops.",
+      "The sampled producer made one +1 count update; the worker processed repeated 0xC0000000 tokens and changed the signed counter through 1, 0, and -1.",
+      "At the final debugger snapshot the retail main thread remained in sub_823B3850."
+    ],
+    "not_proven": [
+      "Whether repeated 0xC0000000 handling violates the title's intended worker contract or identifies the responsible producer stream.",
+      "That PPC fence generation caused or fixes the worker-counter behavior; the run only shows the underflow is still observable with the fences present.",
+      "Frontend menu entry, race entry, or clean title shutdown."
+    ],
+    "next_step": "Trace the counted producer stream and every ring-slot write into the repeated worker sentinel entries before changing retail queue, event, or counter semantics."
+  }
+}
