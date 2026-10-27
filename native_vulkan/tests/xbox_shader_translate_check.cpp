@@ -636,6 +636,19 @@ int main() {
                 translated.glsl.find("r[0].x = previous_scalar") != std::string::npos,
             "captured Xenos scalar FLOOR opcode 13 was not translated");
 
+    std::vector<uint8_t> retail_scalar_log_shader = retail_scalar_floor_shader;
+    write_be32(retail_scalar_log_shader.data() + 7 * 12,
+               (16u << 26) | (1u << 20));
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                retail_scalar_log_shader.data(), retail_scalar_log_shader.size(),
+                options, &translated, &error) &&
+                translated.glsl.find(
+                    "previous_scalar = log2(shift_pixel_constants.c[0].w);") !=
+                    std::string::npos &&
+                translated.glsl.find("r[0].x = previous_scalar") != std::string::npos,
+            "captured Xenos scalar LOG_IEEE opcode 16 did not translate its selected source");
+
     std::vector<uint8_t> retail_scalar_muls_prev_shader = retail_scalar_floor_shader;
     write_be32(retail_scalar_muls_prev_shader.data() + 7 * 12,
                13u << 26);

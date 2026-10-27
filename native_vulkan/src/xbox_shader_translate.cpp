@@ -484,6 +484,11 @@ bool emit_alu(std::ostringstream& glsl,
             case 13:
                 scalar = "floor(" + scalar_source(instruction, stage) + ")";
                 break;
+            case 16:
+                // Xenos LOG_IEEE computes log2(src0.a). The captured scalar
+                // source selector is already decoded by scalar_source().
+                scalar = "log2(" + scalar_source(instruction, stage) + ")";
+                break;
             case 42:
             case 43:
             case 44:

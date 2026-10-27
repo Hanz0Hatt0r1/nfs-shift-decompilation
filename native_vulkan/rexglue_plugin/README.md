@@ -2016,3 +2016,28 @@ before exercising this change; the new build has not yet been replayed. The
 full EDRAM backing/sample mapping and the captured packets' actual depth/stencil
 effects remain unverified because that run did not retain their raster flags.
 No Android device was attached for this build.
+
+## Captured scalar `LOG_IEEE` shader opcode (2026-10-28)
+
+The v45 log records retail pixel draw 10 stopping at scalar opcode 16 in
+instruction 31. [Xenia's Xenos microcode reference](https://raw.githubusercontent.com/xenia-project/xenia/master/src/xenia/gpu/ucode.h#L1030-L1033)
+identifies opcode 16 as `LOG_IEEE`, producing `log2(src0.a)`. The translator
+now emits `log2` using the decoded scalar source selection and keeps the
+existing scalar temporary and destination-mask handling. A targeted synthetic
+instruction regression checks the decoded source and output assignment.
+
+Linux renderer CTest passed 4/4 and plugin CTest passed 6/6 with Vulkan
+validation. The translator's emitted fragment compiled with
+`glslangValidator -V --target-env vulkan1.1`; `spirv-val --target-env
+vulkan1.1` accepted the result. The Android ARM64/API 26 shader translation
+check executable compiled. The full Android plugin target stopped in the
+external ReXGlue SDK's `fiber_posix.cpp`, where NDK 28.2 does not declare
+`getcontext`, `makecontext`, and `swapcontext`; no SDK files were changed.
+There was no attached Android device for execution.
+
+This closes one translation case, not the retail draw: v45 used the preceding
+plugin, and its log retained the opcode diagnostic but not the shader bytes.
+The regression is an encoded instruction fixture, and neither fresh retail
+acceptance nor pixel parity is claimed. Build hashes, commands, capture hash,
+and limitations are in
+[`process2_retail_scalar_log_ieee_opcode16_20261028.json`](../../evidence/process2_retail_scalar_log_ieee_opcode16_20261028.json).

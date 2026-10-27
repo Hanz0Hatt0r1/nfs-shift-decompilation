@@ -1,0 +1,61 @@
+{
+  "schema": "SHIFT.Process2RetailScalarLogIEEE/1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "retail_observation": {
+    "capture": "P1 v45 same-XEX Linux run",
+    "capture_directory": "/dev/shm/nfs-shift-p1-post-bink-worker-route-v45-ordered-route-20261027",
+    "capture_log": "bin/logs/nfs_shift_001.1.log",
+    "capture_log_sha256": "0da95f17c69b41e6f1f47b5e775974ebb9c1c2e27985333a2acf23d34e172117",
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "plugin_sha256_used_by_capture": "a0026207902f5fd3a0578138d0c0edd8875cecbd98119d33b26a65a4382b5ccf",
+    "draw": 10,
+    "stage": "pixel",
+    "instruction": 31,
+    "scalar_opcode": 16,
+    "previous_result": "captured pixel shader translation stopped because scalar opcode 16 wrote an unsupported result"
+  },
+  "translation": {
+    "opcode_name": "LOG_IEEE",
+    "semantics": "dest.xyzw = log2(src0.a)",
+    "glsl": "previous_scalar = log2(scalar_source);",
+    "source_selection": "uses the existing captured scalar source swizzle, register/constant selection, and negate decode",
+    "primary_reference": "https://raw.githubusercontent.com/xenia-project/xenia/master/src/xenia/gpu/ucode.h#L1030-L1033",
+    "implementation": "native_vulkan/src/xbox_shader_translate.cpp",
+    "regression": "native_vulkan/tests/xbox_shader_translate_check.cpp verifies opcode 16 emits log2 from its decoded scalar source and writes the scalar destination"
+  },
+  "verification": {
+    "linux_renderer_ctest": "passed 4/4 with VK_LAYER_KHRONOS_validation",
+    "linux_plugin_ctest": "passed 6/6 with VK_LAYER_KHRONOS_validation",
+    "translated_glsl_vulkan_1_1": {
+      "compiler": "glslangValidator -V --target-env vulkan1.1 -S frag",
+      "validator": "spirv-val --target-env vulkan1.1",
+      "result": "passed",
+      "glsl_sha256": "d6fd73d3da6a9469b2eae2f36a1e7e15e2e8cfcfb42576ae71662a203c3ab490",
+      "spirv_sha256": "93b8e3b63acfd517d29c13c07a1ef1f41c2f2530b5b7dc6ade54e4761070d35f"
+    },
+    "linux_plugin": {
+      "path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-20261027/output/librexgpu-shift-native.so",
+      "sha256": "72baae3d59432727e1e366259ec8a9b6641b7b60d623d8389274d74e368815de",
+      "build_id": "6f677b9014912b3f2050653c0a05e9638f9cf82f",
+      "vulkan_minimum": "1.1"
+    },
+    "android_arm64_api26": {
+      "target": "shift_xbox_shader_translate_check",
+      "result": "compiled",
+      "binary_sha256": "68c74a9b8a6dd4bd001c73eddcb146e2019101dbfb223f89529b8fe5e4a095e9",
+      "device_execution": "not run; adb devices -l reported no connected device"
+    },
+    "android_plugin": {
+      "target": "rexgpu-shift-native",
+      "result": "not built",
+      "blocker": "The external ReXGlue SDK fiber_posix.cpp fails to compile with NDK 28.2 because getcontext, makecontext, and swapcontext are undeclared. No external SDK files were changed."
+    }
+  },
+  "limitations": [
+    "The v45 retail run used the preceding plugin and therefore does not show this opcode accepted by a fresh retail process.",
+    "The retail capture retained the opcode and instruction number in the diagnostic, but not the shader byte payload; the regression uses a constructed ALU instruction fixture.",
+    "Shader translation and Vulkan 1.1 SPIR-V validity are verified; resulting retail pixels and shader numerical parity on hardware are not established."
+  ]
+}
