@@ -359,7 +359,24 @@ bool validate_captured_operation_stream(
     uint32_t previous_draw_index = 0;
     bool have_previous_draw = false;
     for (const CapturedVulkanOperation& operation : operations) {
-        if (operation.type != CapturedVulkanOperation::Type::Draw) continue;
+        if (operation.type == CapturedVulkanOperation::Type::UnresolvedDraw) {
+            std::ostringstream message;
+            message << "captured operation stream contains unresolved draw packet "
+                    << operation.packet_index;
+            return fail(message.str(), error);
+        }
+        if (operation.type == CapturedVulkanOperation::Type::CopyConvert) {
+            if (operation.source_width == 0 || operation.source_height == 0 ||
+                operation.copy_state.destination_base == 0 ||
+                operation.copy_state.destination_pitch == 0 ||
+                operation.copy_state.destination_height == 0) {
+                std::ostringstream message;
+                message << "captured Copy/Convert packet " << operation.packet_index
+                        << " has incomplete source or destination extent";
+                return fail(message.str(), error);
+            }
+            continue;
+        }
         if (operation.draw_index >= draw_count) {
             std::ostringstream message;
             message << "captured operation stream references draw "
@@ -384,6 +401,17 @@ bool validate_captured_operation_stream(
             message << "captured operation stream omits draw " << draw_index;
             return fail(message.str(), error);
         }
+    }
+    uint32_t previous_packet_index = 0;
+    bool have_previous_packet = false;
+    for (const CapturedVulkanOperation& operation : operations) {
+        if (operation.packet_index == std::numeric_limits<uint32_t>::max() ||
+            (have_previous_packet && operation.packet_index <= previous_packet_index)) {
+            return fail("captured operation stream has missing or reordered packet ordinal",
+                        error);
+        }
+        previous_packet_index = operation.packet_index;
+        have_previous_packet = true;
     }
     if (error) error->clear();
     return true;

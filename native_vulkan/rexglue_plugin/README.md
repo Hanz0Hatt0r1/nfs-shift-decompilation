@@ -1622,13 +1622,17 @@ packets. The Vulkan renderer checks that draw references remain ordered and
 complete, and includes the captured sequence in target-layout, copy-extent,
 and mixed-sample failure diagnostics. The host renderer regression exercises
 Draw → Copy/Convert → Draw, preserves the raw mode-6 source-target registers,
-and rejects reordered draw references.
+rejects reordered draw references and packet ordinals, and rejects incomplete
+copies and unresolved draws.
 
 When ring tracing is enabled, each PM4_INTERRUPT is also logged with its ring
 generation, batch read/write pointers, expanded packet ordinal, source IB and
-byte offset, CPU mask, and CPUs whose guest callbacks were dispatched. This
-helps distinguish multiple guest interrupt packets from multiple callbacks
-requested by one packet; it does not coalesce interrupts.
+byte offset, CPU mask, dispatched CPU mask, and each asserted CPU's guest
+callback address, callback data, and dispatch status. Status distinguishes a
+missing callback or host context, wrong host thread, successful return from
+`ExecuteInterrupt`, and an exception. This helps distinguish multiple guest
+interrupt packets from multiple callbacks requested by one packet; it does not
+coalesce interrupts.
 
 This stream does not execute intermediate copies or persist Xenos EDRAM targets;
 those remain the required graphics work for the captured transition/video path.
@@ -1639,6 +1643,9 @@ ARM64 plugin linked successfully; it was not installed over the active Redmi
 game because this instrumentation does not change rendered output. Build and
 test details are in
 [`process2_ordered_operation_stream_20261027.json`](../../evidence/process2_ordered_operation_stream_20261027.json).
+The follow-up preflight regressions and per-CPU interrupt callback trace fields
+are recorded in
+[`process2_ordered_edram_interrupt_trace_progress_20261027.json`](../../evidence/process2_ordered_edram_interrupt_trace_progress_20261027.json).
 
 ## Mode-6 source registers and PM4 interrupt trace (2026-10-27)
 

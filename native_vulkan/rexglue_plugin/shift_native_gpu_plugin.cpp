@@ -619,6 +619,12 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   }
 
  private:
+  struct GuestInterruptDispatchTrace {
+    uint32_t callback = 0;
+    uint32_t callback_data = 0;
+    const char* status = "not_requested";
+  };
+
   struct ReadPointerWriteback {
     bool published = false;
     uint32_t guest_address = 0;
@@ -1166,6 +1172,12 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         shift::xbox::CapturedVulkanTexture texture{};
         texture.fetch_constant_index =
             pixel_translation.texture_fetch_constant_indices[i];
+        texture.guest_address = fetch.guest_address;
+        texture.guest_format = fetch.format;
+        texture.guest_endian = fetch.endian_mode;
+        texture.guest_pitch = fetch.pitch;
+        texture.guest_tiled = fetch.tiled;
+        texture.guest_packed_mips = fetch.packed_mips;
         texture.sampling = resolved.sampling;
         texture.width = fetch.width;
         texture.height = fetch.height;
@@ -1482,7 +1494,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   }
 
   bool DispatchGuestInterrupt(uint32_t source, uint32_t cpu,
-                              rex::system::XHostThread* expected_thread) {
+                              rex::system::XHostThread* expected_thread,
+                              GuestInterruptDispatchTrace* trace = nullptr) {
     uint32_t callback = 0;
     uint32_t callback_data = 0;
     {
@@ -1490,20 +1503,29 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       callback = interrupt_callback_;
       callback_data = interrupt_callback_data_;
     }
+    if (trace) {
+      trace->callback = callback;
+      trace->callback_data = callback_data;
+      trace->status = callback ? "not_dispatched" : "no_callback";
+    }
     if (!callback) return false;
     if (!function_dispatcher_ || !expected_thread) {
+      if (trace) trace->status = "missing_host_context";
       REXLOG_WARN("shift-native: cannot dispatch guest GPU interrupt without "
                   "the ReXGlue host-thread context");
       return false;
     }
     auto* thread = rex::system::XThread::GetCurrentThread();
     if (thread != expected_thread) {
+      if (trace) trace->status = "wrong_host_thread";
       REXLOG_ERROR("shift-native: GPU interrupt left its ReXGlue host thread");
       return false;
     }
     thread->SetActiveCpu(static_cast<uint8_t>(cpu));
     uint64_t args[] = {source, callback_data};
+    if (trace) trace->status = "invoking";
     function_dispatcher_->ExecuteInterrupt(thread->thread_state(), callback, args, 2);
+    if (trace) trace->status = "invoked";
     return true;
   }
 
@@ -3075,19 +3097,31 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               }
               ++interrupt_packets;
               uint32_t dispatched_cpu_mask = 0;
+              std::array<GuestInterruptDispatchTrace, 6> callback_trace{};
               try {
                 for (uint32_t cpu = 0; cpu < 6u; ++cpu) {
                   if ((cpu_mask & (1u << cpu)) != 0 &&
                       DispatchGuestInterrupt(1u, cpu,
-                                             ring_host_worker_.get())) {
+                                             ring_host_worker_.get(),
+                                             &callback_trace[cpu])) {
                     ++dispatched_interrupt_callbacks;
                     dispatched_cpu_mask |= 1u << cpu;
                   }
                 }
               } catch (const std::exception& e) {
+                for (auto& trace : callback_trace) {
+                  if (std::strcmp(trace.status, "invoking") == 0) {
+                    trace.status = "exception";
+                  }
+                }
                 REXLOG_ERROR("shift-native: guest GPU interrupt callback failed: {}",
                              e.what());
               } catch (...) {
+                for (auto& trace : callback_trace) {
+                  if (std::strcmp(trace.status, "invoking") == 0) {
+                    trace.status = "exception";
+                  }
+                }
                 REXLOG_ERROR("shift-native: guest GPU interrupt callback failed");
               }
               if (GuestRingTraceEnabled()) {
@@ -3095,15 +3129,27 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 const uint32_t trace_index = interrupt_trace_count.fetch_add(
                     1, std::memory_order_relaxed);
                 if (trace_index < 128u) {
+                  std::ostringstream callback_summary;
+                  bool first_callback = true;
+                  for (uint32_t cpu = 0; cpu < callback_trace.size(); ++cpu) {
+                    if ((cpu_mask & (1u << cpu)) == 0) continue;
+                    if (!first_callback) callback_summary << ',';
+                    first_callback = false;
+                    const auto& callback = callback_trace[cpu];
+                    callback_summary << "cpu" << cpu << ":callback=0x"
+                                     << std::hex << callback.callback
+                                     << ",data=0x" << callback.callback_data
+                                     << std::dec << ",status=" << callback.status;
+                  }
                   REXLOG_INFO(
                       "shift-native: ring trace PM4_INTERRUPT #{} source=1 "
                       "generation={} batch_rptr={} batch_wptr={} ring_guest={:08X} "
                       "packet={} packet_source={:08X}+{} cpu_mask=0x{:02X} "
-                      "dispatched_cpu_mask=0x{:02X}",
+                      "dispatched_cpu_mask=0x{:02X} callback_dispatches=[{}]",
                       trace_index, ring_generation, read_pointer, write_pointer,
                       ring_guest_address, packet_ordinal,
                       resolved.source_guest_address, packet.byte_offset,
-                      cpu_mask, dispatched_cpu_mask);
+                      cpu_mask, dispatched_cpu_mask, callback_summary.str());
                 }
               }
             }

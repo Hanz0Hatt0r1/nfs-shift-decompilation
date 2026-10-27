@@ -26,6 +26,14 @@ struct CapturedVulkanTexture {
     uint32_t height = 0;
     Format format = Format::Rgba8;
     std::vector<uint8_t> pixels;
+    // Keep the guest descriptor with the decoded pixels so ordered
+    // Copy/Convert results can replace a stale RAM snapshot by address/layout.
+    uint32_t guest_address = 0;
+    uint32_t guest_format = 0;
+    uint32_t guest_endian = 0;
+    uint32_t guest_pitch = 0;
+    bool guest_tiled = false;
+    bool guest_packed_mips = false;
 };
 
 struct CapturedVulkanDraw {

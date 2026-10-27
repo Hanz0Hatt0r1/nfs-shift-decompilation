@@ -1,0 +1,29 @@
+{
+  "schema": "shift.process2.ordered_edram_interrupt_trace_progress.v1",
+  "date": "2026-10-27",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "source_base": "c5f3b75f",
+  "changes": {
+    "operation_preflight": [
+      "Reject unresolved draw operations before Vulkan submission.",
+      "Reject Copy/Convert operations missing source or destination extent/base/pitch.",
+      "Require complete, unique, ordered draw references and strictly increasing packet ordinals."
+    ],
+    "texture_descriptor": "Prepared Vulkan textures now retain their guest address, format, endian, pitch, tiled, and packed-mip descriptor fields for a future ordered-copy resource lookup. No copy result is currently substituted for guest RAM texture bytes.",
+    "interrupt_trace": "With ring tracing enabled, each PM4_INTERRUPT record includes generation, batch read/write pointers, ring guest address, expanded packet ordinal, source IB and byte offset, requested/dispatched CPU masks, and per-asserted-CPU callback guest address, callback data, and dispatch status."
+  },
+  "verification": {
+    "native_linux_ctest": "4/4 passed; renderer operation-stream failure cases ran through the available Vulkan validation layer.",
+    "linux_plugin_compile": "Clang compiled the plugin and live-ring smoke translation units using the isolated task build directory; no SDK libraries were rebuilt or relinked.",
+    "android_device": "Redmi Note 8 Pro is visible to ADB at 192.168.1.32:38615. No plugin was installed and no game process was restarted."
+  },
+  "not_implemented": [
+    "No ordered Vulkan render/copy execution has been added for the 14-operation transition package.",
+    "No persistent aliased Xenos EDRAM color or depth/stencil backing exists.",
+    "The format-12 4x to format-26 resolve and seven format-31 writes remain unsupported.",
+    "No current-device PM4_INTERRUPT callback-address trace was collected; the running phone plugin predates this instrumentation.",
+    "No trace has been sent to Process 1 because there is not yet a fresh live trace to share."
+  ],
+  "retail_evidence_reference": "process2_redmi_transition_copy_chain_20261026.json",
+  "limits": "These changes improve operation validation and trace observability. They do not establish rendered parity, video-transition success, guest synchronization correctness, or Android renderer readiness."
+}

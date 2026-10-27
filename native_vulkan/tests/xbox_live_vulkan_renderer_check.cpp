@@ -626,6 +626,55 @@ int main(int argc, char** argv) {
                 << reordered_operations_error << '\n';
       return 1;
     }
+    auto reordered_packet_operations = ordered_operations;
+    reordered_packet_operations[1].packet_index = 103;
+    std::string reordered_packet_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, changed_extent_draws,
+            &reordered_packet_error, nullptr, enabled_features.geometryShader,
+            &copy, false, {}, VK_NULL_HANDLE, nullptr, nullptr, nullptr,
+            &reordered_packet_operations) ||
+        reordered_packet_error.find(
+            "captured operation stream has missing or reordered packet ordinal") ==
+            std::string::npos) {
+      std::cerr << "reordered captured packet ordinals were accepted: "
+                << reordered_packet_error << '\n';
+      return 1;
+    }
+    auto incomplete_copy_operations = ordered_operations;
+    incomplete_copy_operations[1].copy_state.destination_pitch = 0;
+    std::string incomplete_copy_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, changed_extent_draws,
+            &incomplete_copy_error, nullptr, enabled_features.geometryShader,
+            &copy, false, {}, VK_NULL_HANDLE, nullptr, nullptr, nullptr,
+            &incomplete_copy_operations) ||
+        incomplete_copy_error.find(
+            "Copy/Convert packet 101 has incomplete source or destination extent") ==
+            std::string::npos) {
+      std::cerr << "incomplete captured Copy/Convert was accepted: "
+                << incomplete_copy_error << '\n';
+      return 1;
+    }
+    auto unresolved_draw_operations = ordered_operations;
+    unresolved_draw_operations[0].type =
+        shift::xbox::CapturedVulkanOperation::Type::UnresolvedDraw;
+    std::string unresolved_draw_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, changed_extent_draws,
+            &unresolved_draw_error, nullptr, enabled_features.geometryShader,
+            &copy, false, {}, VK_NULL_HANDLE, nullptr, nullptr, nullptr,
+            &unresolved_draw_operations) ||
+        unresolved_draw_error.find(
+            "captured operation stream contains unresolved draw packet 100") ==
+            std::string::npos) {
+      std::cerr << "unresolved captured draw was accepted: "
+                << unresolved_draw_error << '\n';
+      return 1;
+    }
     auto oversized_target_draws = changed_extent_draws;
     oversized_target_draws.resize(66, draws.front());
     std::string oversized_target_error;

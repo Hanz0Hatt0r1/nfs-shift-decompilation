@@ -652,9 +652,12 @@ int main(int argc, char** argv) {
         diagnostics.find("ring trace PM4_INTERRUPT #0 source=1 generation=") ==
             std::string::npos ||
         diagnostics.find("cpu_mask=0x04 dispatched_cpu_mask=0x00") ==
+            std::string::npos ||
+        diagnostics.find(
+            "callback_dispatches=[cpu2:callback=0x0,data=0x0,status=no_callback]") ==
             std::string::npos) {
       std::cerr << diagnostics << '\n';
-      return fail("PM4_INTERRUPT trace lost its packet, CPU mask, or dispatch count");
+      return fail("PM4_INTERRUPT trace lost its packet, CPU mask, callback, or dispatch result");
     }
   }
   const char* const submission_marker =
