@@ -77,7 +77,7 @@
         "0x823B8C60": 588
       },
       "p2_callback_dispatch": "0x823B37B8 (outer CPU-dispatched wrapper)",
-      "p2_unique_source_1_pm4_interrupts": 962,
+      "p2_source_1_pm4_interrupts_in_join": 962,
       "p2_interrupt_id_range": [1101, 2062],
       "p2_cpu_mask": "0x04",
       "p2_wait_reg_mem_samples": 12602,
