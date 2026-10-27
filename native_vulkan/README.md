@@ -74,8 +74,11 @@ recorded in
   yet applied to a Vulkan view or sampler. The captured black border code has
   unresolved alpha, so the backend does not guess a Vulkan border color. The
   captured color/depth target, viewport, and screen/window scissor are also
-  decoded into a bounded neutral state contract. This does not map Xenos EDRAM
-  tiles to Vulkan images or create a pipeline. A separate strict decoder now
+  decoded into a bounded neutral state contract. A CPU-side address helper now
+  maps 32bpp 1x/2x/4x samples to the 10 MiB Xenos EDRAM tile address space,
+  including the depth half-tile swap. It does not back Vulkan attachments,
+  preserve raster writes between target changes, or support paired-tile 64bpp
+  color. A separate strict decoder now
   recognizes the live 1280x720 color Copy/Convert register tuple
   (`copy_control=0x00100000`, destination `0x0975e000`, format 6 with R/B swap).
   This is metadata only: the live mode-6 draw is still not submitted, and Xenos
@@ -390,6 +393,24 @@ against the exact runtime DSO already packaged in the installed APK; rebuilding
 that runtime from the external SDK still hits its Android POSIX fiber/memory
 errors. The new plugin was not installed. Details and build identifiers are in
 [`process2_multitarget_guard_20261027.json`](../evidence/process2_multitarget_guard_20261027.json).
+
+## Xenos EDRAM sample addressing (2026-10-27)
+
+`captured_xenos_edram_sample_address` maps captured 32bpp target pixels and
+their 1x/2x/4x samples into the 10 MiB, 80x16-sample, 2048-tile EDRAM address
+space. The 4x target uses 2x2 sample expansion; depth addresses apply the
+40-sample half-tile swap. These layout constants and sample dimensions are
+documented in the [Xenos register definitions](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h); the project only uses that file as a read-only hardware-layout reference.
+
+This helper returns an address only. It does not allocate or populate Vulkan
+EDRAM storage, execute the mode-6 intermediate copies, or restore aliased
+samples when the retail batch changes target layouts. The regression pins the
+14-draw layout sequence from the Redmi capture and confirms it still fails
+closed at draw 1. Host CTest passed 4/4 with Vulkan validation; the ARM64 input
+check and a synthetic Vulkan 1.1 offscreen smoke passed on Mali-G76 MC4. The
+phone remained on the legal disclaimer, so this change establishes no video
+or retail-frame parity. Full capture and test details are in
+[`process2_xenos_edram_sample_mapping_20261027.json`](../evidence/process2_xenos_edram_sample_mapping_20261027.json).
 
 ## Commands
 

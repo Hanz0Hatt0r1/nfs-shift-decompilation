@@ -1,0 +1,123 @@
+{
+  "schema": "shift.process2.xenos_edram_sample_mapping.v1",
+  "date": "2026-10-27",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "retail_capture": "evidence/process2_redmi_pm4_packet_limit_20261027.json",
+    "capture_log": "evidence/process2_redmi_pm4_packet_limit_20261027.log.gz",
+    "failure_timestamp_local": "2026-10-27 03:53:25.919 MSK",
+    "addressing_reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h",
+    "addressing_reference_use": "Read-only Xenos memory-layout reference; no Xenia renderer code or runtime dependency is used."
+  },
+  "retail_target_layout_sequence": {
+    "draw_count": 14,
+    "draw_ranges_are_inclusive": true,
+    "runs": [
+      {
+        "draws": [0],
+        "extent": [2560, 1440],
+        "samples": 4,
+        "color_base_tiles": 0,
+        "depth_base_tiles": 1024,
+        "color_format": 3,
+        "surface_pitch": 1280
+      },
+      {
+        "draws": [1],
+        "extent": [1280, 720],
+        "samples": 4,
+        "color_base_tiles": 0,
+        "depth_base_tiles": 720,
+        "color_format": 0,
+        "surface_pitch": 640
+      },
+      {
+        "draws": [2, 10],
+        "extent": [1280, 720],
+        "samples": 1,
+        "color_base_tiles": 0,
+        "depth_base_tiles": 720,
+        "color_format": 1,
+        "surface_pitch": 1280
+      },
+      {
+        "draws": [11],
+        "extent": [1280, 720],
+        "samples": 4,
+        "color_base_tiles": 0,
+        "depth_base_tiles": 720,
+        "color_format": 0,
+        "surface_pitch": 640
+      },
+      {
+        "draws": [12, 13],
+        "extent": [1280, 720],
+        "samples": 1,
+        "color_base_tiles": 0,
+        "depth_base_tiles": 720,
+        "color_format": 1,
+        "surface_pitch": 1280
+      }
+    ],
+    "interpretation": "The groups share color EDRAM base 0 while changing extent, MSAA, format, pitch, and depth base. They cannot be rendered as independent Vulkan attachments without preserving and reinterpreting the aliased Xenos sample storage."
+  },
+  "implementation": {
+    "files": [
+      "native_vulkan/include/shift_xbox_draw_input.hpp",
+      "native_vulkan/src/xbox_draw_input.cpp",
+      "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
+      "native_vulkan/tests/xbox_draw_input_check.cpp",
+      "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp"
+    ],
+    "supported_address_model": "32bpp Xenos EDRAM sample coordinates with 80x16-sample tiles, 2048-tile wrap, 1x/2x/4x sample expansion, and the depth tile half-swap.",
+    "unsupported_address_model": "64bpp paired-tile color addressing.",
+    "renderer_policy": "Target-layout changes still fail closed. Diagnostics now identify the first shared color sample address; no aliased target data is silently discarded."
+  },
+  "regressions": {
+    "draw_input": [
+      "4x sample coordinates and per-tile offsets",
+      "4x tile-row pitch",
+      "depth half-tile swap",
+      "2048-tile wrap",
+      "out-of-range sample rejection"
+    ],
+    "renderer": "Captured 14-draw target metadata is transcribed into the regression fixture. The call is rejected at draw 1 with all 14 ordered layouts and the shared EDRAM sample-0 byte address. The shader and resource payloads are not part of this fixture."
+  },
+  "validation": {
+    "linux": {
+      "result": "passed",
+      "tests": [
+        "shift_xbox_draw_input_check",
+        "xbox_live_vulkan_renderer_check"
+      ],
+      "vulkan_validation_layer": "VK_LAYER_KHRONOS_validation"
+    },
+    "android_arm64": {
+      "abi": "arm64-v8a",
+      "api": 26,
+      "ndk": "r28c / 28.2.13676358",
+      "device": "Redmi Note 8 Pro / Mali-G76 MC4",
+      "draw_input_check": "passed on device",
+      "renderer_check": "synthetic offscreen Vulkan 1.1 smoke passed on device",
+      "vulkan_validation_layer": "unavailable"
+    }
+  },
+  "device_state": {
+    "model": "Redmi Note 8 Pro",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 6382,
+    "screen_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+    "screen": "legal disclaimer",
+    "game_input_sent": false,
+    "test_artifacts": "Temporary ARM64 CPU and Vulkan smoke files were copied to /data/local/tmp, executed, then removed.",
+    "apk_or_plugin_changed": false,
+    "app_restarted": false
+  },
+  "limitations": [
+    "This change maps target sample addresses and pins the retail layout sequence; it does not allocate or populate a Vulkan EDRAM backing store.",
+    "Ordered mode-6 Copy/Convert operations are still not executed between target groups.",
+    "The 14-draw frame is not yet rendered through the complete transition path, and no disclaimer-to-video parity is claimed.",
+    "Several transition shaders and texture descriptors in the capture remain unresolved independently of target persistence."
+  ]
+}

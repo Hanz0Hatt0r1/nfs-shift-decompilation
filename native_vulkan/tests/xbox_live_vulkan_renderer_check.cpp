@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -480,6 +481,87 @@ int main(int argc, char** argv) {
                 << changed_extent_error << '\n';
       return 1;
     }
+
+    // Target layouts transcribed from the Redmi retail 14-draw transition.
+    // Keep this fail-closed until the renderer persists and reinterprets the
+    // aliased Xenos EDRAM contents between these Vulkan passes.
+    auto retail_layout_4x_hdr = draws.front().raster;
+    retail_layout_4x_hdr.width = 2560;
+    retail_layout_4x_hdr.height = 1440;
+    retail_layout_4x_hdr.surface_pitch = 1280;
+    retail_layout_4x_hdr.sample_count = 4;
+    retail_layout_4x_hdr.color_base_tiles = 0;
+    retail_layout_4x_hdr.depth_base_tiles = 1024;
+    retail_layout_4x_hdr.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgb10A2Float;
+    auto retail_layout_4x_rgba8 = retail_layout_4x_hdr;
+    retail_layout_4x_rgba8.width = 1280;
+    retail_layout_4x_rgba8.height = 720;
+    retail_layout_4x_rgba8.surface_pitch = 640;
+    retail_layout_4x_rgba8.depth_base_tiles = 720;
+    retail_layout_4x_rgba8.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
+    auto retail_layout_1x_gamma = retail_layout_4x_rgba8;
+    retail_layout_1x_gamma.surface_pitch = 1280;
+    retail_layout_1x_gamma.sample_count = 1;
+    retail_layout_1x_gamma.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
+    const std::array<shift::xbox::CapturedRasterState, 4>
+        retail_transition_layouts{{retail_layout_4x_hdr,
+                                   retail_layout_4x_rgba8,
+                                   retail_layout_1x_gamma,
+                                   retail_layout_4x_rgba8}};
+    constexpr std::array<size_t, 14> retail_layout_by_draw{{
+        0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2,
+    }};
+    std::vector<shift::xbox::CapturedVulkanDraw> retail_transition_draws(
+        retail_layout_by_draw.size(), draws.front());
+    for (size_t i = 0; i < retail_transition_draws.size(); ++i) {
+      retail_transition_draws[i].raster =
+          retail_transition_layouts[retail_layout_by_draw[i]];
+    }
+    std::string retail_transition_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, retail_transition_draws,
+            &retail_transition_error, nullptr,
+            enabled_features.geometryShader, &copy) ||
+        retail_transition_error.find(
+            "at draw 1 (color_base=0 -> 0, depth_base=1024 -> 720, "
+            "extent=2560x1440 -> 1280x720, color_format=3 -> 0, "
+            "pitch=1280 -> 640)") == std::string::npos ||
+        retail_transition_error.find(
+            "Xenos color sample 0 aliases at EDRAM byte offset 0") ==
+            std::string::npos) {
+      std::cerr << "the captured retail 14-draw target transition was not "
+                   "rejected at its first unsupported EDRAM layout change: "
+                << retail_transition_error << '\n';
+      return 1;
+    }
+    for (size_t draw_index = 0; draw_index < retail_layout_by_draw.size();
+         ++draw_index) {
+      const auto& layout =
+          retail_transition_layouts[retail_layout_by_draw[draw_index]];
+      std::ostringstream expected_layout;
+      expected_layout << "draw" << draw_index << "{extent=" << layout.width
+                      << 'x' << layout.height << ",samples="
+                      << layout.sample_count << ",color_base="
+                      << layout.color_base_tiles << ",depth_base="
+                      << layout.depth_base_tiles << ",color_format="
+                      << static_cast<unsigned>(layout.color_format)
+                      << ",depth_format="
+                      << static_cast<unsigned>(layout.depth_format)
+                      << ",pitch=" << layout.surface_pitch << '}';
+      if (retail_transition_error.find(expected_layout.str()) ==
+          std::string::npos) {
+        std::cerr << "the captured retail target transition diagnostic lost "
+                     "draw "
+                  << draw_index << " layout: " << retail_transition_error
+                  << '\n';
+        return 1;
+      }
+    }
+
     std::vector<shift::xbox::CapturedVulkanOperation> ordered_operations;
     for (size_t draw_index = 0; draw_index < draws.size(); ++draw_index) {
       if (draw_index == 1) {

@@ -3191,6 +3191,18 @@ bool submit_captured_vulkan_frame(
                 message << "; omitted target layouts="
                         << draws.size() - logged_layout_count;
             }
+            CapturedEdramSampleAddress previous_color_sample{};
+            CapturedEdramSampleAddress next_color_sample{};
+            if (captured_xenos_edram_sample_address(
+                    frame_target, false, 0, 0, 0, &previous_color_sample,
+                    nullptr) &&
+                captured_xenos_edram_sample_address(
+                    raster, false, 0, 0, 0, &next_color_sample, nullptr) &&
+                previous_color_sample.byte_offset ==
+                    next_color_sample.byte_offset) {
+                message << "; Xenos color sample 0 aliases at EDRAM byte offset "
+                        << previous_color_sample.byte_offset;
+            }
             message << "; ordered Xenos EDRAM target persistence and resolve are not implemented";
             if (operations) {
                 message << "; ordered operations="

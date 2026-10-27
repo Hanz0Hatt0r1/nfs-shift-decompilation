@@ -434,6 +434,25 @@ struct CapturedRasterState {
     float viewport_height = 0.0f;
 };
 
+struct CapturedEdramSampleAddress {
+    uint32_t tile_index = 0;
+    uint32_t sample_index_in_tile = 0;
+    uint32_t byte_offset = 0;
+};
+
+// Maps one captured target pixel/sample to the Xenos 32bpp EDRAM word space.
+// x/y are logical pixels before the MSAA sample expansion; sample_index uses
+// the Xenos row-major sample order. 64bpp color targets are rejected because
+// their paired-tile addressing is not yet implemented.
+bool captured_xenos_edram_sample_address(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    uint32_t x,
+    uint32_t y,
+    uint32_t sample_index,
+    CapturedEdramSampleAddress* output,
+    std::string* error);
+
 // Checks only framebuffer effects represented by the captured raster state.
 bool captured_draw_has_no_framebuffer_effects(
     const CapturedRasterState& raster) noexcept;

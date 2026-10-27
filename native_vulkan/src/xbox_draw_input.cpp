@@ -1639,6 +1639,81 @@ bool decode_captured_raster_state(
     return true;
 }
 
+bool captured_xenos_edram_sample_address(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    uint32_t x,
+    uint32_t y,
+    uint32_t sample_index,
+    CapturedEdramSampleAddress* output,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    constexpr uint32_t kTileSamples = kTileWidthSamples * kTileHeightSamples;
+    constexpr uint32_t kTileCount = 2048;
+    constexpr uint64_t kEdramBytes =
+        static_cast<uint64_t>(kTileCount) * kTileSamples * sizeof(uint32_t);
+    if (!output || !raster.width || !raster.height || !raster.surface_pitch ||
+        (raster.sample_count != 1 && raster.sample_count != 2 &&
+         raster.sample_count != 4)) {
+        return fail("invalid captured Xenos EDRAM target layout", error);
+    }
+    if (!depth_target &&
+        raster.color_format == CapturedColorTargetFormat::Rg16Float) {
+        return fail("captured 64bpp Xenos EDRAM color addressing is unsupported",
+                    error);
+    }
+
+    const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+    const uint32_t sample_height = raster.sample_count / sample_width;
+    if (raster.width % sample_width || raster.height % sample_height) {
+        return fail("captured Xenos EDRAM extent is not sample aligned", error);
+    }
+    const uint32_t logical_width = raster.width / sample_width;
+    const uint32_t logical_height = raster.height / sample_height;
+    if (raster.surface_pitch < logical_width || x >= logical_width ||
+        y >= logical_height || sample_index >= raster.sample_count) {
+        return fail("captured Xenos EDRAM pixel or sample is out of bounds",
+                    error);
+    }
+
+    const uint64_t pitch_samples =
+        static_cast<uint64_t>(raster.surface_pitch) * sample_width;
+    const uint64_t pitch_tiles =
+        (pitch_samples + kTileWidthSamples - 1u) / kTileWidthSamples;
+    const uint64_t sample_x =
+        static_cast<uint64_t>(x) * sample_width + sample_index % sample_width;
+    const uint64_t sample_y =
+        static_cast<uint64_t>(y) * sample_height + sample_index / sample_width;
+    const uint64_t tile_x = sample_x / kTileWidthSamples;
+    const uint64_t tile_y = sample_y / kTileHeightSamples;
+    const uint32_t tile_index = static_cast<uint32_t>(
+        (static_cast<uint64_t>(depth_target ? raster.depth_base_tiles
+                                            : raster.color_base_tiles) +
+         tile_y * pitch_tiles + tile_x) &
+        (kTileCount - 1u));
+    uint32_t tile_sample_x =
+        static_cast<uint32_t>(sample_x % kTileWidthSamples);
+    if (depth_target) {
+        tile_sample_x = (tile_sample_x + kTileWidthSamples / 2u) %
+            kTileWidthSamples;
+    }
+    const uint32_t sample_in_tile =
+        static_cast<uint32_t>(sample_y % kTileHeightSamples) *
+            kTileWidthSamples +
+        tile_sample_x;
+    const uint64_t byte_offset =
+        (static_cast<uint64_t>(tile_index) * kTileSamples + sample_in_tile) *
+        sizeof(uint32_t);
+    if (byte_offset + sizeof(uint32_t) > kEdramBytes) {
+        return fail("captured Xenos EDRAM address exceeds backing store", error);
+    }
+    *output = {tile_index, sample_in_tile,
+               static_cast<uint32_t>(byte_offset)};
+    if (error) error->clear();
+    return true;
+}
+
 bool decode_captured_copy_state(
     const CapturedRasterRegisters& registers,
     CapturedCopyState* output,
