@@ -526,3 +526,21 @@ the scanned batches. The app stayed black at the wait. See the
 and [compressed log](../evidence/process2_redmi_wait_reg_mem_trace_default_on_20261026.log.gz).
 The diagnostic package was applied with `adb install -r`; app data was
 preserved, and the app process was relaunched to collect this trace.
+
+## Linux provider-enabled depth/stencil candidate (2026-10-27)
+
+Built the current P2 plugin against ReXGlue SDK PR #2, which adds an optional
+provider capability for Vulkan 1.1 depth/stencil resolve. The paired plugin
+and `librexruntime.so` are recorded in
+[`handoff evidence`](../evidence/process2_linux_depth_resolve_handoff_20261027.json).
+With `VK_LAYER_KHRONOS_validation`, all seven plugin CTest cases passed. A
+GTX 950 provider probe reported `VK_KHR_create_renderpass2` and
+`VK_KHR_depth_stencil_resolve` enabled, `SAMPLE_ZERO` supported for depth and
+stencil, and GPU-emulation features disabled. The pair must be loaded together
+in a separate P1 scratch run.
+
+Process 1 received the pair for an exact-XEX recapture. This only verifies
+capability plumbing and renderer regressions; the post-handoff retail result
+is pending. It does not establish that the Xbox title reached or rendered a
+video. The Vulkan 1.1 extension path is implemented, but this host probe ran on
+a Vulkan 1.4 GTX 950.

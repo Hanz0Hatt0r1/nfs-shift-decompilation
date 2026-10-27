@@ -1,0 +1,70 @@
+{
+  "schema": "shift.process2.linux_depth_resolve_handoff.v1",
+  "observed_at": "2026-10-27",
+  "purpose": "Provider-enabled Linux Vulkan candidate handed to Process 1 for an exact-retail startup recapture.",
+  "baseline": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "p1_evidence": "xbox360_linux_current_p2_296be_frontend_followthrough_20261027.json",
+    "previous_renderer_source_commit": "296be17faee91f79ef5036d1b282423295d172ac",
+    "previous_renderer_sha256": "0ccbeab62a7a592fda942083c83172a1536a89246c2ffc903aa2188f106ac7b0",
+    "observed_refresh_failures": 8,
+    "failure": "mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability",
+    "interpretation": "This renderer rejection blocked those refreshes. It does not establish why the guest later stopped submitting or why the window became black."
+  },
+  "build": {
+    "p2_branch": "work/process2-xbox-live-ring-20261023",
+    "p2_source_commit": "ab3c08bd6fc365cf847b7ce71db55d8decda56f8",
+    "sdk_branch": "work/process2-vulkan-resolve-capability-20261024",
+    "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "sdk_pr": "https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/2",
+    "target": "Linux x86_64",
+    "compiler": "Clang 22.1.8",
+    "cxx_flags": "-mssse3",
+    "minimum_vulkan_api": "1.1",
+    "artifact_directory": "/home/pes/work/process2-depth-resolve-handoff-20261027",
+    "artifacts": {
+      "librexgpu-shift-native.so": {
+        "sha256": "abc7bf5df779be7dce4fdae719c05c89a35ad8ce222f95b3337478f24bddc402",
+        "build_id": "0742d7a30c5499febc20d4cf5909a695cc466dae",
+        "size_bytes": 4222760
+      },
+      "librexruntime.so": {
+        "sha256": "f049d64a46ab04e8d5fcb71800c92d86a5cc6a5fbd38a6b1bf1a623c86398a80",
+        "build_id": "a1268154c8954eb1cd5029e340a9229dcfe1b30a",
+        "size_bytes": 15446504
+      }
+    },
+    "matching_runtime_required": true,
+    "provider_compile_definitions": [
+      "SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER=1",
+      "SHIFT_REXGLUE_OPTIONAL_GEOMETRY_SHADER_PROVIDER=1"
+    ]
+  },
+  "validation": {
+    "plugin_ctest": "7/7 passed with VK_LAYER_KHRONOS_validation",
+    "dynamic_link_check": "ldd -r clean when LD_LIBRARY_PATH selects the matching handoff runtime",
+    "provider_probe": {
+      "device": "NVIDIA GeForce GTX 950",
+      "vulkan_api": "1.4",
+      "create_renderpass2_and_depth_stencil_resolve_pair_enabled": true,
+      "sample_zero_supported_for_depth_and_stencil": true,
+      "gpu_emulation_features": "disabled"
+    },
+    "logs_outside_git": [
+      "/home/pes/work/process2-depth-resolve-handoff-20261027/ctest-validation.log",
+      "/home/pes/work/process2-depth-resolve-handoff-20261027/capability-check.txt",
+      "/home/pes/work/process2-depth-resolve-handoff-20261027/ldd.txt"
+    ]
+  },
+  "handoff": {
+    "recipient": "Process 1 thread 01a15b2f-a82e-7c10-9683-31115e86146b",
+    "status": "Sent for isolated exact-XEX recapture with plugin and matching runtime loaded together.",
+    "retail_result": "Pending. No post-handoff retail screenshot or Bink-start evidence is available yet."
+  },
+  "limits": [
+    "The capability probe and CTest are not an exact retail frame or parity result.",
+    "The host GPU reports Vulkan 1.4; Vulkan 1.1 compatibility is implemented through the KHR extension pair but this run is not on a Vulkan 1.1-only device.",
+    "The optional provider API is proposed in ReXGlue SDK PR #2 and older SDK builds remain fail-closed.",
+    "The exact retail refresh sequence must be recaptured with the mapped plugin and matching runtime hashes before claiming this removed the startup blocker or launched a video."
+  ]
+}
