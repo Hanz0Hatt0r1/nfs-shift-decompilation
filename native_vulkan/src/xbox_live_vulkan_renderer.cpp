@@ -349,6 +349,53 @@ bool fail(const std::string& message, std::string* error) {
     return false;
 }
 
+bool validate_captured_operation_stream(
+    const std::vector<CapturedVulkanOperation>& operations,
+    size_t draw_count,
+    std::string* error) {
+    std::vector<bool> referenced_draws(draw_count, false);
+    uint32_t previous_draw_index = 0;
+    bool have_previous_draw = false;
+    for (const CapturedVulkanOperation& operation : operations) {
+        if (operation.type != CapturedVulkanOperation::Type::Draw) continue;
+        if (operation.draw_index >= draw_count) {
+            std::ostringstream message;
+            message << "captured operation stream references draw "
+                    << operation.draw_index << " outside draw list of "
+                    << draw_count;
+            return fail(message.str(), error);
+        }
+        if (referenced_draws[operation.draw_index] ||
+            (have_previous_draw && operation.draw_index <= previous_draw_index)) {
+            std::ostringstream message;
+            message << "captured operation stream has duplicate or reordered draw "
+                    << operation.draw_index;
+            return fail(message.str(), error);
+        }
+        referenced_draws[operation.draw_index] = true;
+        previous_draw_index = operation.draw_index;
+        have_previous_draw = true;
+    }
+    for (size_t draw_index = 0; draw_index < referenced_draws.size(); ++draw_index) {
+        if (!referenced_draws[draw_index]) {
+            std::ostringstream message;
+            message << "captured operation stream omits draw " << draw_index;
+            return fail(message.str(), error);
+        }
+    }
+    if (error) error->clear();
+    return true;
+}
+
+void append_captured_operation_stream(
+    std::string* error,
+    const std::vector<CapturedVulkanOperation>* operations) {
+    if (error && operations && !operations->empty()) {
+        *error += "; ordered operations=" +
+                  describe_captured_vulkan_operations(*operations);
+    }
+}
+
 bool vk_fail(const char* operation, VkResult result, std::string* error) {
     if (error) {
         std::ostringstream stream;
@@ -2943,6 +2990,47 @@ bool submit_mixed_sample_copy_frame(
 
 }  // namespace
 
+std::string describe_captured_vulkan_operations(
+    const std::vector<CapturedVulkanOperation>& operations) {
+    std::ostringstream message;
+    constexpr size_t kMaxLoggedOperations = 64;
+    const size_t count = std::min(operations.size(), kMaxLoggedOperations);
+    for (size_t i = 0; i < count; ++i) {
+        if (i) message << ';';
+        const CapturedVulkanOperation& operation = operations[i];
+        switch (operation.type) {
+            case CapturedVulkanOperation::Type::Draw:
+                message << "draw(packet=" << operation.packet_index
+                        << ",index=" << operation.draw_index << ')';
+                break;
+            case CapturedVulkanOperation::Type::CopyConvert:
+                message << "copy(packet=" << operation.packet_index
+                        << ",source=" << operation.source_width << 'x'
+                        << operation.source_height << ",destination=0x" << std::hex
+                        << operation.copy_state.destination_base << std::dec << ','
+                        << operation.copy_state.destination_pitch << 'x'
+                        << operation.copy_state.destination_height << ",format="
+                        << operation.copy_state.destination_format << '/'
+                        << operation.copy_state.destination_number_format
+                        << ",endian=" << operation.copy_state.destination_endian
+                        << ",exp_bias=" << operation.copy_state.destination_exp_bias
+                        << ",samples=" << operation.copy_state.sample_select
+                        << ",clear=" << operation.copy_state.color_clear_enable
+                        << '/' << operation.copy_state.depth_clear_enable
+                        << ",swap_rb="
+                        << operation.copy_state.destination_swap_red_blue << ')';
+                break;
+            case CapturedVulkanOperation::Type::UnresolvedDraw:
+                message << "unresolved(packet=" << operation.packet_index << ')';
+                break;
+        }
+    }
+    if (count < operations.size()) {
+        message << "; omitted operations=" << operations.size() - count;
+    }
+    return message.str();
+}
+
 struct CapturedVulkanTextureCache::Impl {
     TextureCacheState state;
 };
@@ -3026,7 +3114,8 @@ bool submit_captured_vulkan_frame(
     VkPipelineCache pipeline_cache,
     CapturedVulkanTextureCache* texture_cache,
     CapturedVulkanSourceReadback* source_readback,
-    std::vector<CapturedVulkanDrawVisibility>* draw_visibility) {
+    std::vector<CapturedVulkanDrawVisibility>* draw_visibility,
+    const std::vector<CapturedVulkanOperation>* operations) {
     if (output_readback) output_readback->clear();
     if (draw_visibility) draw_visibility->assign(draws.size(), {});
     if (source_readback) {
@@ -3041,6 +3130,10 @@ bool submit_captured_vulkan_frame(
     if (output_width > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()) ||
         output_height > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())) {
         return fail("Vulkan presenter extent exceeds signed scissor bounds", error);
+    }
+    if (operations &&
+        !validate_captured_operation_stream(*operations, draws.size(), error)) {
+        return false;
     }
     const CapturedRasterState& frame_target = draws.front().raster;
     const bool linear_rgba8_intermediate = copy &&
@@ -3095,6 +3188,10 @@ bool submit_captured_vulkan_frame(
                         << draws.size() - logged_layout_count;
             }
             message << "; ordered Xenos EDRAM target persistence and resolve are not implemented";
+            if (operations) {
+                message << "; ordered operations="
+                        << describe_captured_vulkan_operations(*operations);
+            }
             return fail(message.str(), error);
         }
     }
@@ -3162,12 +3259,14 @@ bool submit_captured_vulkan_frame(
             return fail("mixed captured sample counts require a captured Copy/Convert target",
                         error);
         }
-        return submit_mixed_sample_copy_frame(
+        const bool submitted = submit_mixed_sample_copy_frame(
             physical_device, device, queue, queue_family_index, output_image,
             output_view, output_written_before, output_width, output_height,
             draws, error, output_readback, geometry_shader_enabled, *copy,
             depth_stencil_resolve_enabled, sampler_capabilities, pipeline_cache,
             texture_cache_state, source_readback, draw_visibility);
+        if (!submitted) append_captured_operation_stream(error, operations);
+        return submitted;
     }
     const uint32_t source_width = copy && copy->source_width
                                       ? copy->source_width
@@ -3205,7 +3304,9 @@ bool submit_captured_vulkan_frame(
                     << ",depth_base=0x" << std::hex << raster.depth_base_tiles
                     << std::dec << '}';
         }
-        return fail(message.str(), error);
+        std::string diagnostic = message.str();
+        append_captured_operation_stream(&diagnostic, operations);
+        return fail(diagnostic, error);
     }
     const uint32_t raster_width = copy ? source_width : output_width;
     const uint32_t raster_height = copy ? source_height : output_height;

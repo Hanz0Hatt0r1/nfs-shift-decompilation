@@ -480,6 +480,61 @@ int main(int argc, char** argv) {
                 << changed_extent_error << '\n';
       return 1;
     }
+    std::vector<shift::xbox::CapturedVulkanOperation> ordered_operations;
+    for (size_t draw_index = 0; draw_index < draws.size(); ++draw_index) {
+      if (draw_index == 1) {
+        shift::xbox::CapturedVulkanOperation copy_operation{};
+        copy_operation.type =
+            shift::xbox::CapturedVulkanOperation::Type::CopyConvert;
+        copy_operation.packet_index = 101;
+        copy_operation.source_width = 1280;
+        copy_operation.source_height = 720;
+        copy_operation.copy_state.destination_base = 0x0CC87000u;
+        copy_operation.copy_state.destination_pitch = 256;
+        copy_operation.copy_state.destination_height = 243;
+        copy_operation.copy_state.destination_format = 31;
+        copy_operation.copy_state.destination_number_format = 7;
+        copy_operation.copy_state.destination_endian = 2;
+        copy_operation.copy_state.color_clear_enable = true;
+        ordered_operations.push_back(copy_operation);
+      }
+      shift::xbox::CapturedVulkanOperation draw_operation{};
+      draw_operation.type = shift::xbox::CapturedVulkanOperation::Type::Draw;
+      draw_operation.draw_index = static_cast<uint32_t>(draw_index);
+      draw_operation.packet_index = 100u + static_cast<uint32_t>(draw_index) * 2u;
+      ordered_operations.push_back(draw_operation);
+    }
+    std::string ordered_operations_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, changed_extent_draws,
+            &ordered_operations_error, nullptr, enabled_features.geometryShader,
+            &copy, false, {}, VK_NULL_HANDLE, nullptr, nullptr, nullptr,
+            &ordered_operations) ||
+        ordered_operations_error.find(
+            "ordered operations=draw(packet=100,index=0);copy(packet=101,source=1280x720,destination=0xcc87000,256x243,format=31/7,endian=2,exp_bias=0,samples=0,clear=1/0,swap_rb=0);draw(packet=102,index=1)") ==
+            std::string::npos) {
+      std::cerr << "ordered draw/copy operations were lost from the target-layout "
+                   "diagnostic: "
+                << ordered_operations_error << '\n';
+      return 1;
+    }
+    auto reordered_operations = ordered_operations;
+    std::swap(reordered_operations[0], reordered_operations[2]);
+    std::string reordered_operations_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, changed_extent_draws,
+            &reordered_operations_error, nullptr, enabled_features.geometryShader,
+            &copy, false, {}, VK_NULL_HANDLE, nullptr, nullptr, nullptr,
+            &reordered_operations) ||
+        reordered_operations_error.find(
+            "captured operation stream has duplicate or reordered draw") ==
+            std::string::npos) {
+      std::cerr << "reordered captured draw references were accepted: "
+                << reordered_operations_error << '\n';
+      return 1;
+    }
     auto oversized_target_draws = changed_extent_draws;
     oversized_target_draws.resize(66, draws.front());
     std::string oversized_target_error;

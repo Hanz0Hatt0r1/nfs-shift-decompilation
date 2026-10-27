@@ -1670,8 +1670,27 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     std::vector<uint8_t> pixel_shader_program;
     std::vector<shift::xbox::CapturedVulkanDraw> frame_draws;
     std::vector<uint32_t> frame_draw_packet_indices;
+    std::vector<shift::xbox::CapturedVulkanOperation> frame_operations;
+    uint32_t frame_draw_packet_index = 0;
+    uint64_t last_logged_operation_signature = 0;
+    const auto trace_frame_operations = [&frame_operations,
+                                         &last_logged_operation_signature] {
+      if (!GuestRingTraceEnabled() || frame_operations.empty()) return;
+      const std::string description =
+          shift::xbox::describe_captured_vulkan_operations(frame_operations);
+      uint64_t signature = 14695981039346656037ull;
+      for (const unsigned char byte : description) {
+        signature ^= byte;
+        signature *= 1099511628211ull;
+      }
+      if (signature == last_logged_operation_signature) return;
+      last_logged_operation_signature = signature;
+      REXLOG_INFO("shift-native: captured ordered PM4 operations: {}", description);
+    };
     const auto recycle_frame_draws = [this, &frame_draws,
-                                      &frame_draw_packet_indices] {
+                                      &frame_draw_packet_indices,
+                                      &frame_operations,
+                                      &frame_draw_packet_index] {
       for (size_t draw_slot = 0; draw_slot < frame_draws.size(); ++draw_slot) {
         for (auto& texture : frame_draws[draw_slot].textures) {
           if (texture.format != shift::xbox::CapturedVulkanTexture::Format::R8) {
@@ -1685,6 +1704,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       }
       frame_draws.clear();
       frame_draw_packet_indices.clear();
+      frame_operations.clear();
+      frame_draw_packet_index = 0;
     };
     shift::xbox::CapturedVulkanCopy frame_copy{};
     bool frame_copy_ready = false;
@@ -2445,6 +2466,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               }
             } else if (packet.type == shift::xbox::PacketType::Type3 &&
                        (packet.opcode == 0x22u || packet.opcode == 0x36u)) {
+              const uint32_t draw_packet_index = frame_draw_packet_index++;
               shift::xbox::DecodedIndexedDraw draw{};
               if (shift::xbox::decode_captured_draw_indx(
                       packet_bytes, packet.byte_length, &draw, &error)) {
@@ -2532,17 +2554,27 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   shift::xbox::CapturedCopyState copy_state{};
                   if (shift::xbox::decode_captured_copy_state(
                           raster_registers, &copy_state, &error)) {
-                    if (copy_state.destination_format != 6u ||
+                    const bool intermediate_copy =
+                        copy_state.destination_format != 6u ||
                         copy_state.destination_number_format != 0u ||
                         copy_state.destination_endian != 0u ||
                         copy_state.destination_exp_bias != 0 ||
                         copy_state.sample_select != 0u ||
                         copy_state.color_clear_enable ||
                         copy_state.depth_clear_enable ||
-                        !copy_state.destination_swap_red_blue) {
+                        !copy_state.destination_swap_red_blue;
+                    if (intermediate_copy) {
                       ++recognized_intermediate_copies;
-                      continue;
                     }
+                    shift::xbox::CapturedVulkanOperation operation{};
+                    operation.type =
+                        shift::xbox::CapturedVulkanOperation::Type::CopyConvert;
+                    operation.packet_index = draw_packet_index;
+                    operation.copy_state = copy_state;
+                    operation.source_width = captured_target_width;
+                    operation.source_height = captured_target_height;
+                    frame_operations.push_back(std::move(operation));
+                    if (intermediate_copy) continue;
                     shift::xbox::CapturedVulkanCopy prepared_copy{};
                     prepared_copy.state = copy_state;
                     prepared_copy.source_width = captured_target_width;
@@ -2607,13 +2639,24 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   ++draws_with_project_shader_translation;
                   if (resources_resolved) {
                     ++draws_with_resolved_resource_payloads;
+                    shift::xbox::CapturedVulkanOperation operation{};
+                    operation.type =
+                        shift::xbox::CapturedVulkanOperation::Type::Draw;
+                    operation.draw_index = static_cast<uint32_t>(frame_draws.size());
+                    operation.packet_index = draw_packet_index;
                     frame_draws.push_back(std::move(prepared_draw));
-                    frame_draw_packet_indices.push_back(decoded_draws - 1u);
+                    frame_draw_packet_indices.push_back(draw_packet_index);
+                    frame_operations.push_back(std::move(operation));
                   } else {
                     ++draws_with_unresolved_resource_payloads;
                   }
                 }
                 if (!resources_resolved) {
+                  shift::xbox::CapturedVulkanOperation operation{};
+                  operation.type =
+                      shift::xbox::CapturedVulkanOperation::Type::UnresolvedDraw;
+                  operation.packet_index = draw_packet_index;
+                  frame_operations.push_back(std::move(operation));
                   const std::string reason =
                       error.empty() ? "unsupported shader or resource form" : error;
                   if (logged_unresolved_draw_reasons.size() < 16u &&
@@ -2624,7 +2667,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     REXLOG_INFO(
                         "shift-native: unresolved captured draw #{} topology={} "
                         "autoindex={} count={} raster={} inputs={} translated={}: {}",
-                        decoded_draws - 1u,
+                        draw_packet_index,
                         static_cast<uint32_t>(draw.topology), draw.auto_index,
                         draw.index_count, raster_state_ready, shader_inputs_ready,
                         shaders_translated, reason);
@@ -2655,6 +2698,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 }
               } else {
                 ++unsupported_draws;
+                shift::xbox::CapturedVulkanOperation operation{};
+                operation.type =
+                    shift::xbox::CapturedVulkanOperation::Type::UnresolvedDraw;
+                operation.packet_index = draw_packet_index;
+                frame_operations.push_back(std::move(operation));
                 const std::string reason =
                     error.empty() ? "unsupported draw packet form" : error;
                 if (logged_draw_decode_reasons.size() < 16u &&
@@ -2687,6 +2735,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   frame_copy.state.destination_height == swap.height;
               const shift::xbox::CapturedVulkanCopy* copy_for_swap =
                   copy_matches_swap ? &frame_copy : nullptr;
+              trace_frame_operations();
               if (frame_copy_ready && !copy_matches_swap) {
                 REXLOG_WARN("shift-native: ignored captured Copy/Convert destination "
                             "{:08X} {}x{} for guest swap {:08X} {}x{}",
@@ -2754,7 +2803,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 bool refresh_callback_called = false;
                 const bool refreshed = presenter_->RefreshGuestOutput(
                     swap.width, swap.height, swap.width, swap.height,
-                    [this, &frame_draws, &render_error, &refresh_callback_called,
+                    [this, &frame_draws, &frame_operations, &render_error,
+                      &refresh_callback_called,
                       copy_for_swap, width = swap.width,
                       height = swap.height, capture_output, capture_source,
                      capture_draw_visibility, &output_readback, &source_readback,
@@ -2824,7 +2874,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                            device->properties().maxSamplerAnisotropy},
                           pipeline_cache_, &texture_cache_,
                           capture_source ? &source_readback : nullptr,
-                          capture_draw_visibility ? &draw_visibility : nullptr);
+                          capture_draw_visibility ? &draw_visibility : nullptr,
+                          &frame_operations);
                     });
                 if (refreshed) {
                   ++submitted_frames;

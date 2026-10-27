@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -61,6 +62,26 @@ struct CapturedVulkanCopy {
     std::vector<uint32_t> gamma_pixel_shader_spirv;
     std::vector<uint32_t> gamma_single_sample_pixel_shader_spirv;
 };
+
+struct CapturedVulkanOperation {
+    enum class Type : uint8_t {
+        Draw,
+        CopyConvert,
+        UnresolvedDraw,
+    };
+
+    Type type = Type::Draw;
+    // Draw operations reference the corresponding entry in the frame draw list.
+    // UnresolvedDraw preserves a packet that could not be decoded or prepared.
+    uint32_t draw_index = std::numeric_limits<uint32_t>::max();
+    uint32_t packet_index = std::numeric_limits<uint32_t>::max();
+    CapturedCopyState copy_state{};
+    uint32_t source_width = 0;
+    uint32_t source_height = 0;
+};
+
+std::string describe_captured_vulkan_operations(
+    const std::vector<CapturedVulkanOperation>& operations);
 
 struct CapturedVulkanSamplerCapabilities {
     bool anisotropy_enabled = false;
@@ -136,6 +157,8 @@ class CapturedVulkanTextureCache {
 // depth and stencil, not from extension enumeration alone.
 // When draw_visibility is supplied, the renderer waits for completion and
 // returns one optional non-precise occlusion result per submitted draw.
+// The optional operation stream preserves packet order for validation and
+// failure diagnostics. Intermediate Copy/Convert operations are not executed.
 bool submit_captured_vulkan_frame(
     VkPhysicalDevice physical_device,
     VkDevice device,
@@ -156,6 +179,7 @@ bool submit_captured_vulkan_frame(
     VkPipelineCache pipeline_cache = VK_NULL_HANDLE,
     CapturedVulkanTextureCache* texture_cache = nullptr,
     CapturedVulkanSourceReadback* source_readback = nullptr,
-    std::vector<CapturedVulkanDrawVisibility>* draw_visibility = nullptr);
+    std::vector<CapturedVulkanDrawVisibility>* draw_visibility = nullptr,
+    const std::vector<CapturedVulkanOperation>* operations = nullptr);
 
 }  // namespace shift::xbox

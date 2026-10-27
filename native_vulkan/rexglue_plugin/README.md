@@ -1611,3 +1611,24 @@ P2 plugin suite passed 7/7 with the layer, and the Android ARM64 ring regression
 passed on the phone. APK/plugin hashes, the complete rotated phone log, the
 matched retail frame, and scope limits are in
 [`process2_redmi_pm4_packet_limit_20261027.json`](../../evidence/process2_redmi_pm4_packet_limit_20261027.json).
+
+## Ordered captured draw and copy operations (2026-10-27)
+
+The ring frontend now passes a frame-local operation stream alongside the
+prepared draw resources. It retains packet order for prepared draws, recognized
+Copy/Convert operations (including their captured destination state and source
+extent), and unresolved draw packets. The Vulkan renderer checks that draw
+references remain ordered and complete, and includes the captured sequence in
+target-layout, copy-extent, and mixed-sample failure diagnostics. The host
+renderer regression exercises Draw → Copy/Convert → Draw and rejects reordered
+draw references.
+
+This stream does not execute intermediate copies or persist Xenos EDRAM targets;
+those remain the required graphics work for the captured transition/video path.
+The regression verifies capture and diagnostics only. It does not claim a new
+retail frame or video-parity result. The host Vulkan suite passed 4/4 and the
+Linux plugin suite passed 7/7 with Khronos validation enabled. The Android
+ARM64 plugin linked successfully; it was not installed over the active Redmi
+game because this instrumentation does not change rendered output. Build and
+test details are in
+[`process2_ordered_operation_stream_20261027.json`](../../evidence/process2_ordered_operation_stream_20261027.json).
