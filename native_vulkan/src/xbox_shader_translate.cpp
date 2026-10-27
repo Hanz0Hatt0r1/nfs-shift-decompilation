@@ -566,7 +566,17 @@ bool translate_captured_shader_glsl(
         if (clause.opcode == ShaderControlFlowOpcode::ConditionalJump) {
             path.push_back(pc);
             if (clause.predicated || clause.jump_direction) {
-                return fail("captured shader branch uses unsupported predicate/direction", error);
+                std::ostringstream message;
+                message << "captured shader branch uses unsupported predicate/direction "
+                        << "(instruction=" << pc << ", opcode=11, address="
+                        << clause.address << ", bool_constant="
+                        << clause.bool_constant << ", condition="
+                        << clause.condition << ", unconditional="
+                        << clause.unconditional << ", predicated="
+                        << clause.predicated << ", direction="
+                        << clause.jump_direction << ')';
+                if (error) *error = message.str();
+                return false;
             }
             bool take = clause.unconditional;
             if (!clause.unconditional) {

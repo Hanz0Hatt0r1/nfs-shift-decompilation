@@ -82,6 +82,13 @@ std::vector<uint8_t> captured_conditional_exec_pixel_shader() {
     return shader;
 }
 
+std::vector<uint8_t> captured_predicated_jump_pixel_shader() {
+    auto shader = captured_conditional_exec_pixel_shader();
+    write_be32(shader.data(), 3u | (1u << 14));
+    write_be32(shader.data() + 4, 0x1002B606u);
+    return shader;
+}
+
 void require(bool condition, const char* message) {
     if (!condition) {
         std::cerr << message << '\n';
@@ -267,6 +274,21 @@ int main() {
                 conditional_translation.executed_instruction_addresses ==
                     std::vector<uint32_t>{3},
             "false CEXEC did not skip its clause and continue to EXEC_END");
+
+    const std::vector<uint8_t> predicated_jump_shader =
+        captured_predicated_jump_pixel_shader();
+    require(!shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                predicated_jump_shader.data(), predicated_jump_shader.size(),
+                conditional_options, &conditional_translation,
+                &conditional_error) &&
+                conditional_error.find("instruction=0, opcode=11, address=3") !=
+                    std::string::npos &&
+                conditional_error.find("bool_constant=129, condition=1") !=
+                    std::string::npos &&
+                conditional_error.find("unconditional=0, predicated=1, direction=1") !=
+                    std::string::npos,
+            "unsupported retail-style CJMP rejection omitted its decoded fields");
 
     const std::vector<uint8_t> vertex_shader =
         captured_full_mini_vertex_shader();
