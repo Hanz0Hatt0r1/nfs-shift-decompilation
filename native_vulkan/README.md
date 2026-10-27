@@ -598,11 +598,12 @@ this result does not establish retail gameplay or parity.
 
 ## Partial raster state on unresolved PM4 draws (2026-10-28)
 
-When a captured indexed draw has incomplete raster state, the plugin now keeps
-the raw values of registers that were actually observed plus a validity mask.
-The ordered-operation rejection includes these values even when stream
-validation fails before Vulkan submission. The stencil reference/write-mask
-register is printed as valid only if a corresponding PM4 write was captured.
+For captured indexed draws, the ordered-operation trace now includes decoded
+raster state and the raw values of observed guest registers plus a validity
+mask. This is retained when decoding is incomplete, so the rejection includes
+partial state even when stream validation fails before Vulkan submission. The
+stencil reference/write-mask register is printed as valid only if a
+corresponding PM4 write was captured.
 Linux renderer tests and plugin tests passed 4/4 and 6/6 respectively with
 `VK_LAYER_KHRONOS_validation`; the Vulkan minimum remains 1.1. The ARM64
 renderer and its check target compile, but no Android device was connected.

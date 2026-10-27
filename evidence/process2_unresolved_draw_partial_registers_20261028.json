@@ -14,7 +14,7 @@
       "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp"
     ],
     "behavior": [
-      "A failed raster decode retains every observed raw guest register and its validity mask on the unresolved ordered operation.",
+      "Ordered traces for prepared and unresolved draws retain decoded raster state plus every observed raw guest register and its validity mask.",
       "The stencil reference/write-mask register is marked valid only when its PM4 write was observed.",
       "Ordered-stream validation errors append the operation trace before returning, so an unresolved draw's partial registers remain visible in the rejection diagnostic."
     ],
@@ -39,8 +39,8 @@
       "build_directory": "/home/pes/work/.build-process2-p2161-vulkan-plugin-20261027",
       "validation_layer": "VK_LAYER_KHRONOS_validation",
       "ctest": "passed 6/6",
-      "plugin_sha256": "fff4c40c357bbded964379f4877fd8b2d019ac9eea837eb36c6d81d477efeb40",
-      "build_id": "7748a7118e1cc7c7c63c35e3216acbe359eade9c",
+      "plugin_sha256": "b0cc215dba72b7129c0280c61481f186537957ca8a5f46baedb284582e9d8fa8",
+      "build_id": "92aea23429f4a7b5a4149c4b9a31d659b92d5c37",
       "vulkan_minimum": "1.1"
     },
     "android_arm64_api26": {
@@ -50,7 +50,7 @@
         "xbox_live_vulkan_renderer_check"
       ],
       "result": "compiled",
-      "renderer_archive_sha256": "c804932ec15a9a84c1f20b6d9b9c0767a02fab7982f8e17dfcc74bf1876e5df4",
+      "renderer_archive_sha256": "ea1f320afb71cb3177f90d94b3f10c1ebf47d4aef69ebaf202620508b2cb447f",
       "device_execution": "not run; adb devices -l listed no connected devices"
     }
   },

@@ -3614,7 +3614,14 @@ std::string describe_captured_vulkan_operations(
         switch (operation.type) {
             case CapturedVulkanOperation::Type::Draw:
                 message << "draw(packet=" << operation.packet_index
-                        << ",index=" << operation.draw_index << ')';
+                        << ",index=" << operation.draw_index;
+                if (operation.draw_registers_ready) {
+                    append_draw_registers(operation);
+                }
+                if (operation.draw_raster_ready) {
+                    append_draw_raster(operation.draw_raster);
+                }
+                message << ')';
                 break;
             case CapturedVulkanOperation::Type::CopyConvert:
                 message << "copy(packet=" << operation.packet_index

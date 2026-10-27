@@ -1693,6 +1693,23 @@ int main(int argc, char** argv) {
                 << unresolved_draw_error << '\n';
       return 1;
     }
+    auto resolved_draw_operations = unresolved_draw_operations;
+    resolved_draw_operations[0].type =
+        shift::xbox::CapturedVulkanOperation::Type::Draw;
+    const std::string resolved_draw_trace =
+        shift::xbox::describe_captured_vulkan_operations(resolved_draw_operations);
+    if (resolved_draw_trace.find(
+            "draw(packet=100,index=0,draw_registers={valid_mask=0x17038") ==
+            std::string::npos ||
+        resolved_draw_trace.find(
+            "surface=0x14000500,color=0xd0000,depth=0x1d000") ==
+            std::string::npos ||
+        resolved_draw_trace.find("depth_write=1,stencil_test=1") ==
+            std::string::npos) {
+      std::cerr << "resolved draw trace lost captured raster state: "
+                << resolved_draw_trace << '\n';
+      return 1;
+    }
     auto unresolved_copy_operations = ordered_operations;
     unresolved_copy_operations[1].type =
         shift::xbox::CapturedVulkanOperation::Type::UnresolvedCopy;
