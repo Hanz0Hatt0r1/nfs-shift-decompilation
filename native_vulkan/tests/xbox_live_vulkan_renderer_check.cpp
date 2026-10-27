@@ -1194,6 +1194,24 @@ int main(int argc, char** argv) {
                      "ordered Draw/Copy execution: " << packet49_error << '\n';
         return 1;
       }
+      auto unsupported_depth_only_view = captured_depth_only_view;
+      ++unsupported_depth_only_view.raster.depth_base_tiles;
+      std::string unsupported_depth_only_error;
+      if (shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720,
+              {packet49_draw, unsupported_depth_only_view},
+              depth_only_view_operations, &unsupported_depth_only_error,
+              nullptr, enabled_features.geometryShader, &packet49_copy, false,
+              {}, pipeline_cache, nullptr) ||
+          unsupported_depth_only_error.find(
+              "draw packet 25 changes target layout before a Copy/Convert boundary") ==
+              std::string::npos) {
+        std::cerr << "ordered executor accepted a depth-only view with an "
+                     "unmatched depth base: " << unsupported_depth_only_error
+                  << '\n';
+        return 1;
+      }
 
       auto unsupported_packet49_source = packet49_copy_operation;
       unsupported_packet49_source.source_raster.surface_pitch = 1272;

@@ -67,7 +67,7 @@
       "abi": "arm64-v8a",
       "vulkan_minimum": "1.1",
       "renderer_object_sha256": "4d558c134e43b6490a8e34ff5d43f6ffddd3c405d136582c07e6cb815ac0e868",
-      "renderer_check_sha256": "1108b89058c4b1fdc00251ade5410f8fec3eb3d01da0b959b8ed7d7ffe07b020",
+      "renderer_check_sha256": "d2a245443839211c7e6e69c6dfe7fb8a89f1586d36326fdbe784aba3ce402b2a",
       "device_execution": "not run; adb devices -l reported no connected device"
     },
     "p1_interrupt_trace": {
