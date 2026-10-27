@@ -506,11 +506,19 @@ struct CapturedShaderConstants {
     bool pixel_boolean_constants_valid;
 };
 
+struct CapturedShaderLoopConstantBank {
+    // Each loop constant is one raw dword: count[7:0], aL start[15:8],
+    // signed aL step[23:16], and reserved[31:24].
+    std::array<uint32_t, 32> words{};
+    std::array<bool, 32> valid{};
+};
+
 // Tracks only the constants and fetch descriptors referenced by the captured
 // VS/PS pair. This is a bounded draw-input snapshot, not a Xenos register file.
 struct CapturedXboxShaderRegisterState {
     void reset() noexcept;
     void apply(const GuestRegisterWrite& write) noexcept;
+    CapturedShaderLoopConstantBank snapshot_loop_constants() const noexcept;
     bool snapshot_constants(CapturedShaderConstants* constants,
                            std::string* error) const;
     bool validate_float_constants(
@@ -535,6 +543,8 @@ private:
     std::array<bool, 256> fetch_valid_{};
     std::array<uint32_t, 8> bool_words_{};
     std::array<bool, 8> bool_valid_{};
+    std::array<uint32_t, 32> loop_words_{};
+    std::array<bool, 32> loop_valid_{};
     uint32_t vertex_control_ = 0;
     uint32_t pixel_control_ = 0;
     bool vertex_control_valid_ = false;

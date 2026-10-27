@@ -320,6 +320,31 @@ void AppendShaderConstantDump(
   }
 }
 
+void AppendShaderLoopConstantDump(
+    std::ostringstream *output,
+    const shift::xbox::CapturedShaderLoopConstantBank &constants,
+    uint32_t frame, uint32_t packet) {
+  if (!output) return;
+  uint32_t loaded_mask = 0;
+  for (uint32_t index = 0; index < constants.valid.size(); ++index) {
+    if (constants.valid[index]) loaded_mask |= 1u << index;
+  }
+  *output << "shift-native: selected shader loop constants frame=" << frame
+          << " packet=" << packet << " loaded_mask=0x" << std::hex
+          << loaded_mask << std::dec;
+  for (uint32_t index = 0; index < constants.valid.size(); ++index) {
+    if (!constants.valid[index]) continue;
+    const uint32_t word = constants.words[index];
+    const int32_t step = std::bit_cast<int8_t>(
+        static_cast<uint8_t>((word >> 16) & 0xFFu));
+    *output << " loop[" << index << "]=0x" << std::hex << word << std::dec
+            << "(count=" << (word & 0xFFu)
+            << ",start=" << ((word >> 8) & 0xFFu)
+            << ",step=" << step << ')';
+  }
+  *output << '\n';
+}
+
 uint32_t ReadGuestDword(const uint8_t* bytes) {
   return (static_cast<uint32_t>(bytes[0]) << 24) |
          (static_cast<uint32_t>(bytes[1]) << 16) |
@@ -962,6 +987,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
           raster_state.depth_write_enabled, raster_state.stencil_test_enabled,
           (raster_state.stencil_refmask >> 16) & 0xFFu,
           raster_state.stencil_refmask & 0xFFu, raster_state.depth_control);
+      std::ostringstream loop_constant_dump;
+      AppendShaderLoopConstantDump(
+          &loop_constant_dump, shader_state.snapshot_loop_constants(),
+          diagnostic_submitted_frame, diagnostic_draw_packet_index);
+      REXLOG_INFO("{}", loop_constant_dump.str());
       const auto dump_shader = [&](const char* stage,
                                    const std::vector<uint8_t>& bytes) {
         std::ostringstream path;

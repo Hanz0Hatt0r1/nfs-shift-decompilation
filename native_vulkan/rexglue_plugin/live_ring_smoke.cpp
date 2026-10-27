@@ -165,6 +165,11 @@ std::vector<uint8_t> make_pm4_stream() {
   append_type0(&stream, 0x2307u, 0x000FF000u);
   append_type0(&stream, 0x2308u, 0x000FF100u);
   append_type0(&stream, 0x4904u, 0x00000001u);
+  if (const char* shader_dump_prefix =
+          std::getenv("SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX");
+      shader_dump_prefix && *shader_dump_prefix) {
+    append_type0(&stream, 0x490Fu, 0x00FE0503u);
+  }
   append_type0(&stream, 0x4000u,
                {0x3F800000u, 0x3F800000u, 0x3F800000u, 0x3F800000u});
   append_type0(&stream, 0x4800u,
@@ -552,9 +557,13 @@ int main(int argc, char** argv) {
     if (diagnostics.find("selected shader state frame=1 packet=0") ==
             std::string::npos ||
         diagnostics.find("color_mask=0x") == std::string::npos ||
-        diagnostics.find("stencil_write_mask=0x") == std::string::npos) {
+        diagnostics.find("stencil_write_mask=0x") == std::string::npos ||
+        diagnostics.find("selected shader loop constants frame=1 packet=0 "
+                         "loaded_mask=0x80") == std::string::npos ||
+        diagnostics.find("loop[7]=0xfe0503(count=3,start=5,step=-2)") ==
+            std::string::npos) {
       std::cerr << diagnostics << '\n';
-      return fail("selected shader diagnostic omitted the captured raster state");
+      return fail("selected shader diagnostic omitted raster or loop constants");
     }
     const auto read_shader_dump = [](const std::string& path) {
       std::ifstream file(path, std::ios::binary);

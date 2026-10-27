@@ -502,6 +502,29 @@ int main() {
                 loaded_constants.back().register_index == 0x43FFu &&
                 loaded_constants.back().value == 0xAFu,
             "captured constant-load bytes were not mapped as big-endian register values");
+    const uint8_t captured_loop_constant_load_packet[] = {
+        0xC0, 0x02, 0x2F, 0x00, 0x09, 0xD5, 0x68, 0xA0,
+        0x00, 0x03, 0x00, 0x07, 0x00, 0x00, 0x00, 0x01,
+    };
+    shift::xbox::CapturedConstantLoad loop_constant_load{};
+    require(shift::xbox::decode_captured_constant_load(
+                captured_loop_constant_load_packet,
+                sizeof(captured_loop_constant_load_packet),
+                &loop_constant_load, &error) &&
+                loop_constant_load.bank == shift::xbox::CapturedConstantBank::Loop &&
+                loop_constant_load.start_index == 7u &&
+                loop_constant_load.destination_register == 0x490Fu &&
+                loop_constant_load.byte_length == 4u,
+            "captured loop-constant load destination decoded incorrectly");
+    const uint8_t loop_constant_bytes[] = {0x00, 0xFE, 0x05, 0x03};
+    std::vector<shift::xbox::GuestRegisterWrite> loaded_loop_constants;
+    require(shift::xbox::decode_captured_constant_load_data(
+                loop_constant_load, loop_constant_bytes,
+                sizeof(loop_constant_bytes), &loaded_loop_constants, &error) &&
+                loaded_loop_constants.size() == 1u &&
+                loaded_loop_constants.front().register_index == 0x490Fu &&
+                loaded_loop_constants.front().value == 0x00FE0503u,
+            "captured loop constant lost its big-endian register value");
     auto invalid_constant_load = std::vector<uint8_t>(
         captured_constant_load_packet,
         captured_constant_load_packet + sizeof(captured_constant_load_packet));
@@ -1772,11 +1795,24 @@ int main() {
                     std::array<uint32_t, 6>{0x8800D8FEu, 0x09D57086u, 0x001FE3FFu,
                                             0x01280C14u, 0x00000003u, 0x00000A10u},
             "captured shader register bank snapshot diverged from its draw inputs");
+    shader_register_state.apply(loaded_loop_constants.front());
+    const auto loop_constant_bank =
+        shader_register_state.snapshot_loop_constants();
+    require(loop_constant_bank.valid[7] &&
+                loop_constant_bank.words[7] == 0x00FE0503u &&
+                !loop_constant_bank.valid[6],
+            "captured loop-constant register bank was not tracked by index");
     shader_register_state.reset();
     require(!shader_register_state.snapshot(
                 &tracked_shader_constants, &tracked_vertex_descriptor,
                 &tracked_texture_descriptor, &error),
             "shader register reset retained captured draw state");
+    const auto reset_loop_constant_bank =
+        shader_register_state.snapshot_loop_constants();
+    require(std::none_of(reset_loop_constant_bank.valid.begin(),
+                         reset_loop_constant_bank.valid.end(),
+                         [](bool valid) { return valid; }),
+            "shader register reset retained loop constants");
     shift::xbox::CapturedXboxShaderRegisterState dynamic_fetch_state;
     dynamic_fetch_state.apply({0x4800u, captured_vertex_descriptor[0]});
     dynamic_fetch_state.apply({0x4801u, captured_vertex_descriptor[1]});

@@ -1307,6 +1307,10 @@ void CapturedXboxShaderRegisterState::apply(const GuestRegisterWrite& write) noe
         const size_t slot = index - 0x4900u;
         bool_words_[slot] = write.value;
         bool_valid_[slot] = true;
+    } else if (index >= 0x4908u && index < 0x4928u) {
+        const size_t slot = index - 0x4908u;
+        loop_words_[slot] = write.value;
+        loop_valid_[slot] = true;
     } else if (index == 0x2307u) {
         vertex_control_ = write.value;
         vertex_control_valid_ = true;
@@ -1314,6 +1318,11 @@ void CapturedXboxShaderRegisterState::apply(const GuestRegisterWrite& write) noe
         pixel_control_ = write.value;
         pixel_control_valid_ = true;
     }
+}
+
+CapturedShaderLoopConstantBank
+CapturedXboxShaderRegisterState::snapshot_loop_constants() const noexcept {
+    return {loop_words_, loop_valid_};
 }
 
 bool CapturedXboxShaderRegisterState::snapshot(
