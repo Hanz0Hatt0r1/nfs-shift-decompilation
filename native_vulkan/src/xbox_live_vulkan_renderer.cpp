@@ -4803,24 +4803,13 @@ bool submit_captured_vulkan_operation_stream(
 
     size_t preflight_draw_count = 0;
     uint32_t preflight_first_draw = std::numeric_limits<uint32_t>::max();
-    const CapturedRasterState* preflight_stream_target = nullptr;
+    std::vector<CapturedRasterState> preflight_targets;
     bool found_presenter_copy = false;
     for (size_t i = 0; i < operations.size(); ++i) {
         const CapturedVulkanOperation& operation = operations[i];
         if (operation.type == CapturedVulkanOperation::Type::Draw) {
             const CapturedRasterState& draw_raster =
                 draws[operation.draw_index].raster;
-            if (preflight_stream_target &&
-                !same_target_layout(*preflight_stream_target, draw_raster)) {
-                std::ostringstream message;
-                message << "draw packet " << operation.packet_index
-                        << " changes Xenos EDRAM target layout across a Copy/Convert boundary; "
-                           "the physical EDRAM alias mapping is unavailable";
-                return fail(message.str(), error);
-            }
-            if (!preflight_stream_target) {
-                preflight_stream_target = &draw_raster;
-            }
             if (preflight_draw_count != 0 &&
                 !same_target_layout(draws[preflight_first_draw].raster,
                                     draw_raster)) {
@@ -4831,6 +4820,34 @@ bool submit_captured_vulkan_operation_stream(
                 return fail(message.str(), error);
             }
             if (preflight_draw_count == 0) {
+                bool known_layout = false;
+                for (const CapturedRasterState& previous : preflight_targets) {
+                    if (same_target_layout(previous, draw_raster)) {
+                        known_layout = true;
+                        continue;
+                    }
+                    bool disjoint = false;
+                    uint32_t overlap_tile = 2048;
+                    std::string layout_error;
+                    if (!captured_xenos_edram_layouts_are_tile_disjoint(
+                            previous, draw_raster, &disjoint, &overlap_tile,
+                            &layout_error)) {
+                        std::ostringstream message;
+                        message << "draw packet " << operation.packet_index
+                                << " has an invalid Xenos EDRAM layout: "
+                                << layout_error;
+                        return fail(message.str(), error);
+                    }
+                    if (!disjoint) {
+                        std::ostringstream message;
+                        message << "draw packet " << operation.packet_index
+                                << " changes Xenos EDRAM target layout across a Copy/Convert boundary; "
+                                   "tile " << overlap_tile
+                                << " aliases a cached layout and requires shared physical EDRAM backing";
+                        return fail(message.str(), error);
+                    }
+                }
+                if (!known_layout) preflight_targets.push_back(draw_raster);
                 preflight_first_draw = operation.draw_index;
             }
             ++preflight_draw_count;
@@ -4854,18 +4871,42 @@ bool submit_captured_vulkan_operation_stream(
                 }
                 return fail(message.str(), error);
             }
-            if (preflight_stream_target &&
-                !same_target_layout(*preflight_stream_target,
-                                    operation.source_raster)) {
-                std::ostringstream message;
-                message << "Copy/Convert packet " << operation.packet_index
-                        << " reads an Xenos EDRAM layout that aliases the active "
-                           "stream target; EDRAM reinterpretation is unavailable";
-                return fail(message.str(), error);
+            bool known_layout = false;
+            for (const CapturedRasterState& previous : preflight_targets) {
+                if (same_target_layout(previous, operation.source_raster)) {
+                    known_layout = true;
+                    continue;
+                }
+                bool disjoint = false;
+                uint32_t overlap_tile = 2048;
+                std::string layout_error;
+                if (!captured_xenos_edram_layouts_are_tile_disjoint(
+                        previous, operation.source_raster, &disjoint,
+                        &overlap_tile, &layout_error)) {
+                    std::ostringstream message;
+                    message << "Copy/Convert packet " << operation.packet_index
+                            << " has an invalid source EDRAM layout: "
+                            << layout_error;
+                    return fail(message.str(), error);
+                }
+                if (!disjoint) {
+                    std::ostringstream message;
+                    message << "Copy/Convert packet " << operation.packet_index
+                            << " reads EDRAM tile " << overlap_tile
+                            << " through a different layout; physical alias reinterpretation is unavailable";
+                    return fail(message.str(), error);
+                }
             }
-            if (!preflight_stream_target) {
-                preflight_stream_target = &operation.source_raster;
-            }
+            if (!known_layout) preflight_targets.push_back(operation.source_raster);
+        } else if (operation.source_raster_ready &&
+                   !same_target_layout(
+                       draws[preflight_first_draw].raster,
+                       operation.source_raster)) {
+            std::ostringstream message;
+            message << "Copy/Convert packet " << operation.packet_index
+                    << " reinterprets the active draw segment's EDRAM source layout; "
+                       "only exact-layout copies are supported";
+            return fail(message.str(), error);
         }
         const bool writes_presenter = presenter_copy &&
             operation.copy_state.destination_format ==

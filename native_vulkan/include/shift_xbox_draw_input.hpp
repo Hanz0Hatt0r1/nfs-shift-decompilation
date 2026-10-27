@@ -461,6 +461,17 @@ bool captured_xenos_edram_sample_address(
     CapturedEdramSampleAddress* output,
     std::string* error);
 
+// Compares the color and depth tile footprints of two captured EDRAM layouts.
+// A disjoint result is conservative at whole-tile granularity; overlapping
+// layouts require a shared physical EDRAM backing store and cannot use the
+// renderer's independent per-layout image cache.
+bool captured_xenos_edram_layouts_are_tile_disjoint(
+    const CapturedRasterState& a,
+    const CapturedRasterState& b,
+    bool* disjoint,
+    uint32_t* overlap_tile,
+    std::string* error);
+
 // Checks only framebuffer effects represented by the captured raster state.
 bool captured_draw_has_no_framebuffer_effects(
     const CapturedRasterState& raster) noexcept;

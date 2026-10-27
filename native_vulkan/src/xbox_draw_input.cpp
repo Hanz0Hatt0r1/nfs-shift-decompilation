@@ -1746,6 +1746,87 @@ bool captured_xenos_edram_sample_address(
     return true;
 }
 
+bool captured_xenos_edram_layouts_are_tile_disjoint(
+    const CapturedRasterState& a,
+    const CapturedRasterState& b,
+    bool* disjoint,
+    uint32_t* overlap_tile,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    constexpr uint32_t kTileCount = 2048;
+    if (!disjoint) {
+        return fail("missing Xenos EDRAM tile-disjoint result", error);
+    }
+    *disjoint = false;
+    if (overlap_tile) *overlap_tile = kTileCount;
+
+    const auto collect_tiles = [&](const CapturedRasterState& raster,
+                                   bool depth_target,
+                                   std::array<bool, kTileCount>* tiles) {
+        const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+        const uint32_t sample_height = raster.sample_count / sample_width;
+        if (!raster.width || !raster.height || !sample_height ||
+            raster.width % sample_width || raster.height % sample_height ||
+            !raster.surface_pitch) {
+            return fail("invalid captured Xenos EDRAM target layout", error);
+        }
+        const uint32_t logical_width = raster.width / sample_width;
+        const uint32_t logical_height = raster.height / sample_height;
+        const uint32_t tile_logical_width = kTileWidthSamples / sample_width;
+        const uint32_t tile_logical_height = kTileHeightSamples / sample_height;
+        const uint64_t columns =
+            (static_cast<uint64_t>(logical_width) + tile_logical_width - 1u) /
+            tile_logical_width;
+        const uint64_t rows =
+            (static_cast<uint64_t>(logical_height) + tile_logical_height - 1u) /
+            tile_logical_height;
+        // EDRAM tile addresses wrap at 2048. Scanning one period per axis is
+        // sufficient and bounds work even for malformed giant captures.
+        const uint64_t scan_columns = std::min<uint64_t>(columns, kTileCount);
+        const uint64_t scan_rows = std::min<uint64_t>(rows, kTileCount);
+        for (uint64_t tile_y = 0; tile_y < scan_rows; ++tile_y) {
+            for (uint64_t tile_x = 0; tile_x < scan_columns; ++tile_x) {
+                const uint32_t x = static_cast<uint32_t>(
+                    tile_x * tile_logical_width);
+                const uint32_t y = static_cast<uint32_t>(
+                    tile_y * tile_logical_height);
+                CapturedEdramSampleAddress address{};
+                if (!captured_xenos_edram_sample_address(
+                        raster, depth_target, x, y, 0, &address, error)) {
+                    return false;
+                }
+                (*tiles)[address.tile_index] = true;
+            }
+        }
+        return true;
+    };
+
+    std::array<bool, kTileCount> a_color{};
+    std::array<bool, kTileCount> a_depth{};
+    std::array<bool, kTileCount> b_color{};
+    std::array<bool, kTileCount> b_depth{};
+    if (!collect_tiles(a, false, &a_color) ||
+        !collect_tiles(a, true, &a_depth) ||
+        !collect_tiles(b, false, &b_color) ||
+        !collect_tiles(b, true, &b_depth)) {
+        return false;
+    }
+    for (uint32_t tile = 0; tile < kTileCount; ++tile) {
+        if ((a_color[tile] && b_color[tile]) ||
+            (a_color[tile] && b_depth[tile]) ||
+            (a_depth[tile] && b_color[tile]) ||
+            (a_depth[tile] && b_depth[tile])) {
+            if (overlap_tile) *overlap_tile = tile;
+            if (error) error->clear();
+            return true;
+        }
+    }
+    *disjoint = true;
+    if (error) error->clear();
+    return true;
+}
+
 bool decode_captured_copy_source_raster_state(
     const CapturedRasterRegisters& registers,
     CapturedRasterState* output,

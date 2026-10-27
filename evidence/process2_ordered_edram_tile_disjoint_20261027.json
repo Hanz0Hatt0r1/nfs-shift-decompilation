@@ -1,0 +1,72 @@
+{
+  "schema": "shift.process2.ordered_edram_tile_disjoint.v1",
+  "date": "2026-10-27",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "implementation": {
+    "api": "captured_xenos_edram_layouts_are_tile_disjoint",
+    "behavior": "The ordered Vulkan stream allows distinct per-layout cached images only when both color and depth tile footprints are disjoint from every previously seen layout. Exact-layout reuse remains supported. A decoded Copy/Convert source after a draw stage must match that stage's exact layout.",
+    "granularity": "Conservative whole-tile occupancy over the 2048-tile EDRAM ring; no sub-tile aliasing is accepted as disjoint.",
+    "tests": [
+      "identical target layouts overlap",
+      "disjoint color and depth tile ranges are accepted",
+      "2047-to-0 EDRAM wrap overlap is detected",
+      "color-to-depth cross-plane overlap is detected",
+      "ordered Draw/Copy/Draw/Copy succeeds for disjoint target layouts",
+      "ordered stream rejects aliased target layouts before submission"
+    ]
+  },
+  "linux_validation": {
+    "configure": "cmake -S native_vulkan -B /tmp/process2-edram-layout-build -DCMAKE_BUILD_TYPE=RelWithDebInfo",
+    "build": "cmake --build /tmp/process2-edram-layout-build --parallel 4",
+    "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /tmp/process2-edram-layout-build --output-on-failure",
+    "result": "4/4 passed; renderer regression ran with VK_LAYER_KHRONOS_validation"
+  },
+  "linux_rexglue_plugin": {
+    "sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+    "plugin_path": "/tmp/nfs-process2-rexglue-sdk/out/linux-amd64/librexgpu-shift-native.so",
+    "plugin_sha256": "bcfdcf4cbda55cb31872cc03d409f1574258e9a16a8ba9648d878da3749278d1",
+    "build_id": "a18fcba7192a4ab6e70ebd53ef20673b56c255fe",
+    "needed_libraries": ["librexruntime.so", "libvulkan.so.1"],
+    "build": "cmake --build /tmp/process2-plugin-interrupt-trace-clang --target rexgpu-shift-native --parallel 1",
+    "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /tmp/process2-plugin-interrupt-trace-clang --output-on-failure",
+    "result": "DSO linked and 6/6 plugin CTests passed with VK_LAYER_KHRONOS_validation"
+  },
+  "android_arm64": {
+    "device": "Redmi Note 8 Pro / begonia / Mali-G76 MC4 / Android 13 / Vulkan 1.1.131",
+    "ndk": "28.2.13676358 (r28c)",
+    "api": 26,
+    "sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+    "exact_runtime_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "plugin_build": {
+      "status": "succeeded",
+      "path": "/home/pes/work/rexglue-sdk-rexui-vulkan-20261023/out/android-arm64/librexgpu-shift-native.so",
+      "sha256": "c6904861f65734651f0338cdbeff18c9544ab7624a2c3e8cdb922571e5f90a97",
+      "build_id": "9abfc494bb47f249453dff1d5f8dfa1f87385b4b",
+      "needed_runtime": "librexruntimed.so"
+    },
+    "input_check": {
+      "status": "built_but_not_run",
+      "path": "/tmp/process2-edram-arm64-check/shift_xbox_draw_input_check",
+      "sha256": "711ca81fccd66e1765e52f46f8fd97cb547fa3f407e59ef8e0a84dc999db5524",
+      "reason": "Wireless ADB went offline and the endpoint refused reconnection before the binary could be pushed."
+    },
+    "live_app": {
+      "apk_or_plugin_replaced": false,
+      "app_restarted_or_closed": false,
+      "last_observed_screen": "language selector",
+      "qualification": "The APK was pulled read-only to extract and hash the exact runtime DSO. No game input was sent."
+    }
+  },
+  "retail_transition_status": {
+    "first_target_switch": "still rejected: the captured 4x layout and following 4x layout alias color tile 0; color/depth persistence requires shared physical EDRAM backing",
+    "14_draw_sequence": "not executed end to end",
+    "unsupported": [
+      "shared physical EDRAM backing and aliased-layout reinterpretation",
+      "partial-copy color/depth clear effects",
+      "full-sequence depth/stencil preservation",
+      "all captured source/destination resolves and format conversions"
+    ],
+    "parity_claim": false,
+    "interpretation": "Synthetic regressions prove only that independent cached images can be used across tile-disjoint stages and that aliases remain fail-closed. They do not establish retail frame correctness."
+  }
+}

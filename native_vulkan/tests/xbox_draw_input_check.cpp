@@ -1269,6 +1269,49 @@ int main() {
                 &edram_address, &error) &&
                 edram_address.byte_offset == 4,
             "captured 1x Xenos pixel did not retain its linear EDRAM sample slot");
+
+    auto small_edram_a = single_sample_edram_target;
+    small_edram_a.width = 80;
+    small_edram_a.height = 16;
+    small_edram_a.surface_pitch = 80;
+    small_edram_a.color_base_tiles = 10;
+    small_edram_a.depth_base_tiles = 100;
+    bool edram_layouts_disjoint = false;
+    uint32_t edram_overlap_tile = 0;
+    auto small_edram_same = small_edram_a;
+    require(shift::xbox::captured_xenos_edram_layouts_are_tile_disjoint(
+                small_edram_a, small_edram_same, &edram_layouts_disjoint,
+                &edram_overlap_tile, &error) &&
+                !edram_layouts_disjoint && edram_overlap_tile == 10,
+            "identical Xenos EDRAM layouts were incorrectly classified as disjoint");
+    auto small_edram_b = small_edram_a;
+    small_edram_b.color_base_tiles = 12;
+    small_edram_b.depth_base_tiles = 102;
+    require(shift::xbox::captured_xenos_edram_layouts_are_tile_disjoint(
+                small_edram_a, small_edram_b, &edram_layouts_disjoint,
+                &edram_overlap_tile, &error) &&
+                edram_layouts_disjoint && edram_overlap_tile == 2048,
+            "non-overlapping Xenos color/depth tile layouts were rejected");
+    auto wrapping_edram_a = small_edram_a;
+    wrapping_edram_a.width = 160;
+    wrapping_edram_a.surface_pitch = 160;
+    wrapping_edram_a.color_base_tiles = 2047;
+    auto wrapping_edram_b = small_edram_b;
+    wrapping_edram_b.color_base_tiles = 0;
+    require(shift::xbox::captured_xenos_edram_layouts_are_tile_disjoint(
+                wrapping_edram_a, wrapping_edram_b, &edram_layouts_disjoint,
+                &edram_overlap_tile, &error) &&
+                !edram_layouts_disjoint && edram_overlap_tile == 0,
+            "Xenos EDRAM wraparound alias was not detected");
+    auto cross_plane_edram_b = small_edram_b;
+    cross_plane_edram_b.color_base_tiles = 200;
+    cross_plane_edram_b.depth_base_tiles = 10;
+    require(shift::xbox::captured_xenos_edram_layouts_are_tile_disjoint(
+                small_edram_a, cross_plane_edram_b, &edram_layouts_disjoint,
+                &edram_overlap_tile, &error) &&
+                !edram_layouts_disjoint && edram_overlap_tile == 10,
+            "Xenos color-to-depth EDRAM alias was not detected");
+
     auto two_sample_edram_target = live_raster_state;
     two_sample_edram_target.width = 1280;
     two_sample_edram_target.height = 1440;

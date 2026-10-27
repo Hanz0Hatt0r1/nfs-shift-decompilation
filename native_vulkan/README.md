@@ -434,6 +434,33 @@ operation boundary but does not submit its intermediate image. See
 [`process2_copy_convert_primitives_20261027.json`](../evidence/process2_copy_convert_primitives_20261027.json)
 for the exact tested tuple and limits.
 
+## Conservative EDRAM layout switching (2026-10-27)
+
+The ordered-stream preflight now computes color and depth tile footprints for
+each captured layout, including 1x/2x/4x addressing and the 2048-tile
+wraparound. It permits a later draw stage to use a separate cached Vulkan image
+only when its whole-tile footprint is disjoint from every layout already seen.
+An exact previously seen layout can reuse its image. A copy-only packet still
+requires an initialized exact-layout source; when the Copy/Convert source
+registers decode, a copy after draws rejects a different captured source
+layout. This keeps cached images from silently standing in for shared physical
+EDRAM.
+
+Regressions cover identical layouts, disjoint color/depth ranges, address wrap,
+color-to-depth aliasing, ordered Draw/Copy/Draw/Copy on disjoint layouts, and
+rejection of an aliased layout. Host CTest passed 4/4 with
+`VK_LAYER_KHRONOS_validation`. The Linux ReXGlue DSO was rebuilt with SDK
+revision `b3648b013b02770fa5ca8d4618235b2326c911ca`; its six plugin CTests also
+passed with validation enabled. The ARM64 plugin linked against the exact
+`librexruntime.so` extracted read-only from the installed APK; that DSO was not
+installed and the game stayed open. The device went offline before the new
+ARM64 input regression could be executed there. These are synthetic layout and
+Vulkan checks, not retail rendering evidence. The captured 14-draw transition
+still aliases at its first target change and remains unsupported; shared EDRAM
+storage, partial-copy clear effects, depth/stencil persistence, and full
+resolve behavior remain open. Build hashes and limits are in
+[`process2_ordered_edram_tile_disjoint_20261027.json`](../evidence/process2_ordered_edram_tile_disjoint_20261027.json).
+
 ## Retail conditional-jump rejection detail (2026-10-27)
 
 The Redmi capture also rejects shader translation at draw #14 for a conditional
@@ -472,8 +499,16 @@ identity, ring context, requested/dispatched CPU masks, and per-CPU callback
 address/data/status, with the bounded ring trace enabled for this build. Its
 SHA-256, build ID, exact host/XEX/runtime identity, and smoke result are in
 [`process2_p1_exact_pm4_trace_plugin_20261027.json`](../evidence/process2_p1_exact_pm4_trace_plugin_20261027.json).
-Process 1 has not yet run this DSO with the identified host and XEX, so it has
-not produced new callback-attribution evidence.
+Process 1 ran this DSO with the identified host and XEX. Its 2,912 source-1
+interrupt rows all reported CPU mask/dispatched mask `0x04` and callback
+`0x823B37B8` with data `0xB7365F00`; the bounded guest breakpoint trace recorded
+2,810 callback entries through interrupt #2809. The remaining 102 plugin rows
+were outside that guest trace's recording window. The `WAIT_REG_MEM` after
+interrupt #1094 at physical address `0x1B964004` correctly observed 1 as
+unequal to zero, then 0 after 14 ms. This confirms the wait's observed
+condition, but does not identify the writer or explain the negative guest
+worker counter. The full crosswalk and interpretation limits are in
+[`process2_p1_source1_interrupt_crosswalk_20261027.json`](../evidence/process2_p1_source1_interrupt_crosswalk_20261027.json).
 
 ## Commands
 

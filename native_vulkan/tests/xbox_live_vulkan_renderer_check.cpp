@@ -776,6 +776,76 @@ int main(int argc, char** argv) {
                   << ordered_submit_error << '\n';
         return 1;
       }
+
+      // Synthetic regression: independent cached Vulkan images may serve
+      // sequential stages only when their complete Xenos tile footprints do
+      // not overlap. This is not retail transition parity evidence.
+      auto disjoint_target_draw = cache_sample_draw;
+      disjoint_target_draw.raster.width = 80;
+      disjoint_target_draw.raster.height = 16;
+      disjoint_target_draw.raster.surface_pitch = 80;
+      disjoint_target_draw.raster.color_base_tiles = 800;
+      disjoint_target_draw.raster.depth_base_tiles = 900;
+      disjoint_target_draw.raster.viewport_x = 0.0f;
+      disjoint_target_draw.raster.viewport_y = 0.0f;
+      disjoint_target_draw.raster.viewport_width = 80.0f;
+      disjoint_target_draw.raster.viewport_height = 16.0f;
+      disjoint_target_draw.raster.scissor_x0 = 0;
+      disjoint_target_draw.raster.scissor_y0 = 0;
+      disjoint_target_draw.raster.scissor_x1 = 80;
+      disjoint_target_draw.raster.scissor_y1 = 16;
+      auto disjoint_draw_operation = draw1;
+      disjoint_draw_operation.packet_index = 204;
+      auto disjoint_copy_operation = copy1;
+      disjoint_copy_operation.packet_index = 205;
+      disjoint_copy_operation.source_width = 80;
+      disjoint_copy_operation.source_height = 16;
+      std::vector<uint32_t> disjoint_layout_readback;
+      shift::xbox::CapturedVulkanTextureCache disjoint_layout_cache;
+      if (!shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720,
+              {format31_source, disjoint_target_draw},
+              {draw0, copy0, disjoint_draw_operation,
+               disjoint_copy_operation},
+              &ordered_submit_error, &disjoint_layout_readback,
+              enabled_features.geometryShader, &copy, false, {},
+              pipeline_cache, &disjoint_layout_cache) ||
+          disjoint_layout_cache.cached_guest_edram_target_count() != 2u ||
+          disjoint_layout_readback.size() != 1280u * 720u) {
+        std::cerr << "ordered Vulkan stream rejected or lost disjoint target layouts: "
+                  << ordered_submit_error << '\n';
+        return 1;
+      }
+      disjoint_layout_cache.clear();
+
+      auto aliased_target_draw = disjoint_target_draw;
+      aliased_target_draw.raster.color_base_tiles =
+          format31_source.raster.color_base_tiles;
+      aliased_target_draw.raster.depth_base_tiles =
+          format31_source.raster.depth_base_tiles;
+      aliased_target_draw.raster.guest_color_format =
+          format31_source.raster.guest_color_format + 1u;
+      shift::xbox::CapturedVulkanTextureCache aliased_layout_cache;
+      const bool aliased_layout_rejected =
+          !shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720,
+              {format31_source, aliased_target_draw},
+              {draw0, copy0, disjoint_draw_operation,
+               disjoint_copy_operation},
+              &ordered_submit_error, nullptr,
+              enabled_features.geometryShader, &copy, false, {},
+              pipeline_cache, &aliased_layout_cache) &&
+          ordered_submit_error.find("aliases a cached layout") !=
+              std::string::npos;
+      if (!aliased_layout_rejected) {
+        std::cerr << "ordered Vulkan stream did not reject aliased target layouts: "
+                  << ordered_submit_error << '\n';
+        return 1;
+      }
+      aliased_layout_cache.clear();
+
       auto uploaded_reference = cache_sample_draw;
       uploaded_reference.textures[0].guest_copy_source = false;
       uploaded_reference.textures[0].pixels.resize(256u * 243u * 4u);

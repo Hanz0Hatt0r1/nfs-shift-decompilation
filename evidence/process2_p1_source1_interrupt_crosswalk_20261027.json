@@ -1,0 +1,103 @@
+{
+  "schema": "shift.process2.p1_source1_interrupt_crosswalk.v1",
+  "date": "2026-10-27",
+  "run": {
+    "directory": "/tmp/nfs-shift-p1-source1-queue-pm4-v29-20261027",
+    "duration_seconds": 91.023,
+    "guest_memory_modified_by_probe": false,
+    "controller_input_sent": false,
+    "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "plugin_sha256": "bec4c074f765f82fa9da1258c7b8e86353750c9dd14fe94d5e5df4f25b71167b",
+    "gdb_log_sha256": "a6a42f3e0739f04e0a981d2628b026d4fbff6ffe431c4256f6f5aa87378bf7db",
+    "sdk_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6",
+    "trace_logs_sha256": {
+      "nfs_shift_001.1.log": "2671342bba1301d62ae678d9588b6284fab7406f011e8ed72d665d3502d211cf",
+      "nfs_shift_001.2.log": "09a338f64f425f611a831f9fbf7a5699fb09a5b3db0b4665fe264ae30cae64d0",
+      "nfs_shift_001.log": "2afe9e48fde9e2edd8e8f92a67c9a94852cfe9ba56d8e396453c57ffb720e012"
+    }
+  },
+  "pm4_interrupt": {
+    "plugin_rows": 2912,
+    "trace_id_range": [0, 2911],
+    "trace_ids_sequential_without_gaps": true,
+    "generation": 1,
+    "source_argument": 1,
+    "cpu_mask_counts": {"0x04": 2912},
+    "dispatched_cpu_mask_counts": {"0x04": 2912},
+    "callback": "0x823B37B8",
+    "callback_data": "0xB7365F00",
+    "dispatch_status_counts": {"invoked": 2912},
+    "guest_breakpoint_entries": 2810,
+    "guest_breakpoint_covers_through_plugin_trace_id": 2809,
+    "rows_outside_guest_breakpoint_window": 102,
+    "guest_callback_targets": {
+      "0x823A4758": 1629,
+      "0x823B8C60": 1181
+    },
+    "nested_event_set_count": 1181,
+    "dequeue_and_completion_counts": 785,
+    "worker_counter": {
+      "guest_virtual_address": "0xB7368A04",
+      "writes": 402,
+      "increments": 10,
+      "decrements": 392,
+      "final_value_signed": -382,
+      "diagnosis": "The count is unexplained by this trace; it is not evidence by itself of an interrupt duplication or renderer defect."
+    },
+    "packet_source_offsets_repeat_later": {
+      "full_batch_packet_identity_repeated_occurrences": 312,
+      "interpretation": "Repeated identities occurred in later batches after ring pointer advancement/wrap; the trace generation is per ring initialization and does not distinguish each wrap. This count is not proof of replay within one batch."
+    }
+  },
+  "wait_reg_mem": {
+    "interrupt_trace_id": 1094,
+    "interrupt_timestamp": "2026-10-27 20:10:20.950",
+    "ring": {
+      "guest_address": "0x09752580",
+      "generation": 1,
+      "batch_rptr": 4670,
+      "batch_wptr": 4673,
+      "expanded_packet_ordinal": 329
+    },
+    "indirect_buffer": "0x096FBD40",
+    "interrupt_packet_offset": 14256,
+    "following_wait_packet_offset": 14304,
+    "poll_address_encoded": "0x1B964006",
+    "guest_physical_address": "0x1B964004",
+    "endian_mode": 2,
+    "reference": 0,
+    "mask": "0xFFFFFFFF",
+    "compare": "equal",
+    "poll_interval_field": "0x100",
+    "samples": [
+      {
+        "timestamp": "2026-10-27 20:10:20.950",
+        "raw_host_dword": "0x01000000",
+        "guest_value_after_gpu_swap": 1,
+        "condition_met": false,
+        "poll": 0
+      },
+      {
+        "timestamp": "2026-10-27 20:10:20.964",
+        "raw_host_dword": "0x00000000",
+        "guest_value_after_gpu_swap": 0,
+        "condition_met": true,
+        "poll": 12,
+        "elapsed_ms": 14
+      }
+    ],
+    "interpretation": "The WAIT_REG_MEM equality-to-zero check resumes after the observed guest value becomes zero. The address is inside the 29-bit physical address range and P2 maps it through TranslatePhysical after stripping endian bits. The trace does not identify which CPU or GPU write changed the word."
+  },
+  "assessment": {
+    "interrupt_semantics": "PM4_INTERRUPT payload is a CPU bitmask. Xenos command processing dispatches source=1 once for each asserted CPU bit. 0x04 means one CPU-2 callback per packet; P2's loop matches that behavior.",
+    "dispatch_result": "The first 2810 plugin rows are corroborated by actual guest breakpoint entries. All plugin rows report callback dispatch return, but the last 102 were outside the bounded guest breakpoint trace.",
+    "premature_missing_or_duplicate_writeback": "No such issue is proven by these observations. WAIT_REG_MEM is read-only; there was no watchpoint on 0x1B964004, so its writer and exact ordering relative to concurrent CPU work remain unknown.",
+    "references": [
+      "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/command_processor.cc",
+      "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h"
+    ],
+    "raw_logs_are_external_to_repository": true
+  }
+}
