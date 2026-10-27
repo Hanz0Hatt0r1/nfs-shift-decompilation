@@ -53,7 +53,7 @@ private:
     static constexpr uint32_t kMaximumIndirectBufferCount = 4096u;
     static constexpr size_t kMaximumRootStreamBytes = 64u * 1024u * 1024u;
     static constexpr size_t kMaximumExpandedBytes = 256u * 1024u * 1024u;
-    static constexpr size_t kMaximumPacketCount = 1u << 18;
+    static constexpr size_t kMaximumPacketCount = 1u << 20;
 
     bool append_stream(
         const uint8_t* bytes,

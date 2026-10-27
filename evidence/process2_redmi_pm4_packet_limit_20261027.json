@@ -1,0 +1,134 @@
+{
+  "schema": "shift.process2.redmi_pm4_packet_limit_live.v1",
+  "captured_at_local": "2026-10-27 03:58:29 MSK",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "base_commit": "b540a0be7",
+    "changed_files": [
+      "native_vulkan/src/xbox_guest_ring.cpp",
+      "native_vulkan/tests/xbox_guest_ring_check.cpp",
+      "native_vulkan/rexglue_plugin/README.md",
+      "evidence/process2_redmi_pm4_packet_limit_20261027.json",
+      "evidence/process2_redmi_pm4_packet_limit_20261027.log.gz",
+      "evidence/process2_redmi_pm4_packet_limit_prechange_20261027.log.gz",
+      "evidence/process2_redmi_pm4_packet_limit_bink_20261027.png",
+      "evidence/process2_redmi_pm4_packet_limit_current_20261027.png"
+    ]
+  },
+  "change": {
+    "old_expanded_packet_cap": 262144,
+    "new_expanded_packet_cap": 1048576,
+    "other_bounds_unchanged": {
+      "root_stream_bytes": 67108864,
+      "expanded_indirect_bytes": 268435456,
+      "indirect_buffer_count": 4096,
+      "indirect_buffer_nesting_depth": 8
+    },
+    "regression": "Expands 262145 zero-NOP PM4 packets, just beyond the previous cap, while preserving the other bounds."
+  },
+  "prechange_redmi_run": {
+    "log": "process2_redmi_pm4_packet_limit_prechange_20261027.log.gz",
+    "log_sha256": "4a6db81d50fe40e0e52dfae0aa0d456b57cc90947f81c19b72d49856ff5d065e",
+    "observed_packet_limit_errors": [
+      "2026-10-27 02:37:00.196 MSK at WPTR 00000F37",
+      "2026-10-27 02:39:52.580 MSK at WPTR 00001A6A"
+    ],
+    "last_log_timestamp": "2026-10-27 02:39:52.580 MSK"
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": "13",
+    "api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 6382,
+    "top_resumed_activity": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity"
+  },
+  "installed_candidate": {
+    "apk_path": "/home/pes/work/process2-pm4-packet-limit-20261027-build/nfsshift-pm4-limit.apk",
+    "apk_sha256": "48d1b0920fe4d616aab5efb5cbdfa5c0e6ab753224c86683d4d9262e1ff83c1a",
+    "install_result": "adb install -r succeeded; game data preserved",
+    "signature_scheme": "APK Signature Scheme v3",
+    "signer_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "native_alignment": "16 KiB zipalign check passed",
+    "plugin_aliases": {
+      "lib/arm64-v8a/librexgpu-shift-natived.so": "3c2273aa1c981604a84ee242f5ec3eeba7e37892adab079f3b462e67ee1a88a0",
+      "lib/arm64-v8a/librexgpu-xenosd.so": "3c2273aa1c981604a84ee242f5ec3eeba7e37892adab079f3b462e67ee1a88a0"
+    },
+    "plugin_build_id": "a4233bb0d2b072b76720385de480a869b08e592c",
+    "plugin_target_api": 26,
+    "runtime_sha256_preserved": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a"
+  },
+  "startup_and_video": {
+    "first_logged_submit": "2026-10-27 03:51:22.919 MSK",
+    "language_selector": "English was selected once with Android keyevent 96 because the selector explicitly showed SELECT A.",
+    "disclaimer_input": "No input was sent on the disclaimer; none was sent after selecting English.",
+    "retail_video": {
+      "device_path": "/sdcard/Android/data/com.hanz0hatt0r.nfsshift/files/game/Movies/Franchise_Ident.bik",
+      "sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+      "stream": "Bink video, 1280x720, 29.97 fps, 9.376015 seconds",
+      "phone_capture": "process2_redmi_pm4_packet_limit_bink_20261027.png",
+      "phone_capture_sha256": "2522a2feeade53b70aa51352564b103984fdf2087697cf8b78334eb8c1113f80",
+      "source_match": {
+        "method": "Center-crop Android capture to the 16:9 viewport, resize to 1280x720, then correlate grayscale pixels against decoded retail Bink frames at 10 fps over non-black source pixels.",
+        "best_source_time_seconds": 0.9,
+        "grayscale_correlation": 0.923584642984397
+      },
+      "four_draw_batches": 319,
+      "first_four_draw_batch": "2026-10-27 03:52:08.893 MSK",
+      "last_four_draw_batch": "2026-10-27 03:52:49.920 MSK",
+      "rate_batches_per_second": 7.78
+    },
+    "after_video_screen": "Readable legal disclaimer observed at 03:52:55 and again at 03:58:29 without further input.",
+    "current_screen": "process2_redmi_pm4_packet_limit_current_20261027.png",
+    "current_screen_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8"
+  },
+  "live_render_log": {
+    "log": "process2_redmi_pm4_packet_limit_20261027.log.gz",
+    "uncompressed_sha256": "4e02275086c6fedc219cde98a1f079503b3114e4efb284a53d1cbabcbce2798f",
+    "compressed_sha256": "382956a5f1d8bb4974c1ca9fd9b6b657a11d701fcb572c9c479b1351329f1f6b",
+    "uncompressed_bytes": 11006799,
+    "line_count": 53153,
+    "last_log_timestamp": "2026-10-27 03:58:29.353 MSK",
+    "submitted_batches": 1138,
+    "submitted_batches_by_draw_count": {
+      "1": 5,
+      "2": 26,
+      "4": 319,
+      "5": 53,
+      "6": 1,
+      "11": 9,
+      "13": 549,
+      "14": 99,
+      "24": 77
+    },
+    "expanded_packet_limit_errors": 0,
+    "malformed_pm4_batches": 0,
+    "vulkan_refresh_failures": 1,
+    "refresh_failure": {
+      "timestamp": "2026-10-27 03:53:25.919 MSK",
+      "draw_count": 14,
+      "first_layout": "2560x1440, 4x, color format 3, depth base 1024, pitch 1280",
+      "next_layout": "1280x720, 4x, color format 0, depth base 720, pitch 640",
+      "reason": "Renderer currently fails closed when one submission changes Xenos target layout. The subsequent 13-draw submissions continued, but the failed transition has not been implemented."
+    }
+  },
+  "verification": {
+    "host_ring_regression": "passed; includes stream just above prior packet limit",
+    "host_native_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation enabled",
+    "linux_plugin_ctest": "7/7 passed with VK_LAYER_KHRONOS_validation enabled",
+    "android_arm64_ring_library": "built with NDK r28c / Android API 26",
+    "android_arm64_ring_regression": "executable ran successfully on Redmi Note 8 Pro",
+    "android_plugin": "built against matching Android SDK; only P2 plugin aliases replaced; runtime DSO remained byte-identical"
+  },
+  "limitations": [
+    "The higher PM4 cap removes the previous packet-count rejection class, but the before/after runs do not prove that those earlier drops alone caused the old screen to stop advancing.",
+    "The exact source match proves a retail Bink frame reached the live Vulkan output. It does not prove full video/audio parity, real-time playback, or playable gameplay.",
+    "The 14-draw target-layout transition remains unsupported; EDRAM target persistence and the ordered mode-6 intermediate-copy writes are not implemented.",
+    "The live process remained on the legal disclaimer at the final capture; its later guest-state cause remains unproven."
+  ]
+}

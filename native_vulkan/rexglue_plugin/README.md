@@ -1573,3 +1573,41 @@ before/after screenshot hashes match. This corrects target sizing for capture
 parsing and preparation; it does not execute the ordered mode-6 copies or
 verify a changed retail image. See
 [`process2_redmi_offscreen_raster_extents_20261027.json`](../../evidence/process2_redmi_offscreen_raster_extents_20261027.json).
+
+## Redmi bounded PM4 expansion and retail Bink frame (2026-10-27)
+
+The indirect-buffer expander's packet cap increased from 262,144 to 1,048,576.
+The 64 MiB root-stream limit, 256 MiB expanded-byte limit, 4,096 indirect
+buffer limit, and depth-8 nesting limit remain unchanged. A regression expands
+262,145 one-dword NOP packets, just above the old cap. The prior Redmi log had
+two `expanded Xbox PM4 packet limit exceeded` drops; the updated Android P2
+plugin ran for over seven minutes with 1,138 presenter submissions and no
+packet-limit or malformed-batch errors. This removes that rejection class;
+the before/after runs do not prove that it alone caused the older session to
+stop progressing.
+
+The candidate APK replaced only the two P2 Vulkan plugin aliases and preserved
+the installed runtime DSO. It was v3-signature verified and 16 KiB aligned,
+then installed with `adb install -r` so game data remained intact. On the Redmi
+Note 8 Pro / Mali-G76 MC4 the game passed the language selector after one
+default-English A event. No input was sent on or after the disclaimer. The
+live log contains 319 four-draw batches from 03:52:08.893 to 03:52:49.920; a
+phone frame from this sequence correlates with the original retail
+`Franchise_Ident.bik` at source time 0.9 s with grayscale correlation 0.9236.
+That proves a real Bink frame reached the Vulkan presenter, not full clip or
+audio parity. The clip probes as 1280x720 Bink video, 29.97 fps, 9.376 s, and
+its SHA-256 matches the previously inspected retail file. The game then showed
+the readable legal disclaimer; it remained there at the final capture.
+
+One 14-draw transition at 03:53:25 failed closed because draw 1 changes the
+Xenos target layout from 2560x1440 / 4x / format 3 / depth base 1024 / pitch
+1280 to 1280x720 / 4x / format 0 / depth base 720 / pitch 640. Thirteen-draw
+presenter batches continued afterward. Ordered EDRAM targets and intermediate
+mode-6 copy writes remain the next graphics gap; the observed failure is not
+evidence that they caused the later guest-state stop.
+
+The host native suite passed 4/4 with `VK_LAYER_KHRONOS_validation`, the Linux
+P2 plugin suite passed 7/7 with the layer, and the Android ARM64 ring regression
+passed on the phone. APK/plugin hashes, the complete rotated phone log, the
+matched retail frame, and scope limits are in
+[`process2_redmi_pm4_packet_limit_20261027.json`](../../evidence/process2_redmi_pm4_packet_limit_20261027.json).

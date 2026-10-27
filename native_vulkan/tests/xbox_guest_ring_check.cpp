@@ -636,5 +636,14 @@ int main() {
     }
     require(retail_completion_event_index == retail_completion_addresses.size(),
             "retail completion IB did not expose both nested EVENT_WRITE_SHD packets");
+
+    shift::xbox::GuestRingBatch large_root{};
+    constexpr size_t kFormerPacketLimit = 1u << 18;
+    large_root.bytes.resize((kFormerPacketLimit + 1u) * sizeof(uint32_t));
+    shift::xbox::ExpandedGuestCommandStream large_expansion{};
+    require(shift::xbox::expand_guest_indirect_buffers(
+                large_root, nullptr, nullptr, &large_expansion, &error) &&
+                large_expansion.packets.size() == kFormerPacketLimit + 1u,
+            "bounded PM4 expansion rejected a command stream just above its former packet limit");
     return 0;
 }
