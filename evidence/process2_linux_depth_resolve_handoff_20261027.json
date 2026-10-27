@@ -50,6 +50,14 @@
       "sample_zero_supported_for_depth_and_stencil": true,
       "gpu_emulation_features": "disabled"
     },
+    "latest_target_layout_diagnostic": {
+      "native_renderer_ctest": "1/1 passed with VK_LAYER_KHRONOS_validation",
+      "plugin_ctest": "7/7 passed with VK_LAYER_KHRONOS_validation",
+      "plugin_sha256": "30341149807b5c8d5d8b4d6553d7058f6182364aff0827224b9086520b38f697",
+      "plugin_build_id": "a4caf35a60bc2c273b05a2c79029511d43e40487",
+      "source_commit": "9eb190e1c6b695f0f5815ef28085088d0378cad4",
+      "working_tree_diagnostic_changes_included": true
+    },
     "logs_outside_git": [
       "/home/pes/work/process2-depth-resolve-handoff-20261027/ctest-validation.log",
       "/home/pes/work/process2-depth-resolve-handoff-20261027/capability-check.txt",
@@ -119,15 +127,112 @@
       "nfs_shift_001.log_sha256": "a846e412d28f58d86bdb55876d556b44f1534a3993307f899f4d270cd5526a10",
       "nfs_shift_001.1.log_sha256": "1a2db42d28a4d52b55bd219306d5858dc63781882f15ea484619ebbcbe3d982b",
       "mixed_depth_stencil_refresh_rejections": 0,
+      "other_refresh_rejections": [
+        {
+          "timestamp_local": "2026-10-27 03:04:50.689",
+          "captured_draw_count": 14,
+          "first_changed_draw_index": 1,
+          "reason": "captured Vulkan submission changes Xenos target layout; ordered render-target operations must be split before submission",
+          "layout_change": {
+            "color_base_tiles": "0 -> 0",
+            "depth_base_tiles": "1024 -> 720",
+            "extent": "2560x1440 -> 1280x720",
+            "color_format": "3 -> 0",
+            "pitch": "1280 -> 640"
+          }
+        }
+      ],
       "guest_faults": 0,
       "literal_bink_video_movie_log_mentions": 0
     },
-    "interpretation": "The provider-enabled renderer removed the previously logged resolve rejection for this run. The 180-second run did not display the EA/Bink video or the main menu. Generic draw-submit counts and absence of Bink strings in the renderer log do not establish guest frontend progress or prove that the guest never attempted video playback."
+    "interpretation": "The provider-enabled renderer removed the previous mixed depth/stencil resolve rejection. A different fail-closed renderer rejection occurred on the first 14-draw refresh because target layout changes at draw 1. The 180-second run did not display the EA/Bink video or the main menu. Generic draw-submit counts and absence of Bink strings in the renderer log do not establish guest frontend progress or prove that the guest never attempted video playback."
+  },
+  "target_layout_diagnostic_recapture": {
+    "scratch_directory": "/home/pes/work/process2-layoutdiag-retail-20261027",
+    "runtime_log": "/home/pes/work/process2-layoutdiag-retail-20261027/bin/logs/nfs_shift_004.log",
+    "runtime_log_sha256": "6b06dc3922c7160f4194b7fff21d15fbfe2b4017957ccbd81cb6c1c2714b4217",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "p2_source_commit": "9eb190e1c6b695f0f5815ef28085088d0378cad4",
+    "diagnostic_source_dirty_at_build": true,
+    "mapped_plugin_sha256": "515a843608a9e1e11dacae8e19454adf86bd98a28bbc99e3c164b5b5d34d738b",
+    "mapped_plugin_build_id": "28e9865d0bb02713d888cb336f50e551d1d2b156",
+    "mapped_runtime_sha256": "f049d64a46ab04e8d5fcb71800c92d86a5cc6a5fbd38a6b1bf1a623c86398a80",
+    "duration_seconds": 60,
+    "termination": "Harness timeout sent SIGINT; the host was absent in the post-run process check.",
+    "inputs": [],
+    "captured_draw_count": 14,
+    "failed_refresh_count": 1,
+    "successful_presenter_submissions": 950,
+    "successful_submission_histogram": {
+      "13_draw_batches": 250,
+      "14_draw_batches": 100
+    },
+    "guest_faults": 0,
+    "literal_bink_video_movie_log_mentions": 0,
+    "failed_batch_target_layout_runs": [
+      {
+        "first_draw": 0,
+        "last_draw": 0,
+        "extent": "2560x1440",
+        "samples": 4,
+        "color_base_tiles": 0,
+        "depth_base_tiles": 1024,
+        "color_format": 3,
+        "depth_format": 0,
+        "surface_pitch": 1280
+      },
+      {
+        "first_draw": 1,
+        "last_draw": 1,
+        "extent": "1280x720",
+        "samples": 4,
+        "color_base_tiles": 0,
+        "depth_base_tiles": 720,
+        "color_format": 0,
+        "depth_format": 0,
+        "surface_pitch": 640
+      },
+      {
+        "first_draw": 2,
+        "last_draw": 10,
+        "extent": "1280x720",
+        "samples": 1,
+        "color_base_tiles": 0,
+        "depth_base_tiles": 720,
+        "color_format": 1,
+        "depth_format": 0,
+        "surface_pitch": 1280
+      },
+      {
+        "first_draw": 11,
+        "last_draw": 11,
+        "extent": "1280x720",
+        "samples": 4,
+        "color_base_tiles": 0,
+        "depth_base_tiles": 720,
+        "color_format": 0,
+        "depth_format": 0,
+        "surface_pitch": 640
+      },
+      {
+        "first_draw": 12,
+        "last_draw": 13,
+        "extent": "1280x720",
+        "samples": 1,
+        "color_base_tiles": 0,
+        "depth_base_tiles": 720,
+        "color_format": 1,
+        "depth_format": 0,
+        "surface_pitch": 1280
+      }
+    ],
+    "interpretation": "The target-layout guard rejected one captured 14-draw batch. The same one-minute retail run completed 950 other Vulkan presenter submissions, including 100 14-draw batches. This confirms the exact layout sequence but does not show that this isolated rejection blocks video playback. The renderer still lacks Xenos EDRAM-backed target persistence and resolve semantics; the diagnostic log's lack of Bink/video/movie strings does not establish whether the guest attempted playback."
   },
   "limits": [
     "The capability probe and CTest are not an exact retail frame or parity result.",
     "The host GPU reports Vulkan 1.4; Vulkan 1.1 compatibility is implemented through the KHR extension pair but this run is not on a Vulkan 1.1-only device.",
     "The optional provider API is proposed in ReXGlue SDK PR #2 and older SDK builds remain fail-closed.",
-    "This run confirms the mixed depth/stencil rejection no longer occurs with this provider build; it does not identify why the title remains at the disclaimer/black transition or whether the guest attempted video playback."
+    "The exact target-layout sequence is now captured. The renderer still fails closed for the affected batch because correct handling needs Xenos EDRAM-backed target persistence and resolve semantics; the isolated rejection is not established as the cause of missing video playback."
   ]
 }

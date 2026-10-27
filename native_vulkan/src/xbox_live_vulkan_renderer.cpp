@@ -3072,7 +3072,29 @@ bool submit_captured_vulkan_frame(
                     << static_cast<unsigned>(frame_target.color_format) << " -> "
                     << static_cast<unsigned>(raster.color_format) << ", pitch="
                     << frame_target.surface_pitch << " -> " << raster.surface_pitch
-                    << "); split the ordered render-target operations before submission";
+                    << "); ordered target layouts=";
+            constexpr size_t kMaxLoggedTargetLayouts = 64;
+            const size_t logged_layout_count =
+                std::min(draws.size(), kMaxLoggedTargetLayouts);
+            for (size_t layout_index = 0; layout_index < logged_layout_count;
+                 ++layout_index) {
+                if (layout_index) message << ';';
+                const CapturedRasterState& layout = draws[layout_index].raster;
+                message << "draw" << layout_index << "{extent=" << layout.width
+                        << 'x' << layout.height << ",samples="
+                        << layout.sample_count << ",color_base="
+                        << layout.color_base_tiles << ",depth_base="
+                        << layout.depth_base_tiles << ",color_format="
+                        << static_cast<unsigned>(layout.color_format)
+                        << ",depth_format="
+                        << static_cast<unsigned>(layout.depth_format)
+                        << ",pitch=" << layout.surface_pitch << '}';
+            }
+            if (logged_layout_count < draws.size()) {
+                message << "; omitted target layouts="
+                        << draws.size() - logged_layout_count;
+            }
+            message << "; ordered Xenos EDRAM target persistence and resolve are not implemented";
             return fail(message.str(), error);
         }
     }

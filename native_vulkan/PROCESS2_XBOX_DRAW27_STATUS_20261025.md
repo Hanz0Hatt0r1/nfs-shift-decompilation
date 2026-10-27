@@ -543,11 +543,24 @@ Process 1 received the pair for an exact-XEX recapture. This only verifies
 capability plumbing and renderer regressions; the post-handoff retail result
 ran for 180 seconds with the exact retail XEX. The mapped plugin and matching
 runtime hashes are recorded in the evidence. No mixed depth/stencil refresh
-rejection or guest fault appeared. The disclaimer was visible at 45, 90, and
-180 seconds; the other sampled frames were mostly black. No video image or
-main menu appeared. The run sent no input. This clears the renderer's prior
-resolve rejection for that run, but does not identify why the guest stayed in
-the disclaimer/black transition or prove whether the game attempted video
-playback. Generic draw submissions and a lack of Bink text in this renderer
-log are not proof of frontend progress or non-entry into Bink. The Vulkan 1.1
-extension path is implemented, but this host probe ran on a Vulkan 1.4 GTX 950.
+rejection or guest fault appeared. A different fail-closed rejection occurred
+on one 14-draw batch. The new bounded diagnostic records every target layout
+in that batch: draw 0 is 2560x1440 at 4x, color/depth base 0/1024, format 3,
+pitch 1280; draw 1 is 1280x720 at 4x, bases 0/720, format 0, pitch 640;
+draws 2–10 are 1280x720 at 1x, bases 0/720, format 1, pitch 1280; draw 11
+returns to 4x/format 0/pitch 640; draws 12–13 return to 1x/format 1/pitch
+1280. Depth format is 0 throughout. In a separate 60-second exact-XEX run
+using this instrumented plugin, that guard rejected one batch while 950
+other Vulkan presenter submissions succeeded, including 100 batches of 14
+draws. So this specific rejection is not established as the video blocker.
+Correct handling still needs Xenos EDRAM-backed target persistence and
+resolve semantics; simply removing the guard would invent behavior. The
+capture had no guest faults and no literal Bink/video/movie log terms, which
+does not prove whether the guest attempted playback.
+
+The 180-second P1 run showed the disclaimer at 45, 90, and 180 seconds; the
+other sampled frames were mostly black. No video image or main menu appeared,
+and the run sent no input. The screen advances automatically, as confirmed by
+the user. This renderer evidence does not identify the startup/video blocker.
+The Vulkan 1.1 extension path is implemented, but the provider probe ran on a
+Vulkan 1.4 GTX 950.

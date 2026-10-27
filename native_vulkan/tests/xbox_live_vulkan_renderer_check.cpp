@@ -467,10 +467,31 @@ int main(int argc, char** argv) {
             &changed_extent_error, nullptr, enabled_features.geometryShader,
             &copy) ||
         changed_extent_error.find("extent=1280x720 -> 1279x720") ==
-            std::string::npos) {
-      std::cerr << "distinct captured target extents were merged into one "
-                   "Vulkan pass: "
+            std::string::npos ||
+        changed_extent_error.find("ordered target layouts=draw0{extent=1280x720") ==
+            std::string::npos ||
+        changed_extent_error.find("draw1{extent=1279x720,samples=") ==
+            std::string::npos ||
+        changed_extent_error.find(",color_base=") == std::string::npos ||
+        changed_extent_error.find(",depth_format=") == std::string::npos ||
+        changed_extent_error.find(",pitch=") == std::string::npos) {
+      std::cerr << "distinct captured target extents were merged or the ordered "
+                   "layout diagnostic was incomplete: "
                 << changed_extent_error << '\n';
+      return 1;
+    }
+    auto oversized_target_draws = changed_extent_draws;
+    oversized_target_draws.resize(66, draws.front());
+    std::string oversized_target_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, oversized_target_draws,
+            &oversized_target_error, nullptr, enabled_features.geometryShader,
+            &copy) ||
+        oversized_target_error.find("omitted target layouts=2") ==
+            std::string::npos) {
+      std::cerr << "ordered target layout diagnostics were not bounded at 64: "
+                << oversized_target_error << '\n';
       return 1;
     }
     auto changed_format_draws = draws;
