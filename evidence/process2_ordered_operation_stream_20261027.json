@@ -28,9 +28,9 @@
       "unresolved draw/copy packet"
     ],
     "ordering": "The ring frontend retains the stream across expanded ring batches until guest swap; packet ordinals reset only when the frame is recycled.",
-    "renderer_contract": "The stream executor submits compatible Draw segments and following Copy/Convert packets in PM4 order. It retains same-layout color/depth targets and intermediate destinations in GPU images. A copy-only segment can read a previously initialized target only when the decoded source layout matches exactly. A format-31 texture may sample a preceding cached copy only for a linear base-level descriptor with exact guest address, extent/pitch, and copy-conversion tuple. Unknown EDRAM aliases and nonmatching resources fail closed.",
+    "renderer_contract": "The stream executor submits compatible Draw segments and following Copy/Convert packets in PM4 order. It retains same-layout color/depth targets and intermediate destinations in GPU images. A copy-only segment can read a previously initialized target only when the decoded source layout matches exactly. A format-31 texture may sample a preceding cached copy only for an exact linear base-level descriptor; tiled base-level format-31 descriptors can instead load from guest memory through the 32bpp tile/endian path. Unknown EDRAM aliases and nonmatching resources fail closed.",
     "trace": "When SHIFT_NATIVE_VULKAN_TRACE_RING=1, the frontend logs each distinct operation sequence once per worker session.",
-    "intermediate_copy_execution": "synthetic Draw/Copy/Draw/Copy and exact format-31 Copy-to-texture-fetch sequences submitted; retail 14-draw package remains blocked by unmatched source/layout and tiled mip texture requirements",
+    "intermediate_copy_execution": "synthetic Draw/Copy/Draw/Copy and exact format-31 Copy-to-texture-fetch sequences submitted; the captured draw-12 tiled base-level format-31 descriptor now decodes and untile-translates, while the retail 14-draw package remains blocked by EDRAM source association and layout aliasing",
     "edram_target_persistence": "same-layout color/depth images are retained in a bounded GPU cache; aliased layouts are not reinterpreted"
   },
   "regression": {
@@ -38,6 +38,7 @@
     "verified": [
       "The format-31 copy submission created one guest-address/layout cache image, and a subsequent draw sampled that image directly before presenter Copy/Convert.",
       "The cached-image result matches a separate R16G16_SFLOAT upload of the same half-float values; deliberately stale guest bytes were not used.",
+      "The exact captured draw-12 descriptor (format 31, endian 2, tiled, 1x1, pitch 32, base 0x0CD64000, mip_min=0/mip_max=0) decodes to 4096 source bytes and untile-converts its base texel to the RG16F upload representation.",
       "Same-layout EDRAM color targets survive across ordered segments and a copy-only stream can resolve an exact cached source target.",
       "Target-layout diagnostics preserve the captured copy tuple, and reordered draw references are rejected before Vulkan submission."
     ],
@@ -52,11 +53,11 @@
     "rexglue_linux_plugin": {
       "translation_unit": "current-source Clang compilation passed as part of the plugin DSO build",
       "full_dso": "linked successfully with Clang Release and -march=x86-64-v2; plugin CTest passed 6/6 with VK_LAYER_KHRONOS_validation",
-      "dso_sha256": "416e514035bf25d12b6bcc8b29fe7790814edf967c09fb2d72243243827584c9"
+      "dso_sha256": "068886f84ce1557cfdc8a536a599215d74658342a6551405ce22de779f70107f"
     },
     "android_arm64_plugin": {
       "plugin_and_renderer_translation_units": "current-source objects compiled with NDK r28c",
-      "plugin_translation_unit_sha256": "3e1b8c662343efc0f0385661b9e4d035a0dd5af4e04a454dfd7db08dad583df1",
+      "plugin_translation_unit_sha256": "c9b67a655b4a09a4f6bfa6462119ae9f8f2e419a7e2b8d6c2490407161e3d827",
       "dso": "not linked",
       "abi": "arm64-v8a",
       "android_platform": 29,
@@ -70,12 +71,14 @@
     "package": "com.hanz0hatt0r.nfsshift",
     "offscreen_renderer_test": "passed on Mali-G76 MC4; includes ordered format-31 Copy-to-texture cache sampling, depth/stencil SAMPLE_ZERO, and synthetic format-26/31 conversion",
     "validation_layer": "VK_LAYER_KHRONOS_validation is not installed on Android; the on-device run did not enable it",
-    "test_binary_sha256": "e5fd1c9e38a2e94314797662aa7690dc66825f6562a7ab90df79487ee81f0eea",
+    "test_binary_sha256": "2c36898a398f6ef5a5892f7ab19001fffc6bf656d1bde1b01c2db39c4d7469ed",
+    "draw_input_check": "passed on device; includes the exact captured tiled format-31 draw-12 descriptor and synthetic untile payload",
+    "draw_input_check_sha256": "03addae35f5bccb52ede91f41636a36bf7a7823c5a7e7c242fdaf5bb50da68b5",
     "game_process": "not running; no NFS Shift process was launched or restarted",
     "new_plugin_installed": false
   },
   "limits": [
-    "This is not execution of the full retail transition package: unknown EDRAM source layouts still fail closed, and the captured draw-12 tiled mip descriptor does not exactly match a cached format-31 destination.",
+    "This is not execution of the full retail transition package. The captured draw-12 descriptor is a tiled base-level format-31 texture at 0x0CD64000, separate from the 0x0CD63000 Copy/Convert destination; its guest-memory untile path is regression-tested, but the retail payload and rendered sample were not independently captured or compared.",
     "Xenos EDRAM alias reinterpretation across changed layouts, full-sequence clear effects, depth/stencil preservation, and guest-memory writeback remain unsupported.",
     "The test sequence is synthetic and makes no retail parity or new on-device rendering claim."
   ]

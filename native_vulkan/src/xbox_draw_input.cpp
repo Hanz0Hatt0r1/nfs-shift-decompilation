@@ -89,7 +89,8 @@ uint64_t compressed_texture_storage_bytes(uint32_t pitch_pixels, uint32_t height
     return tiles_wide * tiles_high * 32u * 32u * bytes_per_block;
 }
 
-uint64_t tiled_rgba8_storage_bytes(uint32_t pitch_pixels, uint32_t height) {
+uint64_t tiled_texture_32bpp_storage_bytes(uint32_t pitch_pixels,
+                                           uint32_t height) {
     const uint64_t tile_rows = (static_cast<uint64_t>(height) + 31u) / 32u;
     return static_cast<uint64_t>(pitch_pixels) * tile_rows * 32u * 4u;
 }
@@ -1048,16 +1049,15 @@ bool decode_captured_texture_fetch(
     const bool r8 = format == 2 && endian_mode == 0;
     const bool rgba8 = format == 6 && endian_mode == 2;
     // Format 31 is the captured 16_16_FLOAT view used by format-31
-    // Copy/Convert destinations. It is accepted here only as metadata for an
-    // earlier-copy image lookup; the guest-memory untile path remains closed.
-    const bool rg16_float = format == 31 && endian_mode == 2 && tiled == 0;
+    // Copy/Convert destinations and the tiled base-level retail draw-12 fetch.
+    const bool rg16_float = format == 31 && endian_mode == 2;
     const bool dxt = (format == 19 || format == 20) && endian_mode == 1;
     const bool dxt5a = format == 59 && endian_mode == 1;
     const bool compressed = dxt || dxt5a;
     const bool valid_texture_layout = r8
         ? !tiled && pitch >= width
         : rgba8 ? tiled && pitch >= width && pitch % 32u == 0
-                : rg16_float ? pitch >= width
+                : rg16_float ? pitch >= width && (!tiled || pitch % 32u == 0)
                 : compressed && width % 4u == 0 && height % 4u == 0 &&
                       pitch >= width && pitch % 4u == 0 &&
                       (!tiled || pitch % 128u == 0);
@@ -1075,8 +1075,11 @@ bool decode_captured_texture_fetch(
 
     const uint64_t byte_length = r8
         ? static_cast<uint64_t>(pitch) * height
-        : rgba8 ? tiled_rgba8_storage_bytes(pitch, height)
-                : rg16_float ? static_cast<uint64_t>(pitch) * height * 4u
+        : rgba8 ? tiled_texture_32bpp_storage_bytes(pitch, height)
+                : rg16_float ? (tiled
+                                    ? tiled_texture_32bpp_storage_bytes(pitch,
+                                                                        height)
+                                    : static_cast<uint64_t>(pitch) * height * 4u)
                 : compressed_texture_storage_bytes(
                       pitch, height, dxt5a ? 8u : 16u, tiled != 0);
     if (!width || !height || byte_length > std::numeric_limits<uint32_t>::max()) {
@@ -1905,6 +1908,7 @@ bool untile_captured_texture_2d(
     std::string* error) {
     const bool r8 = texture.format == 2 && texture.endian_mode == 0;
     const bool rgba8 = texture.format == 6 && texture.endian_mode == 2;
+    const bool rg16_float = texture.format == 31 && texture.endian_mode == 2;
     const bool dxt2_3 = texture.format == 19 && texture.endian_mode == 1;
     const bool dxt4_5 = texture.format == 20 && texture.endian_mode == 1;
     const bool dxt = dxt2_3 || dxt4_5;
@@ -1915,11 +1919,14 @@ bool untile_captured_texture_2d(
         ? !texture.tiled && texture.pitch >= texture.width
         : rgba8 ? texture.tiled && texture.pitch >= texture.width &&
                       texture.pitch % 32u == 0
+                : rg16_float ? texture.pitch >= texture.width &&
+                      (!texture.tiled || texture.pitch % 32u == 0)
                 : compressed && texture.width % 4u == 0 &&
                       texture.height % 4u == 0 &&
                       texture.pitch >= texture.width && texture.pitch % 4u == 0 &&
                       (!texture.tiled || texture.pitch % 128u == 0);
-    if (!guest_bytes || !vulkan_bytes || (!r8 && !rgba8 && !compressed) ||
+    if (!guest_bytes || !vulkan_bytes ||
+        (!r8 && !rgba8 && !rg16_float && !compressed) ||
         texture.dimension != 1 || !texture.width || !texture.height ||
         !valid_texture_layout) {
         return fail("unsupported captured texture layout", error);
@@ -1965,7 +1972,14 @@ bool untile_captured_texture_2d(
         static_cast<uint64_t>(blocks_wide) * blocks_high * bytes_per_block;
     const uint64_t source_bytes = r8
         ? static_cast<uint64_t>(texture.pitch) * texture.height
-        : rgba8 ? tiled_rgba8_storage_bytes(texture.pitch, texture.height)
+        : rgba8 ? tiled_texture_32bpp_storage_bytes(texture.pitch,
+                                                     texture.height)
+                : rg16_float
+                    ? (texture.tiled
+                           ? tiled_texture_32bpp_storage_bytes(texture.pitch,
+                                                              texture.height)
+                           : static_cast<uint64_t>(texture.pitch) *
+                                 texture.height * 4u)
                 : compressed_texture_storage_bytes(
                       texture.pitch, texture.height, bytes_per_block,
                       texture.tiled);
@@ -2113,10 +2127,11 @@ bool untile_captured_texture_2d(
     std::vector<uint8_t> linear(static_cast<size_t>(output_bytes));
     for (uint32_t y = 0; y < texture.height; ++y) {
         for (uint32_t x = 0; x < texture.width; ++x) {
-            const size_t source = static_cast<size_t>(
-                tiled_2d_offset_32bpp(x + packed_offset_x_pixels,
-                                      y + packed_offset_y_pixels,
-                                      texture.pitch));
+            const size_t source = texture.tiled
+                ? static_cast<size_t>(tiled_2d_offset_32bpp(
+                      x + packed_offset_x_pixels,
+                      y + packed_offset_y_pixels, texture.pitch))
+                : (static_cast<size_t>(y) * texture.pitch + x) * 4u;
             const size_t destination =
                 (static_cast<size_t>(y) * texture.width + x) * 4;
             if (source + 4 > byte_length) {

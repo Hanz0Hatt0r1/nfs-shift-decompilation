@@ -705,7 +705,40 @@ int main() {
     require(!shift::xbox::untile_captured_texture_2d(
                 copied_format31_fetch, nullptr, 0,
                 &unsupported_format31_upload, &error),
-            "format-31 guest RAM was accepted without a GPU Copy/Convert image");
+            "format-31 texture upload accepted missing guest memory");
+
+    const uint32_t retail_tiled_format31_descriptor[] = {
+        0x80424956u, 0x0CD6409Fu, 0x00000000u,
+        0x01281691u, 0x00000003u, 0x00000210u,
+    };
+    shift::xbox::CapturedTextureFetch retail_tiled_format31_fetch{};
+    require(shift::xbox::decode_captured_texture_fetch(
+                retail_tiled_format31_descriptor,
+                &retail_tiled_format31_fetch, &error) &&
+                retail_tiled_format31_fetch.guest_address == 0x0CD64000u &&
+                retail_tiled_format31_fetch.format == 31u &&
+                retail_tiled_format31_fetch.endian_mode == 2u &&
+                retail_tiled_format31_fetch.width == 1u &&
+                retail_tiled_format31_fetch.height == 1u &&
+                retail_tiled_format31_fetch.pitch == 32u &&
+                retail_tiled_format31_fetch.byte_length == 4096u &&
+                retail_tiled_format31_fetch.tiled &&
+                !retail_tiled_format31_fetch.packed_mips,
+            "captured retail draw-12 tiled format-31 descriptor was rejected");
+    std::vector<uint8_t> retail_tiled_format31_bytes(4096u);
+    retail_tiled_format31_bytes[0] = 0x34u;
+    retail_tiled_format31_bytes[1] = 0x00u;
+    retail_tiled_format31_bytes[2] = 0x38u;
+    retail_tiled_format31_bytes[3] = 0x00u;
+    std::vector<uint8_t> untiled_format31;
+    require(shift::xbox::untile_captured_texture_2d(
+                retail_tiled_format31_fetch,
+                retail_tiled_format31_bytes.data(),
+                retail_tiled_format31_bytes.size(), &untiled_format31,
+                &error) &&
+                untiled_format31 ==
+                    std::vector<uint8_t>{0x00u, 0x38u, 0x00u, 0x34u},
+            "captured tiled format-31 base texel did not untile to RG16F bytes");
     uint32_t mipmapped_format31_descriptor[6];
     std::copy(std::begin(copied_format31_descriptor),
               std::end(copied_format31_descriptor),

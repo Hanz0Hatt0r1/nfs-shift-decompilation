@@ -1185,13 +1185,6 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
             break;
           }
         }
-        if (fetch.format == 31u && !guest_copy_source) {
-          if (error) {
-            *error = "format-31 texture has no preceding exact-layout "
-                     "Copy/Convert image in this PM4 stream";
-          }
-          return false;
-        }
         guest_bytes = nullptr;
         guest_byte_length = 0;
         if (!guest_copy_source &&
@@ -1302,7 +1295,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         }
         texture.format = use_native_r8
             ? shift::xbox::CapturedVulkanTexture::Format::R8
-            : shift::xbox::CapturedVulkanTexture::Format::Rgba8;
+            : fetch.format == 31u
+                ? shift::xbox::CapturedVulkanTexture::Format::Rg16Float
+                : shift::xbox::CapturedVulkanTexture::Format::Rgba8;
         total_texture_bytes += fetch.byte_length;
         prepared.textures.push_back(std::move(texture));
       }

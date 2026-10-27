@@ -35,16 +35,18 @@
     "cache_lifetime": "cache clear destroyed all destination images; stale entries are aged out after 120 cache frames and frame fences are drained before eviction",
     "spirv_validation": "all three Copy/Convert fragment shaders and the constant test shader passed spirv-val --target-env vulkan1.1",
     "linux_plugin_translation_unit": "current-source Clang compilation passed as part of the linked DSO build",
-    "linux_plugin_dso": "linked successfully with -march=x86-64-v2; SHA-256 416e514035bf25d12b6bcc8b29fe7790814edf967c09fb2d72243243827584c9",
+    "linux_plugin_dso": "linked successfully with -march=x86-64-v2; SHA-256 068886f84ce1557cfdc8a536a599215d74658342a6551405ce22de779f70107f",
     "linux_plugin_ctest": "6/6 passed with VK_LAYER_KHRONOS_validation",
-    "android_arm64_objects": "NDK r28c compiled the current plugin and Vulkan renderer translation units; plugin DSO was not linked or installed; plugin object SHA-256 3e1b8c662343efc0f0385661b9e4d035a0dd5af4e04a454dfd7db08dad583df1",
-    "android_offscreen_renderer": "the current ARM64 renderer check (SHA-256 e5fd1c9e38a2e94314797662aa7690dc66825f6562a7ab90df79487ee81f0eea), including exact format-31 cached-image sampling against an uploaded R16G16_SFLOAT reference, passed on Redmi Note 8 Pro Mali-G76 MC4 / Vulkan 1.1.131; Android validation layer unavailable"
+    "android_arm64_objects": "NDK r28c compiled the current plugin and Vulkan renderer translation units; plugin DSO was not linked or installed; plugin object SHA-256 c9b67a655b4a09a4f6bfa6462119ae9f8f2e419a7e2b8d6c2490407161e3d827",
+    "android_draw12_descriptor_check": "the exact tiled base-level format-31 descriptor from captured retail draw 12 decoded and its synthetic 4096-byte tile payload untiled on Redmi Note 8 Pro; no retail texel payload was compared",
+    "android_draw_input_check_sha256": "03addae35f5bccb52ede91f41636a36bf7a7823c5a7e7c242fdaf5bb50da68b5",
+    "android_offscreen_renderer": "the current ARM64 renderer check (SHA-256 2c36898a398f6ef5a5892f7ab19001fffc6bf656d1bde1b01c2db39c4d7469ed), including exact format-31 cached-image sampling against an uploaded R16G16_SFLOAT reference, passed on Redmi Note 8 Pro Mali-G76 MC4 / Vulkan 1.1.131; Android validation layer unavailable"
   },
   "operation_capture": "Each PM4 Copy/Convert operation retains its own compiled shader payload and source register snapshot. The renderer now submits compatible Draw segments and following copies in PM4 queue order; a copy with no available preceding draw segment fails closed.",
   "not_implemented": [
     "The 14-draw retail transition package is not fully executable: its initial copy source may predate the captured draw segment, and Xenos EDRAM source association is not implemented.",
-    "Only a linear, base-level format-31 texture fetch that exactly matches a prior copy's address, extent/pitch, and conversion state can consume the cached image; tiled or mipmapped views and other formats remain unsupported.",
-    "The captured draw-12 texture at guest address 0x0CD64000 is tiled, has mip_min=4/mip_max=10, and does not match the preceding 0x0CD63000 copy destination; this cache path does not resolve that retail draw.",
+    "Only a linear, base-level format-31 texture fetch that exactly matches a prior copy's address, extent/pitch, and conversion state can consume the cached image. Tiled base-level format-31 textures now use a guest-memory upload path; packed/mip subresources remain unsupported.",
+    "The captured draw-12 descriptor is tiled 1x1 format 31 at 0x0CD64000 with mip_min=0/mip_max=0, separate from the preceding 0x0CD63000 copy destination. Its descriptor and synthetic untile path are tested, but captured retail texel bytes and the sampled game output are not.",
     "Copy results are not written back into guest RAM, and Xenos endian conversion for texture fetch is not validated.",
     "The color/depth clear side effects, aliased EDRAM persistence, and depth/stencil preservation are not implemented.",
     "Destination endian modes have not been validated against guest-memory texture fetches.",

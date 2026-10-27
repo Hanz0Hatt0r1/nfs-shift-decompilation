@@ -1525,8 +1525,15 @@ layout, while compatible draw and copy segments execute in PM4 order. The
 renderer also retains same-layout EDRAM targets and can feed a later format-31
 linear base-level texture fetch from an exact matching cached copy image. This
 does not reinterpret aliased target layouts. The captured draw-12 texture is a
-tiled mip view at a different address from the preceding format-31 copy, so
-the exact-match path rejects it and the 14-draw package remains incomplete.
+tiled base-level format-31 view at `0x0CD64000`, separate from the preceding
+copy at `0x0CD63000`; its captured descriptor words are
+`80424956 CD6409F 00000000 01281691 00000003 00000210` (`mip_min=0`,
+`mip_max=0`). The exact-copy cache path correctly does not alias these
+addresses. The renderer now accepts this tiled 32bpp guest-memory layout and
+uploads it as `R16G16_SFLOAT`. The draw-input regression verifies descriptor
+decode and a synthetic tile/endian payload; the retail texel bytes and rendered
+sample were not captured or compared, so this does not establish draw-12 parity.
+The 14-draw package remains incomplete.
 See the exact phone register sequence and earlier failure limits in
 [`process2_redmi_transition_copy_chain_20261026.json`](../../evidence/process2_redmi_transition_copy_chain_20261026.json).
 
@@ -1553,10 +1560,11 @@ PID and screenshot hash before and after the offscreen check.
 
 This adds target-format handling, cached intermediate images, ordered
 submission for compatible segments, same-layout EDRAM persistence, and one
-exact format-31 guest-fetch consumer path. EDRAM alias reinterpretation,
-guest-memory writeback and endian semantics, and complete color/depth clear
+exact format-31 guest-fetch consumer path, plus tiled base-level format-31
+guest-memory upload. EDRAM alias reinterpretation, guest-memory writeback,
+independent guest-texture endian verification, and complete color/depth clear
 side effects remain unimplemented. The captured transition is still blocked by
-source association and the format-31 tiled mip view.
+source association and target-layout aliasing.
 Detailed captured values, build identities, tests, and limits are in
 [`process2_redmi_xenos_16bit_targets_20261026.json`](../../evidence/process2_redmi_xenos_16bit_targets_20261026.json).
 
@@ -1667,7 +1675,7 @@ even when the PM4 stream has no presenter Copy/Convert packet; the existing
 synthetic live-ring readback test caught and verifies this path. The complete
 Linux ReXGlue plugin DSO linked, and its six plugin CTests passed with
 `VK_LAYER_KHRONOS_validation`. The DSO SHA-256 is
-`416e514035bf25d12b6bcc8b29fe7790814edf967c09fb2d72243243827584c9`.
+`068886f84ce1557cfdc8a536a599215d74658342a6551405ce22de779f70107f`.
 The current Android plugin translation unit compiled with NDK r28c, but the
 Android plugin DSO was not linked or installed. These synthetic checks do not
 claim retail parity. Build and test details are in
