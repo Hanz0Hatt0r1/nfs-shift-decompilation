@@ -1660,3 +1660,22 @@ Khronos validation enabled. The Android plugin was not rebuilt or installed in
 this iteration, and the active Redmi game was left running on the disclaimer.
 Evidence and limits are in
 [`process2_mode6_sources_and_interrupt_trace_20261027.json`](../../evidence/process2_mode6_sources_and_interrupt_trace_20261027.json).
+
+## Redmi disclaimer follow-up and ARM64 renderer check (2026-10-27)
+
+The user confirmed that the legal disclaimer advances automatically and does
+not require a button press. No input was sent. During the follow-up, the active
+Redmi process remained in the foreground on the same disclaimer screenshot.
+Its 04:36:49–04:38:14 device-log window contains 145 successful submissions of
+13 captured draws and 145 accepted final presenter copies, with no logged
+`WAIT_REG_MEM` false samples or Vulkan refresh failures. This does not establish
+why the game has not submitted a video frame.
+
+The current source also built the ARM64 Vulkan renderer checker with NDK r28c,
+Android API 26, and passed the draw-input, guest-ring, shader-translation, and
+offscreen renderer checks on the Redmi Mali-G76 MC4 / Vulkan 1.1.131. The
+renderer check uses synthetic draw shaders and does not replay the retail
+transition. The game APK and loaded plugin were not changed; its PID and
+screenshot hash remained unchanged. Device log hash, binary hashes, and exact
+limits are in
+[`process2_redmi_disclaimer_followup_arm64_check_20261027.json`](../../evidence/process2_redmi_disclaimer_followup_arm64_check_20261027.json).
