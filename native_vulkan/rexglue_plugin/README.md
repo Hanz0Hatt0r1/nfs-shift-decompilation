@@ -847,6 +847,19 @@ includes its fetch-constant index and all four decoded channel signs. This
 retains the exact descriptor-side blocker for the next selected draw without
 guessing signed or unsigned-biased sample behavior.
 
+The selected shader/raster dump path was rebuilt from commit `f92ba76b` and
+verified on Linux on 2026-10-28: renderer CTest passed 4/4 and plugin CTest
+passed 6/6 with `VK_LAYER_KHRONOS_validation`. The selected-draw regression
+checks exact VS/PS fixture bytes and confirms raster-state logging before
+translation. The candidate DSO SHA-256 is
+`7d4b53a1070eecd92e210417374c3dfe306e5b951f39249a7304dfa3c0cda54b` (Build ID
+`92269d84a9678c28ed7705eb1eb8b0bab9f618af`). GitHub native, Android
+NativeActivity ARM64, capture, Python, and both Vulkan smoke jobs pass;
+retail-startup-regression is skipped by workflow conditions. The v45 retail
+run used the previous DSO, so these checks do not show the new diagnostics on
+retail shader bytes or prove retail pixels. No Android device is currently
+attached. See [`selected dump verification evidence`](../../evidence/process2_selected_shader_state_dump_20261028.json).
+
 For that comparison, `SHIFT_NATIVE_VULKAN_DUMP_TEXTURE_SOURCE_PREFIX` also
 saves the exact guest-memory bytes read for each texture in the selected
 submit as `.frameN.slotM.textureK.source.bin`. This file preserves Xenos
