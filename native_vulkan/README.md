@@ -526,6 +526,25 @@ condition, but does not identify the writer or explain the negative guest
 worker counter. The full crosswalk and interpretation limits are in
 [`process2_p1_source1_interrupt_crosswalk_20261027.json`](../evidence/process2_p1_source1_interrupt_crosswalk_20261027.json).
 
+## Process 1 source-1 interrupt join, v46 (2026-10-28)
+
+The v46 post-Bink capture recorded 1,925 P2 `PM4_INTERRUPT source=1` rows and
+932 nested P1 callback entries. A strict one-to-one timestamp/order audit finds
+one continuous P2 ID window, 965..1896, for those P1 callbacks. All matched
+rows use generation 1, ring `0x09752580`, CPU/dispatched mask `0x04`, and the
+same outer callback wrapper/data. Absolute timestamp deltas range from 0 to
+156 ms (median 20 ms). The 993 P2 rows outside that window fall outside P1's
+registered-callback observation interval and are not failures.
+
+This confirms ordered callback correspondence, not that callback payloads are
+equivalent or that each interrupt is a fresh GPU completion. Reused command
+buffer locations and repeated queue tokens remain visible; the guest worker
+counter underflows to -187 in this capture, but its meaning remains unresolved.
+The capture used plugin `fff4c40c…`, before the later accepted-draw raster
+formatter, and did not establish a retail Vulkan frame. The full per-event
+join and capture hashes are in
+[`process2_v46_source1_interrupt_join_20261028.json`](../evidence/process2_v46_source1_interrupt_join_20261028.json).
+
 ## Commands
 
 ```bash

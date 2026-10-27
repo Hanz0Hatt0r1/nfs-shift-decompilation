@@ -62,51 +62,70 @@ def parse_p2_line(line):
     return row
 
 
-def audit(events_path, log_paths, max_delta_ms):
-    events = json.loads(Path(events_path).read_text())
-    p1 = events["events"]["source1_callback_events"]
+def join_callbacks(p1, p2, max_delta_ms):
+    """Find the unique continuous P2 interrupt window matching ordered P1 callbacks."""
     if not p1:
         raise ValueError("P1 capture contains no source-1 callback events")
-    p2 = []
-    for path in log_paths:
-        with Path(path).open(errors="replace") as stream:
-            p2.extend(row for line in stream if (row := parse_p2_line(line)))
-    p2.sort(key=lambda row: (row["timestamp_ms"], row["id"]))
+    if len(p2) < len(p1):
+        raise ValueError("P2 capture has fewer source-1 interrupts than P1 callbacks")
 
-    joins = []
-    p2_index = 0
-    for p1_index, event in enumerate(p1):
-        stamp = int(event["wall_clock_epoch_ms"])
-        while p2_index + 1 < len(p2) and abs(
-            p2[p2_index + 1]["timestamp_ms"] - stamp
-        ) < abs(p2[p2_index]["timestamp_ms"] - stamp):
-            p2_index += 1
-        if p2_index >= len(p2):
-            raise ValueError(f"no P2 event available for P1 callback {p1_index}")
-        match = p2[p2_index]
-        delta = match["timestamp_ms"] - stamp
-        if abs(delta) > max_delta_ms:
-            raise ValueError(
-                f"P1 callback {p1_index} has no P2 event within {max_delta_ms} ms"
-            )
-        if int(event["callback_mask"]) != match["mask"]:
-            raise ValueError(f"CPU mask differs at P1 callback {p1_index}")
-        if match["dispatched"] & match["mask"] != match["mask"]:
-            raise ValueError(f"CPU dispatch mask is incomplete at P2 event {match['id']}")
-        if not match["callbacks"] or any(
-            callback["status"] != "invoked" for callback in match["callbacks"]
+    candidates = []
+    for start in range(len(p2) - len(p1) + 1):
+        segment = p2[start : start + len(p1)]
+        if any(
+            right["id"] != left["id"] + 1
+            for left, right in zip(segment, segment[1:])
         ):
-            raise ValueError(f"guest callback did not complete at P2 event {match['id']}")
-        callback = next(
-            (cb for cb in match["callbacks"] if match["mask"] & (1 << cb["cpu"])),
-            None,
+            continue
+
+        deltas = []
+        valid = True
+        for event, interrupt in zip(p1, segment):
+            stamp = int(event["wall_clock_epoch_ms"])
+            delta = interrupt["timestamp_ms"] - stamp
+            if (
+                abs(delta) > max_delta_ms
+                or int(event["callback_mask"]) != interrupt["mask"]
+                or interrupt["dispatched"] & interrupt["mask"]
+                != interrupt["mask"]
+            ):
+                valid = False
+                break
+            callbacks = interrupt["callbacks"]
+            if not callbacks or any(cb["status"] != "invoked" for cb in callbacks):
+                valid = False
+                break
+            if not any(
+                interrupt["mask"] & (1 << callback["cpu"])
+                for callback in callbacks
+            ):
+                valid = False
+                break
+            deltas.append(delta)
+        if valid:
+            candidates.append((segment, deltas))
+
+    if not candidates:
+        raise ValueError(
+            f"no continuous P2 interrupt window matches all P1 callbacks "
+            f"within {max_delta_ms} ms"
         )
-        if callback is None:
-            raise ValueError(f"no dispatched CPU callback at P2 event {match['id']}")
+    if len(candidates) != 1:
+        raise ValueError(
+            f"P1 callbacks ambiguously match {len(candidates)} P2 interrupt windows"
+        )
+
+    segment, deltas = candidates[0]
+    joins = []
+    for p1_index, (event, match, delta) in enumerate(zip(p1, segment, deltas)):
+        callback = next(
+            cb for cb in match["callbacks"]
+            if match["mask"] & (1 << cb["cpu"])
+        )
         joins.append(
             {
                 "p1_callback_index": p1_index,
-                "p1_wall_clock_epoch_ms": stamp,
+                "p1_wall_clock_epoch_ms": int(event["wall_clock_epoch_ms"]),
                 "p1_registered_callback_function": f"0x{int(event['callback_function']):08x}",
                 "p1_callback_object": f"0x{int(event['callback_object']):08x}",
                 "p1_callback_data": f"0x{int(event['callback_data']):08x}",
@@ -129,7 +148,18 @@ def audit(events_path, log_paths, max_delta_ms):
                 "dispatch_status": callback["status"],
             }
         )
-        p2_index += 1
+    return joins
+
+
+def audit(events_path, log_paths, max_delta_ms):
+    events = json.loads(Path(events_path).read_text())
+    p1 = events["events"]["source1_callback_events"]
+    p2 = []
+    for path in log_paths:
+        with Path(path).open(errors="replace") as stream:
+            p2.extend(row for line in stream if (row := parse_p2_line(line)))
+    p2.sort(key=lambda row: (row["timestamp_ms"], row["id"]))
+    joins = join_callbacks(p1, p2, max_delta_ms)
 
     ids = [row["p2_pm4_interrupt_id"] for row in joins]
     if any(right != left + 1 for left, right in zip(ids, ids[1:])):
@@ -137,10 +167,12 @@ def audit(events_path, log_paths, max_delta_ms):
     deltas = sorted(abs(row["timestamp_delta_ms_p2_minus_p1"]) for row in joins)
     return {
         "schema": "shift.process2.pm4_interrupt_timestamp_order_audit.v1",
-        "join_method": "one-to-one monotonic nearest timestamp match",
+        "join_method": "unique one-to-one continuous interrupt-ID window with bounded timestamp error",
         "max_absolute_timestamp_delta_ms": max_delta_ms,
         "summary": {
             "joined_rows": len(joins),
+            "p2_source1_events_considered": len(p2),
+            "p2_events_outside_joined_window": len(p2) - len(joins),
             "p2_interrupt_id_range": [ids[0], ids[-1]],
             "p2_ids_contiguous": True,
             "absolute_timestamp_delta_ms": {
@@ -168,10 +200,11 @@ def audit(events_path, log_paths, max_delta_ms):
             ),
         },
         "interpretation": (
-            "This is a timestamp/order join. Process 1 records callbacks observed "
-            "inside the guest wrapper; Process 2 records the outer guest callback "
-            "and data passed to ExecuteInterrupt. This does not prove callback "
-            "payload or guest semantic equivalence."
+            "This is a timestamp/order join to a unique continuous PM4 interrupt "
+            "window. Process 1 records callbacks observed inside the guest wrapper; "
+            "Process 2 records the outer guest callback and data passed to "
+            "ExecuteInterrupt. This does not prove callback payload or guest "
+            "semantic equivalence."
         ),
         "rows": joins,
     }
