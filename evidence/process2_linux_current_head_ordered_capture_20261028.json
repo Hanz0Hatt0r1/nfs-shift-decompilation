@@ -1,0 +1,153 @@
+{
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "date": "2026-10-28",
+  "environment_paths": {
+    "host": "/home/pes/work/nfsshift-rex-lwsync-20261027/out/build/linux-amd64-release/nfs_shift",
+    "plugin": "/home/pes/work/.build-process2-p2161-vulkan-plugin-20261027/output/librexgpu-shift-native.so",
+    "runtime": "/home/pes/work/rexglue-sdk-retail-lwsync-20261027/out/linux-amd64/Release/librexruntime.so",
+    "trace": "/tmp/nfs-shift-p2-current-head-ring-audit-20261028/trace.gdb",
+    "xex": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data/default.xex"
+  },
+  "interpretation": "Each logged PM4_INTERRUPT source=1 record names the expanded packet ordinal, source IB address and byte offset, ring generation and batch read/write pointers. For all 2,840 records the plugin passed callback 0x823B37B8 and data 0xB7365F00 to ExecuteInterrupt on CPU 2; ExecuteInterrupt returned successfully. This proves P2 packet-to-outer-guest-callback dispatch for this run, not the nested callbacks or semantic effect inside that wrapper.",
+  "interrupt_trace": {
+    "batch_rptr_range": [
+      2,
+      8189
+    ],
+    "batch_rptr_wraps": 2,
+    "batch_wptr_range": [
+      5,
+      8191
+    ],
+    "batch_wptr_wraps": 2,
+    "callback_data": "0xB7365F00",
+    "callback_dispatch_cpu": 2,
+    "callback_guest_target": "0x823B37B8",
+    "callback_target_distribution": {
+      "0x823B37B8": 2840
+    },
+    "cpu_mask_values": [
+      "0x04"
+    ],
+    "dispatch_status": "invoked",
+    "dispatched_cpu_mask_values": [
+      "0x04"
+    ],
+    "file": "process2_linux_current_head_source1_interrupt_trace_20261028.jsonl.gz",
+    "packet_ordinal_range": [
+      10,
+      900
+    ],
+    "per_interrupt_callback_count": 1,
+    "records": 2840,
+    "ring_generation_values": [
+      1
+    ],
+    "ring_guest_addresses": [
+      "0x09752580"
+    ],
+    "sha256": "59c9abe1c1764a1fc9997b3b77854722fdde9bfd9674c8c4ef30f0c8c94c010c",
+    "source": 1,
+    "trace_index_range": [
+      0,
+      2839
+    ],
+    "trace_indices_contiguous": true
+  },
+  "limitations": [
+    "This Linux run used the exact branch-HEAD P2 plugin but an older ReXGlue provider API that cannot request depth/stencil resolve; the 24-draw packet-72 transition therefore remains rejected.",
+    "This run contains no 14-draw refresh and does not exercise aliased EDRAM transfer.",
+    "The rendered scene is not compared against retail pixels; no parity claim is made.",
+    "No Android device was connected for this capture."
+  ],
+  "ordered_render_observations": {
+    "accepted_copy_convert_records": 944,
+    "failure_reasons": {
+      "packet_72_provider_depth_stencil_resolve_not_enabled": 7,
+      "unresolved_draw_packet_0": 1
+    },
+    "frame_refresh_failures": 8,
+    "indexed_draw_submission_records": 112,
+    "retail_14_draw_refreshes": 0,
+    "source1_interrupts_in_capture": 2840,
+    "submission_draw_count_histogram": {
+      "1": 2,
+      "2": 54,
+      "5": 55,
+      "6": 1
+    },
+    "submitted_draw_packets_total": 391
+  },
+  "run": {
+    "controller_events": [
+      {
+        "at_seconds": 94.018,
+        "button": "Start",
+        "edge": "press"
+      },
+      {
+        "at_seconds": 94.368,
+        "button": "Start",
+        "edge": "release"
+      },
+      {
+        "at_seconds": 96.368,
+        "button": "A",
+        "edge": "press"
+      },
+      {
+        "at_seconds": 96.718,
+        "button": "A",
+        "edge": "release"
+      },
+      {
+        "at_seconds": 98.719,
+        "button": "Start",
+        "edge": "press"
+      },
+      {
+        "at_seconds": 99.069,
+        "button": "Start",
+        "edge": "release"
+      }
+    ],
+    "duration_seconds": 111.52,
+    "gdb_exit": 0,
+    "gdb_log_sha256": "2c8e80305963718042bea2eacc3aae1f1df9d40d5d4553e1897785ad21bb7d55",
+    "guest_memory_modified_by_probe": false,
+    "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "plugin_sha256": "763163fa73e07a0c936760b4c3cd549e7daa17c3115eb86a9954e4af880ddacc",
+    "rotated_game_logs": {
+      "nfs_shift_001.1.log": {
+        "bytes": 5242567,
+        "sha256": "b799f33b19b9128dcf402bb490405519ec4bee576df0d6c9dc2e575805e55c1e"
+      },
+      "nfs_shift_001.2.log": {
+        "bytes": 5242779,
+        "sha256": "aba1751786d869e14e4c6ed8997e934ce24eec7ad89c0d32fd0e78caec439695"
+      },
+      "nfs_shift_001.log": {
+        "bytes": 3242606,
+        "sha256": "cea883fe53679df8323bedeca8430a1a02986a98892199cc46f2e90a98c6e2ca"
+      }
+    },
+    "runner_log_sha256": "e8d68a436397eb96df66fc6ff434f0d72038643c4cbad543d7cffeeb9a0fb453",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "schema": "shift.process2.linux_current_head_ordered_capture.v1",
+  "source_commit": "e5f55437e5d47d1dc0c33d5e000214b6e21e9b2b",
+  "vulkan_provider": {
+    "depth_stencil_resolve_enabled": false,
+    "device": "NVIDIA GeForce GTX 950",
+    "device_api_version": "1.4.312",
+    "effect": "No VK_KHR_create_renderpass2/VK_KHR_depth_stencil_resolve enabled; mixed 4x-to-1x depth/stencil segment is rejected fail-closed.",
+    "enabled_device_extensions": [
+      "VK_KHR_swapchain",
+      "VK_EXT_memory_budget"
+    ],
+    "instance_api_version": "1.4.357",
+    "provider_api_lacks_with_depth_stencil_resolve": true,
+    "provider_sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca"
+  }
+}

@@ -40,9 +40,19 @@
     "guest_callback_registration": "0x823B37B8"
   },
   "interpretation": {
-    "packet_72_failures": "The capture used a provider/plugin combination that did not report enabled depth/stencil resolve. These failures do not test the current HEAD candidate, whose provider path was separately verified to expose Vulkan 1.1 resolve support.",
+    "packet_72_failures": "The v42 capture used a different P2 plugin binary, so it did not test the branch-HEAD disjoint-target change. A separate P2-owned replay with the branch-HEAD plugin reproduced the same seven packet-72 failures: the Linux ReXGlue provider did not enable depth/stencil resolve. The current Linux integration therefore still cannot execute this mixed-sample segment.",
     "14_draw_transition": "No 14-draw refresh appears in this run, so it provides no new evidence about the retail EDRAM alias transition.",
     "interrupt_trace": "This run provides no PM4_INTERRUPT packet trace and cannot update the source-1 callback correlation."
+  },
+  "current_head_replay": {
+    "evidence": "process2_linux_current_head_ordered_capture_20261028.json",
+    "plugin_sha256": "763163fa73e07a0c936760b4c3cd549e7daa17c3115eb86a9954e4af880ddacc",
+    "provider_sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+    "provider_api_lacks_depth_stencil_resolve_opt_in": true,
+    "provider_enabled_extensions": ["VK_KHR_swapchain", "VK_EXT_memory_budget"],
+    "packet_72_refresh_failures": 7,
+    "source1_interrupt_dispatches": 2840,
+    "outer_guest_callback": "0x823B37B8"
   },
   "limits": [
     "The v42 run was not replayed with the branch-HEAD plugin.",

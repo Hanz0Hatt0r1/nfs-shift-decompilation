@@ -2111,13 +2111,39 @@ The later v42 Linux capture loaded plugin SHA-256
 `72baae3d59432727e1e366259ec8a9b6641b7b60d623d8389274d74e368815de`, not the
 branch-HEAD candidate `763163fa73e07a0c936760b4c3cd549e7daa17c3115eb86a9954e4af880ddacc`.
 Its seven repeated packet-72 failures report that depth/stencil resolve was
-not provider-enabled, so this run does not exercise the current candidate's
-resolve path. The log has 110 successful draw-submission records and 932
-accepted Copy/Convert records, but no 14-draw refresh and no PM4_INTERRUPT
-packet trace. It does not change the aliasing or interrupt conclusions above.
-Run metadata, hashes, counts, and qualifications are in
+not provider-enabled, and the run has no 14-draw refresh or PM4_INTERRUPT
+packet trace. A separate bounded replay with the branch-HEAD P2 plugin
+reproduced the packet-72 rejection: that Linux host's ReXGlue provider exposes
+only swapchain and memory-budget extensions, and the SDK header used by the
+build has no depth/stencil-resolve opt-in. Thus the current Linux integration
+still cannot execute the mixed-sample segment. The existing
+[ReXGlue SDK PR #2](https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/2) adds
+the optional provider overload; Process 1 must request it when creating the
+native Vulkan provider. Run metadata, hashes, counts, and qualifications are in
 [`process2_p1_v42_plugin_provenance_audit_20261028.json`](../../evidence/process2_p1_v42_plugin_provenance_audit_20261028.json).
 The branch-HEAD DSO was rebuilt with the recorded SHA-256 and Build ID; Linux
 native CTest passed 4/4 and plugin CTest passed 6/6 with Vulkan validation,
 and the Android ARM64 renderer/check targets compiled. No ADB device was
 connected for device execution.
+
+## Branch-head Linux ordered capture and source-1 interrupt trace (2026-10-28)
+
+A bounded replay used the branch-HEAD P2 DSO (`763163fa…`, Build ID
+`9a6ebe8a…`) with the captured retail XEX and the existing Linux host/runtime.
+The run submitted 391 indexed draw packets across 112 presenter submissions
+and accepted 944 Copy/Convert operations. One initial frame failed closed at
+unresolved draw packet 0; seven later 24-draw refreshes failed at packet 72
+because depth/stencil resolve was not enabled by the provider. This run had no
+14-draw refresh, so it does not exercise the aliased EDRAM transition.
+
+The same run recorded 2,840 PM4_INTERRUPT source-1 packets. Every row has a
+packet ordinal, source IB address and byte offset, ring generation, batch read
+and write pointers, CPU mask, dispatched mask, and callback target/data/status.
+All 2,840 dispatched on CPU 2 to guest callback `0x823B37B8` with data
+`0xB7365F00`; `ExecuteInterrupt` returned for every call. The two batch-pointer
+wraps are recorded while ring generation remains 1. This proves P2's
+packet-to-outer-guest-callback dispatch for this run; it does not prove nested
+callback effects inside that wrapper. The complete compressed row trace and
+provider/renderer limits are in
+[`process2_linux_current_head_ordered_capture_20261028.json`](../../evidence/process2_linux_current_head_ordered_capture_20261028.json) and
+[`process2_linux_current_head_source1_interrupt_trace_20261028.jsonl.gz`](../../evidence/process2_linux_current_head_source1_interrupt_trace_20261028.jsonl.gz).
