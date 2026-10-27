@@ -104,6 +104,9 @@ struct CapturedVulkanOperation {
     // fails, so an unresolved packet remains useful as an ordered GPU trace.
     bool draw_raster_ready = false;
     CapturedRasterState draw_raster{};
+    bool draw_registers_ready = false;
+    uint32_t draw_register_valid_mask = 0;
+    CapturedRasterRegisters draw_registers{};
     CapturedCopyState copy_state{};
     uint32_t source_width = 0;
     uint32_t source_height = 0;

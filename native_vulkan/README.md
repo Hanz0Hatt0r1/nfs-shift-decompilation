@@ -595,3 +595,23 @@ reuse, and resolve capability. The log is
 [`process2_pm4_interrupt_order_linux_ctest_20261026.log`](../evidence/process2_pm4_interrupt_order_linux_ctest_20261026.log)
 (SHA-256 `3d642aab…f9dd6bf7`). Its PM4 draw/resource inputs are synthetic, so
 this result does not establish retail gameplay or parity.
+
+## Partial raster state on unresolved PM4 draws (2026-10-28)
+
+When a captured indexed draw has incomplete raster state, the plugin now keeps
+the raw values of registers that were actually observed plus a validity mask.
+The ordered-operation rejection includes these values even when stream
+validation fails before Vulkan submission. The stencil reference/write-mask
+register is printed as valid only if a corresponding PM4 write was captured.
+Linux renderer tests and plugin tests passed 4/4 and 6/6 respectively with
+`VK_LAYER_KHRONOS_validation`; the Vulkan minimum remains 1.1. The ARM64
+renderer and its check target compile, but no Android device was connected.
+
+This improves diagnosis only. The latest DSO has not yet been replayed against
+the retail XEX, so its raw-register output is covered by synthetic regression.
+An earlier replay saw unresolved packet 0 with validity mask `0x17038`, but
+that build did not include the raw-register formatter. The 14-draw transition
+was absent in that replay; EDRAM alias backing and full sequence execution
+remain incomplete. See
+[`process2_unresolved_draw_partial_registers_20261028.json`](../evidence/process2_unresolved_draw_partial_registers_20261028.json)
+for hashes and verification details.

@@ -1201,6 +1201,7 @@ void GuestRasterRegisterState::reset() noexcept {
 void GuestRasterRegisterState::apply(const GuestRegisterWrite& write) noexcept {
     if (write.register_index == 0x210Du) {
         registers_.stencil_refmask = write.value;
+        registers_.stencil_refmask_valid = true;
         return;
     }
     switch (write.register_index) {
@@ -1282,6 +1283,15 @@ bool GuestRasterRegisterState::snapshot(
     }
     *output = registers_;
     if (error) error->clear();
+    return true;
+}
+
+bool GuestRasterRegisterState::snapshot_partial(
+    CapturedRasterRegisters* output,
+    uint32_t* observed_register_mask) const noexcept {
+    if (!output || !observed_register_mask) return false;
+    *output = registers_;
+    *observed_register_mask = valid_mask_;
     return true;
 }
 

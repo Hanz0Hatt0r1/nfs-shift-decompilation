@@ -3589,6 +3589,25 @@ std::string describe_captured_vulkan_operations(
                 << raster.scissor_x0 << ',' << raster.scissor_y0 << ".."
                 << raster.scissor_x1 << ',' << raster.scissor_y1 << "]}";
     };
+    const auto append_draw_registers =
+        [&](const CapturedVulkanOperation& operation) {
+            const CapturedRasterRegisters& registers = operation.draw_registers;
+            message << ",draw_registers={valid_mask=0x" << std::hex
+                    << operation.draw_register_valid_mask << ",surface=0x"
+                    << registers.surface_info << ",color=0x"
+                    << registers.color_info << ",depth=0x"
+                    << registers.depth_info << ",mode=0x"
+                    << registers.mode_control << ",depth_control=0x"
+                    << registers.depth_control << ",color_mask=0x"
+                    << registers.color_mask << ",stencil_refmask=0x"
+                    << registers.stencil_refmask << std::dec
+                    << ",stencil_refmask_valid="
+                    << registers.stencil_refmask_valid << ",screen_scissor=[0x"
+                    << std::hex << registers.screen_scissor_tl << ",0x"
+                    << registers.screen_scissor_br << "],window_scissor=[0x"
+                    << registers.window_scissor_tl << ",0x"
+                    << registers.window_scissor_br << "]}" << std::dec;
+        };
     for (size_t i = 0; i < count; ++i) {
         if (i) message << ';';
         const CapturedVulkanOperation& operation = operations[i];
@@ -3657,6 +3676,9 @@ std::string describe_captured_vulkan_operations(
                 break;
             case CapturedVulkanOperation::Type::UnresolvedDraw:
                 message << "unresolved(packet=" << operation.packet_index;
+                if (operation.draw_registers_ready) {
+                    append_draw_registers(operation);
+                }
                 if (operation.draw_raster_ready) {
                     append_draw_raster(operation.draw_raster);
                 }
@@ -3790,6 +3812,7 @@ bool submit_captured_vulkan_frame(
     }
     if (operations &&
         !validate_captured_operation_stream(*operations, draws.size(), error)) {
+        append_captured_operation_stream(error, operations);
         return false;
     }
     const CapturedRasterState& frame_target = draws.front().raster;
@@ -4954,6 +4977,7 @@ bool submit_captured_vulkan_operation_stream(
         return fail("ordered Vulkan operation stream has no PM4 operations", error);
     }
     if (!validate_captured_operation_stream(operations, draws.size(), error)) {
+        append_captured_operation_stream(error, &operations);
         return false;
     }
     TextureCacheState* texture_cache_state = texture_cache

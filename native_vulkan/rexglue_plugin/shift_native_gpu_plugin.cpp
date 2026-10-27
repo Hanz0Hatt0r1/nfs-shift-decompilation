@@ -2834,6 +2834,12 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 shift::xbox::CapturedRasterState raster_state{};
                 const bool raster_registers_ready =
                     raster_register_state.snapshot(&raster_registers, &error);
+                uint32_t draw_register_valid_mask =
+                    raster_register_state.observed_register_mask();
+                if (!raster_registers_ready) {
+                  raster_register_state.snapshot_partial(
+                      &raster_registers, &draw_register_valid_mask);
+                }
                 uint32_t captured_target_width = last_guest_swap_width;
                 uint32_t captured_target_height = last_guest_swap_height;
                 if (raster_registers_ready && last_guest_swap_width != 0 &&
@@ -3118,6 +3124,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     operation.packet_index = draw_packet_index;
                     operation.draw_raster_ready = raster_state_ready;
                     operation.draw_raster = raster_state;
+                    operation.draw_registers_ready =
+                        draw_register_valid_mask != 0;
+                    operation.draw_register_valid_mask =
+                        draw_register_valid_mask;
+                    operation.draw_registers = raster_registers;
                     frame_draws.push_back(std::move(prepared_draw));
                     frame_draw_packet_indices.push_back(draw_packet_index);
                     frame_operations.push_back(std::move(operation));
@@ -3132,6 +3143,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   operation.packet_index = draw_packet_index;
                   operation.draw_raster_ready = raster_state_ready;
                   operation.draw_raster = raster_state;
+                  operation.draw_registers_ready =
+                      draw_register_valid_mask != 0;
+                  operation.draw_register_valid_mask = draw_register_valid_mask;
+                  operation.draw_registers = raster_registers;
                   frame_operations.push_back(std::move(operation));
                   const std::string reason =
                       error.empty() ? "unsupported shader or resource form" : error;
@@ -3178,6 +3193,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 operation.type =
                     shift::xbox::CapturedVulkanOperation::Type::UnresolvedDraw;
                 operation.packet_index = draw_packet_index;
+                operation.draw_registers_ready =
+                    raster_register_state.snapshot_partial(
+                        &operation.draw_registers,
+                        &operation.draw_register_valid_mask) &&
+                    operation.draw_register_valid_mask != 0;
                 frame_operations.push_back(std::move(operation));
                 const std::string reason =
                     error.empty() ? "unsupported draw packet form" : error;

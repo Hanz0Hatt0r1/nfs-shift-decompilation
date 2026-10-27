@@ -368,6 +368,7 @@ struct CapturedRasterRegisters {
     uint32_t window_scissor_br;
     uint32_t blend_control_0;
     uint32_t stencil_refmask = 0;
+    bool stencil_refmask_valid = false;
     uint32_t copy_control = 0;
     uint32_t copy_dest_base = 0;
     uint32_t copy_dest_pitch = 0;
@@ -389,6 +390,8 @@ struct GuestRasterRegisterState {
     void reset() noexcept;
     void apply(const GuestRegisterWrite& write) noexcept;
     bool snapshot(CapturedRasterRegisters* output, std::string* error) const;
+    bool snapshot_partial(CapturedRasterRegisters* output,
+                          uint32_t* observed_register_mask) const noexcept;
     uint32_t observed_register_mask() const noexcept;
 
 private:

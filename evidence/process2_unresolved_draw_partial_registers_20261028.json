@@ -1,0 +1,62 @@
+{
+  "schema": "shift.process2.unresolved_draw_partial_registers.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "change": {
+    "files": [
+      "native_vulkan/include/shift_xbox_draw_input.hpp",
+      "native_vulkan/include/shift_xbox_live_vulkan_renderer.hpp",
+      "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/src/xbox_draw_input.cpp",
+      "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
+      "native_vulkan/tests/xbox_draw_input_check.cpp",
+      "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp"
+    ],
+    "behavior": [
+      "A failed raster decode retains every observed raw guest register and its validity mask on the unresolved ordered operation.",
+      "The stencil reference/write-mask register is marked valid only when its PM4 write was observed.",
+      "Ordered-stream validation errors append the operation trace before returning, so an unresolved draw's partial registers remain visible in the rejection diagnostic."
+    ],
+    "scope": "Diagnostics only. This does not implement shared physical EDRAM backing or alias transfer."
+  },
+  "regression": {
+    "tests": [
+      "Partial raster-register snapshots preserve the validity mask and captured value.",
+      "An unresolved ordered draw prints captured raw register values and stencil-register validity.",
+      "Renderer validation still rejects the unresolved draw before submission and includes the partial register trace in the error."
+    ],
+    "live_retail_replay_with_this_plugin": false,
+    "prior_replay_context": "A preceding Linux retail replay using plugin b727ee476a27547403d33edb44477a9de604e57d944e31c7d9f5ba6e0d7b182a saw one single-draw unresolved packet 0 with valid_mask=0x17038; that build did not include this raw-register formatter. The 14-draw transition was not captured in that run."
+  },
+  "verification": {
+    "linux_native": {
+      "build_directory": "/tmp/nfs-shift-p2-edram-build-final-20261028",
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "ctest": "passed 4/4"
+    },
+    "linux_rexglue_plugin": {
+      "build_directory": "/home/pes/work/.build-process2-p2161-vulkan-plugin-20261027",
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "ctest": "passed 6/6",
+      "plugin_sha256": "fff4c40c357bbded964379f4877fd8b2d019ac9eea837eb36c6d81d477efeb40",
+      "build_id": "7748a7118e1cc7c7c63c35e3216acbe359eade9c",
+      "vulkan_minimum": "1.1"
+    },
+    "android_arm64_api26": {
+      "build_directory": "/home/pes/work/.build-process2-p2161-android-renderer-20261027",
+      "targets": [
+        "shift_xbox_live_vulkan_renderer",
+        "xbox_live_vulkan_renderer_check"
+      ],
+      "result": "compiled",
+      "renderer_archive_sha256": "c804932ec15a9a84c1f20b6d9b9c0767a02fab7982f8e17dfcc74bf1876e5df4",
+      "device_execution": "not run; adb devices -l listed no connected devices"
+    }
+  },
+  "limitations": [
+    "The latest plugin has not been replayed against the retail XEX; its raw register output is covered by synthetic regression only.",
+    "No new 14-draw retail capture is available, and no retail image or EDRAM sample parity is claimed.",
+    "Shared EDRAM storage, aliased-layout reinterpretation, copy/resolve semantics, and full transition execution remain incomplete."
+  ]
+}

@@ -1528,6 +1528,12 @@ int main() {
     raster_register_state.apply({0x2000u, 0x12345678u});
     require(raster_register_state.observed_register_mask() == 1u,
             "partial raster register state lost its observed register mask");
+    uint32_t partial_raster_valid_mask = 0;
+    require(raster_register_state.snapshot_partial(
+                &tracked_raster_registers, &partial_raster_valid_mask) &&
+                partial_raster_valid_mask == 1u &&
+                tracked_raster_registers.surface_info == 0x12345678u,
+            "partial raster register snapshot lost captured register values");
     raster_register_state.reset();
     const std::array<shift::xbox::GuestRegisterWrite, 26> raster_writes{{
         {0x2000, captured_raster_registers.surface_info},

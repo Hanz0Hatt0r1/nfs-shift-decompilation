@@ -1648,12 +1648,27 @@ int main(int argc, char** argv) {
         shift::xbox::CapturedVulkanOperation::Type::UnresolvedDraw;
     unresolved_draw_operations[0].draw_raster_ready = true;
     unresolved_draw_operations[0].draw_raster = changed_extent_draws[0].raster;
+    unresolved_draw_operations[0].draw_registers_ready = true;
+    unresolved_draw_operations[0].draw_register_valid_mask = 0x17038u;
+    unresolved_draw_operations[0].draw_registers.surface_info = 0x14000500u;
+    unresolved_draw_operations[0].draw_registers.color_info = 0x000D0000u;
+    unresolved_draw_operations[0].draw_registers.depth_info = 0x0001D000u;
+    unresolved_draw_operations[0].draw_registers.mode_control = 4u;
+    unresolved_draw_operations[0].draw_registers.depth_control = 0x00008777u;
+    unresolved_draw_operations[0].draw_registers.color_mask = 0xFu;
+    unresolved_draw_operations[0].draw_registers.stencil_refmask = 0x00123456u;
+    unresolved_draw_operations[0].draw_registers.stencil_refmask_valid = true;
     const std::string unresolved_draw_trace =
         shift::xbox::describe_captured_vulkan_operations(unresolved_draw_operations);
     if (unresolved_draw_trace.find(
-            "unresolved(packet=100,raster={color_base=0xd,depth_base=0x1d,") ==
+            "unresolved(packet=100,draw_registers={valid_mask=0x17038") ==
             std::string::npos ||
         unresolved_draw_trace.find("depth_write=1,stencil_test=1") ==
+            std::string::npos ||
+        unresolved_draw_trace.find(
+            "surface=0x14000500,color=0xd0000,depth=0x1d000") ==
+            std::string::npos ||
+        unresolved_draw_trace.find("stencil_refmask_valid=1") ==
             std::string::npos) {
       std::cerr << "unresolved draw trace lost captured target side effects: "
                 << unresolved_draw_trace << '\n';
@@ -1668,6 +1683,11 @@ int main(int argc, char** argv) {
             &unresolved_draw_operations) ||
         unresolved_draw_error.find(
             "captured operation stream contains unresolved draw packet 100") ==
+            std::string::npos ||
+        unresolved_draw_error.find(
+            "unresolved(packet=100,draw_registers={valid_mask=0x17038") ==
+            std::string::npos ||
+        unresolved_draw_error.find("depth_write=1,stencil_test=1") ==
             std::string::npos) {
       std::cerr << "unresolved captured draw was accepted: "
                 << unresolved_draw_error << '\n';
