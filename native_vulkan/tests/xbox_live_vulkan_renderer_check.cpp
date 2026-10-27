@@ -845,6 +845,45 @@ int main(int argc, char** argv) {
       }
       disjoint_layout_cache.clear();
 
+      auto disjoint_copy = operation_copy;
+      disjoint_copy.source_width = 80;
+      disjoint_copy.source_height = 16;
+      auto disjoint_stage_target_draw = disjoint_target_draw;
+      for (auto& texture : disjoint_stage_target_draw.textures) {
+        if (!texture.guest_copy_source) continue;
+        texture.guest_copy_source = false;
+        texture.pixels.resize(
+            static_cast<size_t>(texture.width) * texture.height * 4u);
+      }
+      std::vector<uint32_t> disjoint_direct_readback;
+      if (!shift::xbox::submit_captured_vulkan_frame(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, {disjoint_stage_target_draw},
+              &ordered_submit_error, &disjoint_direct_readback,
+              enabled_features.geometryShader, &disjoint_copy, false, {},
+              pipeline_cache)) {
+        std::cerr << "direct disjoint-layout Copy/Convert baseline failed: "
+                  << ordered_submit_error << '\n';
+        return 1;
+      }
+      std::vector<uint32_t> disjoint_single_stage_readback;
+      shift::xbox::CapturedVulkanTextureCache disjoint_single_stage_cache;
+      if (!shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720,
+              {format31_source, disjoint_stage_target_draw},
+              {draw0, disjoint_draw_operation, disjoint_copy_operation},
+              &ordered_submit_error, &disjoint_single_stage_readback,
+              enabled_features.geometryShader, &copy, false, {},
+              pipeline_cache, &disjoint_single_stage_cache) ||
+          disjoint_single_stage_cache.cached_guest_edram_target_count() != 2u ||
+          disjoint_single_stage_readback != disjoint_direct_readback) {
+        std::cerr << "ordered executor failed to persist a disjoint layout switch inside one Draw segment: "
+                  << ordered_submit_error << '\n';
+        return 1;
+      }
+      disjoint_single_stage_cache.clear();
+
       auto aliased_target_draw = disjoint_target_draw;
       aliased_target_draw.raster.color_base_tiles =
           format31_source.raster.color_base_tiles;

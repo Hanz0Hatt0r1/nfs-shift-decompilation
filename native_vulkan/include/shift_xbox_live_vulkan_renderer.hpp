@@ -229,10 +229,11 @@ bool submit_captured_vulkan_frame(
     const std::vector<CapturedVulkanOperation>* operations = nullptr,
     bool preserve_edram_target = false);
 
-// Executes compatible Draw segments and their following Copy/Convert packets
-// in PM4 order. Intermediate copy images and same-layout color/depth targets
-// remain GPU-resident in texture_cache. Xenos EDRAM alias reinterpretation and
-// reuse of cached images as guest textures are still unsupported.
+// Executes Draw segments and their following Copy/Convert packets in PM4
+// order. Layout changes with disjoint Xenos EDRAM tile footprints are split
+// into GPU-resident cached targets. Intermediate copy images and exact-layout
+// color/depth targets remain in texture_cache. Overlapping EDRAM aliases still
+// require a shared physical backing store and are rejected.
 bool submit_captured_vulkan_operation_stream(
     VkPhysicalDevice physical_device,
     VkDevice device,

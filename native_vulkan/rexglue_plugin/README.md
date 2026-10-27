@@ -2080,3 +2080,27 @@ The regression is an encoded instruction fixture, and neither fresh retail
 acceptance nor pixel parity is claimed. Build hashes, commands, capture hash,
 and limitations are in
 [`process2_retail_scalar_log_ieee_opcode16_20261028.json`](../../evidence/process2_retail_scalar_log_ieee_opcode16_20261028.json).
+
+## Ordered disjoint EDRAM target segments (2026-10-28)
+
+The ordered executor can now split a Draw run when a target-layout change has
+tile-disjoint color and depth footprints. It submits the preceding run into its
+GPU-resident, exact-layout `CachedEdramTarget`, then continues the next run in
+PM4 order. Copy/Convert after the switch still reads only its exact source
+layout. The no-Copy segment stores its attachment and transitions it for later
+sampling without touching the presenter image. A change with an invalid or
+overlapping Xenos EDRAM footprint still fails closed.
+
+A synthetic Vulkan validation regression submits two disjoint Draw layouts in
+one PM4 Draw segment, followed by a Copy/Convert. It confirms both target
+layouts enter the GPU cache and the final readback matches direct submission
+of the final layout. Native Linux CTest passed 4/4 and plugin CTest passed 6/6
+with `VK_LAYER_KHRONOS_validation`. The ARM64/API 26 renderer and check
+executable compiled. No ADB device was connected for device execution.
+
+This does not implement a shared physical Xenos EDRAM backing store. The retail
+14-draw transition's aliased color base across different extents, sample
+counts, and formats remains unsupported; no transition packet, retail image,
+or pixel-parity claim is made. Clear effects and depth/stencil alias
+preservation also remain open. Build identity and exact check results are in
+[`process2_ordered_disjoint_edram_segments_20261028.json`](../../evidence/process2_ordered_disjoint_edram_segments_20261028.json).

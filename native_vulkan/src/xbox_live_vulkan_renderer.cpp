@@ -3854,6 +3854,12 @@ bool submit_captured_vulkan_frame(
         texture_cache_state = &CapturedVulkanTextureCacheAccess::get(*texture_cache);
         if (!begin_texture_cache_frame(texture_cache_state, device, error)) return false;
     }
+    const bool persistent_edram_target =
+        preserve_edram_target && texture_cache_state;
+    if (persistent_edram_target && !copy && output_readback) {
+        return fail("persistent EDRAM-only segment cannot provide presenter readback",
+                    error);
+    }
     auto resources_owner = std::make_unique<FrameResources>();
     FrameResources& resources = *resources_owner;
     resources.device = device;
@@ -3988,9 +3994,10 @@ bool submit_captured_vulkan_frame(
                                        ? copy->source_height
                                        : frame_target.height;
     const VkFormat raster_color_format =
-        copy ? captured_color_format(frame_target.color_format,
-                                     linear_rgba8_intermediate)
-             : VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+        copy || persistent_edram_target
+            ? captured_color_format(frame_target.color_format,
+                                    linear_rgba8_intermediate)
+            : VK_FORMAT_A2B10G10R10_UNORM_PACK32;
     if (copy &&
         (raster_color_format == VK_FORMAT_UNDEFINED ||
          source_width != frame_target.width || source_height != frame_target.height ||
@@ -4103,8 +4110,6 @@ bool submit_captured_vulkan_frame(
     }
 
     CachedEdramTarget* cached_edram_target = nullptr;
-    const bool persistent_edram_target =
-        preserve_edram_target && copy && texture_cache_state;
     if (persistent_edram_target) {
         if (!acquire_edram_target(
                 texture_cache_state, memory_properties, device, frame_target,
@@ -4119,7 +4124,7 @@ bool submit_captured_vulkan_frame(
         }
     }
 
-    if (samples > 1 || copy) {
+    if (samples > 1 || copy || persistent_edram_target) {
         const VkImageUsageFlags raster_color_usage =
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
             (copy ? VK_IMAGE_USAGE_SAMPLED_BIT : 0);
@@ -4185,8 +4190,9 @@ bool submit_captured_vulkan_frame(
         cached_edram_target->color_initialized;
     color_attachment.loadOp = preserve_color ? VK_ATTACHMENT_LOAD_OP_LOAD
                                               : VK_ATTACHMENT_LOAD_OP_CLEAR;
-    color_attachment.storeOp = samples == 1 || copy ? VK_ATTACHMENT_STORE_OP_STORE
-                                                     : VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.storeOp = persistent_edram_target || samples == 1 || copy
+        ? VK_ATTACHMENT_STORE_OP_STORE
+        : VK_ATTACHMENT_STORE_OP_DONT_CARE;
     color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     color_attachment.initialLayout = persistent_edram_target ||
@@ -4222,7 +4228,7 @@ bool submit_captured_vulkan_frame(
     }
 
     VkAttachmentReference resolve_reference{};
-    if (samples > 1 && !copy) {
+    if (samples > 1 && !copy && !persistent_edram_target) {
         resolve_reference.attachment = static_cast<uint32_t>(attachments.size());
         resolve_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         VkAttachmentDescription resolve_attachment{};
@@ -4242,7 +4248,10 @@ bool submit_captured_vulkan_frame(
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_reference;
     subpass.pDepthStencilAttachment = needs_depth ? &depth_reference : nullptr;
-    subpass.pResolveAttachments = samples > 1 && !copy ? &resolve_reference : nullptr;
+    subpass.pResolveAttachments =
+        samples > 1 && !copy && !persistent_edram_target
+            ? &resolve_reference
+            : nullptr;
     VkRenderPassCreateInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     render_pass_info.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -4257,11 +4266,12 @@ bool submit_captured_vulkan_frame(
     framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebuffer_info.renderPass = resources.render_pass;
     std::vector<VkImageView> framebuffer_views;
-    framebuffer_views.push_back(copy || samples > 1
+    framebuffer_views.push_back(persistent_edram_target || copy || samples > 1
                                     ? resources.multisample_color.view
                                     : output_view);
     if (needs_depth) framebuffer_views.push_back(resources.depth.view);
-    if (samples > 1 && !copy) framebuffer_views.push_back(output_view);
+    if (samples > 1 && !copy && !persistent_edram_target)
+        framebuffer_views.push_back(output_view);
     framebuffer_info.attachmentCount = static_cast<uint32_t>(framebuffer_views.size());
     framebuffer_info.pAttachments = framebuffer_views.data();
     framebuffer_info.width = raster_width;
@@ -4414,6 +4424,7 @@ bool submit_captured_vulkan_frame(
                          0, 0, nullptr, static_cast<uint32_t>(host_barriers.size()),
                          host_barriers.data(), 0, nullptr);
 
+    const bool writes_output_image = copy || !persistent_edram_target;
     VkImageMemoryBarrier output_to_color{};
     output_to_color.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     output_to_color.srcAccessMask = copy_output_written_before
@@ -4430,12 +4441,14 @@ bool submit_captured_vulkan_frame(
     output_to_color.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     output_to_color.subresourceRange.levelCount = 1;
     output_to_color.subresourceRange.layerCount = 1;
-    vkCmdPipelineBarrier(command,
-                         copy_output_written_before
-                             ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-                             : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0,
-                         0, nullptr, 0, nullptr, 1, &output_to_color);
+    if (writes_output_image) {
+        vkCmdPipelineBarrier(command,
+                             copy_output_written_before
+                                 ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                                 : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0,
+                             0, nullptr, 0, nullptr, 1, &output_to_color);
+    }
 
     for (size_t i = 0; i < resources.draws.size(); ++i) {
         const DrawResources& draw = resources.draws[i];
@@ -4722,56 +4735,82 @@ bool submit_captured_vulkan_frame(
         vkCmdEndRenderPass(command);
     }
 
-    VkImageMemoryBarrier output_to_sample{};
-    output_to_sample.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    output_to_sample.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    output_to_sample.dstAccessMask = output_readback ? VK_ACCESS_TRANSFER_READ_BIT
-                                                     : VK_ACCESS_SHADER_READ_BIT;
-    output_to_sample.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    output_to_sample.newLayout = output_readback ? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-                                                 : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    output_to_sample.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    output_to_sample.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    output_to_sample.image = copy_output_image;
-    output_to_sample.subresourceRange = output_to_color.subresourceRange;
-    vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                         output_readback ? VK_PIPELINE_STAGE_TRANSFER_BIT
-                                         : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                         0, nullptr, 0, nullptr, 1, &output_to_sample);
-    if (output_readback) {
-        VkBufferImageCopy readback_copy{};
-        readback_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        readback_copy.imageSubresource.layerCount = 1;
-        readback_copy.imageExtent = {output_width, output_height, 1};
-        vkCmdCopyImageToBuffer(command, copy_output_image,
-                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                               resources.output_readback.buffer, 1, &readback_copy);
+    if (persistent_edram_target && !copy) {
+        VkImageMemoryBarrier color_to_sample{};
+        color_to_sample.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        color_to_sample.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        color_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        color_to_sample.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        color_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        color_to_sample.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        color_to_sample.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        color_to_sample.image = resources.multisample_color.image;
+        color_to_sample.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        color_to_sample.subresourceRange.levelCount = 1;
+        color_to_sample.subresourceRange.layerCount = 1;
+        vkCmdPipelineBarrier(command,
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
+                             nullptr, 0, nullptr, 1, &color_to_sample);
+    }
 
-        VkBufferMemoryBarrier readback_to_host{};
-        readback_to_host.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-        readback_to_host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        readback_to_host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
-        readback_to_host.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        readback_to_host.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        readback_to_host.buffer = resources.output_readback.buffer;
-        readback_to_host.size = output_readback_size;
-        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             VK_PIPELINE_STAGE_HOST_BIT, 0,
-                             0, nullptr, 1, &readback_to_host, 0, nullptr);
+    if (writes_output_image) {
+        VkImageMemoryBarrier output_to_sample{};
+        output_to_sample.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        output_to_sample.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        output_to_sample.dstAccessMask = output_readback
+            ? VK_ACCESS_TRANSFER_READ_BIT
+            : VK_ACCESS_SHADER_READ_BIT;
+        output_to_sample.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        output_to_sample.newLayout = output_readback
+            ? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+            : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        output_to_sample.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        output_to_sample.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        output_to_sample.image = copy_output_image;
+        output_to_sample.subresourceRange = output_to_color.subresourceRange;
+        vkCmdPipelineBarrier(
+            command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            output_readback ? VK_PIPELINE_STAGE_TRANSFER_BIT
+                            : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0, 0, nullptr, 0, nullptr, 1, &output_to_sample);
+        if (output_readback) {
+            VkBufferImageCopy readback_copy{};
+            readback_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            readback_copy.imageSubresource.layerCount = 1;
+            readback_copy.imageExtent = {output_width, output_height, 1};
+            vkCmdCopyImageToBuffer(command, copy_output_image,
+                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                   resources.output_readback.buffer, 1,
+                                   &readback_copy);
 
-        VkImageMemoryBarrier output_to_presenter{};
-        output_to_presenter.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        output_to_presenter.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-        output_to_presenter.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        output_to_presenter.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        output_to_presenter.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        output_to_presenter.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        output_to_presenter.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        output_to_presenter.image = copy_output_image;
-        output_to_presenter.subresourceRange = output_to_color.subresourceRange;
-        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                             0, nullptr, 0, nullptr, 1, &output_to_presenter);
+            VkBufferMemoryBarrier readback_to_host{};
+            readback_to_host.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            readback_to_host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            readback_to_host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+            readback_to_host.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            readback_to_host.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            readback_to_host.buffer = resources.output_readback.buffer;
+            readback_to_host.size = output_readback_size;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                 VK_PIPELINE_STAGE_HOST_BIT, 0, 0, nullptr, 1,
+                                 &readback_to_host, 0, nullptr);
+
+            VkImageMemoryBarrier output_to_presenter{};
+            output_to_presenter.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            output_to_presenter.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            output_to_presenter.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            output_to_presenter.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            output_to_presenter.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            output_to_presenter.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            output_to_presenter.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            output_to_presenter.image = copy_output_image;
+            output_to_presenter.subresourceRange = output_to_color.subresourceRange;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                                 0, nullptr, 0, nullptr, 1,
+                                 &output_to_presenter);
+        }
     }
     result = vkEndCommandBuffer(command);
     if (result != VK_SUCCESS) return vk_fail("vkEndCommandBuffer", result, error);
@@ -5015,21 +5054,43 @@ bool submit_captured_vulkan_operation_stream(
             if (preflight_draw_count != 0 &&
                 !compatible_ordered_target_layout(
                     draws[preflight_layout_draw].raster, draw_raster)) {
-                std::ostringstream message;
-                message << "draw packet " << operation.packet_index
-                        << " changes target layout before a Copy/Convert boundary; "
-                           "ordered EDRAM target persistence is unavailable; prior draw packet "
-                        << preflight_layout_packet << " layout="
-                        << describe_target_layout(
-                               draws[preflight_layout_draw].raster)
-                        << ", next layout=" << describe_target_layout(draw_raster);
-                return fail(message.str(), error);
+                bool disjoint = false;
+                uint32_t overlap_tile = 2048;
+                std::string layout_error;
+                if (!captured_xenos_edram_layouts_are_tile_disjoint(
+                        draws[preflight_layout_draw].raster, draw_raster,
+                        &disjoint, &overlap_tile, &layout_error)) {
+                    std::ostringstream message;
+                    message << "draw packet " << operation.packet_index
+                            << " changes target layout before a Copy/Convert boundary; "
+                               "invalid target layout transition: "
+                            << layout_error;
+                    return fail(message.str(), error);
+                }
+                if (!disjoint) {
+                    std::ostringstream message;
+                    message << "draw packet " << operation.packet_index
+                            << " changes target layout before a Copy/Convert boundary; "
+                               "ordered Xenos EDRAM alias transfer is unavailable; prior draw packet "
+                            << preflight_layout_packet << " layout="
+                            << describe_target_layout(
+                                   draws[preflight_layout_draw].raster)
+                            << ", next layout=" << describe_target_layout(draw_raster)
+                            << ", overlapping tile=" << overlap_tile;
+                    return fail(message.str(), error);
+                }
             }
             if (preflight_draw_count != 0 &&
                 !same_target_layout(draws[preflight_layout_draw].raster,
                                     draw_raster)) {
                 preflight_layout_draw = operation.draw_index;
                 preflight_layout_packet = operation.packet_index;
+                const bool already_tracked = std::any_of(
+                    preflight_targets.begin(), preflight_targets.end(),
+                    [&](const CapturedRasterState& previous) {
+                        return same_target_layout(previous, draw_raster);
+                    });
+                if (!already_tracked) preflight_targets.push_back(draw_raster);
             }
             if (preflight_draw_count == 0) {
                 bool known_layout = false;
@@ -5173,10 +5234,12 @@ bool submit_captured_vulkan_operation_stream(
     std::vector<CapturedVulkanDraw> stage_draws;
     std::vector<uint32_t> stage_indices;
     uint32_t stage_layout_draw = std::numeric_limits<uint32_t>::max();
+    uint32_t stage_last_packet_index = std::numeric_limits<uint32_t>::max();
     bool presenter_copy_submitted = false;
 
     const auto submit_stage = [&](const CapturedVulkanCopy* copy,
                                   bool writes_presenter,
+                                  bool final_stream_stage,
                                   uint32_t packet_index) {
         if (stage_draws.empty()) {
             std::ostringstream message;
@@ -5184,11 +5247,15 @@ bool submit_captured_vulkan_operation_stream(
                     << " has no preceding captured draw segment; its Xenos EDRAM source is unavailable";
             return fail(message.str(), error);
         }
-        const uint32_t stage_width = writes_presenter || !copy
-            ? output_width : copy->state.destination_pitch;
-        const uint32_t stage_height = writes_presenter || !copy
-            ? output_height : copy->state.destination_height;
-        const bool final_output_stage = writes_presenter || copy == nullptr;
+        const uint32_t stage_width = writes_presenter
+            ? output_width
+            : copy ? copy->state.destination_pitch
+                   : stage_draws.front().raster.width;
+        const uint32_t stage_height = writes_presenter
+            ? output_height
+            : copy ? copy->state.destination_height
+                   : stage_draws.front().raster.height;
+        const bool final_output_stage = writes_presenter || final_stream_stage;
         std::vector<CapturedVulkanDrawVisibility> stage_visibility;
         std::string stage_error;
         const bool submitted = submit_captured_vulkan_frame(
@@ -5199,7 +5266,8 @@ bool submit_captured_vulkan_operation_stream(
             geometry_shader_enabled, copy, depth_stencil_resolve_enabled,
             sampler_capabilities, pipeline_cache, texture_cache,
             writes_presenter ? source_readback : nullptr,
-            draw_visibility ? &stage_visibility : nullptr, nullptr, true);
+            draw_visibility ? &stage_visibility : nullptr, nullptr,
+            copy != nullptr || !final_output_stage);
         if (!submitted) {
             std::ostringstream message;
             message << "ordered Vulkan segment ending at packet " << packet_index
@@ -5217,6 +5285,7 @@ bool submit_captured_vulkan_operation_stream(
         stage_draws.clear();
         stage_indices.clear();
         stage_layout_draw = std::numeric_limits<uint32_t>::max();
+        stage_last_packet_index = std::numeric_limits<uint32_t>::max();
         return true;
     };
 
@@ -5228,11 +5297,31 @@ bool submit_captured_vulkan_operation_stream(
             if (!stage_draws.empty() &&
                 !compatible_ordered_target_layout(
                     stage_draws[stage_layout_draw].raster, draw.raster)) {
-                std::ostringstream message;
-                message << "draw packet " << operation.packet_index
-                        << " changes target layout before a Copy/Convert boundary; "
-                           "ordered EDRAM target persistence is unavailable";
-                return fail(message.str(), error);
+                bool disjoint = false;
+                uint32_t overlap_tile = 2048;
+                std::string layout_error;
+                if (!captured_xenos_edram_layouts_are_tile_disjoint(
+                        stage_draws[stage_layout_draw].raster, draw.raster,
+                        &disjoint, &overlap_tile, &layout_error)) {
+                    std::ostringstream message;
+                    message << "draw packet " << operation.packet_index
+                            << " changes target layout before a Copy/Convert boundary; "
+                               "invalid target layout transition: "
+                            << layout_error;
+                    return fail(message.str(), error);
+                }
+                if (!disjoint) {
+                    std::ostringstream message;
+                    message << "draw packet " << operation.packet_index
+                            << " changes target layout before a Copy/Convert boundary; "
+                               "ordered Xenos EDRAM alias transfer is unavailable; overlapping tile="
+                            << overlap_tile;
+                    return fail(message.str(), error);
+                }
+                if (!submit_stage(nullptr, false, false,
+                                  stage_last_packet_index)) {
+                    return false;
+                }
             }
             if (stage_draws.empty() ||
                 !same_target_layout(stage_draws[stage_layout_draw].raster,
@@ -5241,6 +5330,7 @@ bool submit_captured_vulkan_operation_stream(
             }
             stage_draws.push_back(draw);
             stage_indices.push_back(operation.draw_index);
+            stage_last_packet_index = operation.packet_index;
             continue;
         }
         if (operation.type != CapturedVulkanOperation::Type::CopyConvert) {
@@ -5331,14 +5421,15 @@ bool submit_captured_vulkan_operation_stream(
                         error);
         }
         if (!writes_presenter) copy.retain_destination = true;
-        if (!submit_stage(&copy, writes_presenter, operation.packet_index)) {
+        if (!submit_stage(&copy, writes_presenter, false,
+                          operation.packet_index)) {
             return false;
         }
     }
 
     if (!stage_draws.empty()) {
-        if (!submit_stage(presenter_copy, presenter_copy != nullptr,
-                          operations.back().packet_index)) {
+        if (!submit_stage(presenter_copy, presenter_copy != nullptr, true,
+                operations.back().packet_index)) {
             return false;
         }
     } else if (presenter_copy && !presenter_copy_submitted) {
