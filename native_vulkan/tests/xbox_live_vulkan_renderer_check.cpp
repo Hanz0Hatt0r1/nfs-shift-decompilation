@@ -475,6 +475,29 @@ int main(int argc, char** argv) {
          {0, 255, 0, 255}},
     };
 
+    shift::xbox::CapturedVulkanDraw operation_copy_geometry = draw;
+    operation_copy_geometry.vertex_shader_spirv = window_vertex_spirv;
+    operation_copy_geometry.geometry_shader_spirv = rectangle_geometry_spirv;
+    operation_copy_geometry.pixel_shader_spirv = window_fragment_spirv;
+    operation_copy_geometry.topology =
+        shift::xbox::PrimitiveTopology::RectangleList;
+    operation_copy_geometry.index_count = 3;
+    operation_copy_geometry.auto_index = false;
+    operation_copy_geometry.indices = {0, 0, 1, 0, 2, 0};
+    operation_copy_geometry.vertex_stride_bytes = 0;
+    operation_copy_geometry.vertices.clear();
+    operation_copy_geometry.vertex_input_attributes.clear();
+    operation_copy_geometry.raster.sample_count = 1;
+    operation_copy_geometry.raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
+    operation_copy_geometry.raster.depth_test_enabled = false;
+    operation_copy_geometry.raster.depth_write_enabled = false;
+    operation_copy_geometry.raster.stencil_test_enabled = false;
+    operation_copy_geometry.raster.depth_control = 0;
+    operation_copy_geometry.raster.viewport_y_flipped = true;
+    operation_copy_geometry.raster.clip_disabled_window_coordinates = true;
+    operation_copy_geometry.raster.blend_control_0 = 0x00010001u;
+
     std::vector<shift::xbox::CapturedVulkanDraw> draws;
     draws.push_back(draw);
     auto captured_alpha_blend = draw;
@@ -696,7 +719,10 @@ int main(int argc, char** argv) {
       return 1;
     }
     if (has_copy_destination_shaders) {
-      shift::xbox::CapturedVulkanCopy intermediate_copy = copy;
+      shift::xbox::CapturedVulkanCopy operation_copy = copy;
+      operation_copy.source_geometry_ready = true;
+      operation_copy.source_geometry = operation_copy_geometry;
+      shift::xbox::CapturedVulkanCopy intermediate_copy = operation_copy;
       intermediate_copy.state.destination_base = 0x0CC87000u;
       intermediate_copy.state.destination_pitch = 256;
       intermediate_copy.state.destination_height = 243;
@@ -754,7 +780,7 @@ int main(int argc, char** argv) {
       copy1.source_width = 1280;
       copy1.source_height = 720;
       copy1.copy_state = copy.state;
-      copy1.copy = copy;
+      copy1.copy = operation_copy;
       copy1.copy_shaders_ready = true;
       std::vector<uint32_t> ordered_readback;
       shift::xbox::CapturedVulkanTextureCache ordered_copy_cache;
@@ -893,8 +919,8 @@ int main(int argc, char** argv) {
       seed_copy.packet_index = 301;
       seed_copy.source_width = 1280;
       seed_copy.source_height = 720;
-      seed_copy.copy_state = copy.state;
-      seed_copy.copy = copy;
+      seed_copy.copy_state = operation_copy.state;
+      seed_copy.copy = operation_copy;
       seed_copy.copy_shaders_ready = true;
       std::string edram_seed_error;
       shift::xbox::CapturedVulkanTextureCache persistent_edram_cache;
@@ -915,8 +941,8 @@ int main(int argc, char** argv) {
       present_copy.packet_index = 303;
       present_copy.source_width = 1280;
       present_copy.source_height = 720;
-      present_copy.copy_state = copy.state;
-      present_copy.copy = copy;
+      present_copy.copy_state = operation_copy.state;
+      present_copy.copy = operation_copy;
       present_copy.copy_shaders_ready = true;
       present_copy.source_raster_ready = true;
       present_copy.source_raster = format31_source.raster;
@@ -935,6 +961,23 @@ int main(int argc, char** argv) {
         return 1;
       }
       persistent_edram_cache.clear();
+
+      auto copy_without_geometry = copy0;
+      copy_without_geometry.copy.source_geometry_ready = false;
+      std::string missing_geometry_error;
+      if (shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, {format31_source},
+              {draw0, copy_without_geometry}, &missing_geometry_error,
+              nullptr, enabled_features.geometryShader, &copy, false, {},
+              pipeline_cache, nullptr) ||
+          missing_geometry_error.find(
+              "ordered replay refuses a fullscreen substitute") ==
+              std::string::npos) {
+        std::cerr << "ordered executor accepted Copy/Convert without captured PM4 geometry: "
+                  << missing_geometry_error << '\n';
+        return 1;
+      }
 
       auto copy_without_source = copy0;
       copy_without_source.packet_index = 200;
@@ -1136,7 +1179,7 @@ int main(int argc, char** argv) {
             &copy, false, {}, VK_NULL_HANDLE, nullptr, nullptr, nullptr,
             &ordered_operations) ||
         ordered_operations_error.find(
-            "ordered operations=draw(packet=100,index=0);copy(packet=101,source=1280x720,source_regs=0x14020500/0xc0000/0x400/0x6,destination=0xcc87000,256x243,format=31/7,endian=2,exp_bias=0,samples=0,clear=1/0,clear_registers={ready:0,color:0x0,color_lo:0x0,depth:0x0},source_target={ready:0},swap_rb=0,shaders=prepared);draw(packet=102,index=1)") ==
+            "ordered operations=draw(packet=100,index=0);copy(packet=101,source=1280x720,source_regs=0x14020500/0xc0000/0x400/0x6,destination=0xcc87000,256x243,format=31/7,endian=2,exp_bias=0,samples=0,clear=1/0,clear_registers={ready:0,color:0x0,color_lo:0x0,depth:0x0},source_target={ready:0},swap_rb=0,shaders=prepared,source_geometry=missing);draw(packet=102,index=1)") ==
             std::string::npos) {
       std::cerr << "ordered draw/copy operations were lost from the target-layout "
                    "diagnostic: "
@@ -1366,6 +1409,41 @@ int main(int argc, char** argv) {
                     })) {
         std::cerr << "pre-Copy readback did not distinguish a colored 4x source "
                      "from its black final output\n";
+        return 1;
+    }
+
+    std::vector<uint32_t> copy_preservation_baseline;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, draws, &error,
+            &copy_preservation_baseline, enabled_features.geometryShader,
+            &copy, false, {}, pipeline_cache)) {
+      std::cerr << "Copy/Convert geometry preservation baseline failed: "
+                << error << '\n';
+      return 1;
+    }
+    const bool copy_baseline_has_color = std::any_of(
+        copy_preservation_baseline.begin(), copy_preservation_baseline.end(),
+        [](uint32_t pixel) { return (pixel & 0x3FFFFFFFu) != 0; });
+    auto empty_scissor_copy = black_copy;
+    empty_scissor_copy.source_geometry_ready = true;
+    empty_scissor_copy.source_geometry = operation_copy_geometry;
+    empty_scissor_copy.source_geometry.raster.scissor_x0 = 0;
+    empty_scissor_copy.source_geometry.raster.scissor_y0 = 0;
+    empty_scissor_copy.source_geometry.raster.scissor_x1 = 0;
+    empty_scissor_copy.source_geometry.raster.scissor_y1 = 0;
+    empty_scissor_copy.source_geometry.raster.scissor_has_area = false;
+    std::vector<uint32_t> empty_scissor_copy_output;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, true, 1280, 720, draws, &error,
+            &empty_scissor_copy_output, enabled_features.geometryShader,
+            &empty_scissor_copy, false, {}, pipeline_cache) ||
+        copy_preservation_baseline.size() != 1280u * 720u ||
+        !copy_baseline_has_color ||
+        empty_scissor_copy_output != copy_preservation_baseline) {
+        std::cerr << "captured Copy/Convert scissor did not preserve the loaded destination: "
+                  << error << '\n';
         return 1;
     }
 

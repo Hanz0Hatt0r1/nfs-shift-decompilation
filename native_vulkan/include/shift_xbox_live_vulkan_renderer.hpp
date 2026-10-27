@@ -72,6 +72,11 @@ struct CapturedVulkanCopy {
     uint32_t depth_clear = 0;
     bool clear_values_ready = false;
     bool source_gamma = false;
+    // Copy/Convert is itself a PM4 rectangle-list draw. Preserve the translated
+    // vertex stage and fetched geometry so ordered replay does not substitute a
+    // fullscreen triangle for the guest operation.
+    bool source_geometry_ready = false;
+    CapturedVulkanDraw source_geometry{};
     // Set by the ordered executor for non-presenter writes, including guest
     // format 6 copies whose destination must remain in the resource cache.
     bool retain_destination = false;

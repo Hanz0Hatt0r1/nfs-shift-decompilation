@@ -1867,3 +1867,41 @@ and no game process was running during the check. These tests do not replay the
 retail 14-draw transition, verify swapchain presentation, or establish retail
 parity. See
 [`the evidence record`](../../evidence/process2_android_shader_fixtures_factory_smoke_20261027.json).
+
+## Original PM4 geometry for ordered Copy/Convert (2026-10-27)
+
+Recognized rectangle-list Copy/Convert packets now preserve their actual
+translated Xenos vertex shader, vertex constants, decoded index data, guest
+vertex-fetch payload, and source raster/scissor. Ordered Vulkan replay binds
+that geometry with the captured format-specific resolve fragment shader;
+missing geometry fails closed instead of silently drawing a fullscreen
+triangle. Cached copy destinations load prior contents on later partial
+writes. Packet diagnostics report topology, index count, and captured buffer
+sizes. The fail-closed layout mismatch diagnostic now prints the active draw
+and Copy source EDRAM fields so the next retail trace can distinguish an
+initialized prior target from an alias that requires physical EDRAM transfer.
+
+Native Linux CTest passed 4/4 with `VK_LAYER_KHRONOS_validation`; the Linux
+ReXGlue plugin CTest passed 6/6 with the same layer. The ARM64/API 26 guest
+ring, Vulkan renderer core, and renderer-check target compiled with NDK r28c;
+the renderer-check was compile-only and the Android plugin translation unit
+was not rebuilt in this verification run. The rebuilt Linux plugin SHA-256 is
+`e9c5873adac7dd14695ae586dac89fad04a7e935e54c5dc58a6fa5f8f0981e7e` (Build ID
+`58ecafd975cc745cffbb027c2267aa3c17aac98a`). A previous full Android plugin
+link attempt stopped in the external ReXGlue SDK at `fiber_posix.cpp`
+(`getcontext`, `makecontext`, and `swapcontext` are not declared by that NDK
+build). ADB currently lists no device, so this version has not been exercised
+on the phone. The Vulkan regression uses synthetic indexed rectangle geometry,
+checks that missing geometry is rejected, and verifies that a zero-area
+captured scissor preserves an initialized non-black destination. It does not
+establish retail Copy/Convert pixel parity.
+
+P1's latest capture reports one captured draw followed by Copy/Convert packet
+49 failing because its decoded source EDRAM layout differs from the active draw
+segment. The guard stays in place until a ring trace supplies the exact layouts
+and confirms whether the source is an initialized prior target or an EDRAM
+alias. The 14-draw transition is not replaying fully. The resolve fragment
+shader is still an explicit implementation of the decoded Copy state, not a
+verified retail image match. PM4 interrupt to guest callback attribution also
+remains incomplete. Build identities, checks, and limits are recorded in
+[`process2_ordered_copy_geometry_capture_20261027.json`](../../evidence/process2_ordered_copy_geometry_capture_20261027.json).

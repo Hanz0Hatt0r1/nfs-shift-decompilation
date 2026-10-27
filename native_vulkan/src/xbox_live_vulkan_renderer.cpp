@@ -1551,6 +1551,125 @@ void set_copy_resolution_constants(CapturedVulkanDraw *draw,
               sizeof(scale));
 }
 
+CapturedVulkanDraw make_copy_resolve_draw(
+    const CapturedVulkanCopy& copy, uint32_t source_width,
+    uint32_t source_height, uint32_t destination_width,
+    uint32_t destination_height, bool single_sample_shader) {
+  CapturedVulkanDraw copy_draw = copy.source_geometry_ready
+      ? copy.source_geometry : CapturedVulkanDraw{};
+  if (!copy.source_geometry_ready) {
+    copy_draw.vertex_shader_spirv = copy.vertex_shader_spirv;
+    copy_draw.auto_index = true;
+    copy_draw.index_count = 3;
+    copy_draw.raster.width = destination_width;
+    copy_draw.raster.height = destination_height;
+    copy_draw.raster.scissor_x1 = destination_width;
+    copy_draw.raster.scissor_y1 = destination_height;
+    copy_draw.raster.scissor_has_area = true;
+  }
+  copy_draw.pixel_shader_spirv = copy.source_gamma
+      ? (single_sample_shader ? copy.gamma_single_sample_pixel_shader_spirv
+                              : copy.gamma_pixel_shader_spirv)
+      : (single_sample_shader ? copy.single_sample_pixel_shader_spirv
+                              : copy.pixel_shader_spirv);
+  copy_draw.pixel_shader_spirv_linear_target.clear();
+  copy_draw.texture_width = 1;
+  copy_draw.texture_height = 1;
+  copy_draw.texture_rgba8 = {0, 0, 0, 255};
+  copy_draw.raster.sample_count = 1;
+  copy_draw.raster.color_write_mask = 0xFu;
+  copy_draw.raster.depth_test_enabled = false;
+  copy_draw.raster.depth_write_enabled = false;
+  copy_draw.raster.stencil_test_enabled = false;
+  copy_draw.raster.depth_control = 0;
+  copy_draw.raster.blend_control_0 = 0x00010001u;
+  set_copy_resolution_constants(&copy_draw, source_width, source_height,
+                                destination_width, destination_height);
+  copy_draw.texture_sampling.clamps = {TextureClamp::ClampToEdge,
+                                       TextureClamp::ClampToEdge,
+                                       TextureClamp::ClampToEdge};
+  copy_draw.texture_sampling.mag_filter = TextureFilter::Point;
+  copy_draw.texture_sampling.min_filter = TextureFilter::Point;
+  copy_draw.texture_sampling.mip_filter = TextureFilter::Point;
+  copy_draw.texture_sampling.anisotropy = TextureAnisotropy::Disabled;
+  copy_draw.texture_sampling.border_color = TextureBorderColor::AbgrBlack;
+  copy_draw.texture_sampling.border_alpha_known = true;
+  return copy_draw;
+}
+
+void record_copy_resolve_draw(VkCommandBuffer command,
+                              const DrawResources& draw_resources,
+                              const CapturedVulkanCopy& copy,
+                              uint32_t target_width,
+                              uint32_t target_height) {
+  const CapturedVulkanDraw* source = copy.source_geometry_ready
+      ? &copy.source_geometry : nullptr;
+  VkViewport viewport{};
+  if (source && source->raster.clip_disabled_window_coordinates) {
+    viewport.width = static_cast<float>(target_width);
+    viewport.height = static_cast<float>(target_height);
+  } else if (source && source->raster.viewport_width != 0.0f &&
+             source->raster.viewport_height != 0.0f && source->raster.width &&
+             source->raster.height) {
+    const float scale_x = static_cast<float>(target_width) / source->raster.width;
+    const float scale_y = static_cast<float>(target_height) / source->raster.height;
+    viewport.x = source->raster.viewport_x * scale_x;
+    viewport.y = source->raster.viewport_y * scale_y;
+    viewport.width = source->raster.viewport_width * scale_x;
+    viewport.height = source->raster.viewport_height * scale_y;
+  } else {
+    viewport.y = source && source->raster.viewport_y_flipped
+        ? static_cast<float>(target_height) : 0.0f;
+    viewport.width = static_cast<float>(target_width);
+    viewport.height = source && source->raster.viewport_y_flipped
+        ? -static_cast<float>(target_height) : static_cast<float>(target_height);
+  }
+  viewport.minDepth = 0.0f;
+  viewport.maxDepth = 1.0f;
+
+  const auto scaled_edge = [](uint32_t edge, uint32_t source_extent,
+                              uint32_t target_extent, bool round_up) {
+    if (source_extent == 0) return uint32_t{0};
+    const uint64_t numerator = static_cast<uint64_t>(edge) * target_extent;
+    const uint64_t quotient = numerator / source_extent;
+    return static_cast<uint32_t>(quotient +
+        (round_up && numerator % source_extent != 0 ? 1u : 0u));
+  };
+  const uint32_t x0 = source
+      ? scaled_edge(source->raster.scissor_x0, source->raster.width,
+                    target_width, false) : 0;
+  const uint32_t y0 = source
+      ? scaled_edge(source->raster.scissor_y0, source->raster.height,
+                    target_height, false) : 0;
+  const uint32_t x1 = source
+      ? scaled_edge(source->raster.scissor_x1, source->raster.width,
+                    target_width, true) : target_width;
+  const uint32_t y1 = source
+      ? scaled_edge(source->raster.scissor_y1, source->raster.height,
+                    target_height, true) : target_height;
+  VkRect2D scissor{{static_cast<int32_t>(x0), static_cast<int32_t>(y0)},
+                   {x1 - x0, y1 - y0}};
+  const VkDeviceSize vertex_offset = 0;
+  vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    draw_resources.pipeline);
+  vkCmdSetViewport(command, 0, 1, &viewport);
+  vkCmdSetScissor(command, 0, 1, &scissor);
+  if (draw_resources.vertices.buffer != VK_NULL_HANDLE) {
+    vkCmdBindVertexBuffers(command, 0, 1, &draw_resources.vertices.buffer,
+                           &vertex_offset);
+  }
+  vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          draw_resources.pipeline_layout, 0, 2,
+                          draw_resources.descriptor_sets, 0, nullptr);
+  if (!source || source->auto_index) {
+    vkCmdDraw(command, source ? source->index_count : 3u, 1, 0, 0);
+  } else {
+    vkCmdBindIndexBuffer(command, draw_resources.indices.buffer, 0,
+                         VK_INDEX_TYPE_UINT16);
+    vkCmdDrawIndexed(command, source->index_count, 1, 0, 0, 0);
+  }
+}
+
 uint64_t regular_render_pass_key(VkFormat color_format,
                                  VkSampleCountFlagBits samples,
                                  bool needs_depth, bool has_copy) {
@@ -2865,7 +2984,8 @@ bool submit_mixed_sample_copy_frame(
     VkAttachmentDescription copy_attachment{};
     copy_attachment.format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
     copy_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    copy_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    copy_attachment.loadOp = output_written_before
+        ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     copy_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     copy_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     copy_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -2883,7 +3003,8 @@ bool submit_mixed_sample_copy_frame(
                                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     copy_dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     copy_dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    copy_dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    copy_dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     copy_dependencies[1].srcSubpass = 0;
     copy_dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
     copy_dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -2941,38 +3062,13 @@ bool submit_mixed_sample_copy_frame(
             return false;
         }
     }
-    CapturedVulkanDraw copy_draw{};
-    copy_draw.vertex_shader_spirv = copy.vertex_shader_spirv;
-    copy_draw.pixel_shader_spirv = copy.source_gamma
-        ? copy.gamma_single_sample_pixel_shader_spirv
-        : copy.single_sample_pixel_shader_spirv;
-    copy_draw.auto_index = true;
-    copy_draw.index_count = 3;
-    copy_draw.texture_width = 1;
-    copy_draw.texture_height = 1;
-    copy_draw.texture_rgba8 = {0, 0, 0, 255};
-    set_copy_resolution_constants(&copy_draw, source_width, source_height,
-                                  output_width, output_height);
-    copy_draw.raster.width = output_width;
-    copy_draw.raster.height = output_height;
-    copy_draw.raster.sample_count = 1;
-    copy_draw.raster.color_write_mask = 0xFu;
-    copy_draw.raster.scissor_x1 = output_width;
-    copy_draw.raster.scissor_y1 = output_height;
-    copy_draw.raster.scissor_has_area = true;
-    copy_draw.raster.blend_control_0 = 0x00010001u;
-    copy_draw.texture_sampling.clamps = {TextureClamp::ClampToEdge,
-                                         TextureClamp::ClampToEdge,
-                                         TextureClamp::ClampToEdge};
-    copy_draw.texture_sampling.mag_filter = TextureFilter::Point;
-    copy_draw.texture_sampling.min_filter = TextureFilter::Point;
-    copy_draw.texture_sampling.mip_filter = TextureFilter::Point;
-    copy_draw.texture_sampling.anisotropy = TextureAnisotropy::Disabled;
-    copy_draw.texture_sampling.border_color = TextureBorderColor::AbgrBlack;
-    copy_draw.texture_sampling.border_alpha_known = true;
+    CapturedVulkanDraw copy_draw = make_copy_resolve_draw(
+        copy, source_width, source_height, output_width, output_height, true);
     if (!create_draw_resources(copy_draw, std::numeric_limits<size_t>::max(), nullptr,
                                memory_properties, device,
-                               resources.mixed_copy_render_pass, 0, pipeline_cache, false,
+                               resources.mixed_copy_render_pass, 0, pipeline_cache,
+                               geometry_shader_enabled &&
+                                   !copy_draw.geometry_shader_spirv.empty(),
                                sampler_capabilities, &resources.copy_draw, error)) {
         return false;
     }
@@ -3286,7 +3382,8 @@ bool submit_mixed_sample_copy_frame(
     output_to_color.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     output_to_color.srcAccessMask =
         output_written_before ? VK_ACCESS_SHADER_READ_BIT : 0;
-    output_to_color.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    output_to_color.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     output_to_color.oldLayout = output_written_before
                                     ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
                                     : VK_IMAGE_LAYOUT_UNDEFINED;
@@ -3310,17 +3407,8 @@ bool submit_mixed_sample_copy_frame(
     copy_begin.framebuffer = resources.mixed_copy_framebuffer;
     copy_begin.renderArea.extent = {output_width, output_height};
     vkCmdBeginRenderPass(command, &copy_begin, VK_SUBPASS_CONTENTS_INLINE);
-    VkViewport copy_viewport{0.0f, 0.0f, static_cast<float>(output_width),
-                             static_cast<float>(output_height), 0.0f, 1.0f};
-    VkRect2D copy_scissor{{0, 0}, {output_width, output_height}};
-    vkCmdSetViewport(command, 0, 1, &copy_viewport);
-    vkCmdSetScissor(command, 0, 1, &copy_scissor);
-    vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      resources.copy_draw.pipeline);
-    vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            resources.copy_draw.pipeline_layout, 0, 2,
-                            resources.copy_draw.descriptor_sets, 0, nullptr);
-    vkCmdDraw(command, 3, 1, 0, 0);
+    record_copy_resolve_draw(command, resources.copy_draw, copy,
+                             output_width, output_height);
     vkCmdEndRenderPass(command);
 
     VkImageMemoryBarrier output_to_read{};
@@ -3502,6 +3590,22 @@ std::string describe_captured_vulkan_operations(
                         << operation.copy_state.destination_swap_red_blue
                         << ",shaders="
                         << (operation.copy_shaders_ready ? "prepared" : "missing")
+                        << ",source_geometry="
+                        << (operation.copy.source_geometry_ready ? "captured" : "missing");
+                if (operation.copy.source_geometry_ready) {
+                    message << ",topology="
+                            << static_cast<uint32_t>(
+                                   operation.copy.source_geometry.topology)
+                            << ",indices="
+                            << operation.copy.source_geometry.index_count
+                            << ",auto_index="
+                            << operation.copy.source_geometry.auto_index
+                            << ",vertex_bytes="
+                            << operation.copy.source_geometry.vertices.size()
+                            << ",index_bytes="
+                            << operation.copy.source_geometry.indices.size();
+                }
+                message
                         << ')';
                 break;
             case CapturedVulkanOperation::Type::UnresolvedDraw:
@@ -4135,7 +4239,8 @@ bool submit_captured_vulkan_frame(
         VkAttachmentDescription copy_attachment{};
         copy_attachment.format = copy_destination_format;
         copy_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        copy_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        copy_attachment.loadOp = copy_output_written_before
+            ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         copy_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         copy_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         copy_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -4168,41 +4273,14 @@ bool submit_captured_vulkan_frame(
                                      &resources.copy_framebuffer);
         if (result != VK_SUCCESS) return vk_fail("vkCreateFramebuffer(copy)", result, error);
 
-        CapturedVulkanDraw copy_draw{};
-        copy_draw.vertex_shader_spirv = copy->vertex_shader_spirv;
-        copy_draw.pixel_shader_spirv = copy->source_gamma
-            ? (single_sample_copy
-                   ? copy->gamma_single_sample_pixel_shader_spirv
-                   : copy->gamma_pixel_shader_spirv)
-            : (single_sample_copy ? copy->single_sample_pixel_shader_spirv
-                                  : copy->pixel_shader_spirv);
-        copy_draw.auto_index = true;
-        copy_draw.index_count = 3;
-        copy_draw.texture_width = 1;
-        copy_draw.texture_height = 1;
-        copy_draw.texture_rgba8 = {0, 0, 0, 255};
-        set_copy_resolution_constants(&copy_draw, source_width, source_height,
-                                     output_width, output_height);
-        copy_draw.raster.width = output_width;
-        copy_draw.raster.height = output_height;
-        copy_draw.raster.sample_count = 1;
-        copy_draw.raster.color_write_mask = 0xFu;
-        copy_draw.raster.scissor_x1 = output_width;
-        copy_draw.raster.scissor_y1 = output_height;
-        copy_draw.raster.scissor_has_area = true;
-        copy_draw.raster.blend_control_0 = 0x00010001u;
-        copy_draw.texture_sampling.clamps = {TextureClamp::ClampToEdge,
-                                             TextureClamp::ClampToEdge,
-                                             TextureClamp::ClampToEdge};
-        copy_draw.texture_sampling.mag_filter = TextureFilter::Point;
-        copy_draw.texture_sampling.min_filter = TextureFilter::Point;
-        copy_draw.texture_sampling.mip_filter = TextureFilter::Point;
-        copy_draw.texture_sampling.anisotropy = TextureAnisotropy::Disabled;
-        copy_draw.texture_sampling.border_color = TextureBorderColor::AbgrBlack;
-        copy_draw.texture_sampling.border_alpha_known = true;
+        CapturedVulkanDraw copy_draw = make_copy_resolve_draw(
+            *copy, source_width, source_height, output_width, output_height,
+            single_sample_copy);
         if (!create_draw_resources(copy_draw, std::numeric_limits<size_t>::max(), nullptr,
                                    memory_properties, device,
-                                   resources.copy_render_pass, 0, pipeline_cache, false,
+                                   resources.copy_render_pass, 0, pipeline_cache,
+                                   geometry_shader_enabled &&
+                                       !copy_draw.geometry_shader_spirv.empty(),
                                    sampler_capabilities, &resources.copy_draw, error)) {
             return false;
         }
@@ -4604,17 +4682,8 @@ bool submit_captured_vulkan_frame(
         copy_begin.framebuffer = resources.copy_framebuffer;
         copy_begin.renderArea.extent = {output_width, output_height};
         vkCmdBeginRenderPass(command, &copy_begin, VK_SUBPASS_CONTENTS_INLINE);
-        VkViewport copy_viewport{0.0f, 0.0f, static_cast<float>(output_width),
-                                 static_cast<float>(output_height), 0.0f, 1.0f};
-        VkRect2D copy_scissor{{0, 0}, {output_width, output_height}};
-        vkCmdSetViewport(command, 0, 1, &copy_viewport);
-        vkCmdSetScissor(command, 0, 1, &copy_scissor);
-        vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          resources.copy_draw.pipeline);
-        vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                resources.copy_draw.pipeline_layout, 0, 2,
-                                resources.copy_draw.descriptor_sets, 0, nullptr);
-        vkCmdDraw(command, 3, 1, 0, 0);
+        record_copy_resolve_draw(command, resources.copy_draw, *copy,
+                                 output_width, output_height);
         vkCmdEndRenderPass(command);
     }
 
@@ -4800,6 +4869,22 @@ bool submit_captured_vulkan_operation_stream(
             a.sample_count == b.sample_count &&
             a.surface_pitch == b.surface_pitch;
     };
+    const auto describe_target_layout = [](const CapturedRasterState& raster) {
+        std::ostringstream description;
+        description << "{color_base=0x" << std::hex
+                    << raster.color_base_tiles << ",depth_base=0x"
+                    << raster.depth_base_tiles << std::dec
+                    << ",guest_color_format=" << raster.guest_color_format
+                    << ",color_format="
+                    << static_cast<uint32_t>(raster.color_format)
+                    << ",depth_format="
+                    << static_cast<uint32_t>(raster.depth_format)
+                    << ",extent=" << raster.width << 'x' << raster.height
+                    << ",pitch=" << raster.surface_pitch
+                    << ",samples=" << raster.sample_count
+                    << ",depth_only=" << raster.depth_only << '}';
+        return description.str();
+    };
 
     size_t preflight_draw_count = 0;
     uint32_t preflight_first_draw = std::numeric_limits<uint32_t>::max();
@@ -4856,6 +4941,19 @@ bool submit_captured_vulkan_operation_stream(
         if (operation.type != CapturedVulkanOperation::Type::CopyConvert) {
             continue;
         }
+        if (!operation.copy_shaders_ready ||
+            !operation.copy.source_geometry_ready ||
+            operation.copy.source_geometry.vertex_shader_spirv.empty() ||
+            operation.copy.source_geometry.geometry_shader_spirv.empty() ||
+            operation.copy.source_geometry.topology !=
+                PrimitiveTopology::RectangleList ||
+            operation.copy.source_geometry.index_count < 3) {
+            std::ostringstream message;
+            message << "Copy/Convert packet " << operation.packet_index
+                    << " is missing captured PM4 rectangle-list geometry or "
+                       "translated resolve shaders; ordered replay refuses a fullscreen substitute";
+            return fail(message.str(), error);
+        }
         if (preflight_draw_count == 0) {
             CachedEdramTarget* source_target = operation.source_raster_ready
                 ? find_initialized_edram_target(texture_cache_state,
@@ -4905,7 +5003,11 @@ bool submit_captured_vulkan_operation_stream(
             std::ostringstream message;
             message << "Copy/Convert packet " << operation.packet_index
                     << " reinterprets the active draw segment's EDRAM source layout; "
-                       "only exact-layout copies are supported";
+                       "only exact-layout copies are supported; active draw="
+                    << describe_target_layout(
+                           draws[preflight_first_draw].raster)
+                    << ", copy source="
+                    << describe_target_layout(operation.source_raster);
             return fail(message.str(), error);
         }
         const bool writes_presenter = presenter_copy &&

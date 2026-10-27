@@ -1,0 +1,81 @@
+{
+  "schema": "shift.process2.ordered_copy_geometry_capture.v1",
+  "date": "2026-10-27",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "change": {
+    "files": [
+      "native_vulkan/include/shift_xbox_live_vulkan_renderer.hpp",
+      "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
+      "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
+      "native_vulkan/rexglue_plugin/README.md"
+    ],
+    "capture": [
+      "Retains translated vertex SPIR-V, vertex constants, decoded indices, guest vertex-fetch bytes, and source raster/scissor for recognized PM4 rectangle-list Copy/Convert draws.",
+      "Uses the actual captured Copy/Convert draw geometry with the existing format-specific resolve fragment shader.",
+      "Ordered operation replay rejects missing Copy/Convert geometry instead of substituting a fullscreen triangle.",
+      "Cached destination images use LOAD on subsequent partial writes after initialization.",
+      "The exact-layout Copy/Convert guard prints active draw and Copy source EDRAM fields when it rejects a packet."
+    ],
+    "diagnostics": "Copy packet logs include topology, index count, AutoIndex, vertex/index byte counts, input attribute count, and source scissor. Layout mismatch diagnostics include color/depth bases, guest and translated formats, extent, pitch, samples, and depth-only state."
+  },
+  "verification": {
+    "native_linux": {
+      "command": "cmake --build native_vulkan/build -j2 && VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir native_vulkan/build --output-on-failure",
+      "result": "passed",
+      "tests": "4/4",
+      "regressions": [
+        "Synthetic indexed rectangle-list Copy/Convert uses captured geometry.",
+        "Ordered stream refuses Copy/Convert with missing captured geometry.",
+        "A zero-area captured scissor preserves the initialized non-black destination."
+      ]
+    },
+    "linux_plugin": {
+      "command": "cmake --build /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --target rexgpu-shift-native -j2 && VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
+      "result": "passed",
+      "tests": "6/6",
+      "plugin_sha256": "e9c5873adac7dd14695ae586dac89fad04a7e935e54c5dc58a6fa5f8f0981e7e",
+      "build_id": "58ecafd975cc745cffbb027c2267aa3c17aac98a",
+      "binary": "/home/pes/work/.build-process2-p2161-vulkan-plugin-20261027/output/librexgpu-shift-native.so"
+    },
+    "android_arm64_api26": {
+      "ndk": "28.2.13676358 (r28c)",
+      "abi": "arm64-v8a",
+      "android_platform": "android-26",
+      "built_targets": [
+        "shift_xbox_guest_ring",
+        "shift_xbox_live_vulkan_renderer",
+        "xbox_live_vulkan_renderer_check (compile only)"
+      ],
+      "guest_ring_object_sha256": "63899ba768a64651cdb339888306385978c40ba674ab72cb776e6ea6f4a6574d",
+      "renderer_object_sha256": "b91938c5db10051646c088217e67f9516e905d55be2bb22ffe10449382ec9461",
+      "renderer_check_object_sha256": "571e5c170668c721d18a0d68614a21c9bc70196ca758f0ac7798f12322c97ebe",
+      "plugin_translation_unit_built_this_run": false,
+      "prior_full_plugin_link_attempt": {
+        "result": "failed in external ReXGlue SDK dependency",
+        "file": "rexglue-sdk/src/core/fiber_posix.cpp",
+        "diagnostic": "NDK r28c build does not declare getcontext, makecontext, or swapcontext"
+      },
+      "adb_device_available": false,
+      "device_run": false
+    }
+  },
+  "p1_capture_observation": {
+    "plugin_snapshot_sha256": "71128a46a1dfcb0c7db15bdbe6560acb50cf40ab636851c60d7d6db6e4cbf9d2",
+    "result": "P1 reports one captured draw followed by Copy/Convert packet 49 failing because the decoded source EDRAM layout differs from the active draw segment layout.",
+    "next_capture": "P1 is preparing a ring trace. This build adds exact layout values to the guard diagnostic; keep the guard until the capture establishes whether the source is a previously initialized target or a physical EDRAM alias.",
+    "interrupt_join": "P1 reports 2,205 source=1 ExecuteInterrupt calls with CPU mask 0x04 and callback 0x823B37B8; exact PM4 packet-to-guest-entry attribution remains unproven."
+  },
+  "regression_scope": {
+    "renderer_case": "Synthetic indexed rectangle-list geometry, absent-geometry rejection, and scissor-preserved partial output.",
+    "vulkan_validation": "Enabled for all Linux native and plugin tests.",
+    "retail_parity": false
+  },
+  "limitations": [
+    "No retail capture was run in this turn because ADB lists no connected device.",
+    "The 14-draw retail transition still fails closed at packet 49's EDRAM source-layout mismatch; shared physical EDRAM backing and tile/sample transfer across aliases are not implemented.",
+    "The format-specific Copy/Convert fragment shader has not been verified against an original retail image or complete 14-draw execution.",
+    "Depth/stencil and clear-side-effect preservation across the full transition remain incomplete.",
+    "Exact PM4_INTERRUPT packet-to-guest-dispatcher-entry crosswalk remains unproven."
+  ]
+}

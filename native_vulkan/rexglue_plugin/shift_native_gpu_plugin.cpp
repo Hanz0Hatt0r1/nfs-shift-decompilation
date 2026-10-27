@@ -775,6 +775,155 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     return *bytes != nullptr;
   }
 
+  bool PrepareCapturedCopyGeometry(
+      const shift::xbox::DecodedIndexedDraw& draw,
+      const shift::xbox::CapturedRasterState& raster_state,
+      const shift::xbox::CapturedXboxShaderRegisterState& shader_state,
+      const std::vector<uint8_t>& vertex_program,
+      shift::xbox::CapturedVulkanDraw* prepared_geometry,
+      std::string* error) {
+    if (!prepared_geometry || vertex_program.empty() ||
+        draw.topology != shift::xbox::PrimitiveTopology::RectangleList ||
+        draw.index_count == 0) {
+      if (error) *error = "captured Copy/Convert geometry inputs are incomplete";
+      return false;
+    }
+
+    shift::xbox::CapturedShaderConstants constants{};
+    if (!shader_state.snapshot_constants(&constants, error)) return false;
+    shift::xbox::CapturedShaderTranslationOptions options{};
+    if (raster_state.clip_disabled_window_coordinates) {
+      const uint32_t vte = raster_state.viewport_transform_control;
+      const float captured_x_scale = raster_state.viewport_width * 0.5f;
+      const float captured_y_scale = raster_state.viewport_height * 0.5f;
+      options.clip_disabled_window_coordinates = true;
+      options.window_coordinate_width = raster_state.width;
+      options.window_coordinate_height = raster_state.height;
+      options.window_coordinate_x_scale = (vte & 0x1u) ? captured_x_scale : 1.0f;
+      options.window_coordinate_y_scale = (vte & 0x4u) ? captured_y_scale : 1.0f;
+      options.window_coordinate_x_offset = (vte & 0x2u)
+          ? raster_state.viewport_x + captured_x_scale : 0.0f;
+      options.window_coordinate_y_offset = (vte & 0x8u)
+          ? raster_state.viewport_y + captured_y_scale : 0.0f;
+    }
+    shift::xbox::CapturedShaderTranslation translation{};
+    if (!shader_translation_cache_.translate(
+            shift::xbox::CapturedShaderStage::Vertex, vertex_program.data(),
+            vertex_program.size(), options, &translation, error)) {
+      if (error) *error = "captured Copy/Convert vertex shader: " + *error;
+      return false;
+    }
+    if (!shader_state.validate_float_constants(
+            shift::xbox::GuestShaderStage::Vertex,
+            translation.float_constant_registers,
+            translation.uses_relative_float_constant_index, error)) {
+      return false;
+    }
+
+    shift::xbox::CapturedVulkanDraw prepared{};
+    prepared.raster = raster_state;
+    prepared.constants = constants;
+    prepared.topology = draw.topology;
+    prepared.auto_index = draw.auto_index;
+    prepared.index_count = draw.index_count;
+    prepared.vertex_stride_bytes = 0;
+    prepared.vertex_input_attributes = translation.vertex_input_attributes;
+    if (!CompileVulkanShader("copy-source-vertex", EShLangVertex,
+                             translation.glsl, &prepared.vertex_shader_spirv,
+                             error)) {
+      return false;
+    }
+    auto* device = provider_ ? provider_->vulkan_device() : nullptr;
+    if (!device || !device->properties().geometryShader) {
+      if (error) *error = "captured Copy/Convert rectangle-list draw requires Vulkan geometryShader";
+      return false;
+    }
+    if (!CompileVulkanShader("copy-source-rectangle-list-geometry",
+                             EShLangGeometry,
+                             rectangle_list_geometry_shader(),
+                             &prepared.geometry_shader_spirv, error)) {
+      return false;
+    }
+
+    constexpr uint32_t kMaxLiveIndexBytes = 2u * 1024u * 1024u;
+    constexpr uint32_t kMaxLiveVertexBytes = 4u * 1024u * 1024u;
+    const uint8_t* guest_bytes = nullptr;
+    size_t guest_byte_length = 0;
+    uint32_t maximum_vertex_index = 0;
+    if (draw.auto_index) {
+      maximum_vertex_index = draw.index_count - 1u;
+    } else if (draw.index_byte_length > kMaxLiveIndexBytes ||
+               !ReadGuestMemory(this, draw.index_guest_address,
+                                draw.index_byte_length, &guest_bytes,
+                                &guest_byte_length) ||
+               guest_byte_length < draw.index_byte_length ||
+               !shift::xbox::decode_captured_index_data(
+                   draw, guest_bytes, draw.index_byte_length,
+                   &prepared.indices, &maximum_vertex_index, error)) {
+      return false;
+    }
+
+    shift::xbox::CapturedVertexFetch vertex_fetch{};
+    if (!translation.vertex_input_attributes.empty()) {
+      std::array<uint32_t, 2> descriptor{};
+      if (!translation.has_vertex_fetch_constant ||
+          !shader_state.snapshot_vertex_fetch_descriptor(
+              translation.vertex_fetch_constant_index, &descriptor, error) ||
+          !shift::xbox::decode_captured_vertex_fetch(
+              descriptor.data(), &vertex_fetch, error)) {
+        return false;
+      }
+      uint32_t stride_bytes = 0;
+      uint32_t maximum_attribute_end = 0;
+      for (const auto& attribute : translation.vertex_input_attributes) {
+        const uint32_t attribute_size = attribute.vertex_format == 6  ? 4u
+                                        : attribute.vertex_format == 37 ? 8u
+                                        : attribute.vertex_format == 57 ? 12u
+                                        : attribute.vertex_format == 38 ? 16u
+                                                                        : 0u;
+        if (attribute_size == 0 || attribute.stride_dwords == 0 ||
+            attribute.offset_dwords < 0) {
+          if (error) *error = "captured Copy/Convert vertex input layout is unsupported";
+          return false;
+        }
+        const uint64_t stride = uint64_t{attribute.stride_dwords} * 4u;
+        const uint64_t end =
+            static_cast<uint64_t>(attribute.offset_dwords) * 4u + attribute_size;
+        if (stride > UINT32_MAX || end > stride ||
+            (stride_bytes != 0 && stride_bytes != stride)) {
+          if (error) *error = "captured Copy/Convert vertex attributes disagree on stride";
+          return false;
+        }
+        stride_bytes = static_cast<uint32_t>(stride);
+        maximum_attribute_end = std::max(maximum_attribute_end,
+                                         static_cast<uint32_t>(end));
+      }
+      uint32_t required_vertex_bytes = 0;
+      if (!shift::xbox::captured_vertex_required_bytes(
+              maximum_vertex_index, stride_bytes, 0, maximum_attribute_end,
+              &required_vertex_bytes, error) ||
+          required_vertex_bytes > kMaxLiveVertexBytes ||
+          required_vertex_bytes > vertex_fetch.byte_length ||
+          !ReadGuestMemory(this, vertex_fetch.guest_address,
+                           required_vertex_bytes, &guest_bytes,
+                           &guest_byte_length) ||
+          guest_byte_length < required_vertex_bytes ||
+          !shift::xbox::normalize_captured_buffer_bytes(
+              vertex_fetch.endian_mode, guest_bytes, required_vertex_bytes,
+              &prepared.vertices, error)) {
+        return false;
+      }
+      prepared.vertex_stride_bytes = stride_bytes;
+    } else if (translation.has_vertex_fetch_constant) {
+      if (error) *error = "captured Copy/Convert vertex shader has a fetch constant without inputs";
+      return false;
+    }
+
+    *prepared_geometry = std::move(prepared);
+    if (error) error->clear();
+    return true;
+  }
+
   bool PrepareCapturedDrawResources(
       const shift::xbox::DecodedIndexedDraw& draw,
       size_t draw_slot,
@@ -2745,6 +2894,41 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                           raster_registers.copy_clear_valid_mask);
                     }
                     prepared_copy.source_gamma = copy_state.source_gamma;
+                    std::string copy_geometry_error;
+                    const bool copy_geometry_ready = copy_source_raster_ready &&
+                        PrepareCapturedCopyGeometry(
+                            draw, copy_source_raster, shader_register_state,
+                            vertex_shader_program,
+                            &prepared_copy.source_geometry,
+                            &copy_geometry_error);
+                    if (copy_geometry_ready) {
+                      prepared_copy.source_geometry_ready = true;
+                    } else {
+                      if (copy_geometry_error.empty()) {
+                        copy_geometry_error =
+                            "Copy/Convert source raster or vertex program is unavailable";
+                      }
+                      shift::xbox::CapturedVulkanOperation unresolved{};
+                      unresolved.type =
+                          shift::xbox::CapturedVulkanOperation::Type::UnresolvedCopy;
+                      unresolved.packet_index = draw_packet_index;
+                      unresolved.copy_state = copy_state;
+                      unresolved.source_width = prepared_copy.source_width;
+                      unresolved.source_height = prepared_copy.source_height;
+                      unresolved.source_surface_info = raster_registers.surface_info;
+                      unresolved.source_color_info = raster_registers.color_info;
+                      unresolved.source_depth_info = raster_registers.depth_info;
+                      unresolved.source_mode_control = raster_registers.mode_control;
+                      unresolved.source_raster_ready = copy_source_raster_ready;
+                      unresolved.source_raster = copy_source_raster;
+                      frame_operations.push_back(std::move(unresolved));
+                      frame_copy_ready = false;
+                      REXLOG_WARN(
+                          "shift-native: could not capture original geometry for "
+                          "Copy/Convert packet #{}: {}",
+                          draw_packet_index, copy_geometry_error);
+                      continue;
+                    }
                     shift::xbox::CapturedVulkanOperation operation{};
                     operation.type =
                         shift::xbox::CapturedVulkanOperation::Type::CopyConvert;
@@ -2771,6 +2955,21 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     }
                     operation.copy = prepared_copy;
                     operation.copy_shaders_ready = true;
+                    REXLOG_INFO(
+                        "shift-native: captured Copy/Convert PM4 geometry packet #{} "
+                        "topology={} indices={} autoindex={} vertex_bytes={} index_bytes={} "
+                        "attributes={} source_scissor=[{},{}..{},{}]",
+                        draw_packet_index,
+                        static_cast<uint32_t>(prepared_copy.source_geometry.topology),
+                        prepared_copy.source_geometry.index_count,
+                        prepared_copy.source_geometry.auto_index,
+                        prepared_copy.source_geometry.vertices.size(),
+                        prepared_copy.source_geometry.indices.size(),
+                        prepared_copy.source_geometry.vertex_input_attributes.size(),
+                        prepared_copy.source_geometry.raster.scissor_x0,
+                        prepared_copy.source_geometry.raster.scissor_y0,
+                        prepared_copy.source_geometry.raster.scissor_x1,
+                        prepared_copy.source_geometry.raster.scissor_y1);
                     frame_operations.push_back(std::move(operation));
                     if (intermediate_copy) {
                       REXLOG_INFO(
