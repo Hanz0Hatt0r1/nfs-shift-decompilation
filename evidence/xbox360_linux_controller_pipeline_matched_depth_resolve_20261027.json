@@ -1,0 +1,129 @@
+{
+  "schema": "shift.xbox360.linux-controller-pipeline-matched-depth-resolve.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "p2_runtime_sha256": "f049d64a46ab04e8d5fcb71800c92d86a5cc6a5fbd38a6b1bf1a623c86398a80",
+    "p2_runtime_mapped_path": "/tmp/nfs-shift-p1-depth-resolve-controller-input-confirmation-20261027/bin/librexruntime.so",
+    "p2_plugin_sha256": "abc7bf5df779be7dce4fdae719c05c89a35ad8ce222f95b3337478f24bddc402",
+    "p2_plugin_mapping_independently_captured": false
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "duration_seconds": 62.123,
+    "gdb_timer_seconds": 60,
+    "termination": "The GDB timer interrupted the inferior, detached, then sent SIGINT; GDB exited 0. Clean title shutdown was not established.",
+    "gdb_instrumented": true,
+    "probe_guest_memory_writes": false,
+    "controller": {
+      "device": "Linux uinput Xbox 360 pad, VID:PID 045e:028e",
+      "pulse_duration_ms": 3000,
+      "pulses": [
+        {"at_seconds": 8, "button": "A", "mask": "0x1000"},
+        {"at_seconds": 16, "button": "Start", "mask": "0x0010"},
+        {"at_seconds": 24, "button": "A", "mask": "0x1000"},
+        {"at_seconds": 32, "button": "Start", "mask": "0x0010"},
+        {"at_seconds": 40, "button": "A", "mask": "0x1000"},
+        {"at_seconds": 48, "button": "Start", "mask": "0x0010"}
+      ]
+    },
+    "tracing": {
+      "gdb_script": {
+        "path": "tools/xbox360/trace_linux_retail_controller_pipeline_depth_resolve_20261027.gdb",
+        "sha256": "1397c11bc04c0872e1afc8b3e743d07d47765906989ccb4e00468c8a77eb5504"
+      },
+      "reproduction_runner": {
+        "path": "tools/xbox360/capture_linux_retail_controller_pipeline_depth_resolve_20261027.py",
+        "sha256": "4a941d54221517f4f20621c35b072eabbfd729d3ba288d2d1117c2c754dfe778"
+      },
+      "execution_runner_copy": {
+        "path_outside_git": "/tmp/nfs-shift-p1-depth-resolve-controller-input-confirmation-20261027/capture.py",
+        "sha256": "7d6860d30a556983df0e1fa458ca9a93e6951f2a1929bcd32ee15266745009eb"
+      },
+      "gdb_log": {
+        "path_outside_git": "/tmp/nfs-shift-p1-depth-resolve-controller-input-confirmation-20261027/gdb.log",
+        "sha256": "9288b900de4faa1d7ec28528ffbeabe82322aa8f2591c9d9deec27928a79344a"
+      },
+      "runner_log": {
+        "path_outside_git": "/tmp/nfs-shift-p1-depth-resolve-controller-input-confirmation-20261027/runner.log",
+        "sha256": "7a594e3df648ce6f9039c6ede30d456ad1af18c1619636b0ad3851ad9b8c091d"
+      }
+    },
+    "runtime_input_symbols": {
+      "rex_input_system_get_state_offset": "0x292080",
+      "xam_input_get_state_entry_offset": "0x42F990",
+      "offset_source": "nm -C on the exact f049d64a runtime file"
+    }
+  },
+  "retail_input_path": {
+    "counts": {
+      "XamInputGetState_entry": 1520,
+      "InputSystem_GetState": 1520,
+      "successful_user0_returns_sampled": 95,
+      "sampled_button_masks": {
+        "0x0000": 59,
+        "0x0010": 18,
+        "0x1000": 18
+      },
+      "sub_8230CD00_hits": 1520,
+      "sub_82308E60_hits": 1520,
+      "candidate_dispatcher_sub_8230D398_hits": 0
+    },
+    "retail_controller_object": "0xBCAEB260",
+    "observed_edges": [
+      {
+        "elapsed_seconds": 14.208,
+        "function": "sub_8230CD00",
+        "current": "0x0010",
+        "previous": "0x0000",
+        "edge": "0x0010"
+      },
+      {
+        "elapsed_seconds": 14.272,
+        "function": "sub_82308E60",
+        "current": "0x0010",
+        "previous": "0x0000",
+        "edge": "0x0010"
+      },
+      {
+        "elapsed_seconds": 22.167,
+        "function": "sub_8230CD00",
+        "current": "0x1000",
+        "previous": "0x0000",
+        "edge": "0x1000"
+      },
+      {
+        "elapsed_seconds": 22.198,
+        "function": "sub_82308E60",
+        "current": "0x1000",
+        "previous": "0x0000",
+        "edge": "0x1000"
+      }
+    ],
+    "matching_xam_return_samples": [
+      {"elapsed_seconds": 14.425, "packet": 3, "status": "0x0", "buttons": "0x0010"},
+      {"elapsed_seconds": 17.193, "packet": 4, "status": "0x0", "buttons": "0x0000"},
+      {"elapsed_seconds": 22.232, "packet": 5, "status": "0x0", "buttons": "0x1000"},
+      {"elapsed_seconds": 25.636, "packet": 6, "status": "0x0", "buttons": "0x0000"}
+    ]
+  },
+  "interpretation": {
+    "supported": [
+      "The exact matched runtime's XamInputGetState entry and InputSystem::GetState were each called 1520 times.",
+      "Successful user-0 return samples contained Start and A masks, and those same masks appeared as rising edges on retail controller object 0xBCAEB260 in the original retail update functions.",
+      "This run rules out a host-to-retail input delivery failure before the observed retail edge-update path for these pulses."
+    ],
+    "not_proven": [
+      "That the active frontend action handler consumed the edge or advanced a scene.",
+      "A visible main menu, offline race, gameplay, or correct rendering; this trace captured no pixels.",
+      "That sub_8230D398 is the only retail action dispatcher; it had no hits in this bounded trace.",
+      "Clean title shutdown."
+    ],
+    "next_p1_step": "Keep XAM and retail controller semantics unchanged. Trace the scene/frontend state and the active action consumer after these confirmed edges; keep renderer work in Process 2."
+  }
+}
