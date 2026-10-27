@@ -1003,6 +1003,98 @@ int main(int argc, char** argv) {
         return 1;
       }
 
+      auto layout_change_draw = draw0;
+      layout_change_draw.packet_index = 201;
+      layout_change_draw.draw_index = 1;
+      auto layout_change_copy = copy0;
+      layout_change_copy.packet_index = 202;
+      auto layout_change_source = format31_source;
+      ++layout_change_source.raster.color_base_tiles;
+      std::string layout_change_error;
+      if (shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720,
+              {format31_source, layout_change_source},
+              {draw0, layout_change_draw, layout_change_copy},
+              &layout_change_error,
+              nullptr, enabled_features.geometryShader, &copy, false, {},
+              pipeline_cache, nullptr) ||
+          layout_change_error.find("draw packet 201 changes target layout before a "
+                                   "Copy/Convert boundary") == std::string::npos ||
+          layout_change_error.find("prior draw packet 200 layout={color_base=0x") ==
+              std::string::npos ||
+          layout_change_error.find(", next layout={color_base=0x") ==
+              std::string::npos) {
+        std::cerr << "ordered EDRAM layout-change diagnostic omitted both draw layouts: "
+                  << layout_change_error << '\n';
+        return 1;
+      }
+
+      auto packet49_draw = draw;
+      packet49_draw.topology = shift::xbox::PrimitiveTopology::TriangleList;
+      packet49_draw.index_count = 3;
+      packet49_draw.pixel_shader_spirv = gamma_encoded_fragment_spirv;
+      packet49_draw.pixel_shader_spirv_linear_target =
+          gamma_linear_fragment_spirv;
+      packet49_draw.raster.color_base_tiles = 0;
+      packet49_draw.raster.depth_base_tiles = 0x2d0;
+      packet49_draw.raster.surface_pitch = 640;
+      packet49_draw.raster.sample_count = 4;
+      packet49_draw.raster.color_format =
+          shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
+      packet49_draw.raster.guest_color_format = 1;
+      packet49_draw.raster.depth_test_enabled = false;
+      packet49_draw.raster.depth_write_enabled = false;
+      packet49_draw.raster.stencil_test_enabled = false;
+      packet49_draw.raster.depth_control = 0;
+      auto packet49_source = packet49_draw.raster;
+      packet49_source.color_format =
+          shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
+      packet49_source.sample_count = 1;
+      packet49_source.surface_pitch = 1280;
+      packet49_source.guest_color_format = 0;
+      auto packet49_copy = copy;
+      packet49_copy.source_gamma = false;
+      packet49_copy.source_geometry_ready = true;
+      packet49_copy.source_geometry = operation_copy_geometry;
+      packet49_copy.source_geometry.raster = packet49_source;
+      shift::xbox::CapturedVulkanOperation packet49_draw_operation{};
+      packet49_draw_operation.type =
+          shift::xbox::CapturedVulkanOperation::Type::Draw;
+      packet49_draw_operation.packet_index = 24;
+      packet49_draw_operation.draw_index = 0;
+      shift::xbox::CapturedVulkanOperation packet49_copy_operation{};
+      packet49_copy_operation.type =
+          shift::xbox::CapturedVulkanOperation::Type::CopyConvert;
+      packet49_copy_operation.packet_index = 49;
+      packet49_copy_operation.source_width = 1280;
+      packet49_copy_operation.source_height = 720;
+      packet49_copy_operation.source_raster_ready = true;
+      packet49_copy_operation.source_raster = packet49_source;
+      packet49_copy_operation.copy_state = packet49_copy.state;
+      packet49_copy_operation.copy = packet49_copy;
+      packet49_copy_operation.copy_shaders_ready = true;
+      std::vector<uint32_t> packet49_direct_readback;
+      std::vector<uint32_t> packet49_ordered_readback;
+      std::string packet49_error;
+      if (!shift::xbox::submit_captured_vulkan_frame(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, {packet49_draw}, &packet49_error,
+              &packet49_direct_readback, enabled_features.geometryShader,
+              &packet49_copy, false, {}, pipeline_cache, nullptr) ||
+          !shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, {packet49_draw},
+              {packet49_draw_operation, packet49_copy_operation},
+              &packet49_error, &packet49_ordered_readback,
+              enabled_features.geometryShader, &packet49_copy, false, {},
+              pipeline_cache, nullptr) ||
+          packet49_ordered_readback != packet49_direct_readback) {
+        std::cerr << "captured packet-49 4x gamma draw to sample-zero 1x "
+                     "linear source replay failed: " << packet49_error << '\n';
+        return 1;
+      }
+
       auto copy_without_source = copy0;
       copy_without_source.packet_index = 200;
       auto draw_after_copy = draw0;

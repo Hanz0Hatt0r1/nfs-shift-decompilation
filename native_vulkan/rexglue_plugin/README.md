@@ -1897,12 +1897,40 @@ captured scissor preserves an initialized non-black destination. It also
 checks that a Copy source-layout rejection reports both active and source
 EDRAM layouts. It does not establish retail Copy/Convert pixel parity.
 
-P1's latest capture reports one captured draw followed by Copy/Convert packet
-49 failing because its decoded source EDRAM layout differs from the active draw
-segment. The guard stays in place until a ring trace supplies the exact layouts
-and confirms whether the source is an initialized prior target or an EDRAM
-alias. The 14-draw transition is not replaying fully. The resolve fragment
-shader is still an explicit implementation of the decoded Copy state, not a
-verified retail image match. PM4 interrupt to guest callback attribution also
-remains incomplete. Build identities, checks, and limits are recorded in
+P1's v42 capture supplied the exact source layout for Copy/Convert packet 49.
+The renderer now handles that one captured sample-zero 4x-to-1x view; other
+EDRAM layout aliases remain fail-closed. The 14-draw transition is not replaying
+fully. The resolve fragment shader is still an explicit implementation of the
+decoded Copy state, not a verified retail image match. PM4 interrupt to guest
+callback attribution also remains incomplete. Build identities, checks, and
+limits are recorded in
 [`process2_ordered_copy_geometry_capture_20261027.json`](../../evidence/process2_ordered_copy_geometry_capture_20261027.json).
+
+## Captured packet-49 sample-zero source view (2026-10-27)
+
+P1's v42 same-run trace shows packet 24 drawing to color base `0x0`, depth
+base `0x2d0`, extent 1280x720, pitch 640, 4x MSAA, and RGBA8 gamma. Copy/Convert
+packet 49 then selects source 0/sample 0 and describes that same base and extent
+as pitch 1280, 1x, RGBA8 linear; it converts to format 6 at `0x0975E000`.
+The renderer now accepts only this exact observed case and executes the captured
+Copy rectangle with the existing 4x `sampler2DMS` path at sample index 0. Other
+non-matching EDRAM source layouts still fail closed. When a later draw changes
+layout before a Copy boundary, the diagnostic now prints both packet ordinals
+and full target layouts for the next trace.
+
+The renderer regression feeds the same captured-shaped draw/copy pair through
+the ordered executor and direct Vulkan submission and requires identical
+readback. Native Linux CTest passed 4/4, plugin CTest passed 6/6, both with
+`VK_LAYER_KHRONOS_validation`; the Android ARM64/API 26 renderer core also
+compiled. Linux plugin SHA-256 is
+`d4feb4968ba496b625a578205f2c0b09a7b73e9ea54ecc9af2b36a42ee4184ff`, Build ID
+`563c64eb612333d04d54df1f08fba302e9ab5b12`.
+
+This only validates ordered submission equivalence inside the renderer; it
+does not prove the selected Vulkan sample matches Xenos EDRAM addressing or a
+retail pixel. The v42 capture used the preceding plugin build, and this change
+has not yet been replayed against the game. Its next recorded blocker is draw
+packet 25 changing target layout before Copy packet 53. The full transition,
+depth/stencil preservation across layout changes, and interrupt/callback join
+remain open. See
+[`process2_packet49_sample0_edram_view_20261027.json`](../../evidence/process2_packet49_sample0_edram_view_20261027.json).

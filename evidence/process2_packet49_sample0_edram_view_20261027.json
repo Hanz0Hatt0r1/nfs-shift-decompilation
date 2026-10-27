@@ -1,0 +1,103 @@
+{
+  "schema": "shift.process2.packet49_sample0_edram_view.v1",
+  "date": "2026-10-27",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "retail_observation": {
+    "capture": "P1 v42 same-run Linux capture",
+    "capture_directory": "/dev/shm/nfs-shift-p1-post-bink-worker-route-v42-p2diagnostic-20261027",
+    "capture_log": "bin/logs/nfs_shift_001.2.log",
+    "capture_log_sha256": "ec4a92962c3cd4a9c74a72e2618d10c54b5d07442d18fd5390ef8fb048fe2f2b",
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "captured_plugin_sha256": "e9c5873adac7dd14695ae586dac89fad04a7e935e54c5dc58a6fa5f8f0981e7e",
+    "operations": [
+      {
+        "type": "draw",
+        "packet": 24,
+        "color_base_tiles": "0x0",
+        "depth_base_tiles": "0x2d0",
+        "guest_color_format": 1,
+        "extent": [1280, 720],
+        "surface_pitch": 640,
+        "samples": 4
+      },
+      {
+        "type": "copy_convert",
+        "packet": 49,
+        "raw_source_registers": {
+          "surface_info": "0x14000500",
+          "color_info": "0x0",
+          "depth_info": "0x2d0",
+          "mode_control": "0x6"
+        },
+        "source": {
+          "source_select": 0,
+          "sample_select": 0,
+          "color_base_tiles": "0x0",
+          "depth_base_tiles": "0x2d0",
+          "guest_color_format": 0,
+          "extent": [1280, 720],
+          "surface_pitch": 1280,
+          "samples": 1
+        },
+        "destination": {
+          "guest_address": "0x0975e000",
+          "extent": [1280, 720],
+          "format": 6,
+          "clear_color": false,
+          "clear_depth": false
+        },
+        "captured_geometry": {
+          "topology": 2,
+          "index_count": 3,
+          "auto_index": true,
+          "vertex_bytes": 24
+        }
+      }
+    ],
+    "subsequent_blocker": "In the v42 run, draw packet 25 changed target layout before Copy/Convert packet 53; physical target persistence across that transition is not implemented."
+  },
+  "implementation": {
+    "files": [
+      "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
+      "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
+      "native_vulkan/rexglue_plugin/README.md"
+    ],
+    "supported_signature": "Only source-0/sample-0 format-6 Convert from a same-base/same-extent 4x RGBA8 gamma target (pitch P) through the captured 1x RGBA8 linear source view (pitch 2P), with matching depth base/format and no clear side effects.",
+    "execution": "The ordered executor uses the captured Copy rectangle and the existing Vulkan multisample texture path to read sample index 0 from the active 4x target.",
+    "other_layout_aliases": "Remain fail-closed.",
+    "diagnostics": "A draw layout change before a Copy boundary reports the previous and next packet ordinals and full color/depth layout fields."
+  },
+  "verification": {
+    "native_linux": {
+      "command": "cmake --build native_vulkan/build -j2 && VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir native_vulkan/build --output-on-failure",
+      "result": "passed",
+      "tests": "4/4",
+      "new_regressions": [
+        "Captured-shaped packet-24 4x gamma draw followed by packet-49 1x sample-zero source layout matches direct Vulkan submission readback.",
+        "Unsupported Copy source reinterpretations still fail closed and include source and active layouts.",
+        "A draw target layout change before Copy reports both captured layouts."
+      ]
+    },
+    "linux_plugin": {
+      "command": "cmake --build /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --target rexgpu-shift-native -j2 && VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
+      "result": "passed",
+      "tests": "6/6",
+      "plugin_sha256": "d4feb4968ba496b625a578205f2c0b09a7b73e9ea54ecc9af2b36a42ee4184ff",
+      "build_id": "563c64eb612333d04d54df1f08fba302e9ab5b12"
+    },
+    "android_arm64_api26": {
+      "command": "cmake --build /home/pes/work/.build-process2-p2161-android-renderer-20261027 --target shift_xbox_live_vulkan_renderer -j2",
+      "result": "compiled",
+      "abi": "arm64-v8a",
+      "vulkan_minimum": "1.1",
+      "renderer_object_sha256": "105a623903b52bc4cf35bc6368c56025233408e4efee99b53840aa0618fbac19"
+    }
+  },
+  "limitations": [
+    "The P1 v42 run used the preceding plugin build; this change has not been replayed in the retail game.",
+    "Synthetic readback equivalence validates executor routing only, not Xenos sample-index mapping, physical EDRAM alias semantics, or retail pixel parity.",
+    "The next captured draw-layout transition at packet 25 / Copy boundary 53 and the rest of the transition package remain unresolved.",
+    "The Linux plugin build and Android renderer-core compile do not verify Android surface presentation or Mali execution."
+  ]
+}

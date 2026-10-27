@@ -4869,6 +4869,32 @@ bool submit_captured_vulkan_operation_stream(
             a.sample_count == b.sample_count &&
             a.surface_pitch == b.surface_pitch;
     };
+    // Packet 49 in the retail trace uses this source view over the immediately
+    // preceding 4x gamma target. The current resolve path can read sample 0
+    // from that multisampled image; all other EDRAM reinterpretations stay
+    // fail-closed until their physical sample/tile mapping is implemented.
+    const auto is_sample0_gamma_4x_to_linear_1x_source =
+        [](const CapturedRasterState& draw,
+           const CapturedRasterState& source,
+           const CapturedCopyState& copy) {
+            return copy.source_select == 0 && copy.sample_select == 0 &&
+                copy.command == CapturedCopyCommand::Convert &&
+                copy.destination_format == 6 && !copy.color_clear_enable &&
+                !copy.depth_clear_enable && !draw.depth_only &&
+                !source.depth_only && draw.sample_count == 4 &&
+                source.sample_count == 1 &&
+                draw.color_write_mask != 0 &&
+                draw.color_format == CapturedColorTargetFormat::Rgba8Gamma &&
+                source.color_format == CapturedColorTargetFormat::Rgba8Linear &&
+                draw.guest_color_format == 1 &&
+                source.guest_color_format == 0 &&
+                draw.color_base_tiles == source.color_base_tiles &&
+                draw.depth_base_tiles == source.depth_base_tiles &&
+                draw.depth_format == source.depth_format &&
+                draw.width == source.width && draw.height == source.height &&
+                draw.surface_pitch <= UINT32_MAX / 2u &&
+                source.surface_pitch == draw.surface_pitch * 2u;
+        };
     const auto describe_target_layout = [](const CapturedRasterState& raster) {
         std::ostringstream description;
         description << "{color_base=0x" << std::hex
@@ -4888,6 +4914,7 @@ bool submit_captured_vulkan_operation_stream(
 
     size_t preflight_draw_count = 0;
     uint32_t preflight_first_draw = std::numeric_limits<uint32_t>::max();
+    uint32_t preflight_first_packet = std::numeric_limits<uint32_t>::max();
     std::vector<CapturedRasterState> preflight_targets;
     bool found_presenter_copy = false;
     for (size_t i = 0; i < operations.size(); ++i) {
@@ -4901,7 +4928,11 @@ bool submit_captured_vulkan_operation_stream(
                 std::ostringstream message;
                 message << "draw packet " << operation.packet_index
                         << " changes target layout before a Copy/Convert boundary; "
-                           "ordered EDRAM target persistence is unavailable";
+                           "ordered EDRAM target persistence is unavailable; prior draw packet "
+                        << preflight_first_packet << " layout="
+                        << describe_target_layout(
+                               draws[preflight_first_draw].raster)
+                        << ", next layout=" << describe_target_layout(draw_raster);
                 return fail(message.str(), error);
             }
             if (preflight_draw_count == 0) {
@@ -4934,6 +4965,7 @@ bool submit_captured_vulkan_operation_stream(
                 }
                 if (!known_layout) preflight_targets.push_back(draw_raster);
                 preflight_first_draw = operation.draw_index;
+                preflight_first_packet = operation.packet_index;
             }
             ++preflight_draw_count;
             continue;
@@ -4999,7 +5031,10 @@ bool submit_captured_vulkan_operation_stream(
         } else if (operation.source_raster_ready &&
                    !same_target_layout(
                        draws[preflight_first_draw].raster,
-                       operation.source_raster)) {
+                       operation.source_raster) &&
+                   !is_sample0_gamma_4x_to_linear_1x_source(
+                       draws[preflight_first_draw].raster,
+                       operation.source_raster, operation.copy_state)) {
             std::ostringstream message;
             message << "Copy/Convert packet " << operation.packet_index
                     << " reinterprets the active draw segment's EDRAM source layout; "
@@ -5022,6 +5057,7 @@ bool submit_captured_vulkan_operation_stream(
         found_presenter_copy |= writes_presenter;
         preflight_draw_count = 0;
         preflight_first_draw = std::numeric_limits<uint32_t>::max();
+        preflight_first_packet = std::numeric_limits<uint32_t>::max();
     }
     if (presenter_copy && !found_presenter_copy && preflight_draw_count == 0) {
         return fail("presenter Copy/Convert has no preceding captured draw segment",
