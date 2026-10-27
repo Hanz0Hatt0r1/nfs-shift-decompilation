@@ -1094,6 +1094,67 @@ int main(int argc, char** argv) {
                      "linear source replay failed: " << packet49_error << '\n';
         return 1;
       }
+
+      // Regression shaped like the live ordered packet 24..28 -> Copy 53
+      // transition. Its shaders and triangles are synthetic smoke inputs; the
+      // test checks ordered executor acceptance and equality with its direct
+      // mixed-sample path, not retail image parity.
+      std::vector<shift::xbox::CapturedVulkanDraw> packet24_to_53_draws(
+          5, packet49_draw);
+      for (size_t i = 1; i < packet24_to_53_draws.size(); ++i) {
+        packet24_to_53_draws[i].raster.sample_count = 1;
+        packet24_to_53_draws[i].raster.surface_pitch = 1280;
+      }
+      std::vector<shift::xbox::CapturedVulkanOperation>
+          packet24_to_53_operations;
+      for (uint32_t i = 0; i < packet24_to_53_draws.size(); ++i) {
+        shift::xbox::CapturedVulkanOperation operation{};
+        operation.type = shift::xbox::CapturedVulkanOperation::Type::Draw;
+        operation.packet_index = 24u + i;
+        operation.draw_index = i;
+        packet24_to_53_operations.push_back(operation);
+      }
+      auto packet53_copy_operation = packet49_copy_operation;
+      packet53_copy_operation.packet_index = 53;
+      packet24_to_53_operations.push_back(packet53_copy_operation);
+      std::vector<uint32_t> packet24_to_53_direct_readback;
+      std::vector<uint32_t> packet24_to_53_ordered_readback;
+      if (!shift::xbox::submit_captured_vulkan_frame(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, packet24_to_53_draws,
+              &packet49_error, &packet24_to_53_direct_readback,
+              enabled_features.geometryShader, &packet49_copy, false, {},
+              pipeline_cache, nullptr) ||
+          !shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, packet24_to_53_draws,
+              packet24_to_53_operations, &packet49_error,
+              &packet24_to_53_ordered_readback,
+              enabled_features.geometryShader, &packet49_copy, false, {},
+              pipeline_cache, nullptr) ||
+          packet24_to_53_ordered_readback != packet24_to_53_direct_readback) {
+        std::cerr << "ordered packet 24..28 4x-to-1x Draw/Copy 53 transition "
+                     "failed or differed from its mixed-sample path: "
+                  << packet49_error << '\n';
+        return 1;
+      }
+      auto unsupported_transition_draws = packet24_to_53_draws;
+      unsupported_transition_draws[1].raster.surface_pitch = 1272;
+      std::string unsupported_transition_error;
+      if (shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, unsupported_transition_draws,
+              packet24_to_53_operations, &unsupported_transition_error,
+              nullptr, enabled_features.geometryShader, &packet49_copy, false,
+              {}, pipeline_cache, nullptr) ||
+          unsupported_transition_error.find(
+              "draw packet 25 changes target layout before a Copy/Convert boundary") ==
+              std::string::npos) {
+        std::cerr << "ordered executor accepted an unobserved 4x-to-1x target "
+                     "pitch: " << unsupported_transition_error << '\n';
+        return 1;
+      }
+
       auto unsupported_packet49_source = packet49_copy_operation;
       unsupported_packet49_source.source_raster.surface_pitch = 1272;
       std::string unsupported_packet49_error;

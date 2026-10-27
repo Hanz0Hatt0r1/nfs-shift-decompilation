@@ -1934,3 +1934,33 @@ packet 25 changing target layout before Copy packet 53. The full transition,
 depth/stencil preservation across layout changes, and interrupt/callback join
 remain open. See
 [`process2_packet49_sample0_edram_view_20261027.json`](../../evidence/process2_packet49_sample0_edram_view_20261027.json).
+
+## Captured packet-24 to packet-53 mixed-sample segment (2026-10-28)
+
+P1's v44 run exposed the exact next draw boundary: packet 24 targets 1280x720
+RGBA8 gamma at color base `0x0`, depth base `0x2d0`, pitch 640 and 4x MSAA;
+packet 25 keeps those bases and extent but switches to pitch 1280 and 1x. The
+ordered segment then contains draws 26–28 and Copy/Convert packet 53. That copy
+uses source 0/sample 0, the same target bases, a 1x pitch-1280 source view, and
+writes format 6 to `0x0975E000` using its captured rectangle geometry. Packet
+49 passed its prior source-layout guard in this v44 run. The capture and its
+raw-log hash are recorded in
+[`process2_packet24_to_53_ordered_mixed_sample_20261028.json`](../../evidence/process2_packet24_to_53_ordered_mixed_sample_20261028.json).
+
+The ordered executor now routes only the same-base, same-depth-base, same-
+format, same-extent RGBA8 gamma 4x-to-1x transition with exactly doubled pitch
+through the existing mixed-sample Vulkan submission path. The path resolves
+the 4x color attachment to its 1x attachment before submitting the subsequent
+1x draws and captured Copy 53 geometry; a near-match pitch of 1272 remains
+rejected. This is a candidate translation of the observed operation order:
+Vulkan's ordinary color resolve has not been shown to reproduce Xenos EDRAM
+sample/backing semantics. The synthetic regression proves ordered/direct
+executor readback equality only, not retail image parity.
+
+Native Linux tests passed 4/4 and plugin tests passed 6/6 with
+`VK_LAYER_KHRONOS_validation`. The Android ARM64/API 26 renderer core and
+regression executable compiled, but no device was attached for execution. P1
+has the new Linux DSO path, SHA-256, and Build ID for a same-run retail replay.
+The full 14-draw operation package, intermediate target persistence, retail
+readback, presentation, and the one-event PM4 interrupt/callback count mismatch
+remain unverified.
