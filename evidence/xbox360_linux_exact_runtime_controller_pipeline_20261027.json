@@ -39,7 +39,7 @@
         "sha256": "bb282e4b157a16be839da66ef1539e9b1161d5b1e61a3b8fffcb6d44c8938a8f"
       },
       "reproduction_runner": {
-        "path": "tools/xbox360/capture_linux_exact_runtime_controller_pipeline_20261027.py",
+        "path": "tools/xbox360/capture_linux_exact_runtime_controller_pipeline_20261027_pre_runtime_override.py",
         "sha256": "c10209424c95a3bde879b9f240dcfe6e766a1ef7309a898fa4583526fd55e675"
       },
       "gdb_log": {

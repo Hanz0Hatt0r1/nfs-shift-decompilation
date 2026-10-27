@@ -52,7 +52,7 @@
       "log_sha256": "b8c68bb067c870853bfc89dbe7180cd0be84567198c77260af792428dd827bbe"
     },
     "runner": {
-      "path": "tools/xbox360/capture_linux_exact_runtime_controller_pipeline_20261027.py",
+      "path": "tools/xbox360/capture_linux_exact_runtime_controller_pipeline_20261027_pre_runtime_override.py",
       "sha256": "c10209424c95a3bde879b9f240dcfe6e766a1ef7309a898fa4583526fd55e675",
       "log_path_outside_git": "/tmp/nfs-shift-p1-queue-event-contract-enqueue-slots-clean-20261027/runner.log",
       "log_sha256": "99a861c32079e6a6b7c960989fd6621390df7b50ab6c89e01f3243290c64a554"
