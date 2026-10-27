@@ -120,6 +120,7 @@ uint32_t NextGuestRingTraceRecord() {
 }
 
 constexpr uint32_t kMaxGuestRingTraceRecords = 32768;
+constexpr uint32_t kMaxGuestInterruptTraceRecords = 8192;
 
 const std::string kDebugFragmentColorShader =
     "#version 450\n"
@@ -3284,7 +3285,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 static std::atomic<uint32_t> interrupt_trace_count{0};
                 const uint32_t trace_index = interrupt_trace_count.fetch_add(
                     1, std::memory_order_relaxed);
-                if (trace_index < 128u) {
+                if (trace_index < kMaxGuestInterruptTraceRecords) {
                   std::ostringstream callback_summary;
                   bool first_callback = true;
                   for (uint32_t cpu = 0; cpu < callback_trace.size(); ++cpu) {
@@ -3306,6 +3307,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                       ring_guest_address, packet_ordinal,
                       resolved.source_guest_address, packet.byte_offset,
                       cpu_mask, dispatched_cpu_mask, callback_summary.str());
+                } else if (trace_index == kMaxGuestInterruptTraceRecords) {
+                  REXLOG_WARN(
+                      "shift-native: ring trace PM4_INTERRUPT limit reached; "
+                      "stopped recording after {} packets",
+                      kMaxGuestInterruptTraceRecords);
                 }
               }
             }

@@ -206,6 +206,9 @@ if(SHIFT_REXGLUE_NATIVE_BUILD_TESTS)
   add_test(NAME rexgpu_shift_native_live_ring_check
     COMMAND rexgpu_shift_native_live_ring_check $<TARGET_FILE:rexgpu-shift-native>
   )
+  set_tests_properties(rexgpu_shift_native_live_ring_check PROPERTIES
+    ENVIRONMENT "SHIFT_NATIVE_VULKAN_TRACE_RING=0"
+  )
   add_test(NAME rexgpu_shift_native_live_ring_write_trace_check
     COMMAND rexgpu_shift_native_live_ring_check $<TARGET_FILE:rexgpu-shift-native>
   )

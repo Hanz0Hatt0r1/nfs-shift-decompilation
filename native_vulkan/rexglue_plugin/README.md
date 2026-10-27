@@ -1705,6 +1705,25 @@ this iteration, and the active Redmi game was left running on the disclaimer.
 Evidence and limits are in
 [`process2_mode6_sources_and_interrupt_trace_20261027.json`](../../evidence/process2_mode6_sources_and_interrupt_trace_20261027.json).
 
+## Extended PM4 interrupt trace window (2026-10-27)
+
+The opt-in ring trace now retains up to 8,192 `PM4_INTERRUPT` records per
+plugin lifetime (previously 128). Each record keeps the ring guest address,
+source and generation, batch pointers, expanded packet ordinal, packet source
+and byte offset, requested/dispatched CPU masks, and every asserted CPU's
+callback address, callback data, and status. A single warning marks the cap.
+No interrupt dispatch or guest-runtime behavior changes; with
+`SHIFT_NATIVE_VULKAN_TRACE_RING=0`, interrupt trace formatting and its counter
+remain untouched. The live-ring smoke has explicit trace-on and trace-off
+checks.
+
+The last capture recorded 128 interrupts in 4.2 seconds before reaching the
+old cap, about 30 records/second. The new bound has capacity for that observed
+rate across more than four minutes, including the requested 40–50 second
+post-Bink window. A new retail run is still required to confirm its actual
+interrupt rate and capture the queue/event/counter interval. See
+[`process2_interrupt_trace_window_20261027.json`](../../evidence/process2_interrupt_trace_window_20261027.json).
+
 ## Redmi disclaimer follow-up and ARM64 renderer check (2026-10-27)
 
 The user confirmed that the legal disclaimer advances automatically and does

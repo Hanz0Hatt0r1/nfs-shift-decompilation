@@ -659,6 +659,12 @@ int main(int argc, char** argv) {
       std::cerr << diagnostics << '\n';
       return fail("PM4_INTERRUPT trace lost its packet, CPU mask, callback, or dispatch result");
     }
+  } else if (ring_trace_environment &&
+             std::string(ring_trace_environment) == "0" &&
+             diagnostics.find("ring trace PM4_INTERRUPT #") !=
+                 std::string::npos) {
+    std::cerr << diagnostics << '\n';
+    return fail("PM4_INTERRUPT diagnostics were emitted with ring tracing disabled");
   }
   const char* const submission_marker =
       "submitted 3 captured indexed draw packets to the Vulkan presenter";
