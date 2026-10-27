@@ -11,7 +11,7 @@
       "Retain each Copy/Convert packet's own raw source registers and compiled shaders; reject unresolved or unprepared copy payloads before submission."
     ],
     "texture_descriptor": "Prepared Vulkan textures now retain their guest address, format, endian, pitch, tiled, and packed-mip descriptor fields for a future ordered-copy resource lookup. No copy result is currently substituted for guest RAM texture bytes.",
-    "copy_convert_primitives": "Added standalone Vulkan output paths for captured format-26 all-four-sample conversion and format-31 sample-zero copies (1x and 4x sources). Exact synthetic texel readbacks and Vulkan 1.1 SPIR-V validation pass; see process2_copy_convert_primitives_20261027.json.",
+    "copy_convert_primitives": "Added standalone Vulkan output paths for captured format-26 all-four-sample conversion and format-31 sample-zero copies (1x and 4x sources), plus GPU-resident destination images cached by guest address and complete captured layout. Repeated submissions reuse the target with exact readback; see process2_copy_convert_primitives_20261027.json.",
     "interrupt_trace": "With ring tracing enabled, each PM4_INTERRUPT record includes generation, batch read/write pointers, ring guest address, expanded packet ordinal, source IB and byte offset, requested/dispatched CPU masks, and per-asserted-CPU callback guest address, callback data, and dispatch status."
   },
   "verification": {
@@ -22,7 +22,7 @@
   "not_implemented": [
     "No ordered Vulkan render/copy execution has been added for the 14-draw transition package. The format-26 and format-31 paths are standalone and are not invoked by the live operation stream.",
     "No persistent aliased Xenos EDRAM color or depth/stencil backing exists.",
-    "The captured format-12 4x to format-26 conversion and seven format-31 outputs have shader/render-target primitives, but their clear effects, guest-address writeback/cache lookup, and ordered execution remain unsupported.",
+    "The captured format-12 4x to format-26 conversion and seven format-31 outputs have shader/render-target primitives and standalone GPU destination caching, but clear effects, source association, use of cached copies by later guest texture fetches, and ordered execution remain unsupported.",
     "No current-device PM4_INTERRUPT callback-address trace was collected; the running phone plugin predates this instrumentation.",
     "No trace has been sent to Process 1 because there is not yet a fresh live trace to share."
   ],

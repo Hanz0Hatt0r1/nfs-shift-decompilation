@@ -1520,8 +1520,12 @@ its transition batch contains an all-four-sample format-26 resolve, seven
 single-sample format-31 intermediate copies at different extents, and a final
 frontbuffer copy. The current renderer handles the final copy path but does not
 write those internal copies to guest memory or preserve their ordering as
-render-target operations. See the exact phone register sequence and failure
-limits in
+render-target operations. Standalone intermediate copies now write into
+GPU-resident Vulkan images cached by destination guest address and the complete
+captured destination layout. Repeated copies reuse the image and transition its
+layout under Vulkan 1.1 barriers; later captured texture fetches do not yet read
+this cache, and the 14-operation stream is still not submitted in PM4 order. See
+the exact phone register sequence and failure limits in
 [`process2_redmi_transition_copy_chain_20261026.json`](../../evidence/process2_redmi_transition_copy_chain_20261026.json).
 
 ## Captured 16-bit floating-point targets (2026-10-26)
@@ -1545,12 +1549,12 @@ using Vulkan 1.1.131. The updated Android plugin compiled but was not installed
 over the running retail app; the game stayed at the disclaimer with the same
 PID and screenshot hash before and after the offscreen check.
 
-This adds target-format handling, not the missing ordered mode-6 operation
-stream. EDRAM source association, the all-four-sample resolve, format-26 and
-format-31 intermediate writes, and color/depth clear side effects remain
-unimplemented. The older 14-draw failure remains ambiguous between target
-format and copy source extent. Detailed captured values, build identities,
-tests, and limits are in
+This adds target-format handling and reusable standalone intermediate images,
+not the missing ordered mode-6 operation stream. EDRAM source association,
+using cached copies as later guest texture inputs, guest-memory writeback and
+endian semantics, and color/depth clear side effects remain unimplemented. The
+older 14-draw failure remains ambiguous between target format and copy source
+extent. Detailed captured values, build identities, tests, and limits are in
 [`process2_redmi_xenos_16bit_targets_20261026.json`](../../evidence/process2_redmi_xenos_16bit_targets_20261026.json).
 
 ## Captured offscreen raster extents (2026-10-27)

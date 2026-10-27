@@ -156,6 +156,9 @@ class CapturedVulkanTextureCache {
     size_t cached_draw_buffer_count() const;
     size_t cached_descriptor_layout_count() const;
     size_t descriptor_layout_cache_hits() const;
+    // GPU-resident intermediate Copy/Convert destinations keyed by guest
+    // address and the complete captured destination layout.
+    size_t cached_guest_copy_image_count() const;
 
  private:
     struct Impl;
@@ -180,7 +183,9 @@ class CapturedVulkanTextureCache {
 // When draw_visibility is supplied, the renderer waits for completion and
 // returns one optional non-precise occlusion result per submitted draw.
 // The optional operation stream preserves packet order for validation and
-// failure diagnostics. Intermediate Copy/Convert operations are not executed.
+// failure diagnostics. A standalone intermediate Copy/Convert can retain its
+// destination image in texture_cache; this function still does not execute an
+// ordered multi-operation stream or model Xenos EDRAM aliasing.
 bool submit_captured_vulkan_frame(
     VkPhysicalDevice physical_device,
     VkDevice device,

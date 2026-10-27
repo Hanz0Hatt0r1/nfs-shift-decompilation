@@ -33,6 +33,13 @@ struct ImageResource {
   VkDeviceSize allocation_size = 0;
 };
 
+void destroy_image_resource(VkDevice device, ImageResource& resource) {
+  if (resource.view) vkDestroyImageView(device, resource.view, nullptr);
+  if (resource.image) vkDestroyImage(device, resource.image, nullptr);
+  if (resource.memory) vkFreeMemory(device, resource.memory, nullptr);
+  resource = {};
+}
+
 struct CachedGraphicsPipeline;
 
 struct DrawTextureResources {
@@ -105,8 +112,53 @@ struct CachedR8Texture {
   bool initialized = false;
 };
 
+struct GuestCopyImageKey {
+  std::array<uint32_t, 14> values{};
+
+  bool operator==(const GuestCopyImageKey& other) const noexcept {
+    return values == other.values;
+  }
+};
+
+struct GuestCopyImageKeyHash {
+  size_t operator()(const GuestCopyImageKey& key) const noexcept {
+    uint64_t hash = 14695981039346656037ull;
+    for (uint32_t value : key.values) {
+      hash ^= value;
+      hash *= 1099511628211ull;
+    }
+    return static_cast<size_t>(hash);
+  }
+};
+
+GuestCopyImageKey make_guest_copy_image_key(const CapturedCopyState& state) {
+  return {{{state.destination_base,
+            state.destination_pitch,
+            state.destination_height,
+            state.destination_format,
+            state.destination_number_format,
+            static_cast<uint32_t>(state.destination_exp_bias),
+            state.destination_endian,
+            state.sample_select,
+            state.destination_swap_red_blue,
+            state.destination_array,
+            state.destination_slice,
+            state.source_select,
+            static_cast<uint32_t>(state.command),
+            state.source_gamma}}};
+}
+
+struct CachedGuestCopyImage {
+  ImageResource image;
+  uint64_t estimated_bytes = 0;
+  uint64_t last_used_frame = 0;
+  bool initialized = false;
+};
+
 constexpr uint64_t kR8TextureCacheBudgetBytes = 16u * 1024u * 1024u;
 constexpr uint64_t kR8TextureCacheLifetimeFrames = 120;
+constexpr uint64_t kGuestCopyImageCacheBudgetBytes = 32u * 1024u * 1024u;
+constexpr uint64_t kGuestCopyImageCacheLifetimeFrames = 120;
 constexpr uint64_t kDrawBufferCacheBudgetBytes = 16u * 1024u * 1024u;
 constexpr size_t kDrawBufferCacheEntryLimit = 128;
 constexpr size_t kGraphicsPipelineCacheEntryLimit = 128;
@@ -310,13 +362,7 @@ struct FrameResources {
   }
 
   void destroy_image(ImageResource &resource) const {
-    if (resource.view)
-      vkDestroyImageView(device, resource.view, nullptr);
-    if (resource.image)
-      vkDestroyImage(device, resource.image, nullptr);
-    if (resource.memory)
-      vkFreeMemory(device, resource.memory, nullptr);
-    resource = {};
+    destroy_image_resource(device, resource);
   }
 };
 
@@ -329,6 +375,9 @@ struct TextureCacheState {
   std::unordered_map<size_t, CachedDrawBuffers> draw_buffers;
   std::unordered_map<TextureCacheKey, CachedR8Texture, TextureCacheKeyHash>
       textures;
+  std::unordered_map<GuestCopyImageKey, CachedGuestCopyImage,
+                     GuestCopyImageKeyHash> guest_copy_images;
+  uint64_t guest_copy_image_bytes = 0;
   std::unordered_map<GraphicsPipelineKey, CachedGraphicsPipeline,
                      GraphicsPipelineKeyHash>
       graphics_pipelines;
@@ -814,6 +863,7 @@ bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
     if (!cache) return true;
     if (cache->device && cache->device != device &&
         (!cache->draw_buffers.empty() || !cache->textures.empty() ||
+         !cache->guest_copy_images.empty() ||
          !cache->graphics_pipelines.empty() ||
          !cache->descriptor_layouts.empty() ||
          !cache->samplers.empty() || !cache->in_flight.empty())) {
@@ -835,7 +885,13 @@ bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
             return cache->frame - entry.second.last_used_frame >
                    kR8TextureCacheLifetimeFrames;
         });
-    if ((evicting || evicting_draw_buffers) &&
+    const bool evicting_guest_copy_images = std::any_of(
+        cache->guest_copy_images.begin(), cache->guest_copy_images.end(),
+        [&](const auto& entry) {
+            return cache->frame - entry.second.last_used_frame >
+                   kGuestCopyImageCacheLifetimeFrames;
+        });
+    if ((evicting || evicting_draw_buffers || evicting_guest_copy_images) &&
         !wait_for_all_frames(cache, error)) {
         return false;
     }
@@ -855,6 +911,17 @@ bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
             destroy_cached_draw_buffers(device, it->second,
                                         &cache->draw_buffers_bytes);
             it = cache->draw_buffers.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    for (auto it = cache->guest_copy_images.begin();
+         it != cache->guest_copy_images.end();) {
+        if (cache->frame - it->second.last_used_frame >
+            kGuestCopyImageCacheLifetimeFrames) {
+            cache->guest_copy_image_bytes -= it->second.estimated_bytes;
+            destroy_image_resource(device, it->second.image);
+            it = cache->guest_copy_images.erase(it);
         } else {
             ++it;
         }
@@ -947,6 +1014,9 @@ void finish_texture_cache_frame(TextureCacheState* cache) {
     for (auto& [key, texture] : cache->textures) {
         if (texture.last_used_frame == cache->frame) texture.initialized = true;
     }
+    for (auto& [key, image] : cache->guest_copy_images) {
+        if (image.last_used_frame == cache->frame) image.initialized = true;
+    }
 }
 
 void clear_texture_cache(TextureCacheState* cache) {
@@ -974,6 +1044,11 @@ void clear_texture_cache(TextureCacheState* cache) {
         destroy_cached_r8_texture(cache->device, texture);
     }
     cache->textures.clear();
+    for (auto& [key, image] : cache->guest_copy_images) {
+        destroy_image_resource(cache->device, image.image);
+    }
+    cache->guest_copy_images.clear();
+    cache->guest_copy_image_bytes = 0;
     for (auto& [draw_index, buffers] : cache->draw_buffers) {
         destroy_cached_draw_buffers(cache->device, buffers,
                                     &cache->draw_buffers_bytes);
@@ -1129,6 +1204,52 @@ VkFormat captured_copy_destination_format(uint32_t format) {
         case 31: return VK_FORMAT_R16G16_SFLOAT;
         default: return VK_FORMAT_UNDEFINED;
     }
+}
+
+bool acquire_guest_copy_image(
+    TextureCacheState* cache,
+    const VkPhysicalDeviceMemoryProperties& memory_properties,
+    VkDevice device,
+    const CapturedCopyState& state,
+    uint32_t width,
+    uint32_t height,
+    VkFormat format,
+    CachedGuestCopyImage** output,
+    std::string* error) {
+    if (!cache || !output || !width || !height ||
+        state.destination_base == 0 || format == VK_FORMAT_UNDEFINED) {
+        return fail("invalid guest Copy/Convert image cache request", error);
+    }
+    *output = nullptr;
+    const GuestCopyImageKey key = make_guest_copy_image_key(state);
+    auto found = cache->guest_copy_images.find(key);
+    if (found == cache->guest_copy_images.end()) {
+        CachedGuestCopyImage created{};
+        if (!create_render_attachment(
+                memory_properties, device, width, height, format,
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                    VK_IMAGE_USAGE_SAMPLED_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_1_BIT,
+                &created.image, error)) {
+            destroy_image_resource(device, created.image);
+            return false;
+        }
+        created.estimated_bytes = created.image.allocation_size;
+        if (created.estimated_bytes > kGuestCopyImageCacheBudgetBytes ||
+            cache->guest_copy_image_bytes >
+                kGuestCopyImageCacheBudgetBytes - created.estimated_bytes) {
+            destroy_image_resource(device, created.image);
+            return fail("guest Copy/Convert image cache exceeded its 32 MiB budget",
+                        error);
+        }
+        found = cache->guest_copy_images.emplace(key, std::move(created)).first;
+        cache->guest_copy_image_bytes += found->second.estimated_bytes;
+    }
+    CachedGuestCopyImage& image = found->second;
+    image.last_used_frame = cache->frame;
+    *output = &image;
+    return true;
 }
 
 uint32_t color_format_bytes(VkFormat format) {
@@ -3174,6 +3295,10 @@ size_t CapturedVulkanTextureCache::descriptor_layout_cache_hits() const {
     return impl_ ? impl_->state.descriptor_layout_cache_hits : 0;
 }
 
+size_t CapturedVulkanTextureCache::cached_guest_copy_image_count() const {
+    return impl_ ? impl_->state.guest_copy_images.size() : 0;
+}
+
 bool submit_captured_vulkan_frame(
     VkPhysicalDevice physical_device,
     VkDevice device,
@@ -3366,7 +3491,8 @@ bool submit_captured_vulkan_frame(
                 &destination_properties);
             constexpr VkFormatFeatureFlags required_features =
                 VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT |
-                VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+                VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+                VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
             if ((destination_properties.optimalTilingFeatures &
                  required_features) != required_features) {
                 return fail("captured intermediate Copy/Convert destination format is not color-attachable and sampleable on this Vulkan device",
@@ -3406,6 +3532,23 @@ bool submit_captured_vulkan_frame(
             texture_cache_state, source_readback, draw_visibility);
         if (!submitted) append_captured_operation_stream(error, operations);
         return submitted;
+    }
+    CachedGuestCopyImage* cached_copy_image = nullptr;
+    const bool persistent_copy_target = copy &&
+        copy->state.destination_format != 6 && texture_cache_state;
+    VkImage copy_output_image = output_image;
+    VkImageView copy_output_view = output_view;
+    bool copy_output_written_before = output_written_before;
+    if (persistent_copy_target) {
+        if (!acquire_guest_copy_image(
+                texture_cache_state, memory_properties, device, copy->state,
+                output_width, output_height, copy_destination_format,
+                &cached_copy_image, error)) {
+            return false;
+        }
+        copy_output_image = cached_copy_image->image.image;
+        copy_output_view = cached_copy_image->image.view;
+        copy_output_written_before = cached_copy_image->initialized;
     }
     const uint32_t source_width = copy && copy->source_width
                                       ? copy->source_width
@@ -3692,7 +3835,7 @@ bool submit_captured_vulkan_frame(
         copy_framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         copy_framebuffer_info.renderPass = resources.copy_render_pass;
         copy_framebuffer_info.attachmentCount = 1;
-        copy_framebuffer_info.pAttachments = &output_view;
+        copy_framebuffer_info.pAttachments = &copy_output_view;
         copy_framebuffer_info.width = output_width;
         copy_framebuffer_info.height = output_height;
         copy_framebuffer_info.layers = 1;
@@ -3834,21 +3977,24 @@ bool submit_captured_vulkan_frame(
 
     VkImageMemoryBarrier output_to_color{};
     output_to_color.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    output_to_color.srcAccessMask = output_written_before ? VK_ACCESS_SHADER_READ_BIT : 0;
+    output_to_color.srcAccessMask = copy_output_written_before
+        ? VK_ACCESS_SHADER_READ_BIT : 0;
     output_to_color.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    output_to_color.oldLayout = output_written_before ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-                                                      : VK_IMAGE_LAYOUT_UNDEFINED;
+    output_to_color.oldLayout = copy_output_written_before
+        ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        : VK_IMAGE_LAYOUT_UNDEFINED;
     output_to_color.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     output_to_color.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     output_to_color.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    output_to_color.image = output_image;
+    output_to_color.image = copy_output_image;
     output_to_color.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     output_to_color.subresourceRange.levelCount = 1;
     output_to_color.subresourceRange.layerCount = 1;
     vkCmdPipelineBarrier(command,
-                         output_written_before ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-                                               : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                         copy_output_written_before
+                             ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                             : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0,
                          0, nullptr, 0, nullptr, 1, &output_to_color);
 
@@ -4102,7 +4248,7 @@ bool submit_captured_vulkan_frame(
                                                  : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     output_to_sample.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     output_to_sample.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    output_to_sample.image = output_image;
+    output_to_sample.image = copy_output_image;
     output_to_sample.subresourceRange = output_to_color.subresourceRange;
     vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                          output_readback ? VK_PIPELINE_STAGE_TRANSFER_BIT
@@ -4113,7 +4259,8 @@ bool submit_captured_vulkan_frame(
         readback_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         readback_copy.imageSubresource.layerCount = 1;
         readback_copy.imageExtent = {output_width, output_height, 1};
-        vkCmdCopyImageToBuffer(command, output_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        vkCmdCopyImageToBuffer(command, copy_output_image,
+                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                resources.output_readback.buffer, 1, &readback_copy);
 
         VkBufferMemoryBarrier readback_to_host{};
@@ -4136,7 +4283,7 @@ bool submit_captured_vulkan_frame(
         output_to_presenter.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         output_to_presenter.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         output_to_presenter.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        output_to_presenter.image = output_image;
+        output_to_presenter.image = copy_output_image;
         output_to_presenter.subresourceRange = output_to_color.subresourceRange;
         vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,

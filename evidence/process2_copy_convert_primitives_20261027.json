@@ -30,6 +30,8 @@
     "vulkan_device": "NVIDIA GeForce GTX 950",
     "format_26_synthetic_texel": "input (0.5, 0.25, 0.125, 1.0) produced unsigned lanes (1024, 512, 256, 2048)",
     "format_31_synthetic_texel": "input (0.5, 0.25) produced half-float lanes with bit patterns (0x3800, 0x3400), for both 1x and 4x source images",
+    "gpu_resident_destination_cache": "format-26 and format-31 synthetic outputs were written to reusable Vulkan images keyed by guest destination address and captured destination layout; repeated submissions reused the same image, with exact readback preserved",
+    "cache_lifetime": "cache clear destroyed all destination images; stale entries are aged out after 120 cache frames and frame fences are drained before eviction",
     "spirv_validation": "all three Copy/Convert fragment shaders and the constant test shader passed spirv-val --target-env vulkan1.1",
     "linux_plugin_translation_unit": "Clang object compilation passed in the isolated plugin build tree",
     "android_arm64_objects": "NDK r28c compiled the plugin and Vulkan renderer translation units in an isolated build directory; the plugin DSO was not linked or installed"
@@ -37,8 +39,8 @@
   "operation_capture": "Each PM4 Copy/Convert operation now retains its own compiled shader payload and source register snapshot. Unsupported compilation is recorded as unresolved and rejected by renderer preflight. The payload is not yet submitted in operation order.",
   "not_implemented": [
     "The live plugin captures and prepares format-26/format-31 operation shader payloads, but the renderer does not submit them as ordered intermediate copies.",
-    "The renderer does not record the 14-draw operation stream in PM4 order.",
-    "No guest-address/layout cache receives these destination images, and no guest-memory writeback occurs.",
+    "The renderer does not record the 14-draw operation stream in PM4 order; standalone cache entries are not consumed by later captured texture fetches.",
+    "Copy results are not written back into guest RAM, and Xenos endian conversion for texture fetch is not validated.",
     "The color/depth clear side effects, aliased EDRAM persistence, and depth/stencil preservation are not implemented.",
     "Destination endian modes have not been validated against guest-memory texture fetches.",
     "No Android package with these changes was installed, and the phone game was not restarted."

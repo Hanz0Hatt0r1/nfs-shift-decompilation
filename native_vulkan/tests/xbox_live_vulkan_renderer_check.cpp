@@ -558,6 +558,7 @@ int main(int argc, char** argv) {
     format31_ms_source.raster.sample_count = 4;
     std::vector<shift::xbox::CapturedVulkanDraw> format31_ms_source_draws{
         format31_ms_source};
+    shift::xbox::CapturedVulkanTextureCache guest_copy_cache;
     const auto exercise_intermediate_copy = [&](uint32_t destination_format,
                                                 VkFormat vk_format,
                                                 uint32_t destination_width,
@@ -614,7 +615,8 @@ int main(int argc, char** argv) {
       const bool converted_ok = shift::xbox::submit_captured_vulkan_frame(
           physical_device, device, queue, queue_family, target.image, target.view,
           false, destination_width, destination_height, source_draws, &error,
-          &converted, false, &intermediate_copy);
+          &converted, false, &intermediate_copy, false, {}, pipeline_cache,
+          &guest_copy_cache);
       bool payload_ok = converted_ok && !converted.empty();
       if (payload_ok && destination_format == 26) {
         const auto* components =
@@ -637,6 +639,22 @@ int main(int argc, char** argv) {
                                  [](uint32_t texel) {
                                    return texel == 0x34003800u;
                                  });
+      }
+      const size_t expected_cached_layouts = destination_format == 26 ? 1u : 2u;
+      payload_ok = payload_ok &&
+          guest_copy_cache.cached_guest_copy_image_count() ==
+              expected_cached_layouts;
+      if (payload_ok) {
+        std::vector<uint32_t> reused_output;
+        const bool reused_ok = shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, target.image,
+            target.view, false, destination_width, destination_height,
+            source_draws, &error, &reused_output, false, &intermediate_copy,
+            false, {}, pipeline_cache, &guest_copy_cache);
+        payload_ok = reused_ok && reused_output == converted &&
+            guest_copy_cache.cached_guest_copy_image_count() ==
+                expected_cached_layouts;
+        if (!reused_ok) error = "cached guest Copy/Convert image reuse failed: " + error;
       }
       destroy_test_color_image(device, &target);
       if (!payload_ok) {
@@ -2148,6 +2166,11 @@ int main(int argc, char** argv) {
           has_source_red = true;
         if (pixel & 0x000FFC00u)
           has_source_green = true;
+    }
+    guest_copy_cache.clear();
+    if (guest_copy_cache.cached_guest_copy_image_count() != 0) {
+      std::cerr << "clearing guest Copy/Convert cache retained destination images\n";
+      return 1;
     }
     texture_cache.clear();
     if (texture_cache.cached_pipeline_count() != 0 ||
