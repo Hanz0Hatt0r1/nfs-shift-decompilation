@@ -9,6 +9,11 @@
     "bin/logs/nfs_shift_001.2.log"
   ],
   "join_method": "one-to-one monotonic nearest timestamp match, maximum absolute difference 120 ms; emitted P2 interrupt IDs must remain continuous",
+  "reproduction": {
+    "tool": "native_vulkan/tools/audit_pm4_interrupt_join.py",
+    "result": "881/881 joins; P2 IDs 969..1849 contiguous; absolute delta 0..77 ms, median 22 ms",
+    "semantic_limit": "The audit confirms ordered timestamp correlation and completed outer-wrapper dispatch only; it does not claim nested callback or guest semantic equivalence."
+  },
   "summary": {
     "joined_rows": 881,
     "p2_interrupt_id_range": [
