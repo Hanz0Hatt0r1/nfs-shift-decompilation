@@ -1,0 +1,41 @@
+{
+  "schema": "shift.process2.redmi_disclaimer_auto_no_input.v1",
+  "captured_at_local": "2026-10-27 07:25 MSK",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": "13",
+    "api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 6382,
+    "adb_endpoint": "192.168.1.32:38615"
+  },
+  "observation": {
+    "screen": "legal disclaimer",
+    "screenshot": "process2_redmi_disclaimer_auto_no_input_20261027.png",
+    "screenshot_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+    "matches_earlier_disclaimer_capture": true,
+    "input_sent": false,
+    "foreground_activity": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity"
+  },
+  "live_renderer": {
+    "latest_log_timestamp": "2026-10-27 07:25:09.322 MSK",
+    "latest_submission": "13 captured indexed draw packets at 1280x720 to the Vulkan presenter; frontbuffer 0975E000",
+    "latest_copy": "source-0/sample-0 to 0975E000, 1280x720, destination format 6, R/B swap enabled",
+    "rotated_session_logs_scanned": 15,
+    "renderer_or_shader_failure_diagnostics_found": 0
+  },
+  "video_evidence": {
+    "prior_capture_record": "process2_redmi_pm4_packet_limit_20261027.json",
+    "retail_video": "Franchise_Ident.bik",
+    "first_matched_source_time_seconds": 0.9,
+    "grayscale_correlation": 0.923584642984397,
+    "interpretation": "A retail Bink frame reached Vulkan output before the legal disclaimer. This does not establish real-time playback or full video/audio parity."
+  },
+  "limits": [
+    "This screenshot shows the automatic legal disclaimer stage and the renderer remains active; it does not show a transition beyond the disclaimer.",
+    "The capture does not establish full retail graphics parity or a real-time video frame rate."
+  ]
+}
