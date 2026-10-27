@@ -53,6 +53,21 @@
       "renderer_check_sha256": "c845bf0ae3d98ae3f8fc9a2d126a64144904430d90eb6ff45138297226599be5",
       "game_process_after_check": 6382,
       "device_game_state": "No game input was sent. The APK was not modified or restarted. Temporary checker and shader files were removed."
+    },
+    "rexglue_plugin": {
+      "status": "built",
+      "target": "rexgpu-shift-native",
+      "sdk": "ReXGlue 0.10.0.0-dev.unknown",
+      "compiler": "Clang 22.1.8",
+      "abi": "linux-amd64",
+      "runtime": "Prebuilt librexruntime.so from the same SDK checkout",
+      "disabled_optional_sdl_modules": ["DBus", "IBus"],
+      "sha256": "65ca916a121885bcda695537ab20a0b5f189330b839d1ef7176674c35798a0a6"
+    },
+    "github_ci": {
+      "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+      "status": "all reported checks passed or were skipped",
+      "skipped": ["retail-startup-regression"]
     }
   },
   "limits": [

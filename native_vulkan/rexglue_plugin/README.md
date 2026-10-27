@@ -1753,6 +1753,7 @@ cross-checked against [Xenia's format definitions](https://github.com/xenia-proj
 
 The Linux regression checks format-12 sample, tile-row, and wrap addresses,
 true 64bpp rejection, and two raw formats that share one Vulkan format. This
+also builds `rexgpu-shift-native` against ReXGlue 0.10.0 with Clang. The change
 does not add EDRAM persistence or execute the captured ordered mode-6 copies;
 the 14-draw transition still cannot be presented as retail parity. Details and
 validation results are in
