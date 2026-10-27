@@ -1094,6 +1094,23 @@ int main(int argc, char** argv) {
                      "linear source replay failed: " << packet49_error << '\n';
         return 1;
       }
+      auto unsupported_packet49_source = packet49_copy_operation;
+      unsupported_packet49_source.source_raster.surface_pitch = 1272;
+      std::string unsupported_packet49_error;
+      if (shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, {packet49_draw},
+              {packet49_draw_operation, unsupported_packet49_source},
+              &unsupported_packet49_error, nullptr,
+              enabled_features.geometryShader, &packet49_copy, false, {},
+              pipeline_cache, nullptr) ||
+          unsupported_packet49_error.find(
+              "Copy/Convert packet 49 reinterprets the active draw segment") ==
+              std::string::npos) {
+        std::cerr << "ordered replay accepted a near-matching packet-49 source pitch: "
+                  << unsupported_packet49_error << '\n';
+        return 1;
+      }
 
       auto copy_without_source = copy0;
       copy_without_source.packet_index = 200;

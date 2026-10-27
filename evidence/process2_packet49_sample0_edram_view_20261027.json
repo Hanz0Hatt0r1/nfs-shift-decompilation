@@ -75,6 +75,7 @@
       "tests": "4/4",
       "new_regressions": [
         "Captured-shaped packet-24 4x gamma draw followed by packet-49 1x sample-zero source layout matches direct Vulkan submission readback.",
+        "A near-matching packet-49 source pitch remains fail-closed.",
         "Unsupported Copy source reinterpretations still fail closed and include source and active layouts.",
         "A draw target layout change before Copy reports both captured layouts."
       ]
