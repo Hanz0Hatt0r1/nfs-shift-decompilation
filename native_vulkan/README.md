@@ -412,6 +412,19 @@ phone remained on the legal disclaimer, so this change establishes no video
 or retail-frame parity. Full capture and test details are in
 [`process2_xenos_edram_sample_mapping_20261027.json`](../evidence/process2_xenos_edram_sample_mapping_20261027.json).
 
+## Retail conditional-jump rejection detail (2026-10-27)
+
+The Redmi capture also rejects shader translation at draw #14 for a conditional
+jump with predication or a non-forward direction bit. The original log did not
+say which decoded field triggered the guard, and the retail shader bytes were
+not retained. The translator now includes the branch address, bool constant,
+condition, unconditional/predicated flags, and direction bit in the rejection.
+The guard still rejects the shader; this change does not guess its execution
+semantics. A synthetic regression verifies those fields, and the updated
+ARM64 translator check passed on the Redmi while the game remained running.
+The plugin was built but not installed. See
+[`process2_retail_cjmp_diagnostic_20261027.json`](../evidence/process2_retail_cjmp_diagnostic_20261027.json).
+
 ## Commands
 
 ```bash
