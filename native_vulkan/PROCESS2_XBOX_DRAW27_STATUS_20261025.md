@@ -541,6 +541,13 @@ in a separate P1 scratch run.
 
 Process 1 received the pair for an exact-XEX recapture. This only verifies
 capability plumbing and renderer regressions; the post-handoff retail result
-is pending. It does not establish that the Xbox title reached or rendered a
-video. The Vulkan 1.1 extension path is implemented, but this host probe ran on
-a Vulkan 1.4 GTX 950.
+ran for 180 seconds with the exact retail XEX. The mapped plugin and matching
+runtime hashes are recorded in the evidence. No mixed depth/stencil refresh
+rejection or guest fault appeared. The disclaimer was visible at 45, 90, and
+180 seconds; the other sampled frames were mostly black. No video image or
+main menu appeared. The run sent no input. This clears the renderer's prior
+resolve rejection for that run, but does not identify why the guest stayed in
+the disclaimer/black transition or prove whether the game attempted video
+playback. Generic draw submissions and a lack of Bink text in this renderer
+log are not proof of frontend progress or non-entry into Bink. The Vulkan 1.1
+extension path is implemented, but this host probe ran on a Vulkan 1.4 GTX 950.

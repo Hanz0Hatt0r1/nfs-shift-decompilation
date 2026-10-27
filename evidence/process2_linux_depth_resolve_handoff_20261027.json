@@ -58,13 +58,76 @@
   },
   "handoff": {
     "recipient": "Process 1 thread 01a15b2f-a82e-7c10-9683-31115e86146b",
-    "status": "Sent for isolated exact-XEX recapture with plugin and matching runtime loaded together.",
-    "retail_result": "Pending. No post-handoff retail screenshot or Bink-start evidence is available yet."
+    "status": "Completed in an isolated 180-second exact-XEX scratch run with plugin and matching runtime mapped together.",
+    "retail_result": "The prior depth/stencil refresh rejection did not recur, but the game did not show the EA/Bink video during the run."
+  },
+  "retail_recapture": {
+    "scratch_directory": "/tmp/nfs-shift-p1-p2-depth-resolve-full-20261027",
+    "run_summary_sha256": "d32551f53362d9a73f47e08a776a87f1ed6da3d575292258eead09962e66d0bd",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "mapped_plugin_sha256": "abc7bf5df779be7dce4fdae719c05c89a35ad8ce222f95b3337478f24bddc402",
+    "mapped_runtime_sha256": "f049d64a46ab04e8d5fcb71800c92d86a5cc6a5fbd38a6b1bf1a623c86398a80",
+    "duration_seconds": 180.597,
+    "termination": "Harness SIGINT after final capture; host exit 0.",
+    "inputs": [],
+    "captures": [
+      {
+        "elapsed_seconds": 45.127,
+        "path": "/tmp/nfs-shift-p1-p2-depth-resolve-full-20261027/captures/auto-45s.png",
+        "sha256": "eb909a36c1bf629aa08789660e3fafb3a8603f8b589dc264fbe8b1419c7c491c",
+        "observation": "Retail disclaimer visible."
+      },
+      {
+        "elapsed_seconds": 60.125,
+        "path": "/tmp/nfs-shift-p1-p2-depth-resolve-full-20261027/captures/auto-60s.png",
+        "sha256": "abc3e9bbdd429c3f0082d5e0c8120bbf42e1ab1e2fcfb5e4dbac4d88eb4d349f",
+        "observation": "Mostly black frame; no video image visible."
+      },
+      {
+        "elapsed_seconds": 75.108,
+        "path": "/tmp/nfs-shift-p1-p2-depth-resolve-full-20261027/captures/auto-75s.png",
+        "sha256": "c74a56ed8cce468c2f8b909f6beb6bcd613da20b1d712f1bc73c170911371479",
+        "observation": "Mostly black frame; no video image visible."
+      },
+      {
+        "elapsed_seconds": 90.108,
+        "path": "/tmp/nfs-shift-p1-p2-depth-resolve-full-20261027/captures/auto-90s.png",
+        "sha256": "a32856668bd2ef73a419c7883f56898887f63505cce7811f293ab9dcc9ade38a",
+        "observation": "Retail disclaimer visible again."
+      },
+      {
+        "elapsed_seconds": 120.133,
+        "path": "/tmp/nfs-shift-p1-p2-depth-resolve-full-20261027/captures/auto-120s.png",
+        "sha256": "227df40f87c852d916c3562306227c0fe6dae180dda9d8e76c57e8f912e7bf30",
+        "observation": "Mostly black frame; no video image visible."
+      },
+      {
+        "elapsed_seconds": 150.105,
+        "path": "/tmp/nfs-shift-p1-p2-depth-resolve-full-20261027/captures/auto-150s.png",
+        "sha256": "965fc1eb5b0758d793559dd444a2c7933996819241c3ce89cf4d6c21f6fc79c1",
+        "observation": "Mostly black frame; no video image visible."
+      },
+      {
+        "elapsed_seconds": 180.161,
+        "path": "/tmp/nfs-shift-p1-p2-depth-resolve-full-20261027/captures/auto-180s.png",
+        "sha256": "895757ed0409a4a22a8f3b88fad051bd229df7722b60645b270366778223e6ba",
+        "observation": "Retail disclaimer visible again; no video image visible."
+      }
+    ],
+    "runtime_logs": {
+      "nfs_shift_001.log_sha256": "a846e412d28f58d86bdb55876d556b44f1534a3993307f899f4d270cd5526a10",
+      "nfs_shift_001.1.log_sha256": "1a2db42d28a4d52b55bd219306d5858dc63781882f15ea484619ebbcbe3d982b",
+      "mixed_depth_stencil_refresh_rejections": 0,
+      "guest_faults": 0,
+      "literal_bink_video_movie_log_mentions": 0
+    },
+    "interpretation": "The provider-enabled renderer removed the previously logged resolve rejection for this run. The 180-second run did not display the EA/Bink video or the main menu. Generic draw-submit counts and absence of Bink strings in the renderer log do not establish guest frontend progress or prove that the guest never attempted video playback."
   },
   "limits": [
     "The capability probe and CTest are not an exact retail frame or parity result.",
     "The host GPU reports Vulkan 1.4; Vulkan 1.1 compatibility is implemented through the KHR extension pair but this run is not on a Vulkan 1.1-only device.",
     "The optional provider API is proposed in ReXGlue SDK PR #2 and older SDK builds remain fail-closed.",
-    "The exact retail refresh sequence must be recaptured with the mapped plugin and matching runtime hashes before claiming this removed the startup blocker or launched a video."
+    "This run confirms the mixed depth/stencil rejection no longer occurs with this provider build; it does not identify why the title remains at the disclaimer/black transition or whether the guest attempted video playback."
   ]
 }
