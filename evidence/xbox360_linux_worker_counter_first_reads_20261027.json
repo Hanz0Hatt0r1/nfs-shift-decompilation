@@ -1,0 +1,89 @@
+{
+  "schema": "shift.xbox360.linux-worker-counter-first-reads.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "p1_runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+    "p2_linux_plugin_sha256": "abc7bf5df779be7dce4fdae719c05c89a35ad8ce222f95b3337478f24bddc402"
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "duration_seconds": 105.474,
+    "termination": "GDB timer interrupted the debugger, detached, then sent SIGINT to the still-live title. The runtime log contains no clean-shutdown claim.",
+    "controller_input_sent": false,
+    "guest_memory_modified_by_probe": false,
+    "gdb_script": {
+      "path": "tools/xbox360/trace_linux_worker_counter_first_reads_20261027.gdb",
+      "sha256": "d7efd8a8ad71bdcea07604e1356c4f0babfc5e40514b3ffedd08e344d002910f"
+    },
+    "gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-worker-counter-first-reads-20261027/gdb.log",
+      "bytes": 17680,
+      "sha256": "eb25e50fe4e73d70eca590788b9f34930475809580cb4da5283088d7c686fa77"
+    },
+    "counter": {
+      "manager_guest_object": "0xB7365F00",
+      "guest_address": "0xB7368A04",
+      "host_alias": "0x1B7368A04",
+      "initial_value": "0x00000000",
+      "first_transitions": [
+        {"elapsed_seconds": 51.670556, "old": "0x00000000", "new": "0x00000001", "thread": 15},
+        {"elapsed_seconds": 51.770945, "old": "0x00000001", "new": "0x00000000", "thread": 24},
+        {"elapsed_seconds": 51.775933, "old": "0x00000000", "new": "0xFFFFFFFF", "thread": 24},
+        {"elapsed_seconds": 52.691984, "old": "0xFFFFFFFF", "new": "0xFFFFFFFE", "thread": 24},
+        {"elapsed_seconds": 52.704600, "old": "0xFFFFFFFE", "new": "0xFFFFFFFD", "thread": 24},
+        {"elapsed_seconds": 52.716837, "old": "0xFFFFFFFD", "new": "0xFFFFFFFC", "thread": 24}
+      ],
+      "write_watch_total": 836,
+      "read_watch_total": 12,
+      "read_watch_disabled_after": 12,
+      "first_reads": [
+        {"index": 1, "elapsed_seconds": 51.784488, "value": "0xFFFFFFFF", "function": "sub_823B31A0", "offset": 322, "thread": 15},
+        {"index": 2, "elapsed_seconds": 52.321024, "value": "0xFFFFFFFF", "function": "sub_823B31A0", "offset": 541, "thread": 15},
+        {"index": 3, "elapsed_seconds": 52.328706, "value": "0xFFFFFFFF", "function": "sub_823B31A0", "offset": 570, "thread": 15},
+        {"index": 4, "elapsed_seconds": 52.335231, "value": "0xFFFFFFFF", "function": "sub_823B31A0", "offset": 117, "thread": 15},
+        {"index": 5, "elapsed_seconds": 52.432800, "value": "0xFFFFFFFF", "function": "sub_823B85D0", "offset": 1578, "thread": 24},
+        {"index": 6, "elapsed_seconds": 52.695814, "value": "0xFFFFFFFE", "function": "sub_823B85D0", "offset": 1578, "thread": 24},
+        {"index": 7, "elapsed_seconds": 52.708448, "value": "0xFFFFFFFD", "function": "sub_823B85D0", "offset": 1578, "thread": 24},
+        {"index": 8, "elapsed_seconds": 52.721217, "value": "0xFFFFFFFC", "function": "sub_823B85D0", "offset": 1578, "thread": 24},
+        {"index": 9, "elapsed_seconds": 52.739085, "value": "0xFFFFFFFB", "function": "sub_823B31A0", "offset": 322, "thread": 15},
+        {"index": 10, "elapsed_seconds": 52.746399, "value": "0xFFFFFFFB", "function": "sub_823B31A0", "offset": 541, "thread": 15},
+        {"index": 11, "elapsed_seconds": 52.756498, "value": "0xFFFFFFFB", "function": "sub_823B31A0", "offset": 570, "thread": 15},
+        {"index": 12, "elapsed_seconds": 52.882659, "value": "0xFFFFFFFB", "function": "sub_823B85D0", "offset": 1578, "thread": 24}
+      ],
+      "first_read_stack": [
+        "sub_823B31A0",
+        "sub_823B33A0",
+        "sub_823B34A0",
+        "sub_823B3850",
+        "sub_823A0760",
+        "sub_8264F868",
+        "sub_82FD46F8",
+        "sub_82FD5658"
+      ]
+    }
+  },
+  "retail_static_crosscheck": {
+    "source_function": "sub_823B31A0",
+    "generated_source_outside_repo": "/home/pes/work/nfsshift-rex/generated/default/nfs_shift_recomp.115.cpp",
+    "field_test": "signed cmpwi against zero; a negative value takes the nonzero path",
+    "worker_writer": "sub_823B85D0 decrements the aliased field when its +72 guard is zero"
+  },
+  "interpretation": {
+    "supported": [
+      "The first reads after wrap occur in the retail queue producer/wait path and the retail worker completion path.",
+      "The retail producer compares the field as a signed integer; 0xFFFFFFFF is consumed as nonzero and is not dereferenced as an address at that branch.",
+      "The field keeps decreasing on the observed worker path; the read-watch sample alone does not establish whether this signed state is expected or defective."
+    ],
+    "not_proven": [
+      "The full contract for the signed field or whether the later negative values affect frontend progress.",
+      "A ReXGlue scheduler defect, a visible menu, offline-race entry, or playable Linux port."
+    ],
+    "next_step": "Keep the guest counter semantics unchanged. Continue tracing the retail state/action path after Bink completion; do not patch the worker count based on wrap alone."
+  }
+}
