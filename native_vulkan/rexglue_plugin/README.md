@@ -840,6 +840,11 @@ retains programs rejected by the current shader subset. The live-ring selected
 draw regression compares both files byte-for-byte with its synthetic shader
 fixtures.
 
+When a texture-sign combination is unsupported, the shader diagnostic now
+includes its fetch-constant index and all four decoded channel signs. This
+retains the exact descriptor-side blocker for the next selected draw without
+guessing signed or unsigned-biased sample behavior.
+
 For that comparison, `SHIFT_NATIVE_VULKAN_DUMP_TEXTURE_SOURCE_PREFIX` also
 saves the exact guest-memory bytes read for each texture in the selected
 submit as `.frameN.slotM.textureK.source.bin`. This file preserves Xenos

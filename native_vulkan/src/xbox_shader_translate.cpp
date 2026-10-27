@@ -280,7 +280,17 @@ bool append_fetch(std::ostringstream& glsl,
     }
     for (TextureSign sign : texture_options.signs) {
         if (sign != TextureSign::Unsigned && sign != TextureSign::Gamma) {
-            return fail("captured texture channel sign is outside the unsigned/gamma subset", error);
+            std::ostringstream message;
+            message << "captured texture channel sign is outside the unsigned/gamma subset"
+                    << " fetch_constant=" << fetch.fetch_constant_index
+                    << " signs=[";
+            for (size_t lane = 0; lane < texture_options.signs.size(); ++lane) {
+                if (lane) message << ',';
+                message << static_cast<uint32_t>(texture_options.signs[lane]);
+            }
+            message << ']';
+            if (error) *error = message.str();
+            return false;
         }
     }
     const uint32_t sampler = fetch.fetch_constant_index;

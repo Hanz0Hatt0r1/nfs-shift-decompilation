@@ -473,12 +473,18 @@ int main() {
                 translated.glsl.find("sampled_0.w=shift_pwl_gamma_to_linear") ==
                     std::string::npos,
             "captured Gamma RGB texture signs did not preserve linear alpha");
-    gamma_texture_options.textures[0].signs[0] = shift::xbox::TextureSign::Signed;
+    gamma_texture_options.textures[0].signs = {
+        shift::xbox::TextureSign::Signed,
+        shift::xbox::TextureSign::UnsignedBiased,
+        shift::xbox::TextureSign::Gamma,
+        shift::xbox::TextureSign::Unsigned};
     require(!shift::xbox::translate_captured_shader_glsl(
                 shift::xbox::CapturedShaderStage::Pixel, shader.data(), shader.size(),
                 gamma_texture_options, &translated, &error) &&
-                error == "captured texture channel sign is outside the unsigned/gamma subset",
-            "uncaptured signed texture sign was silently accepted");
+                error ==
+                    "captured texture channel sign is outside the unsigned/gamma subset "
+                    "fetch_constant=0 signs=[1,2,3,0]",
+            "unsupported captured texture signs were silently accepted or omitted from diagnostics");
 
     std::vector<uint8_t> multiple_samplers = shader;
     write_be32(multiple_samplers.data() + 8, 0x12000005u);
