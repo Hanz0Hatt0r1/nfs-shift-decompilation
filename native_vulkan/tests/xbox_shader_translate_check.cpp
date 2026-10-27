@@ -663,6 +663,27 @@ int main() {
     require(retail_scalar_muls_prev_ok,
             "captured Xenos MULS_PREV did not consume/update scalar ps before export");
 
+    std::vector<uint8_t> scalar_add_constant_shader = conditional_exec_shader;
+    write_be32(scalar_add_constant_shader.data() + 2 * 12,
+               (44u << 26) | (1u << 20));
+    write_be32(scalar_add_constant_shader.data() + 2 * 12 + 4,
+               1u << 24);
+    write_be32(scalar_add_constant_shader.data() + 2 * 12 + 8,
+               (1u << 29) | 3u);
+    shift::xbox::CapturedShaderTranslationOptions scalar_add_options{};
+    scalar_add_options.pixel_b128 = true;
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                scalar_add_constant_shader.data(), scalar_add_constant_shader.size(),
+                scalar_add_options, &translated, &error) &&
+                translated.glsl.find(
+                    "previous_scalar = ((-shift_pixel_constants.c[3].w) + (-r[2].x));") !=
+                    std::string::npos &&
+                translated.glsl.find("r[0].x = previous_scalar") !=
+                    std::string::npos &&
+                translated.float_constant_registers == std::vector<uint32_t>{3},
+            "captured Xenos ADD_CONST_0 did not decode its constant, src3 selector, or negate");
+
     std::vector<uint8_t> unsupported_scalar_shader = shader;
     write_be32(unsupported_scalar_shader.data() + 7 * 12,
                (63u << 26) | (1u << 20));

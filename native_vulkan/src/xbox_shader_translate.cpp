@@ -84,6 +84,10 @@ bool constant_relative(const CapturedShaderAluInstruction& instruction,
     }
 }
 
+bool scalar_constant_temporary_opcode(uint32_t opcode) {
+    return opcode >= 42 && opcode <= 47;
+}
+
 std::string swizzled_vector(const CapturedShaderAluInstruction& instruction,
                             uint32_t source,
                             CapturedShaderStage stage) {
@@ -328,6 +332,12 @@ bool emit_alu(std::ostringstream& glsl,
         }
         return false;
     };
+    const uint32_t vector_result_mask = instruction.export_data ?
+        instruction.vector_write_mask & ~instruction.scalar_write_mask :
+        instruction.vector_write_mask;
+    const uint32_t scalar_result_mask = instruction.export_data ?
+        instruction.scalar_write_mask & ~instruction.vector_write_mask :
+        instruction.scalar_write_mask;
     if (instruction.vector_destination_relative) {
         return fail_at_slot("captured ALU uses a relative vector destination");
     }
@@ -341,7 +351,18 @@ bool emit_alu(std::ostringstream& glsl,
     if (instruction.predicated) {
         return fail_at_slot("captured ALU is predicated");
     }
+    const bool scalar_constant_temporary =
+        scalar_constant_temporary_opcode(instruction.scalar_opcode);
+    const bool vector_uses_third_source = vector_result_mask != 0 &&
+        (instruction.vector_opcode == 11 || instruction.vector_opcode == 12);
     for (uint32_t source = 0; source < 3; ++source) {
+        // For mulsc/addsc/subsc, src3_sel contributes to the scalar temporary
+        // register index. The scalar constant remains src3_reg even when this
+        // selector is set, so don't interpret its packed bits as temp flags.
+        if (source == 2 && scalar_constant_temporary &&
+            !vector_uses_third_source) {
+            continue;
+        }
         if (instruction.source_temporary_relative[source]) {
             return fail_at_slot("captured ALU uses relative temporary addressing");
         }
@@ -351,17 +372,15 @@ bool emit_alu(std::ostringstream& glsl,
             return fail_at_slot("captured ALU constant-relative source has no a0 selector");
         }
     }
+    if (scalar_constant_temporary && constant_relative(instruction, 2) &&
+        !instruction.const_address_register_relative) {
+        return fail_at_slot("captured ALU constant-relative source has no a0 selector");
+    }
 
     const std::string a = swizzled_vector(instruction, 0, stage);
     const std::string b = swizzled_vector(instruction, 1, stage);
     const std::string c = swizzled_vector(instruction, 2, stage);
     const std::string result = "alu_" + std::to_string(address);
-    const uint32_t vector_result_mask = instruction.export_data ?
-        instruction.vector_write_mask & ~instruction.scalar_write_mask :
-        instruction.vector_write_mask;
-    const uint32_t scalar_result_mask = instruction.export_data ?
-        instruction.scalar_write_mask & ~instruction.vector_write_mask :
-        instruction.scalar_write_mask;
     const uint32_t constant_one_mask = instruction.export_data ?
         instruction.vector_write_mask & instruction.scalar_write_mask : 0;
     const uint32_t constant_zero_mask =
@@ -466,16 +485,45 @@ bool emit_alu(std::ostringstream& glsl,
                 scalar = "floor(" + scalar_source(instruction, stage) + ")";
                 break;
             case 42:
-                if (instruction.source_is_temporary[2]) {
-                    return fail("captured MULSC0 constant operand is not a constant", error);
-                }
-                scalar = scalar_multiply(
-                    scalar_constant(stage, instruction.source_registers[2],
-                                    instruction.scalar_constant_component,
-                                    constant_relative(instruction, 2)),
+            case 43:
+            case 44:
+            case 45:
+            case 46:
+            case 47: {
+                // Xenos mulsc/addsc/subsc use c#.w as the left operand and
+                // the scalar temporary selected by opcode[0], src3_sel, and
+                // src3_swiz as the right operand. src3_reg_negate applies to
+                // both operands. See xenia-project/xenia src/xenia/gpu/ucode.h
+                // (AluInstruction::scalar_const_reg_op_src_temp_reg).
+                std::string constant_operand = scalar_constant(
+                    stage, instruction.source_registers[2],
+                    instruction.scalar_constant_component,
+                    constant_relative(instruction, 2));
+                std::string temporary_operand =
                     "r[" + std::to_string(instruction.scalar_temporary_register) +
-                        "]." + component_name(instruction.scalar_temporary_component));
+                    "]." + component_name(instruction.scalar_temporary_component);
+                if (instruction.source_negate[2]) {
+                    constant_operand = "(-" + constant_operand + ")";
+                    temporary_operand = "(-" + temporary_operand + ")";
+                }
+                switch (instruction.scalar_opcode) {
+                    case 42:
+                    case 43:
+                        scalar = scalar_multiply(constant_operand, temporary_operand);
+                        break;
+                    case 44:
+                    case 45:
+                        scalar = "(" + constant_operand + " + " +
+                                 temporary_operand + ")";
+                        break;
+                    case 46:
+                    case 47:
+                        scalar = "(" + constant_operand + " - " +
+                                 temporary_operand + ")";
+                        break;
+                }
                 break;
+            }
             case 50:
                 scalar = "previous_scalar";
                 break;
@@ -796,8 +844,11 @@ bool translate_captured_shader_glsl(
     const auto record_constant_source =
         [&float_constant_registers, &uses_relative_float_constant_index](
             const CapturedShaderAluInstruction& alu, uint32_t source,
+            bool scalar_constant_temporary,
             std::string* record_error) {
-            if (alu.source_is_temporary[source]) return true;
+            if (!scalar_constant_temporary && alu.source_is_temporary[source]) {
+                return true;
+            }
             if (constant_relative(alu, source)) {
                 uses_relative_float_constant_index = true;
                 if (!alu.const_address_register_relative) {
@@ -865,11 +916,17 @@ bool translate_captured_shader_glsl(
                     const size_t source_count =
                         alu.vector_opcode == 11 || alu.vector_opcode == 12 ? 3 : 2;
                     for (size_t i = 0; i < source_count; ++i) {
-                        if (!record_constant_source(alu, sources[i], error)) return false;
+                        if (!record_constant_source(alu, sources[i], false, error)) {
+                            return false;
+                        }
                     }
                 }
-                if (alu.scalar_opcode != 50) {
-                    if (!record_constant_source(alu, 2, error)) return false;
+                if (scalar_constant_temporary_opcode(alu.scalar_opcode)) {
+                    if (!record_constant_source(alu, 2, true, error)) {
+                        return false;
+                    }
+                } else if (alu.scalar_opcode != 50) {
+                    if (!record_constant_source(alu, 2, false, error)) return false;
                 }
                 if (!emit_alu(glsl, stage, instruction.address, alu,
                               allocation_type, error)) return false;

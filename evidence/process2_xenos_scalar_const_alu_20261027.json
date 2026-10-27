@@ -1,0 +1,78 @@
+{
+  "schema": "shift.process2.xenos_scalar_const_alu.v1",
+  "date": "2026-10-27",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "retail_observation": {
+    "run": "P1 post-bink counter low-intrusion v10 rerun",
+    "log": "bin/logs/nfs_shift_001.2.log",
+    "log_sha256": "23c79ef45d5b3ff11b1c3990d8f73cf2598130ea53cc0ecad675e18991620179",
+    "line": 1385,
+    "timestamp_local": "2026-10-27 15:50:56.798 MSK",
+    "draw": 10,
+    "stage": "pixel shader",
+    "instruction": 29,
+    "observed_scalar_opcode": 44,
+    "previous_failure": "captured ALU scalar opcode 44 writes an unsupported result"
+  },
+  "instruction_contract": {
+    "reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/ucode.h",
+    "reference_use": "Read-only Xenos instruction-format reference; no Xenia renderer or runtime is linked.",
+    "opcode_44": "ADD_CONST_0: c#.w + r#.x",
+    "temporary_register_index": "scalar_opcode[0] | (src3_sel << 1) | (src3_swiz & 0x3c)",
+    "temporary_component": "src3_swiz[0:1]",
+    "constant_component": "(3 + src3_swiz[6:7]) & 3",
+    "third_source_negate": "Applied to both scalar operands."
+  },
+  "implementation": {
+    "files": [
+      "native_vulkan/src/xbox_shader_translate.cpp",
+      "native_vulkan/tests/xbox_shader_translate_check.cpp"
+    ],
+    "supported_scalar_constant_opcodes": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47
+    ],
+    "behavior": [
+      "Translate mulsc/addsc/subsc using the constant and scalar temporary operand encodings.",
+      "Do not treat src3_sel as evidence that the scalar constant operand is temporary.",
+      "Include scalar constant registers in the shader constant read set, including when src3_sel is set.",
+      "Apply src3_reg_negate to both operands."
+    ],
+    "regression": "ADD_CONST_0 with src3_sel=1, constant register 3, W/X swizzles, and third-source negate; verifies emitted GLSL and constant read-set."
+  },
+  "validation": {
+    "linux_build": "cmake --build native_vulkan/build -j2",
+    "linux_ctest": {
+      "command": "/usr/bin/ctest --test-dir native_vulkan/build --output-on-failure",
+      "result": "4/4 passed"
+    },
+    "renderer_validation": {
+      "test": "xbox_live_vulkan_renderer_check",
+      "vulkan_validation_layer": "VK_LAYER_KHRONOS_validation enabled",
+      "result": "passed"
+    },
+    "shader_validation": {
+      "generator": "glslangValidator -V --target-env vulkan1.1 -S frag",
+      "spirv_validator": "spirv-val --target-env vulkan1.1",
+      "result": "passed on the generated regression shader"
+    },
+    "android_arm64": {
+      "build": "CMake with NDK 28.2.13676358, arm64-v8a, android-29",
+      "device": "Redmi Note 8 Pro / Android API 33",
+      "test": "shift_xbox_shader_translate_check",
+      "result": "passed on device",
+      "binary_sha256": "fe902d1b1d10dca27ea463714362affc6cdeb9400231440253e5205ad0331ae8",
+      "device_state": "The game APK and process were not changed. The temporary checker was removed after the run."
+    }
+  },
+  "limits": [
+    "The regression uses constructed shader bytes for the observed opcode; the complete retail shader bytes are not part of this test fixture.",
+    "This unblocks one shader-translation diagnostic only. It does not prove that retail draw 10 renders correctly or that a retail frame matches.",
+    "The full 14-draw transition remains blocked by EDRAM alias/layout persistence and additional shader/control-flow/resource gaps.",
+    "Absolute-constant ALU mode and loop control flow remain unsupported by the translator."
+  ]
+}
