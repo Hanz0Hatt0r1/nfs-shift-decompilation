@@ -836,9 +836,11 @@ the source of the strips.
 Set `SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX` with the selected draw frame to
 write the original guest VS/PS bytes as `.frameN.packetM.vs.bin` and
 `.frameN.packetM.ps.bin`. This capture occurs before translation, so it also
-retains programs rejected by the current shader subset. The live-ring selected
-draw regression compares both files byte-for-byte with its synthetic shader
-fixtures.
+retains programs rejected by the current shader subset. The selected draw log
+also records target bases, extent, pitch, sample count, color mask, depth
+test/write, stencil test/write mask, and depth control before translation can
+fail. The live-ring selected-draw regression compares both files byte-for-byte
+with its synthetic shader fixtures and checks that raster metadata was logged.
 
 When a texture-sign combination is unsupported, the shader diagnostic now
 includes its fetch-constant index and all four decoded channel signs. This

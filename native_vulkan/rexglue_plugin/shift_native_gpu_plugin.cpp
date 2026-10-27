@@ -946,6 +946,22 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         std::getenv("SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX");
     if (diagnostic_submitted_frame != 0u && shader_dump_prefix &&
         *shader_dump_prefix) {
+      REXLOG_INFO(
+          "shift-native: selected shader state frame={} packet={} extent={}x{} "
+          "pitch={} samples={} color_base_tiles=0x{:X} depth_base_tiles=0x{:X} "
+          "color_format={} depth_format={} color_mask=0x{:X} depth_test={} "
+          "depth_write={} stencil_test={} stencil_write_mask=0x{:02X} "
+          "stencil_reference=0x{:02X} depth_control=0x{:08X}",
+          diagnostic_submitted_frame, diagnostic_draw_packet_index,
+          raster_state.width, raster_state.height, raster_state.surface_pitch,
+          raster_state.sample_count, raster_state.color_base_tiles,
+          raster_state.depth_base_tiles,
+          static_cast<uint32_t>(raster_state.color_format),
+          static_cast<uint32_t>(raster_state.depth_format),
+          raster_state.color_write_mask, raster_state.depth_test_enabled,
+          raster_state.depth_write_enabled, raster_state.stencil_test_enabled,
+          (raster_state.stencil_refmask >> 16) & 0xFFu,
+          raster_state.stencil_refmask & 0xFFu, raster_state.depth_control);
       const auto dump_shader = [&](const char* stage,
                                    const std::vector<uint8_t>& bytes) {
         std::ostringstream path;

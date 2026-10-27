@@ -549,6 +549,13 @@ int main(int argc, char** argv) {
   const char* shader_dump_prefix =
       std::getenv("SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX");
   if (shader_dump_prefix && *shader_dump_prefix) {
+    if (diagnostics.find("selected shader state frame=1 packet=0") ==
+            std::string::npos ||
+        diagnostics.find("color_mask=0x") == std::string::npos ||
+        diagnostics.find("stencil_write_mask=0x") == std::string::npos) {
+      std::cerr << diagnostics << '\n';
+      return fail("selected shader diagnostic omitted the captured raster state");
+    }
     const auto read_shader_dump = [](const std::string& path) {
       std::ifstream file(path, std::ios::binary);
       return std::vector<uint8_t>(std::istreambuf_iterator<char>(file), {});
