@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <string>
 #include <utility>
 
 namespace shift::xbox {
@@ -456,6 +457,8 @@ bool decode_captured_shader_control_flow(
     constexpr uint32_t kControlFlowNop = 0;
     constexpr uint32_t kControlFlowExec = 1;
     constexpr uint32_t kControlFlowExecEnd = 2;
+    constexpr uint32_t kControlFlowConditionalExec = 3;
+    constexpr uint32_t kControlFlowConditionalExecEnd = 4;
     constexpr uint32_t kControlFlowConditionalJump = 11;
     constexpr uint32_t kControlFlowAllocate = 12;
     constexpr uint32_t kControlFlowTripletBytes = 12;
@@ -484,7 +487,9 @@ bool decode_captured_shader_control_flow(
 
         for (uint32_t slot = 0; slot < 2; ++slot) {
             const uint32_t opcode = (words[slot * 2 + 1] >> 12) & 0xFu;
-            if (opcode == kControlFlowExec || opcode == kControlFlowExecEnd) {
+            if (opcode == kControlFlowExec || opcode == kControlFlowExecEnd ||
+                opcode == kControlFlowConditionalExec ||
+                opcode == kControlFlowConditionalExecEnd) {
                 control_flow_triplet_count = std::min(
                     control_flow_triplet_count, words[slot * 2] & 0xFFFu);
             }
@@ -515,15 +520,23 @@ bool decode_captured_shader_control_flow(
             const uint32_t raw_opcode = (word1 >> 12) & 0xFu;
             if (raw_opcode != kControlFlowNop && raw_opcode != kControlFlowExec &&
                 raw_opcode != kControlFlowExecEnd &&
+                raw_opcode != kControlFlowConditionalExec &&
+                raw_opcode != kControlFlowConditionalExecEnd &&
                 raw_opcode != kControlFlowConditionalJump &&
                 raw_opcode != kControlFlowAllocate) {
-                return fail("unsupported captured shader control-flow opcode", error);
+                const std::string message =
+                    "unsupported captured shader control-flow opcode " +
+                    std::to_string(raw_opcode) + " at instruction " +
+                    std::to_string(triplet * 2 + slot);
+                return fail(message.c_str(), error);
             }
 
             CapturedShaderControlFlow decoded{};
             decoded.instruction_index = triplet * 2 + slot;
             decoded.opcode = static_cast<ShaderControlFlowOpcode>(raw_opcode);
-            if (raw_opcode == kControlFlowExec || raw_opcode == kControlFlowExecEnd) {
+            if (raw_opcode == kControlFlowExec || raw_opcode == kControlFlowExecEnd ||
+                raw_opcode == kControlFlowConditionalExec ||
+                raw_opcode == kControlFlowConditionalExecEnd) {
                 decoded.address = word0 & 0xFFFu;
                 decoded.instruction_count = (word0 >> 12) & 0x7u;
                 decoded.sequence = (word0 >> 16) & 0xFFFu;
@@ -531,6 +544,11 @@ bool decode_captured_shader_control_flow(
                     static_cast<uint64_t>(decoded.address) + decoded.instruction_count >
                         triplet_count) {
                     return fail("captured shader exec range is invalid", error);
+                }
+                if (raw_opcode == kControlFlowConditionalExec ||
+                    raw_opcode == kControlFlowConditionalExecEnd) {
+                    decoded.bool_constant = (word1 >> 2) & 0xFFu;
+                    decoded.condition = ((word1 >> 10) & 1u) != 0;
                 }
             } else if (raw_opcode == kControlFlowConditionalJump) {
                 decoded.address = word0 & 0x1FFFu;
@@ -720,7 +738,9 @@ bool schedule_captured_shader_instructions(
     std::vector<CapturedShaderInstructionSchedule> scheduled;
     for (const CapturedShaderControlFlow& clause : control_flow) {
         if (clause.opcode != ShaderControlFlowOpcode::Exec &&
-            clause.opcode != ShaderControlFlowOpcode::ExecEnd) {
+            clause.opcode != ShaderControlFlowOpcode::ExecEnd &&
+            clause.opcode != ShaderControlFlowOpcode::ConditionalExec &&
+            clause.opcode != ShaderControlFlowOpcode::ConditionalExecEnd) {
             continue;
         }
         if (clause.instruction_count == 0 ||

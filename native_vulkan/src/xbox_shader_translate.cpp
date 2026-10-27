@@ -559,9 +559,12 @@ bool translate_captured_shader_glsl(
     for (size_t steps = 0; steps <= control_flow.size(); ++steps) {
         if (pc >= control_flow.size()) return fail("captured shader control flow leaves its prefix", error);
         const CapturedShaderControlFlow& clause = control_flow[pc];
-        path.push_back(pc);
-        if (clause.opcode == ShaderControlFlowOpcode::ExecEnd) break;
+        if (clause.opcode == ShaderControlFlowOpcode::ExecEnd) {
+            path.push_back(pc);
+            break;
+        }
         if (clause.opcode == ShaderControlFlowOpcode::ConditionalJump) {
+            path.push_back(pc);
             if (clause.predicated || clause.jump_direction) {
                 return fail("captured shader branch uses unsupported predicate/direction", error);
             }
@@ -581,14 +584,38 @@ bool translate_captured_shader_glsl(
             }
             continue;
         }
+        if (clause.opcode == ShaderControlFlowOpcode::ConditionalExec ||
+            clause.opcode == ShaderControlFlowOpcode::ConditionalExecEnd) {
+            bool value = false;
+            if (clause.bool_constant == 128) value = options.pixel_b128;
+            else if (clause.bool_constant == 129) value = options.pixel_b129;
+            else {
+                return fail("captured shader conditional exec uses an uncaptured bool constant",
+                            error);
+            }
+            const bool execute = value == clause.condition;
+            if (execute) {
+                path.push_back(pc);
+                if (clause.opcode == ShaderControlFlowOpcode::ConditionalExecEnd) {
+                    break;
+                }
+            }
+            ++pc;
+            continue;
+        }
         if (clause.opcode != ShaderControlFlowOpcode::Nop &&
             clause.opcode != ShaderControlFlowOpcode::Exec &&
+            clause.opcode != ShaderControlFlowOpcode::ConditionalExec &&
+            clause.opcode != ShaderControlFlowOpcode::ConditionalExecEnd &&
             clause.opcode != ShaderControlFlowOpcode::Allocate) {
             return fail("captured shader control-flow opcode is unsupported", error);
         }
+        path.push_back(pc);
         ++pc;
     }
-    if (path.empty() || control_flow[path.back()].opcode != ShaderControlFlowOpcode::ExecEnd) {
+    if (path.empty() ||
+        (control_flow[path.back()].opcode != ShaderControlFlowOpcode::ExecEnd &&
+         control_flow[path.back()].opcode != ShaderControlFlowOpcode::ConditionalExecEnd)) {
         return fail("captured shader path has no bounded exec-end", error);
     }
 
@@ -605,7 +632,9 @@ bool translate_captured_shader_glsl(
     for (uint32_t slot : path) {
         const auto& clause = control_flow[slot];
         if (clause.opcode != ShaderControlFlowOpcode::Exec &&
-            clause.opcode != ShaderControlFlowOpcode::ExecEnd) continue;
+            clause.opcode != ShaderControlFlowOpcode::ExecEnd &&
+            clause.opcode != ShaderControlFlowOpcode::ConditionalExec &&
+            clause.opcode != ShaderControlFlowOpcode::ConditionalExecEnd) continue;
         for (const auto& instruction : schedule) {
             if (instruction.control_flow_index == slot) {
                 executed.push_back(instruction);
@@ -792,7 +821,9 @@ bool translate_captured_shader_glsl(
             continue;
         }
         if (clause.opcode != ShaderControlFlowOpcode::Exec &&
-            clause.opcode != ShaderControlFlowOpcode::ExecEnd) continue;
+            clause.opcode != ShaderControlFlowOpcode::ExecEnd &&
+            clause.opcode != ShaderControlFlowOpcode::ConditionalExec &&
+            clause.opcode != ShaderControlFlowOpcode::ConditionalExecEnd) continue;
         for (const auto& instruction : executed) {
             if (instruction.control_flow_index != slot) continue;
             if (instruction.kind == ShaderScheduledInstructionKind::Fetch) {

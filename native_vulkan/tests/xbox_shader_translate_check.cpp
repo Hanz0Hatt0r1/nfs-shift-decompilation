@@ -70,6 +70,18 @@ std::vector<uint8_t> captured_multi_interpolator_vertex_shader() {
     return shader;
 }
 
+std::vector<uint8_t> captured_conditional_exec_pixel_shader() {
+    std::vector<uint8_t> shader(4 * 12, 0);
+    write_be32(shader.data(), 2u);
+    write_be32(shader.data() + 4, 0x1002C400u);
+    write_be32(shader.data() + 8, 0x46000000u);
+    write_be32(shader.data() + 12, 0x00001003u);
+    write_be32(shader.data() + 16, 0x00002000u);
+    write_be32(shader.data() + 2 * 12, 5u << 26);
+    write_be32(shader.data() + 3 * 12, 5u << 26);
+    return shader;
+}
+
 void require(bool condition, const char* message) {
     if (!condition) {
         std::cerr << message << '\n';
@@ -214,6 +226,47 @@ void verify_pre_wait_retail_shader_exports() {
 
 int main() {
     verify_pre_wait_retail_shader_exports();
+
+    const std::vector<uint8_t> conditional_exec_shader =
+        captured_conditional_exec_pixel_shader();
+    shift::xbox::CapturedShaderTranslationOptions conditional_options{};
+    conditional_options.pixel_b128 = true;
+    shift::xbox::CapturedShaderTranslation conditional_translation{};
+    std::string conditional_error;
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                conditional_exec_shader.data(), conditional_exec_shader.size(),
+                conditional_options, &conditional_translation, &conditional_error) &&
+                conditional_translation.executed_instruction_addresses ==
+                    std::vector<uint32_t>{2},
+            "true CEXECE did not execute its clause and terminate the shader");
+    conditional_options.pixel_b128 = false;
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                conditional_exec_shader.data(), conditional_exec_shader.size(),
+                conditional_options, &conditional_translation, &conditional_error) &&
+                conditional_translation.executed_instruction_addresses ==
+                    std::vector<uint32_t>{3},
+            "false CEXECE did not fall through to the bounded EXEC_END");
+
+    std::vector<uint8_t> cexec_shader = conditional_exec_shader;
+    write_be32(cexec_shader.data() + 8, 0x36000000u);
+    conditional_options.pixel_b128 = true;
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                cexec_shader.data(), cexec_shader.size(), conditional_options,
+                &conditional_translation, &conditional_error) &&
+                conditional_translation.executed_instruction_addresses ==
+                    (std::vector<uint32_t>{2, 3}),
+            "true CEXEC did not execute its clause and continue to EXEC_END");
+    conditional_options.pixel_b128 = false;
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                cexec_shader.data(), cexec_shader.size(), conditional_options,
+                &conditional_translation, &conditional_error) &&
+                conditional_translation.executed_instruction_addresses ==
+                    std::vector<uint32_t>{3},
+            "false CEXEC did not skip its clause and continue to EXEC_END");
 
     const std::vector<uint8_t> vertex_shader =
         captured_full_mini_vertex_shader();

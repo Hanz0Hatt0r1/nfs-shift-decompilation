@@ -1696,3 +1696,27 @@ not the captured transition: its 14-draw frame still fails on changing Xenos
 target layouts, and other shader/resource errors remain. No retail video frame
 or parity result is claimed. Details and limits are in
 [`process2_retail_transition_min_alu_20261027.json`](../../evidence/process2_retail_transition_min_alu_20261027.json).
+
+## Conditional Xenos shader execution (2026-10-27)
+
+The same Redmi transition log rejects draw 2 with an unsupported shader
+control-flow opcode, but the raw shader bytes were not retained, so that log
+does not identify the opcode. The bounded decoder and translator now support
+Xenos `CEXEC` and `CEXECE` (opcodes 3 and 4) when their condition is captured
+as `b128` or `b129`. `CEXECE` ends shader execution only when its condition is
+true, matching the documented Xenos behavior. The source encoding is cross
+checked against [Xenia's Xenos ucode definitions](https://raw.githubusercontent.com/xenia-project/xenia/master/src/xenia/gpu/ucode.h).
+Other control-flow opcodes now report their numeric opcode and instruction
+slot, so a later retail trace can identify the next unsupported form.
+
+Synthetic regressions check CEXEC field decoding, true/false CEXEC fallthrough,
+and true/false CEXECE termination. Native Vulkan CTest passed 4/4 and Linux
+plugin CTest passed 7/7 with `VK_LAYER_KHRONOS_validation` forced. The ARM64
+shader-translation check also passed on the Redmi Note 8 Pro / Mali-G76 MC4.
+Only the test binary was uploaded; the game remained at the disclaimer with
+the same PID and screenshot hash. This change may cover the rejected opcode if
+draw 2 used CEXEC/CEXECE;
+it does not prove that mapping or advance the game. The raw shader is absent,
+and the transition still has separate texture-descriptor, branch-predicate,
+and changing-target-layout failures. Build identities and exact evidence are
+in [`process2_retail_cond_exec_20261027.json`](../../evidence/process2_retail_cond_exec_20261027.json).

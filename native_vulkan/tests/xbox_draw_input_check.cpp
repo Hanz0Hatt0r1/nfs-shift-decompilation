@@ -68,6 +68,19 @@ int main() {
     require(control_flow[3].opcode == shift::xbox::ShaderControlFlowOpcode::Nop,
             "shader control-flow NOP changed");
 
+    uint8_t conditional_exec_shader[sizeof(shader_control_flow)];
+    std::copy(shader_control_flow, shader_control_flow + sizeof(shader_control_flow),
+              conditional_exec_shader);
+    conditional_exec_shader[6] = 0x36;
+    conditional_exec_shader[7] = 0x00;
+    require(shift::xbox::decode_captured_shader_control_flow(
+                conditional_exec_shader, sizeof(conditional_exec_shader),
+                &control_flow, &error) &&
+                control_flow[0].opcode ==
+                    shift::xbox::ShaderControlFlowOpcode::ConditionalExec &&
+                control_flow[0].bool_constant == 128 && control_flow[0].condition,
+            "conditional shader exec fields changed");
+
     const uint8_t shader_branch_control_flow[] = {
         0x00, 0x00, 0x10, 0x04, 0x00, 0x02, 0x10, 0x00, 0xB6, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x20, 0x03, 0x10, 0x04, 0xB0, 0x00, 0x20, 0x00, 0x00, 0x00,
@@ -271,6 +284,8 @@ int main() {
                 unsupported_shader_control_flow, sizeof(unsupported_shader_control_flow),
                 &control_flow, &error),
             "unsupported shader control-flow opcode was accepted");
+    require(error.find("opcode 15 at instruction 0") != std::string::npos,
+            "unsupported shader control-flow diagnostic lost opcode and slot");
     require(control_flow.size() == unchanged_control_flow.size(),
             "unsupported shader decode partially replaced its output");
 

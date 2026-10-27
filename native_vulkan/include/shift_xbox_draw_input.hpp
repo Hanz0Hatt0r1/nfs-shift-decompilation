@@ -121,6 +121,8 @@ enum class ShaderControlFlowOpcode : uint8_t {
     Nop = 0,
     Exec = 1,
     ExecEnd = 2,
+    ConditionalExec = 3,
+    ConditionalExecEnd = 4,
     ConditionalJump = 11,
     Allocate = 12,
 };
