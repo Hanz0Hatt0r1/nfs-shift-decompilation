@@ -1047,12 +1047,17 @@ bool decode_captured_texture_fetch(
 
     const bool r8 = format == 2 && endian_mode == 0;
     const bool rgba8 = format == 6 && endian_mode == 2;
+    // Format 31 is the captured 16_16_FLOAT view used by format-31
+    // Copy/Convert destinations. It is accepted here only as metadata for an
+    // earlier-copy image lookup; the guest-memory untile path remains closed.
+    const bool rg16_float = format == 31 && endian_mode == 2 && tiled == 0;
     const bool dxt = (format == 19 || format == 20) && endian_mode == 1;
     const bool dxt5a = format == 59 && endian_mode == 1;
     const bool compressed = dxt || dxt5a;
     const bool valid_texture_layout = r8
         ? !tiled && pitch >= width
         : rgba8 ? tiled && pitch >= width && pitch % 32u == 0
+                : rg16_float ? pitch >= width
                 : compressed && width % 4u == 0 && height % 4u == 0 &&
                       pitch >= width && pitch % 4u == 0 &&
                       (!tiled || pitch % 128u == 0);
@@ -1062,13 +1067,16 @@ bool decode_captured_texture_fetch(
     const bool mip_range_aliases_base = mip_max != 0 && mip_min == 0 &&
         base_address != 0 && base_address == mip_address;
     if (fetch_type != 2 || !valid_texture_layout || stacked || stack_depth != 0 ||
-        dimension != 1 || mip_min != 0 || (mip_max != 0 && !mip_range_aliases_base)) {
+        dimension != 1 || mip_min != 0 ||
+        (rg16_float && mip_max != 0) ||
+        (mip_max != 0 && !mip_range_aliases_base)) {
         return fail("unsupported captured texture-fetch descriptor", error);
     }
 
     const uint64_t byte_length = r8
         ? static_cast<uint64_t>(pitch) * height
         : rgba8 ? tiled_rgba8_storage_bytes(pitch, height)
+                : rg16_float ? static_cast<uint64_t>(pitch) * height * 4u
                 : compressed_texture_storage_bytes(
                       pitch, height, dxt5a ? 8u : 16u, tiled != 0);
     if (!width || !height || byte_length > std::numeric_limits<uint32_t>::max()) {
@@ -1208,6 +1216,18 @@ void GuestRasterRegisterState::apply(const GuestRegisterWrite& write) noexcept {
         case 0x231Bu:
             registers_.copy_dest_info = write.value;
             registers_.copy_valid_mask |= 8u;
+            return;
+        case 0x231Du:
+            registers_.depth_clear = write.value;
+            registers_.copy_clear_valid_mask |= 1u;
+            return;
+        case 0x231Eu:
+            registers_.color_clear = write.value;
+            registers_.copy_clear_valid_mask |= 2u;
+            return;
+        case 0x231Fu:
+            registers_.color_clear_lo = write.value;
+            registers_.copy_clear_valid_mask |= 4u;
             return;
         default:
             break;
@@ -1721,6 +1741,23 @@ bool captured_xenos_edram_sample_address(
                static_cast<uint32_t>(byte_offset), bytes_per_sample};
     if (error) error->clear();
     return true;
+}
+
+bool decode_captured_copy_source_raster_state(
+    const CapturedRasterRegisters& registers,
+    CapturedRasterState* output,
+    std::string* error,
+    uint32_t target_width,
+    uint32_t target_height) {
+    if (registers.mode_control != 6u) {
+        return fail("captured Copy/Convert source is not in Xenos mode 6", error);
+    }
+    CapturedRasterRegisters source_registers = registers;
+    // Mode 6 selects copy behavior. The other fields still describe the source
+    // EDRAM layout, so normalize only the mode selector for raster decoding.
+    source_registers.mode_control = 4u;
+    return decode_captured_raster_state(source_registers, output, error,
+                                        target_width, target_height);
 }
 
 bool decode_captured_copy_state(

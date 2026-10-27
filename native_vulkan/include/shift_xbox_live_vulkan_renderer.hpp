@@ -18,6 +18,7 @@ struct CapturedVulkanTexture {
     enum class Format : uint8_t {
         Rgba8,
         R8,
+        Rg16Float,
     };
 
     uint32_t fetch_constant_index = 0;
@@ -34,6 +35,9 @@ struct CapturedVulkanTexture {
     uint32_t guest_pitch = 0;
     bool guest_tiled = false;
     bool guest_packed_mips = false;
+    // True only when an earlier operation in the same PM4 stream produced an
+    // exact-layout Vulkan image for this fetch descriptor.
+    bool guest_copy_source = false;
 };
 
 struct CapturedVulkanDraw {
@@ -63,7 +67,14 @@ struct CapturedVulkanCopy {
     CapturedCopyState state{};
     uint32_t source_width = 0;
     uint32_t source_height = 0;
+    uint32_t color_clear = 0;
+    uint32_t color_clear_lo = 0;
+    uint32_t depth_clear = 0;
+    bool clear_values_ready = false;
     bool source_gamma = false;
+    // Set by the ordered executor for non-presenter writes, including guest
+    // format 6 copies whose destination must remain in the resource cache.
+    bool retain_destination = false;
     std::vector<uint32_t> vertex_shader_spirv;
     std::vector<uint32_t> pixel_shader_spirv;
     std::vector<uint32_t> single_sample_pixel_shader_spirv;
@@ -93,6 +104,8 @@ struct CapturedVulkanOperation {
     uint32_t source_color_info = 0;
     uint32_t source_depth_info = 0;
     uint32_t source_mode_control = 0;
+    bool source_raster_ready = false;
+    CapturedRasterState source_raster{};
     // Copy/Convert packets carry their own compiled shaders so an executor can
     // replay the PM4 stream without borrowing the final presenter copy.
     bool copy_shaders_ready = false;
@@ -159,6 +172,9 @@ class CapturedVulkanTextureCache {
     // GPU-resident intermediate Copy/Convert destinations keyed by guest
     // address and the complete captured destination layout.
     size_t cached_guest_copy_image_count() const;
+    // GPU-resident Xenos render targets retained between copy segments and
+    // guest frames, keyed by the complete captured raster layout.
+    size_t cached_guest_edram_target_count() const;
 
  private:
     struct Impl;
@@ -183,9 +199,7 @@ class CapturedVulkanTextureCache {
 // When draw_visibility is supplied, the renderer waits for completion and
 // returns one optional non-precise occlusion result per submitted draw.
 // The optional operation stream preserves packet order for validation and
-// failure diagnostics. A standalone intermediate Copy/Convert can retain its
-// destination image in texture_cache; this function still does not execute an
-// ordered multi-operation stream or model Xenos EDRAM aliasing.
+// failure diagnostics. This single-frame function does not execute it.
 bool submit_captured_vulkan_frame(
     VkPhysicalDevice physical_device,
     VkDevice device,
@@ -207,6 +221,34 @@ bool submit_captured_vulkan_frame(
     CapturedVulkanTextureCache* texture_cache = nullptr,
     CapturedVulkanSourceReadback* source_readback = nullptr,
     std::vector<CapturedVulkanDrawVisibility>* draw_visibility = nullptr,
-    const std::vector<CapturedVulkanOperation>* operations = nullptr);
+    const std::vector<CapturedVulkanOperation>* operations = nullptr,
+    bool preserve_edram_target = false);
+
+// Executes compatible Draw segments and their following Copy/Convert packets
+// in PM4 order. Intermediate copy images and same-layout color/depth targets
+// remain GPU-resident in texture_cache. Xenos EDRAM alias reinterpretation and
+// reuse of cached images as guest textures are still unsupported.
+bool submit_captured_vulkan_operation_stream(
+    VkPhysicalDevice physical_device,
+    VkDevice device,
+    VkQueue queue,
+    uint32_t queue_family_index,
+    VkImage output_image,
+    VkImageView output_view,
+    bool output_written_before,
+    uint32_t output_width,
+    uint32_t output_height,
+    const std::vector<CapturedVulkanDraw>& draws,
+    const std::vector<CapturedVulkanOperation>& operations,
+    std::string* error,
+    std::vector<uint32_t>* output_readback = nullptr,
+    bool geometry_shader_enabled = false,
+    const CapturedVulkanCopy* presenter_copy = nullptr,
+    bool depth_stencil_resolve_enabled = false,
+    CapturedVulkanSamplerCapabilities sampler_capabilities = {},
+    VkPipelineCache pipeline_cache = VK_NULL_HANDLE,
+    CapturedVulkanTextureCache* texture_cache = nullptr,
+    CapturedVulkanSourceReadback* source_readback = nullptr,
+    std::vector<CapturedVulkanDrawVisibility>* draw_visibility = nullptr);
 
 }  // namespace shift::xbox

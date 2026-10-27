@@ -680,6 +680,43 @@ int main() {
                 texture_fetch.border_color == 0 && !texture_fetch.border_size,
             "captured texture channel or clamp state changed");
 
+    const uint32_t copied_format31_descriptor[] = {
+        (8u << 22) | 2u,
+        ((0x0CC87000u >> 12) << 12) | (2u << 6) | 31u,
+        (242u << 13) | 255u,
+        0u,
+        0u,
+        1u << 9,
+    };
+    shift::xbox::CapturedTextureFetch copied_format31_fetch{};
+    require(shift::xbox::decode_captured_texture_fetch(
+                copied_format31_descriptor, &copied_format31_fetch, &error) &&
+                copied_format31_fetch.guest_address == 0x0CC87000u &&
+                copied_format31_fetch.format == 31u &&
+                copied_format31_fetch.endian_mode == 2u &&
+                copied_format31_fetch.width == 256u &&
+                copied_format31_fetch.height == 243u &&
+                copied_format31_fetch.pitch == 256u &&
+                copied_format31_fetch.byte_length == 256u * 243u * 4u &&
+                !copied_format31_fetch.tiled &&
+                !copied_format31_fetch.packed_mips,
+            "linear format-31 texture metadata for an exact Copy/Convert destination was rejected");
+    std::vector<uint8_t> unsupported_format31_upload;
+    require(!shift::xbox::untile_captured_texture_2d(
+                copied_format31_fetch, nullptr, 0,
+                &unsupported_format31_upload, &error),
+            "format-31 guest RAM was accepted without a GPU Copy/Convert image");
+    uint32_t mipmapped_format31_descriptor[6];
+    std::copy(std::begin(copied_format31_descriptor),
+              std::end(copied_format31_descriptor),
+              std::begin(mipmapped_format31_descriptor));
+    mipmapped_format31_descriptor[4] = 1u << 6;
+    mipmapped_format31_descriptor[5] =
+        (1u << 9) | ((0x0CC87000u >> 12) << 12);
+    require(!shift::xbox::decode_captured_texture_fetch(
+                mipmapped_format31_descriptor, &copied_format31_fetch, &error),
+            "format-31 Copy/Convert cache descriptor unexpectedly accepted a mip range");
+
     const uint32_t captured_movie_r8_descriptor[] = {
         0x0A024802u, 0x05F60002u, 0x0059E4FFu,
         0x00A81400u, 0x00000003u, 0x00000210u,
@@ -1255,6 +1292,17 @@ int main() {
                 edram_address.tile_index == 32 &&
                 edram_address.byte_offset == 32u * 5120u,
             "captured format-12 target did not retain the 32bpp tile-row pitch");
+    auto mode6_copy_source_registers = format12_registers;
+    mode6_copy_source_registers.mode_control = 6u;
+    shift::xbox::CapturedRasterState mode6_copy_source{};
+    require(shift::xbox::decode_captured_copy_source_raster_state(
+                mode6_copy_source_registers, &mode6_copy_source, &error,
+                2560, 1440) &&
+                mode6_copy_source.width == 2560u &&
+                mode6_copy_source.height == 1440u &&
+                mode6_copy_source.sample_count == 4u &&
+                mode6_copy_source.guest_color_format == 12u,
+            "mode-6 Copy/Convert did not retain its source EDRAM layout");
     auto wrapped_format12_target = format12_target;
     wrapped_format12_target.color_base_tiles = 2047;
     require(shift::xbox::captured_xenos_edram_sample_address(
@@ -1281,7 +1329,7 @@ int main() {
     require(raster_register_state.observed_register_mask() == 1u,
             "partial raster register state lost its observed register mask");
     raster_register_state.reset();
-    const std::array<shift::xbox::GuestRegisterWrite, 23> raster_writes{{
+    const std::array<shift::xbox::GuestRegisterWrite, 26> raster_writes{{
         {0x2000, captured_raster_registers.surface_info},
         {0x2001, captured_raster_registers.color_info},
         {0x2002, captured_raster_registers.depth_info},
@@ -1305,6 +1353,9 @@ int main() {
         {0x2319, 0x0975E000u},
         {0x231A, 0x02D00500u},
         {0x231B, 0x00000306u},
+        {0x231D, 0x3F800000u},
+        {0x231E, 0x00C00000u},
+        {0x231F, 0x12345678u},
     }};
     for (const auto& write : raster_writes) raster_register_state.apply(write);
     raster_register_state.apply({0x3000, 0xFFFFFFFFu});
@@ -1314,7 +1365,11 @@ int main() {
                 tracked_raster_registers.copy_control == 0x00100004u &&
                 tracked_raster_registers.copy_dest_base == 0x0975E000u &&
                 tracked_raster_registers.copy_dest_pitch == 0x02D00500u &&
-                tracked_raster_registers.copy_dest_info == 0x00000306u,
+                tracked_raster_registers.copy_dest_info == 0x00000306u &&
+                tracked_raster_registers.copy_clear_valid_mask == 7u &&
+                tracked_raster_registers.depth_clear == 0x3F800000u &&
+                tracked_raster_registers.color_clear == 0x00C00000u &&
+                tracked_raster_registers.color_clear_lo == 0x12345678u,
             "captured Xenos EDRAM copy registers changed");
     shift::xbox::CapturedRasterState tracked_window_coordinates{};
     require(shift::xbox::decode_captured_raster_state(

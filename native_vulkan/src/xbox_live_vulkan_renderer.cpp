@@ -31,9 +31,14 @@ struct ImageResource {
   VkDeviceMemory memory = VK_NULL_HANDLE;
   VkImageView view = VK_NULL_HANDLE;
   VkDeviceSize allocation_size = 0;
+  bool borrowed = false;
 };
 
 void destroy_image_resource(VkDevice device, ImageResource& resource) {
+  if (resource.borrowed) {
+    resource = {};
+    return;
+  }
   if (resource.view) vkDestroyImageView(device, resource.view, nullptr);
   if (resource.image) vkDestroyImage(device, resource.image, nullptr);
   if (resource.memory) vkFreeMemory(device, resource.memory, nullptr);
@@ -52,6 +57,7 @@ struct DrawTextureResources {
   VkImageLayout upload_old_layout = VK_IMAGE_LAYOUT_UNDEFINED;
   bool cached = false;
   bool cached_sampler = false;
+  bool guest_copy_source = false;
 };
 
 struct DrawResources {
@@ -155,10 +161,55 @@ struct CachedGuestCopyImage {
   bool initialized = false;
 };
 
+struct EdramTargetKey {
+  std::array<uint32_t, 10> values{};
+
+  bool operator==(const EdramTargetKey& other) const noexcept {
+    return values == other.values;
+  }
+};
+
+struct EdramTargetKeyHash {
+  size_t operator()(const EdramTargetKey& key) const noexcept {
+    uint64_t hash = 14695981039346656037ull;
+    for (uint32_t value : key.values) {
+      hash ^= value;
+      hash *= 1099511628211ull;
+    }
+    return static_cast<size_t>(hash);
+  }
+};
+
+EdramTargetKey make_edram_target_key(const CapturedRasterState& raster,
+                                    VkFormat color_format) {
+  return {{{raster.color_base_tiles,
+            raster.depth_base_tiles,
+            raster.width,
+            raster.height,
+            raster.surface_pitch,
+            raster.guest_color_format,
+            static_cast<uint32_t>(color_format),
+            raster.sample_count,
+            static_cast<uint32_t>(raster.depth_format),
+            raster.depth_only}}};
+}
+
+struct CachedEdramTarget {
+  ImageResource color;
+  ImageResource depth;
+  uint64_t estimated_bytes = 0;
+  uint64_t last_used_frame = 0;
+  uint64_t last_depth_used_frame = 0;
+  bool color_initialized = false;
+  bool depth_initialized = false;
+};
+
 constexpr uint64_t kR8TextureCacheBudgetBytes = 16u * 1024u * 1024u;
 constexpr uint64_t kR8TextureCacheLifetimeFrames = 120;
 constexpr uint64_t kGuestCopyImageCacheBudgetBytes = 32u * 1024u * 1024u;
 constexpr uint64_t kGuestCopyImageCacheLifetimeFrames = 120;
+constexpr uint64_t kEdramTargetCacheBudgetBytes = 192u * 1024u * 1024u;
+constexpr uint64_t kEdramTargetCacheLifetimeFrames = 120;
 constexpr uint64_t kDrawBufferCacheBudgetBytes = 16u * 1024u * 1024u;
 constexpr size_t kDrawBufferCacheEntryLimit = 128;
 constexpr size_t kGraphicsPipelineCacheEntryLimit = 128;
@@ -378,6 +429,9 @@ struct TextureCacheState {
   std::unordered_map<GuestCopyImageKey, CachedGuestCopyImage,
                      GuestCopyImageKeyHash> guest_copy_images;
   uint64_t guest_copy_image_bytes = 0;
+  std::unordered_map<EdramTargetKey, CachedEdramTarget,
+                     EdramTargetKeyHash> edram_targets;
+  uint64_t edram_target_bytes = 0;
   std::unordered_map<GraphicsPipelineKey, CachedGraphicsPipeline,
                      GraphicsPipelineKeyHash>
       graphics_pipelines;
@@ -861,9 +915,10 @@ bool make_room_for_graphics_pipeline(TextureCacheState* cache) {
 bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
                                std::string* error) {
     if (!cache) return true;
-    if (cache->device && cache->device != device &&
+  if (cache->device && cache->device != device &&
         (!cache->draw_buffers.empty() || !cache->textures.empty() ||
          !cache->guest_copy_images.empty() ||
+         !cache->edram_targets.empty() ||
          !cache->graphics_pipelines.empty() ||
          !cache->descriptor_layouts.empty() ||
          !cache->samplers.empty() || !cache->in_flight.empty())) {
@@ -891,7 +946,14 @@ bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
             return cache->frame - entry.second.last_used_frame >
                    kGuestCopyImageCacheLifetimeFrames;
         });
-    if ((evicting || evicting_draw_buffers || evicting_guest_copy_images) &&
+    const bool evicting_edram_targets = std::any_of(
+        cache->edram_targets.begin(), cache->edram_targets.end(),
+        [&](const auto& entry) {
+            return cache->frame - entry.second.last_used_frame >
+                   kEdramTargetCacheLifetimeFrames;
+        });
+    if ((evicting || evicting_draw_buffers || evicting_guest_copy_images ||
+         evicting_edram_targets) &&
         !wait_for_all_frames(cache, error)) {
         return false;
     }
@@ -922,6 +984,18 @@ bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
             cache->guest_copy_image_bytes -= it->second.estimated_bytes;
             destroy_image_resource(device, it->second.image);
             it = cache->guest_copy_images.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    for (auto it = cache->edram_targets.begin();
+         it != cache->edram_targets.end();) {
+        if (cache->frame - it->second.last_used_frame >
+            kEdramTargetCacheLifetimeFrames) {
+            cache->edram_target_bytes -= it->second.estimated_bytes;
+            destroy_image_resource(device, it->second.depth);
+            destroy_image_resource(device, it->second.color);
+            it = cache->edram_targets.erase(it);
         } else {
             ++it;
         }
@@ -1017,6 +1091,14 @@ void finish_texture_cache_frame(TextureCacheState* cache) {
     for (auto& [key, image] : cache->guest_copy_images) {
         if (image.last_used_frame == cache->frame) image.initialized = true;
     }
+    for (auto& [key, target] : cache->edram_targets) {
+        if (target.last_used_frame == cache->frame) {
+            target.color_initialized = true;
+        }
+        if (target.last_depth_used_frame == cache->frame) {
+            target.depth_initialized = true;
+        }
+    }
 }
 
 void clear_texture_cache(TextureCacheState* cache) {
@@ -1049,6 +1131,12 @@ void clear_texture_cache(TextureCacheState* cache) {
     }
     cache->guest_copy_images.clear();
     cache->guest_copy_image_bytes = 0;
+    for (auto& [key, target] : cache->edram_targets) {
+        destroy_image_resource(cache->device, target.depth);
+        destroy_image_resource(cache->device, target.color);
+    }
+    cache->edram_targets.clear();
+    cache->edram_target_bytes = 0;
     for (auto& [draw_index, buffers] : cache->draw_buffers) {
         destroy_cached_draw_buffers(cache->device, buffers,
                                     &cache->draw_buffers_bytes);
@@ -1089,6 +1177,7 @@ bool create_render_attachment(
 
     VkMemoryRequirements requirements{};
     vkGetImageMemoryRequirements(device, output->image, &requirements);
+    output->allocation_size = requirements.size;
     const uint32_t memory_type = find_memory_type(
         memory_properties, requirements.memoryTypeBits, 0,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -1167,6 +1256,95 @@ VkSampleCountFlagBits sample_count_flag(uint32_t samples) {
     }
 }
 
+bool acquire_edram_target(
+    TextureCacheState* cache,
+    const VkPhysicalDeviceMemoryProperties& memory_properties,
+    VkDevice device,
+    const CapturedRasterState& raster,
+    VkFormat color_format,
+    bool needs_depth,
+    CachedEdramTarget** output,
+    std::string* error) {
+  if (!cache || !output || !raster.width || !raster.height ||
+      color_format == VK_FORMAT_UNDEFINED) {
+    return fail("invalid persistent Xenos EDRAM target request", error);
+  }
+  const VkSampleCountFlagBits samples = sample_count_flag(raster.sample_count);
+  if (samples == VkSampleCountFlagBits{}) {
+    return fail("persistent Xenos EDRAM target uses an unsupported sample count",
+                error);
+  }
+
+  const EdramTargetKey key = make_edram_target_key(raster, color_format);
+  auto found = cache->edram_targets.find(key);
+  if (found == cache->edram_targets.end()) {
+    CachedEdramTarget created{};
+    constexpr VkImageUsageFlags color_usage =
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    if (!create_render_attachment(
+            memory_properties, device, raster.width, raster.height,
+            color_format, color_usage, VK_IMAGE_ASPECT_COLOR_BIT, samples,
+            &created.color, error)) {
+      destroy_image_resource(device, created.color);
+      return false;
+    }
+    created.estimated_bytes = created.color.allocation_size;
+    if (needs_depth) {
+      if (!create_render_attachment(
+              memory_properties, device, raster.width, raster.height,
+              VK_FORMAT_D24_UNORM_S8_UINT,
+              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+              VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+              samples, &created.depth, error)) {
+        destroy_image_resource(device, created.depth);
+        destroy_image_resource(device, created.color);
+        return false;
+      }
+      created.estimated_bytes += created.depth.allocation_size;
+    }
+    if (created.estimated_bytes > kEdramTargetCacheBudgetBytes ||
+        cache->edram_target_bytes >
+            kEdramTargetCacheBudgetBytes - created.estimated_bytes) {
+      destroy_image_resource(device, created.depth);
+      destroy_image_resource(device, created.color);
+      std::ostringstream message;
+      message << "persistent Xenos EDRAM target cache requires "
+              << created.estimated_bytes << " bytes and exceeds its "
+              << kEdramTargetCacheBudgetBytes << "-byte budget";
+      return fail(message.str(), error);
+    }
+    found = cache->edram_targets.emplace(key, std::move(created)).first;
+    cache->edram_target_bytes += found->second.estimated_bytes;
+  } else if (needs_depth && found->second.depth.image == VK_NULL_HANDLE) {
+    ImageResource depth{};
+    if (!create_render_attachment(
+            memory_properties, device, raster.width, raster.height,
+            VK_FORMAT_D24_UNORM_S8_UINT,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+            VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+            samples, &depth, error)) {
+      destroy_image_resource(device, depth);
+      return false;
+    }
+    if (depth.allocation_size > kEdramTargetCacheBudgetBytes -
+                                    cache->edram_target_bytes) {
+      destroy_image_resource(device, depth);
+      return fail("persistent Xenos EDRAM depth target exceeds its 192 MiB cache budget",
+                  error);
+    }
+    found->second.estimated_bytes += depth.allocation_size;
+    cache->edram_target_bytes += depth.allocation_size;
+    found->second.depth = depth;
+  }
+
+  CachedEdramTarget& target = found->second;
+  target.last_used_frame = cache->frame;
+  if (needs_depth) target.last_depth_used_frame = cache->frame;
+  *output = &target;
+  return true;
+}
+
 bool frame_has_gamma_color_target(
     const std::vector<CapturedVulkanDraw>& draws) {
     return std::any_of(draws.begin(), draws.end(), [](const CapturedVulkanDraw& draw) {
@@ -1204,6 +1382,24 @@ VkFormat captured_copy_destination_format(uint32_t format) {
         case 31: return VK_FORMAT_R16G16_SFLOAT;
         default: return VK_FORMAT_UNDEFINED;
     }
+}
+
+CachedEdramTarget* find_initialized_edram_target(
+    TextureCacheState* cache,
+    const CapturedRasterState& raster) {
+  if (!cache) return nullptr;
+  const VkFormat color_format = captured_color_format(raster.color_format, false);
+  if (color_format == VK_FORMAT_UNDEFINED) return nullptr;
+  const EdramTargetKey key = make_edram_target_key(raster, color_format);
+  const auto found = cache->edram_targets.find(key);
+  if (found == cache->edram_targets.end() ||
+      !found->second.color_initialized ||
+      found->second.last_used_frame > cache->frame ||
+      cache->frame + 1u - found->second.last_used_frame >
+          kEdramTargetCacheLifetimeFrames) {
+    return nullptr;
+  }
+  return &found->second;
 }
 
 bool acquire_guest_copy_image(
@@ -1250,6 +1446,32 @@ bool acquire_guest_copy_image(
     image.last_used_frame = cache->frame;
     *output = &image;
     return true;
+}
+
+CachedGuestCopyImage* find_guest_copy_texture(
+    TextureCacheState* cache, const CapturedVulkanTexture& texture) {
+  if (!cache || !texture.guest_copy_source || texture.guest_address == 0 ||
+      texture.guest_format != 31u || texture.guest_endian != 2u ||
+      texture.guest_tiled || texture.guest_packed_mips ||
+      texture.guest_pitch != texture.width || texture.width == 0 ||
+      texture.height == 0) {
+    return nullptr;
+  }
+  for (auto& [key, image] : cache->guest_copy_images) {
+    const auto& values = key.values;
+    if (image.initialized && values[0] == texture.guest_address &&
+        values[1] == texture.width && values[2] == texture.height &&
+        values[3] == 31u && values[4] == 7u &&
+        static_cast<int32_t>(values[5]) == 0 && values[6] == 2u &&
+        values[7] == 0u && values[8] == 0u && values[9] == 0u &&
+        values[10] == 0u && values[11] == 0u && values[12] ==
+            static_cast<uint32_t>(CapturedCopyCommand::Convert) &&
+        values[13] == 0u) {
+      image.last_used_frame = cache->frame;
+      return &image;
+    }
+  }
+  return nullptr;
 }
 
 uint32_t color_format_bytes(VkFormat format) {
@@ -1363,40 +1585,74 @@ bool create_draw_resources(
     uint32_t height;
     CapturedVulkanTexture::Format format;
     const std::vector<uint8_t> *pixels;
+    const CapturedVulkanTexture *captured = nullptr;
   };
   std::vector<TextureInput> texture_inputs;
   if (source.textures.empty()) {
-    texture_inputs.push_back({0, &source.texture_sampling, source.texture_width,
+      texture_inputs.push_back({0, &source.texture_sampling, source.texture_width,
                               source.texture_height,
                               CapturedVulkanTexture::Format::Rgba8,
-                              &source.texture_rgba8});
+                              &source.texture_rgba8, nullptr});
   } else {
     texture_inputs.reserve(source.textures.size());
     for (const CapturedVulkanTexture &texture : source.textures) {
       texture_inputs.push_back({texture.fetch_constant_index, &texture.sampling,
                                 texture.width, texture.height, texture.format,
-                                &texture.pixels});
+                                &texture.pixels, &texture});
     }
   }
   uint64_t total_texture_size = 0;
   for (size_t i = 0; i < texture_inputs.size(); ++i) {
     const TextureInput &texture = texture_inputs[i];
+    const CapturedVulkanTexture *captured = texture.captured;
+    const bool captured_copy_source = captured &&
+        find_guest_copy_texture(texture_cache, *captured) != nullptr;
+    if (captured && captured->guest_copy_source && !captured_copy_source) {
+      std::ostringstream message;
+      message << "format-31 texture cache lookup failed for address 0x"
+              << std::hex << captured->guest_address << std::dec << " extent "
+              << captured->width << 'x' << captured->height << " pitch "
+              << captured->guest_pitch << "; cached copy keys="
+              << (texture_cache ? texture_cache->guest_copy_images.size() : 0);
+      if (texture_cache) {
+        for (const auto& [key, image] : texture_cache->guest_copy_images) {
+          (void)image;
+          message << " [";
+          for (size_t key_index = 0; key_index < key.values.size(); ++key_index) {
+            if (key_index) message << ',';
+            message << key.values[key_index];
+          }
+          message << ']';
+        }
+      }
+      return fail(message.str(), error);
+    }
     const uint64_t pixel_count =
         static_cast<uint64_t>(texture.width) * texture.height;
-    const uint32_t bytes_per_pixel =
-        texture.format == CapturedVulkanTexture::Format::R8 ? 1u : 4u;
+    const uint32_t bytes_per_pixel = texture.format ==
+            CapturedVulkanTexture::Format::R8
+        ? 1u
+        : texture.format == CapturedVulkanTexture::Format::Rg16Float ? 4u : 4u;
     if (texture.format != CapturedVulkanTexture::Format::R8 &&
-        texture.format != CapturedVulkanTexture::Format::Rgba8) {
+        texture.format != CapturedVulkanTexture::Format::Rgba8 &&
+        texture.format != CapturedVulkanTexture::Format::Rg16Float) {
       return fail("captured Vulkan texture format is unsupported", error);
     }
     if (texture.fetch_constant_index >= 32 || texture.width == 0 ||
         texture.height == 0 || pixel_count > (uint64_t{1} << 24) ||
-        pixel_count * bytes_per_pixel != texture.pixels->size() ||
+        (!captured_copy_source &&
+         pixel_count * bytes_per_pixel != texture.pixels->size()) ||
         total_texture_size >
-            (uint64_t{1} << 26) - pixel_count * bytes_per_pixel) {
-      return fail(
-          "captured Vulkan texture resources are incomplete or oversized",
-          error);
+            (uint64_t{1} << 26) -
+                (captured_copy_source ? 0 : pixel_count * bytes_per_pixel)) {
+      std::ostringstream message;
+      message << "captured Vulkan texture resources are incomplete or oversized"
+              << " at texture " << i << " (fetch="
+              << texture.fetch_constant_index << ", extent=" << texture.width
+              << 'x' << texture.height << ", bytes=" << texture.pixels->size()
+              << ", expected=" << pixel_count * bytes_per_pixel
+              << ", copy-cache=" << captured_copy_source << ')';
+      return fail(message.str(), error);
     }
     for (size_t j = 0; j < i; ++j) {
       if (texture_inputs[j].fetch_constant_index ==
@@ -1405,7 +1661,7 @@ bool create_draw_resources(
                     error);
       }
     }
-    total_texture_size += pixel_count * bytes_per_pixel;
+    if (!captured_copy_source) total_texture_size += pixel_count * bytes_per_pixel;
   }
   std::sort(texture_inputs.begin(), texture_inputs.end(),
             [](const TextureInput &left, const TextureInput &right) {
@@ -1544,7 +1800,23 @@ bool create_draw_resources(
     const VkFormat image_format =
         input.format == CapturedVulkanTexture::Format::R8
             ? VK_FORMAT_R8_UNORM
-            : VK_FORMAT_R8G8B8A8_UNORM;
+            : input.format == CapturedVulkanTexture::Format::Rg16Float
+                  ? VK_FORMAT_R16G16_SFLOAT
+                  : VK_FORMAT_R8G8B8A8_UNORM;
+    CachedGuestCopyImage *guest_copy_image = input.captured
+        ? find_guest_copy_texture(texture_cache, *input.captured)
+        : nullptr;
+    if (input.captured && input.captured->guest_copy_source &&
+        !guest_copy_image) {
+      return fail("captured format-31 texture has no initialized exact-layout Copy/Convert image",
+                  error);
+    }
+    if (guest_copy_image) {
+      texture.image = guest_copy_image->image;
+      texture.image.borrowed = true;
+      texture.cached = true;
+      texture.guest_copy_source = true;
+    }
     if (texture_cache && input.format == CapturedVulkanTexture::Format::R8) {
       if (!acquire_cached_r8_texture(texture_cache, memory_properties, device,
                                      draw_index, input.fetch_constant_index,
@@ -2780,7 +3052,8 @@ bool submit_mixed_sample_copy_frame(
         };
         for (const auto& [buffer, access] : buffers) add_host_barrier(buffer, access);
         for (const DrawTextureResources& texture : draw.textures) {
-            add_host_barrier(&texture.upload, VK_ACCESS_TRANSFER_READ_BIT);
+            if (!texture.guest_copy_source)
+                add_host_barrier(&texture.upload, VK_ACCESS_TRANSFER_READ_BIT);
         }
     }
     vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_HOST_BIT,
@@ -2793,6 +3066,7 @@ bool submit_mixed_sample_copy_frame(
     for (size_t i = 0; i < resources.draws.size(); ++i) {
         const DrawResources& draw = resources.draws[i];
         for (const DrawTextureResources& texture : draw.textures) {
+            if (texture.guest_copy_source) continue;
             VkImageMemoryBarrier to_upload{};
             to_upload.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             to_upload.srcAccessMask = texture.upload_old_layout ==
@@ -3206,7 +3480,25 @@ std::string describe_captured_vulkan_operations(
                         << ",samples=" << operation.copy_state.sample_select
                         << ",clear=" << operation.copy_state.color_clear_enable
                         << '/' << operation.copy_state.depth_clear_enable
-                        << ",swap_rb="
+                        << ",clear_registers={ready:"
+                        << operation.copy.clear_values_ready << ",color:0x"
+                        << std::hex << operation.copy.color_clear
+                        << ",color_lo:0x" << operation.copy.color_clear_lo
+                        << ",depth:0x" << operation.copy.depth_clear << std::dec
+                        << "},source_target={ready:"
+                        << operation.source_raster_ready;
+                if (operation.source_raster_ready) {
+                    message << ",extent=" << operation.source_raster.width << 'x'
+                            << operation.source_raster.height << ",samples="
+                            << operation.source_raster.sample_count
+                            << ",color_base=0x" << std::hex
+                            << operation.source_raster.color_base_tiles
+                            << ",depth_base=0x"
+                            << operation.source_raster.depth_base_tiles << std::dec
+                            << ",guest_format="
+                            << operation.source_raster.guest_color_format;
+                }
+                message << "},swap_rb="
                         << operation.copy_state.destination_swap_red_blue
                         << ",shaders="
                         << (operation.copy_shaders_ready ? "prepared" : "missing")
@@ -3299,6 +3591,10 @@ size_t CapturedVulkanTextureCache::cached_guest_copy_image_count() const {
     return impl_ ? impl_->state.guest_copy_images.size() : 0;
 }
 
+size_t CapturedVulkanTextureCache::cached_guest_edram_target_count() const {
+    return impl_ ? impl_->state.edram_targets.size() : 0;
+}
+
 bool submit_captured_vulkan_frame(
     VkPhysicalDevice physical_device,
     VkDevice device,
@@ -3320,7 +3616,8 @@ bool submit_captured_vulkan_frame(
     CapturedVulkanTextureCache* texture_cache,
     CapturedVulkanSourceReadback* source_readback,
     std::vector<CapturedVulkanDrawVisibility>* draw_visibility,
-    const std::vector<CapturedVulkanOperation>* operations) {
+    const std::vector<CapturedVulkanOperation>* operations,
+    bool preserve_edram_target) {
     if (output_readback) output_readback->clear();
     if (draw_visibility) draw_visibility->assign(draws.size(), {});
     if (source_readback) {
@@ -3534,8 +3831,8 @@ bool submit_captured_vulkan_frame(
         return submitted;
     }
     CachedGuestCopyImage* cached_copy_image = nullptr;
-    const bool persistent_copy_target = copy &&
-        copy->state.destination_format != 6 && texture_cache_state;
+    const bool persistent_copy_target = copy && texture_cache_state &&
+        (copy->state.destination_format != 6 || copy->retain_destination);
     VkImage copy_output_image = output_image;
     VkImageView copy_output_view = output_view;
     bool copy_output_written_before = output_written_before;
@@ -3594,6 +3891,12 @@ bool submit_captured_vulkan_frame(
     }
     const uint32_t raster_width = copy ? source_width : output_width;
     const uint32_t raster_height = copy ? source_height : output_height;
+    const bool needs_depth = std::any_of(
+        draws.begin(), draws.end(), [](const CapturedVulkanDraw& draw) {
+            return draw.raster.depth_test_enabled ||
+                   draw.raster.depth_write_enabled ||
+                   draw.raster.stencil_test_enabled;
+        });
     bool source_readback_ready = copy && prepare_source_readback_buffer(
         memory_properties, device, source_width, source_height,
         raster_color_format, samples, samples > 1, resources, source_readback);
@@ -3614,13 +3917,6 @@ bool submit_captured_vulkan_frame(
                                      optional_error);
         }
     }
-    const bool needs_depth = std::any_of(
-        draws.begin(), draws.end(), [](const CapturedVulkanDraw& draw) {
-            return draw.raster.depth_test_enabled ||
-                   draw.raster.depth_write_enabled ||
-                   draw.raster.stencil_test_enabled;
-        });
-
     for (size_t draw_index = 0; draw_index < draws.size(); ++draw_index) {
         const CapturedVulkanDraw& draw = draws[draw_index];
         if (draw.topology == PrimitiveTopology::RectangleList &&
@@ -3667,11 +3963,28 @@ bool submit_captured_vulkan_frame(
         }
     }
 
+    CachedEdramTarget* cached_edram_target = nullptr;
+    const bool persistent_edram_target =
+        preserve_edram_target && copy && texture_cache_state;
+    if (persistent_edram_target) {
+        if (!acquire_edram_target(
+                texture_cache_state, memory_properties, device, frame_target,
+                raster_color_format, needs_depth, &cached_edram_target, error)) {
+            return false;
+        }
+        resources.multisample_color = cached_edram_target->color;
+        resources.multisample_color.borrowed = true;
+        if (needs_depth) {
+            resources.depth = cached_edram_target->depth;
+            resources.depth.borrowed = true;
+        }
+    }
+
     if (samples > 1 || copy) {
         const VkImageUsageFlags raster_color_usage =
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
             (copy ? VK_IMAGE_USAGE_SAMPLED_BIT : 0);
-        if (source_readback_ready) {
+        if (source_readback_ready && !resources.multisample_color.image) {
             std::string optional_error;
             if (!create_render_attachment(
                     memory_properties, device, raster_width, raster_height,
@@ -3715,7 +4028,7 @@ bool submit_captured_vulkan_frame(
             return false;
         }
     }
-    if (needs_depth &&
+    if (needs_depth && !resources.depth.image &&
         !create_render_attachment(
             memory_properties, device, raster_width, raster_height,
             VK_FORMAT_D24_UNORM_S8_UINT,
@@ -3729,14 +4042,18 @@ bool submit_captured_vulkan_frame(
     VkAttachmentDescription color_attachment{};
     color_attachment.format = raster_color_format;
     color_attachment.samples = raster_samples;
-    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    const bool preserve_color = persistent_edram_target &&
+        cached_edram_target->color_initialized;
+    color_attachment.loadOp = preserve_color ? VK_ATTACHMENT_LOAD_OP_LOAD
+                                              : VK_ATTACHMENT_LOAD_OP_CLEAR;
     color_attachment.storeOp = samples == 1 || copy ? VK_ATTACHMENT_STORE_OP_STORE
                                                      : VK_ATTACHMENT_STORE_OP_DONT_CARE;
     color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    color_attachment.initialLayout = samples == 1 && !copy
-                                         ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-                                         : VK_IMAGE_LAYOUT_UNDEFINED;
+    color_attachment.initialLayout = persistent_edram_target ||
+            (samples == 1 && !copy)
+        ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        : VK_IMAGE_LAYOUT_UNDEFINED;
     color_attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     attachments.push_back(color_attachment);
     VkAttachmentReference color_reference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
@@ -3748,11 +4065,19 @@ bool submit_captured_vulkan_frame(
         VkAttachmentDescription depth_attachment{};
         depth_attachment.format = VK_FORMAT_D24_UNORM_S8_UINT;
         depth_attachment.samples = raster_samples;
-        depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        const bool preserve_depth = persistent_edram_target &&
+            cached_edram_target->depth_initialized;
+        depth_attachment.loadOp = preserve_depth ? VK_ATTACHMENT_LOAD_OP_LOAD
+                                                  : VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.storeOp = persistent_edram_target
+            ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.stencilLoadOp = preserve_depth
+            ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.stencilStoreOp = persistent_edram_target
+            ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.initialLayout = preserve_depth
+            ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+            : VK_IMAGE_LAYOUT_UNDEFINED;
         depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         attachments.push_back(depth_attachment);
     }
@@ -3964,7 +4289,8 @@ bool submit_captured_vulkan_frame(
         };
         for (const auto& [buffer, access] : buffers) add_host_barrier(buffer, access);
         for (const DrawTextureResources& texture : draw.textures) {
-            add_host_barrier(&texture.upload, VK_ACCESS_TRANSFER_READ_BIT);
+            if (!texture.guest_copy_source)
+                add_host_barrier(&texture.upload, VK_ACCESS_TRANSFER_READ_BIT);
         }
     }
     vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_HOST_BIT,
@@ -4001,6 +4327,7 @@ bool submit_captured_vulkan_frame(
     for (size_t i = 0; i < resources.draws.size(); ++i) {
         const DrawResources& draw = resources.draws[i];
         for (const DrawTextureResources& texture : draw.textures) {
+            if (texture.guest_copy_source) continue;
             VkImageMemoryBarrier texture_barrier{};
             texture_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             texture_barrier.srcAccessMask = texture.upload_old_layout ==
@@ -4036,6 +4363,59 @@ bool submit_captured_vulkan_frame(
             vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                  VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
                                  0, nullptr, 0, nullptr, 1, &texture_to_sample);
+        }
+    }
+
+    if (persistent_edram_target) {
+        VkImageMemoryBarrier color_to_attachment{};
+        color_to_attachment.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        color_to_attachment.srcAccessMask = cached_edram_target->color_initialized
+            ? VK_ACCESS_SHADER_READ_BIT : 0;
+        color_to_attachment.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        color_to_attachment.oldLayout = cached_edram_target->color_initialized
+            ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            : VK_IMAGE_LAYOUT_UNDEFINED;
+        color_to_attachment.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        color_to_attachment.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        color_to_attachment.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        color_to_attachment.image = resources.multisample_color.image;
+        color_to_attachment.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        color_to_attachment.subresourceRange.levelCount = 1;
+        color_to_attachment.subresourceRange.layerCount = 1;
+        vkCmdPipelineBarrier(
+            command,
+            cached_edram_target->color_initialized
+                ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0,
+            nullptr, 1, &color_to_attachment);
+
+        if (needs_depth && cached_edram_target->depth_initialized) {
+            VkImageMemoryBarrier depth_to_attachment{};
+            depth_to_attachment.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            depth_to_attachment.srcAccessMask =
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            depth_to_attachment.dstAccessMask =
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            depth_to_attachment.oldLayout =
+                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            depth_to_attachment.newLayout =
+                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            depth_to_attachment.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            depth_to_attachment.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            depth_to_attachment.image = resources.depth.image;
+            depth_to_attachment.subresourceRange.aspectMask =
+                VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            depth_to_attachment.subresourceRange.levelCount = 1;
+            depth_to_attachment.subresourceRange.layerCount = 1;
+            vkCmdPipelineBarrier(
+                command,
+                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                    VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                0, 0, nullptr, 0, nullptr, 1, &depth_to_attachment);
         }
     }
 
@@ -4367,6 +4747,310 @@ bool submit_captured_vulkan_frame(
             source_readback->status = CapturedVulkanSourceReadback::Status::Captured;
             source_readback->reason.clear();
         }
+    }
+    if (error) error->clear();
+    return true;
+}
+
+bool submit_captured_vulkan_operation_stream(
+    VkPhysicalDevice physical_device,
+    VkDevice device,
+    VkQueue queue,
+    uint32_t queue_family_index,
+    VkImage output_image,
+    VkImageView output_view,
+    bool output_written_before,
+    uint32_t output_width,
+    uint32_t output_height,
+    const std::vector<CapturedVulkanDraw>& draws,
+    const std::vector<CapturedVulkanOperation>& operations,
+    std::string* error,
+    std::vector<uint32_t>* output_readback,
+    bool geometry_shader_enabled,
+    const CapturedVulkanCopy* presenter_copy,
+    bool depth_stencil_resolve_enabled,
+    CapturedVulkanSamplerCapabilities sampler_capabilities,
+    VkPipelineCache pipeline_cache,
+    CapturedVulkanTextureCache* texture_cache,
+    CapturedVulkanSourceReadback* source_readback,
+    std::vector<CapturedVulkanDrawVisibility>* draw_visibility) {
+    if (error) error->clear();
+    if (output_readback) output_readback->clear();
+    if (draw_visibility) draw_visibility->assign(draws.size(), {});
+    if (source_readback) {
+        *source_readback = {};
+        source_readback_unsupported(
+            source_readback, "ordered stream has not reached its presenter copy");
+    }
+    if (operations.empty()) {
+        return fail("ordered Vulkan operation stream has no PM4 operations", error);
+    }
+    if (!validate_captured_operation_stream(operations, draws.size(), error)) {
+        return false;
+    }
+    TextureCacheState* texture_cache_state = texture_cache
+        ? &CapturedVulkanTextureCacheAccess::get(*texture_cache) : nullptr;
+    const auto same_target_layout = [](const CapturedRasterState& a,
+                                       const CapturedRasterState& b) {
+        return a.color_base_tiles == b.color_base_tiles &&
+            a.guest_color_format == b.guest_color_format &&
+            a.depth_base_tiles == b.depth_base_tiles && a.width == b.width &&
+            a.height == b.height && a.color_format == b.color_format &&
+            a.depth_format == b.depth_format &&
+            a.sample_count == b.sample_count &&
+            a.surface_pitch == b.surface_pitch;
+    };
+
+    size_t preflight_draw_count = 0;
+    uint32_t preflight_first_draw = std::numeric_limits<uint32_t>::max();
+    const CapturedRasterState* preflight_stream_target = nullptr;
+    bool found_presenter_copy = false;
+    for (size_t i = 0; i < operations.size(); ++i) {
+        const CapturedVulkanOperation& operation = operations[i];
+        if (operation.type == CapturedVulkanOperation::Type::Draw) {
+            const CapturedRasterState& draw_raster =
+                draws[operation.draw_index].raster;
+            if (preflight_stream_target &&
+                !same_target_layout(*preflight_stream_target, draw_raster)) {
+                std::ostringstream message;
+                message << "draw packet " << operation.packet_index
+                        << " changes Xenos EDRAM target layout across a Copy/Convert boundary; "
+                           "the physical EDRAM alias mapping is unavailable";
+                return fail(message.str(), error);
+            }
+            if (!preflight_stream_target) {
+                preflight_stream_target = &draw_raster;
+            }
+            if (preflight_draw_count != 0 &&
+                !same_target_layout(draws[preflight_first_draw].raster,
+                                    draw_raster)) {
+                std::ostringstream message;
+                message << "draw packet " << operation.packet_index
+                        << " changes target layout before a Copy/Convert boundary; "
+                           "ordered EDRAM target persistence is unavailable";
+                return fail(message.str(), error);
+            }
+            if (preflight_draw_count == 0) {
+                preflight_first_draw = operation.draw_index;
+            }
+            ++preflight_draw_count;
+            continue;
+        }
+        if (operation.type != CapturedVulkanOperation::Type::CopyConvert) {
+            continue;
+        }
+        if (preflight_draw_count == 0) {
+            CachedEdramTarget* source_target = operation.source_raster_ready
+                ? find_initialized_edram_target(texture_cache_state,
+                                                operation.source_raster)
+                : nullptr;
+            if (!source_target) {
+                std::ostringstream message;
+                message << "Copy/Convert packet " << operation.packet_index
+                        << " has no preceding captured draw segment or initialized "
+                           "same-layout Xenos EDRAM source target";
+                if (!operation.source_raster_ready) {
+                    message << "; source layout registers did not decode";
+                }
+                return fail(message.str(), error);
+            }
+            if (preflight_stream_target &&
+                !same_target_layout(*preflight_stream_target,
+                                    operation.source_raster)) {
+                std::ostringstream message;
+                message << "Copy/Convert packet " << operation.packet_index
+                        << " reads an Xenos EDRAM layout that aliases the active "
+                           "stream target; EDRAM reinterpretation is unavailable";
+                return fail(message.str(), error);
+            }
+            if (!preflight_stream_target) {
+                preflight_stream_target = &operation.source_raster;
+            }
+        }
+        const bool writes_presenter = presenter_copy &&
+            operation.copy_state.destination_format ==
+                presenter_copy->state.destination_format &&
+            operation.copy_state.destination_base ==
+                presenter_copy->state.destination_base;
+        if (writes_presenter && i + 1 != operations.size()) {
+            return fail("presenter Copy/Convert is not the final PM4 operation",
+                        error);
+        }
+        found_presenter_copy |= writes_presenter;
+        preflight_draw_count = 0;
+        preflight_first_draw = std::numeric_limits<uint32_t>::max();
+    }
+    if (presenter_copy && !found_presenter_copy && preflight_draw_count == 0) {
+        return fail("presenter Copy/Convert has no preceding captured draw segment",
+                    error);
+    }
+
+    std::vector<CapturedVulkanDraw> stage_draws;
+    std::vector<uint32_t> stage_indices;
+    bool presenter_copy_submitted = false;
+
+    const auto submit_stage = [&](const CapturedVulkanCopy* copy,
+                                  bool writes_presenter,
+                                  uint32_t packet_index) {
+        if (stage_draws.empty()) {
+            std::ostringstream message;
+            message << "Copy/Convert packet " << packet_index
+                    << " has no preceding captured draw segment; its Xenos EDRAM source is unavailable";
+            return fail(message.str(), error);
+        }
+        const uint32_t stage_width = writes_presenter || !copy
+            ? output_width : copy->state.destination_pitch;
+        const uint32_t stage_height = writes_presenter || !copy
+            ? output_height : copy->state.destination_height;
+        const bool final_output_stage = writes_presenter || copy == nullptr;
+        std::vector<CapturedVulkanDrawVisibility> stage_visibility;
+        std::string stage_error;
+        const bool submitted = submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family_index, output_image,
+            output_view, final_output_stage && output_written_before,
+            stage_width, stage_height, stage_draws, &stage_error,
+            final_output_stage ? output_readback : nullptr,
+            geometry_shader_enabled, copy, depth_stencil_resolve_enabled,
+            sampler_capabilities, pipeline_cache, texture_cache,
+            writes_presenter ? source_readback : nullptr,
+            draw_visibility ? &stage_visibility : nullptr, nullptr, true);
+        if (!submitted) {
+            std::ostringstream message;
+            message << "ordered Vulkan segment ending at packet " << packet_index
+                    << " failed: " << stage_error;
+            return fail(message.str(), error);
+        }
+        if (draw_visibility) {
+            for (size_t i = 0; i < stage_indices.size(); ++i) {
+                if (stage_indices[i] < draw_visibility->size()) {
+                    (*draw_visibility)[stage_indices[i]] = stage_visibility[i];
+                }
+            }
+        }
+        presenter_copy_submitted |= writes_presenter;
+        stage_draws.clear();
+        stage_indices.clear();
+        return true;
+    };
+
+    for (size_t operation_index = 0; operation_index < operations.size();
+         ++operation_index) {
+        const CapturedVulkanOperation& operation = operations[operation_index];
+        if (operation.type == CapturedVulkanOperation::Type::Draw) {
+            const CapturedVulkanDraw& draw = draws[operation.draw_index];
+            if (!stage_draws.empty() &&
+                !same_target_layout(stage_draws.front().raster, draw.raster)) {
+                std::ostringstream message;
+                message << "draw packet " << operation.packet_index
+                        << " changes target layout before a Copy/Convert boundary; "
+                           "ordered EDRAM target persistence is unavailable";
+                return fail(message.str(), error);
+            }
+            stage_draws.push_back(draw);
+            stage_indices.push_back(operation.draw_index);
+            continue;
+        }
+        if (operation.type != CapturedVulkanOperation::Type::CopyConvert) {
+            continue;
+        }
+
+        CapturedVulkanCopy copy = operation.copy;
+        copy.state = operation.copy_state;
+        copy.source_width = operation.source_width;
+        copy.source_height = operation.source_height;
+        if (stage_draws.empty()) {
+            CachedEdramTarget* source_target = operation.source_raster_ready
+                ? find_initialized_edram_target(texture_cache_state,
+                                                operation.source_raster)
+                : nullptr;
+            if (!source_target) {
+                std::ostringstream message;
+                message << "Copy/Convert packet " << operation.packet_index
+                        << " lost its initialized same-layout Xenos EDRAM source target before submission";
+                return fail(message.str(), error);
+            }
+            const auto source_draw = std::find_if(
+                draws.begin(), draws.end(), [](const CapturedVulkanDraw& draw) {
+                    return !draw.vertex_shader_spirv.empty() &&
+                           !draw.pixel_shader_spirv.empty();
+                });
+            CapturedVulkanDraw no_op_draw{};
+            if (source_draw != draws.end()) {
+                no_op_draw = *source_draw;
+            } else {
+                no_op_draw.vertex_shader_spirv = copy.vertex_shader_spirv;
+                no_op_draw.pixel_shader_spirv = copy.source_gamma
+                    ? (operation.source_raster.sample_count == 1
+                           ? copy.gamma_single_sample_pixel_shader_spirv
+                           : copy.gamma_pixel_shader_spirv)
+                    : (operation.source_raster.sample_count == 1
+                           ? copy.single_sample_pixel_shader_spirv
+                           : copy.pixel_shader_spirv);
+                no_op_draw.texture_width = 1;
+                no_op_draw.texture_height = 1;
+                no_op_draw.texture_rgba8 = {0, 0, 0, 255};
+                no_op_draw.texture_sampling.clamps = {
+                    TextureClamp::ClampToEdge, TextureClamp::ClampToEdge,
+                    TextureClamp::ClampToEdge};
+                no_op_draw.texture_sampling.mag_filter = TextureFilter::Point;
+                no_op_draw.texture_sampling.min_filter = TextureFilter::Point;
+                no_op_draw.texture_sampling.mip_filter = TextureFilter::Point;
+                no_op_draw.texture_sampling.anisotropy =
+                    TextureAnisotropy::Disabled;
+                no_op_draw.texture_sampling.border_color =
+                    TextureBorderColor::AbgrBlack;
+            }
+            if (no_op_draw.vertex_shader_spirv.empty() ||
+                no_op_draw.pixel_shader_spirv.empty()) {
+                return fail("cached-source Copy/Convert has no zero-vertex Vulkan shader pair",
+                            error);
+            }
+            no_op_draw.raster = operation.source_raster;
+            no_op_draw.raster.color_write_mask = 0;
+            no_op_draw.raster.depth_test_enabled = false;
+            no_op_draw.raster.depth_write_enabled = false;
+            no_op_draw.raster.stencil_test_enabled = false;
+            no_op_draw.raster.depth_control = 0;
+            no_op_draw.raster.scissor_x0 = 0;
+            no_op_draw.raster.scissor_y0 = 0;
+            no_op_draw.raster.scissor_x1 = 0;
+            no_op_draw.raster.scissor_y1 = 0;
+            no_op_draw.raster.scissor_has_area = false;
+            no_op_draw.topology = PrimitiveTopology::TriangleList;
+            no_op_draw.auto_index = true;
+            no_op_draw.index_count = 3;
+            no_op_draw.vertex_stride_bytes = 0;
+            no_op_draw.vertices.clear();
+            no_op_draw.indices.clear();
+            no_op_draw.vertex_input_attributes.clear();
+            no_op_draw.geometry_shader_spirv.clear();
+            set_copy_resolution_constants(
+                &no_op_draw, copy.source_width, copy.source_height,
+                copy.state.destination_pitch, copy.state.destination_height);
+            stage_draws.push_back(std::move(no_op_draw));
+            stage_indices.push_back(std::numeric_limits<uint32_t>::max());
+        }
+        const bool writes_presenter = presenter_copy &&
+            copy.state.destination_format == presenter_copy->state.destination_format &&
+            copy.state.destination_base == presenter_copy->state.destination_base;
+        if (writes_presenter && operation_index + 1 != operations.size()) {
+            return fail("presenter Copy/Convert is not the final PM4 operation",
+                        error);
+        }
+        if (!writes_presenter) copy.retain_destination = true;
+        if (!submit_stage(&copy, writes_presenter, operation.packet_index)) {
+            return false;
+        }
+    }
+
+    if (!stage_draws.empty()) {
+        if (!submit_stage(presenter_copy, presenter_copy != nullptr,
+                          operations.back().packet_index)) {
+            return false;
+        }
+    } else if (presenter_copy && !presenter_copy_submitted) {
+        return fail("presenter Copy/Convert has no preceding captured draw segment",
+                    error);
     }
     if (error) error->clear();
     return true;

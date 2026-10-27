@@ -4,33 +4,42 @@
   "source": {
     "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
     "branch": "work/process2-xbox-live-ring-20261023",
-    "base_commit": "99a936db25d387e228f4e12ae9cf1041028e6c70",
+    "base_commit": "b952d8f6",
     "changed_files": [
       "native_vulkan/include/shift_xbox_live_vulkan_renderer.hpp",
+      "native_vulkan/include/shift_xbox_draw_input.hpp",
       "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
+      "native_vulkan/src/xbox_draw_input.cpp",
       "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/android/CMakeLists.txt",
+      "native_vulkan/tests/xbox_draw_input_check.cpp",
       "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
       "native_vulkan/rexglue_plugin/README.md",
-      "evidence/process2_ordered_operation_stream_20261027.json"
+      "evidence/process2_ordered_operation_stream_20261027.json",
+      "evidence/process2_copy_convert_primitives_20261027.json",
+      "evidence/process2_ordered_edram_interrupt_trace_progress_20261027.json"
     ]
   },
   "change": {
     "operation_types": [
       "prepared draw reference",
       "captured Copy/Convert state and source extent",
-      "unresolved draw packet"
+      "exact-layout cached EDRAM source and format-31 guest texture reference",
+      "unresolved draw/copy packet"
     ],
     "ordering": "The ring frontend retains the stream across expanded ring batches until guest swap; packet ordinals reset only when the frame is recycled.",
-    "renderer_contract": "Draw references are checked for range, uniqueness, order, and completeness. Existing target-layout, copy-extent, and mixed-sample errors include a bounded ordered-operation description.",
+    "renderer_contract": "The stream executor submits compatible Draw segments and following Copy/Convert packets in PM4 order. It retains same-layout color/depth targets and intermediate destinations in GPU images. A copy-only segment can read a previously initialized target only when the decoded source layout matches exactly. A format-31 texture may sample a preceding cached copy only for a linear base-level descriptor with exact guest address, extent/pitch, and copy-conversion tuple. Unknown EDRAM aliases and nonmatching resources fail closed.",
     "trace": "When SHIFT_NATIVE_VULKAN_TRACE_RING=1, the frontend logs each distinct operation sequence once per worker session.",
-    "intermediate_copy_execution": false,
-    "edram_target_persistence": false
+    "intermediate_copy_execution": "synthetic Draw/Copy/Draw/Copy and exact format-31 Copy-to-texture-fetch sequences submitted; retail 14-draw package remains blocked by unmatched source/layout and tiled mip texture requirements",
+    "edram_target_persistence": "same-layout color/depth images are retained in a bounded GPU cache; aliased layouts are not reinterpreted"
   },
   "regression": {
-    "synthetic_sequence": "Draw → format-31 Copy/Convert → Draw",
+    "synthetic_sequence": "Draw → format-31 Copy/Convert → Draw → presenter Copy/Convert",
     "verified": [
-      "The target-layout diagnostic preserves copy destination, extent, format/number format, endian, exponent bias, sample select, clear flags, and channel swap.",
-      "Reordered draw references are rejected before Vulkan submission."
+      "The format-31 copy submission created one guest-address/layout cache image, and a subsequent draw sampled that image directly before presenter Copy/Convert.",
+      "The cached-image result matches a separate R16G16_SFLOAT upload of the same half-float values; deliberately stale guest bytes were not used.",
+      "Same-layout EDRAM color targets survive across ordered segments and a copy-only stream can resolve an exact cached source target.",
+      "Target-layout diagnostics preserve the captured copy tuple, and reordered draw references are rejected before Vulkan submission."
     ],
     "retail_parity_claim": false
   },
@@ -41,17 +50,16 @@
       "vulkan_validation_layer": "VK_LAYER_KHRONOS_validation"
     },
     "rexglue_linux_plugin": {
-      "result": "passed",
-      "ctest": "7/7",
-      "vulkan_validation_layer": "VK_LAYER_KHRONOS_validation"
+      "translation_unit": "current-source Clang compilation passed as part of the plugin DSO build",
+      "full_dso": "linked successfully with Clang Release and -march=x86-64-v2; plugin CTest passed 6/6 with VK_LAYER_KHRONOS_validation",
+      "dso_sha256": "416e514035bf25d12b6bcc8b29fe7790814edf967c09fb2d72243243827584c9"
     },
     "android_arm64_plugin": {
-      "result": "built",
+      "plugin_and_renderer_translation_units": "current-source objects compiled with NDK r28c",
+      "plugin_translation_unit_sha256": "3e1b8c662343efc0f0385661b9e4d035a0dd5af4e04a454dfd7db08dad583df1",
+      "dso": "not linked",
       "abi": "arm64-v8a",
       "android_platform": 29,
-      "build_id": "a9f5b4255184c2386d1a407637b461dba251f9db",
-      "sha256": "4cce2ed75ac1f005a4a1ad16b33ee3950c845d5e98d7b87785d1da66bc3d9186",
-      "path": "/tmp/process2-multitarget-android-output-20261027/librexgpu-shift-native.so",
       "installed_on_device": false
     }
   },
@@ -60,14 +68,15 @@
     "gpu": "Mali-G76 MC4",
     "vulkan_api": "1.1.131",
     "package": "com.hanz0hatt0r.nfsshift",
-    "process_id": 6382,
-    "previously_installed_apk_sha256": "48d1b0920fe4d616aab5efb5cbdfa5c0e6ab753224c86683d4d9262e1ff83c1a",
-    "screen": "Readable safety disclaimer, unchanged at the latest read-only capture; no input was sent.",
-    "latest_screenshot_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+    "offscreen_renderer_test": "passed on Mali-G76 MC4; includes ordered format-31 Copy-to-texture cache sampling, depth/stencil SAMPLE_ZERO, and synthetic format-26/31 conversion",
+    "validation_layer": "VK_LAYER_KHRONOS_validation is not installed on Android; the on-device run did not enable it",
+    "test_binary_sha256": "e5fd1c9e38a2e94314797662aa7690dc66825f6562a7ab90df79487ee81f0eea",
+    "game_process": "not running; no NFS Shift process was launched or restarted",
     "new_plugin_installed": false
   },
   "limits": [
-    "The operation stream is capture, validation, and diagnostics plumbing. It does not execute intermediate Copy/Convert operations or preserve ordered Xenos EDRAM targets.",
-    "No new on-device rendering or video result is claimed; the current Redmi process was left running on the previously installed build."
+    "This is not execution of the full retail transition package: unknown EDRAM source layouts still fail closed, and the captured draw-12 tiled mip descriptor does not exactly match a cached format-31 destination.",
+    "Xenos EDRAM alias reinterpretation across changed layouts, full-sequence clear effects, depth/stencil preservation, and guest-memory writeback remain unsupported.",
+    "The test sequence is synthetic and makes no retail parity or new on-device rendering claim."
   ]
 }

@@ -695,6 +695,197 @@ int main(int argc, char** argv) {
                 << error << '\n';
       return 1;
     }
+    if (has_copy_destination_shaders) {
+      shift::xbox::CapturedVulkanCopy intermediate_copy = copy;
+      intermediate_copy.state.destination_base = 0x0CC87000u;
+      intermediate_copy.state.destination_pitch = 256;
+      intermediate_copy.state.destination_height = 243;
+      intermediate_copy.state.destination_format = 31;
+      intermediate_copy.state.destination_swap_red_blue = false;
+      intermediate_copy.state.destination_number_format = 7;
+      intermediate_copy.state.destination_endian = 2;
+      intermediate_copy.state.destination_exp_bias = 0;
+      intermediate_copy.state.sample_select = 0;
+      intermediate_copy.state.color_clear_enable = true;
+      intermediate_copy.state.depth_clear_enable = false;
+      intermediate_copy.source_width = 1280;
+      intermediate_copy.source_height = 720;
+      intermediate_copy.pixel_shader_spirv =
+          copy_sample0_rg16f_ms_spirv;
+      intermediate_copy.single_sample_pixel_shader_spirv =
+          copy_sample0_rg16f_single_spirv;
+      shift::xbox::CapturedVulkanOperation draw0{};
+      draw0.type = shift::xbox::CapturedVulkanOperation::Type::Draw;
+      draw0.draw_index = 0;
+      draw0.packet_index = 200;
+      shift::xbox::CapturedVulkanOperation copy0{};
+      copy0.type = shift::xbox::CapturedVulkanOperation::Type::CopyConvert;
+      copy0.packet_index = 201;
+      copy0.source_width = 1280;
+      copy0.source_height = 720;
+      copy0.copy_state = intermediate_copy.state;
+      copy0.copy = intermediate_copy;
+      copy0.copy_shaders_ready = true;
+      auto cache_sample_draw = format31_source;
+      cache_sample_draw.vertex_shader_spirv = draw.vertex_shader_spirv;
+      cache_sample_draw.pixel_shader_spirv = draw.pixel_shader_spirv;
+      shift::xbox::CapturedVulkanTexture copied_format31{};
+      copied_format31.fetch_constant_index = 0;
+      copied_format31.guest_address = 0x0CC87000u;
+      copied_format31.guest_format = 31;
+      copied_format31.guest_endian = 2;
+      copied_format31.guest_pitch = 256;
+      copied_format31.width = 256;
+      copied_format31.height = 243;
+      copied_format31.format =
+          shift::xbox::CapturedVulkanTexture::Format::Rg16Float;
+      copied_format31.guest_copy_source = true;
+      copied_format31.pixels = {0x00, 0x3C, 0x00, 0x3C};  // deliberately stale
+      copied_format31.sampling = draw.texture_sampling;
+      auto black_detail = draw.textures[1];
+      black_detail.pixels = {0, 0, 0, 0};
+      cache_sample_draw.textures = {copied_format31, black_detail};
+      shift::xbox::CapturedVulkanOperation draw1 = draw0;
+      draw1.draw_index = 1;
+      draw1.packet_index = 202;
+      shift::xbox::CapturedVulkanOperation copy1{};
+      copy1.type = shift::xbox::CapturedVulkanOperation::Type::CopyConvert;
+      copy1.packet_index = 203;
+      copy1.source_width = 1280;
+      copy1.source_height = 720;
+      copy1.copy_state = copy.state;
+      copy1.copy = copy;
+      copy1.copy_shaders_ready = true;
+      std::vector<uint32_t> ordered_readback;
+      shift::xbox::CapturedVulkanTextureCache ordered_copy_cache;
+      std::string ordered_submit_error;
+      if (!shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720,
+              {format31_source, cache_sample_draw},
+              {draw0, copy0, draw1, copy1}, &ordered_submit_error,
+              &ordered_readback, enabled_features.geometryShader, &copy,
+              false, {}, pipeline_cache, &ordered_copy_cache) ||
+          ordered_copy_cache.cached_guest_copy_image_count() != 1u ||
+          ordered_readback.size() != 1280u * 720u ||
+          std::none_of(ordered_readback.begin(), ordered_readback.end(),
+                       [](uint32_t pixel) {
+                           return (pixel & 0x3FFFFFFFu) != 0;
+                       })) {
+        std::cerr << "ordered Draw/Copy/Draw/Copy Vulkan submissions failed: "
+                  << ordered_submit_error << '\n';
+        return 1;
+      }
+      auto uploaded_reference = cache_sample_draw;
+      uploaded_reference.textures[0].guest_copy_source = false;
+      uploaded_reference.textures[0].pixels.resize(256u * 243u * 4u);
+      for (size_t offset = 0;
+           offset < uploaded_reference.textures[0].pixels.size(); offset += 4) {
+        uploaded_reference.textures[0].pixels[offset + 0] = 0x00;
+        uploaded_reference.textures[0].pixels[offset + 1] = 0x38;
+        uploaded_reference.textures[0].pixels[offset + 2] = 0x00;
+        uploaded_reference.textures[0].pixels[offset + 3] = 0x34;
+      }
+      std::vector<uint32_t> uploaded_reference_readback;
+      shift::xbox::CapturedVulkanTextureCache uploaded_reference_cache;
+      if (!shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720,
+              {format31_source, uploaded_reference},
+              {draw0, copy0, draw1, copy1}, &ordered_submit_error,
+              &uploaded_reference_readback, enabled_features.geometryShader,
+              &copy, false, {}, pipeline_cache, &uploaded_reference_cache) ||
+          ordered_readback != uploaded_reference_readback) {
+        std::cerr << "format-31 Copy/Convert cache image did not sample like its exact R16G16_FLOAT payload: "
+                  << ordered_submit_error << '\n';
+        return 1;
+      }
+      uploaded_reference_cache.clear();
+      if (ordered_copy_cache.cached_guest_edram_target_count() != 1u) {
+        std::cerr << "ordered Copy/Convert did not retain its guest EDRAM color target\n";
+        return 1;
+      }
+
+      std::vector<uint32_t> one_draw_baseline;
+      if (!shift::xbox::submit_captured_vulkan_frame(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, {format31_source},
+              &ordered_submit_error, &one_draw_baseline, false, &copy)) {
+        std::cerr << "single-draw baseline for EDRAM persistence failed: "
+                  << ordered_submit_error << '\n';
+        return 1;
+      }
+      shift::xbox::CapturedVulkanOperation seed_draw = draw0;
+      seed_draw.packet_index = 300;
+      shift::xbox::CapturedVulkanOperation seed_copy{};
+      seed_copy.type =
+          shift::xbox::CapturedVulkanOperation::Type::CopyConvert;
+      seed_copy.packet_index = 301;
+      seed_copy.source_width = 1280;
+      seed_copy.source_height = 720;
+      seed_copy.copy_state = copy.state;
+      seed_copy.copy = copy;
+      seed_copy.copy_shaders_ready = true;
+      std::string edram_seed_error;
+      shift::xbox::CapturedVulkanTextureCache persistent_edram_cache;
+      if (!shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, {format31_source},
+              {seed_draw, seed_copy}, &edram_seed_error, nullptr,
+              enabled_features.geometryShader, &copy, false, {},
+              pipeline_cache, &persistent_edram_cache) ||
+          persistent_edram_cache.cached_guest_edram_target_count() != 1u) {
+        std::cerr << "could not seed a persistent Xenos EDRAM target: "
+                  << edram_seed_error << '\n';
+        return 1;
+      }
+      shift::xbox::CapturedVulkanOperation present_copy{};
+      present_copy.type =
+          shift::xbox::CapturedVulkanOperation::Type::CopyConvert;
+      present_copy.packet_index = 303;
+      present_copy.source_width = 1280;
+      present_copy.source_height = 720;
+      present_copy.copy_state = copy.state;
+      present_copy.copy = copy;
+      present_copy.copy_shaders_ready = true;
+      present_copy.source_raster_ready = true;
+      present_copy.source_raster = format31_source.raster;
+      std::vector<uint32_t> persisted_edram_readback;
+      std::string edram_preserve_error;
+      if (!shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, {}, {present_copy},
+              &edram_preserve_error,
+              &persisted_edram_readback, enabled_features.geometryShader,
+              &copy, false, {}, pipeline_cache, &persistent_edram_cache) ||
+          persisted_edram_readback != one_draw_baseline ||
+          persistent_edram_cache.cached_guest_edram_target_count() != 1u) {
+        std::cerr << "cached-source Copy/Convert did not preserve the previous Xenos EDRAM color target: "
+                  << edram_preserve_error << '\n';
+        return 1;
+      }
+      persistent_edram_cache.clear();
+
+      auto copy_without_source = copy0;
+      copy_without_source.packet_index = 200;
+      auto draw_after_copy = draw0;
+      draw_after_copy.packet_index = 201;
+      std::string missing_source_error;
+      if (shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, {format31_source},
+              {copy_without_source, draw_after_copy}, &missing_source_error,
+              nullptr, enabled_features.geometryShader, &copy, false, {},
+              pipeline_cache, nullptr) ||
+          missing_source_error.find(
+              "Copy/Convert packet 200 has no preceding captured draw segment") ==
+              std::string::npos) {
+        std::cerr << "ordered executor guessed an unavailable initial EDRAM source: "
+                  << missing_source_error << '\n';
+        return 1;
+      }
+      ordered_copy_cache.clear();
+    }
     const size_t cached_sampler_count = texture_cache.cached_sampler_count();
     const size_t cached_descriptor_layout_count =
         texture_cache.cached_descriptor_layout_count();
@@ -875,7 +1066,7 @@ int main(int argc, char** argv) {
             &copy, false, {}, VK_NULL_HANDLE, nullptr, nullptr, nullptr,
             &ordered_operations) ||
         ordered_operations_error.find(
-            "ordered operations=draw(packet=100,index=0);copy(packet=101,source=1280x720,source_regs=0x14020500/0xc0000/0x400/0x6,destination=0xcc87000,256x243,format=31/7,endian=2,exp_bias=0,samples=0,clear=1/0,swap_rb=0,shaders=prepared);draw(packet=102,index=1)") ==
+            "ordered operations=draw(packet=100,index=0);copy(packet=101,source=1280x720,source_regs=0x14020500/0xc0000/0x400/0x6,destination=0xcc87000,256x243,format=31/7,endian=2,exp_bias=0,samples=0,clear=1/0,clear_registers={ready:0,color:0x0,color_lo:0x0,depth:0x0},source_target={ready:0},swap_rb=0,shaders=prepared);draw(packet=102,index=1)") ==
             std::string::npos) {
       std::cerr << "ordered draw/copy operations were lost from the target-layout "
                    "diagnostic: "
@@ -2230,7 +2421,11 @@ int main(int argc, char** argv) {
                                              : " with anisotropy fallback")
               << " with R16G16_SFLOAT target and captured sample-zero "
                  "Copy/Convert plus synthetic format-26 all-sample and "
-                 "format-31 sample-zero conversions passed on "
+                 "format-31 sample-zero conversions"
+              << (has_copy_destination_shaders
+                      ? " plus ordered format-31 Copy-to-texture cache sampling"
+                      : "")
+              << " passed on "
               << device_properties.deviceName
               << (use_validation ? " with validation enabled\n" : "\n");
     return 0;

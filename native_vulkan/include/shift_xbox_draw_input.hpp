@@ -373,6 +373,10 @@ struct CapturedRasterRegisters {
     uint32_t copy_dest_pitch = 0;
     uint32_t copy_dest_info = 0;
     uint32_t copy_valid_mask = 0;
+    uint32_t depth_clear = 0;
+    uint32_t color_clear = 0;
+    uint32_t color_clear_lo = 0;
+    uint32_t copy_clear_valid_mask = 0;
     uint32_t setup_mode_control = 0;
     uint32_t clip_control = 0;
     uint32_t viewport_transform_control = 0;
@@ -682,6 +686,16 @@ bool infer_captured_raster_extent(
 // register writes or Xenos rasterization. Partial viewports require the known
 // output target extent because the captured surface has no height register.
 bool decode_captured_raster_state(
+    const CapturedRasterRegisters& registers,
+    CapturedRasterState* output,
+    std::string* error,
+    uint32_t target_width = 0,
+    uint32_t target_height = 0);
+
+// Decodes the active EDRAM source-target registers while the guest is in the
+// mode-6 Copy/Convert operation. Only the source layout is interpreted as a
+// color/depth raster target; the captured mode-6 command remains unchanged.
+bool decode_captured_copy_source_raster_state(
     const CapturedRasterRegisters& registers,
     CapturedRasterState* output,
     std::string* error,

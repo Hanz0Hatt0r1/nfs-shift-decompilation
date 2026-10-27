@@ -1519,13 +1519,15 @@ The later provider-resolve capture still stops at a separate graphics limit:
 its transition batch contains an all-four-sample format-26 resolve, seven
 single-sample format-31 intermediate copies at different extents, and a final
 frontbuffer copy. The current renderer handles the final copy path but does not
-write those internal copies to guest memory or preserve their ordering as
-render-target operations. Standalone intermediate copies now write into
-GPU-resident Vulkan images cached by destination guest address and the complete
-captured destination layout. Repeated copies reuse the image and transition its
-layout under Vulkan 1.1 barriers; later captured texture fetches do not yet read
-this cache, and the 14-operation stream is still not submitted in PM4 order. See
-the exact phone register sequence and failure limits in
+write those internal copies to guest memory. Intermediate destinations are
+retained as GPU-resident Vulkan images keyed by the captured destination
+layout, while compatible draw and copy segments execute in PM4 order. The
+renderer also retains same-layout EDRAM targets and can feed a later format-31
+linear base-level texture fetch from an exact matching cached copy image. This
+does not reinterpret aliased target layouts. The captured draw-12 texture is a
+tiled mip view at a different address from the preceding format-31 copy, so
+the exact-match path rejects it and the 14-draw package remains incomplete.
+See the exact phone register sequence and earlier failure limits in
 [`process2_redmi_transition_copy_chain_20261026.json`](../../evidence/process2_redmi_transition_copy_chain_20261026.json).
 
 ## Captured 16-bit floating-point targets (2026-10-26)
@@ -1549,12 +1551,13 @@ using Vulkan 1.1.131. The updated Android plugin compiled but was not installed
 over the running retail app; the game stayed at the disclaimer with the same
 PID and screenshot hash before and after the offscreen check.
 
-This adds target-format handling and reusable standalone intermediate images,
-not the missing ordered mode-6 operation stream. EDRAM source association,
-using cached copies as later guest texture inputs, guest-memory writeback and
-endian semantics, and color/depth clear side effects remain unimplemented. The
-older 14-draw failure remains ambiguous between target format and copy source
-extent. Detailed captured values, build identities, tests, and limits are in
+This adds target-format handling, cached intermediate images, ordered
+submission for compatible segments, same-layout EDRAM persistence, and one
+exact format-31 guest-fetch consumer path. EDRAM alias reinterpretation,
+guest-memory writeback and endian semantics, and complete color/depth clear
+side effects remain unimplemented. The captured transition is still blocked by
+source association and the format-31 tiled mip view.
+Detailed captured values, build identities, tests, and limits are in
 [`process2_redmi_xenos_16bit_targets_20261026.json`](../../evidence/process2_redmi_xenos_16bit_targets_20261026.json).
 
 ## Captured offscreen raster extents (2026-10-27)
@@ -1638,14 +1641,36 @@ missing callback or host context, wrong host thread, successful return from
 interrupt packets from multiple callbacks requested by one packet; it does not
 coalesce interrupts.
 
-This stream does not execute intermediate copies or persist Xenos EDRAM targets;
-those remain the required graphics work for the captured transition/video path.
-The regression verifies capture and diagnostics only. It does not claim a new
-retail frame or video-parity result. The host Vulkan suite passed 4/4 and the
-Linux plugin suite passed 7/7 with Khronos validation enabled. The Android
-ARM64 plugin linked successfully; it was not installed over the active Redmi
-game because this instrumentation does not change rendered output. Build and
-test details are in
+The ordered executor now retains same-layout color/depth targets between
+segments and can execute a copy-only packet from an initialized target when
+the captured source layout matches exactly. A later texture fetch may consume
+an intermediate format-31 Vulkan image only when its linear, base-level
+descriptor exactly matches a preceding format-31 Copy/Convert destination
+(guest address, extent/pitch, number format, endian, sample selection, and
+conversion flags). In that case the renderer samples the cached
+`R16G16_SFLOAT` image and does not read stale guest RAM. The regression checks
+that result against a separate upload of the same half-float values; it is a
+synthetic data-flow test, not a retail frame.
+
+The captured 14-draw transition still does not execute end to end. Its draw
+#12 texture descriptor is tiled and requests a mip range, and its address
+does not exactly match the preceding format-31 destination, so this narrow
+cache path rejects it. EDRAM alias reinterpretation across changed target
+layouts, clear side effects, depth/stencil preservation through the full
+sequence, and broader texture subresource mapping remain unsupported. The
+host Vulkan suite passed 4/4 with Khronos validation. The Android renderer
+regression was rebuilt for ARM64/API 29 and passed on the Redmi Note 8 Pro's
+Mali-G76 MC4 with Vulkan 1.1.131, including the ordered format-31
+Copy-to-texture cache test. Android has no Khronos validation layer in this
+run. A final draw-only presenter stage now retains requested output readback
+even when the PM4 stream has no presenter Copy/Convert packet; the existing
+synthetic live-ring readback test caught and verifies this path. The complete
+Linux ReXGlue plugin DSO linked, and its six plugin CTests passed with
+`VK_LAYER_KHRONOS_validation`. The DSO SHA-256 is
+`416e514035bf25d12b6bcc8b29fe7790814edf967c09fb2d72243243827584c9`.
+The current Android plugin translation unit compiled with NDK r28c, but the
+Android plugin DSO was not linked or installed. These synthetic checks do not
+claim retail parity. Build and test details are in
 [`process2_ordered_operation_stream_20261027.json`](../../evidence/process2_ordered_operation_stream_20261027.json).
 The follow-up preflight regressions and per-CPU interrupt callback trace fields
 are recorded in
@@ -1764,8 +1789,8 @@ cross-checked against [Xenia's format definitions](https://github.com/xenia-proj
 
 The Linux regression checks format-12 sample, tile-row, and wrap addresses,
 true 64bpp rejection, and two raw formats that share one Vulkan format. This
-also builds `rexgpu-shift-native` against ReXGlue 0.10.0 with Clang. The change
-does not add EDRAM persistence or execute the captured ordered mode-6 copies;
-the 14-draw transition still cannot be presented as retail parity. Details and
-validation results are in
+also builds `rexgpu-shift-native` against ReXGlue 0.10.0 with Clang. Although
+same-layout EDRAM targets now persist across submissions, this does not execute
+the captured transition end to end; the 14-draw sequence still cannot be
+presented as retail parity. Details and validation results are in
 [`process2_xenos_guest_color_format_contract_20261027.json`](../../evidence/process2_xenos_guest_color_format_contract_20261027.json).

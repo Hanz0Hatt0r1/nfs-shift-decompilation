@@ -781,6 +781,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       const shift::xbox::CapturedXboxShaderRegisterState& shader_state,
       const std::vector<uint8_t>& vertex_program,
       const std::vector<uint8_t>& pixel_program,
+      const std::vector<shift::xbox::CapturedVulkanOperation>& prior_operations,
       uint32_t diagnostic_submitted_frame,
       shift::xbox::CapturedVulkanDraw* prepared_draw,
       bool* inputs_ready,
@@ -1158,15 +1159,52 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
           if (error) *error = "captured pixel textures exceed the live read limit";
           return false;
         }
-        if (!ReadGuestMemory(this, fetch.guest_address, fetch.byte_length,
-                             &guest_bytes, &guest_byte_length) ||
-            guest_byte_length < fetch.byte_length) {
+        bool guest_copy_source = false;
+        if (fetch.format == 31u && fetch.endian_mode == 2u &&
+            !fetch.tiled && !fetch.packed_mips && fetch.pitch == fetch.width) {
+          for (auto it = prior_operations.rbegin();
+               it != prior_operations.rend(); ++it) {
+            if (it->type !=
+                shift::xbox::CapturedVulkanOperation::Type::CopyConvert) {
+              continue;
+            }
+            const auto& state = it->copy_state;
+            if (state.destination_base != fetch.guest_address) continue;
+            guest_copy_source =
+                state.destination_pitch == fetch.pitch &&
+                state.destination_height == fetch.height &&
+                state.destination_format == 31u &&
+                state.destination_number_format == 7u &&
+                state.destination_exp_bias == 0 &&
+                state.destination_endian == 2u &&
+                state.sample_select == 0u &&
+                !state.destination_swap_red_blue &&
+                !state.destination_array && state.destination_slice == 0u &&
+                state.source_select == 0u && !state.source_gamma &&
+                state.command == shift::xbox::CapturedCopyCommand::Convert;
+            break;
+          }
+        }
+        if (fetch.format == 31u && !guest_copy_source) {
+          if (error) {
+            *error = "format-31 texture has no preceding exact-layout "
+                     "Copy/Convert image in this PM4 stream";
+          }
+          return false;
+        }
+        guest_bytes = nullptr;
+        guest_byte_length = 0;
+        if (!guest_copy_source &&
+            (!ReadGuestMemory(this, fetch.guest_address, fetch.byte_length,
+                              &guest_bytes, &guest_byte_length) ||
+             guest_byte_length < fetch.byte_length)) {
           if (error) *error = "captured texture guest memory is unavailable";
           return false;
         }
         const char* texture_source_dump_prefix =
             std::getenv("SHIFT_NATIVE_VULKAN_DUMP_TEXTURE_SOURCE_PREFIX");
-        if (texture_source_dump_prefix && *texture_source_dump_prefix) {
+        if (!guest_copy_source && texture_source_dump_prefix &&
+            *texture_source_dump_prefix) {
           const auto dump_texture_source = [&](const std::string& path) {
             std::ofstream source_file(path,
                                       std::ios::binary | std::ios::trunc);
@@ -1228,9 +1266,17 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         texture.guest_pitch = fetch.pitch;
         texture.guest_tiled = fetch.tiled;
         texture.guest_packed_mips = fetch.packed_mips;
+        texture.guest_copy_source = guest_copy_source;
         texture.sampling = resolved.sampling;
         texture.width = fetch.width;
         texture.height = fetch.height;
+        if (guest_copy_source) {
+          texture.format =
+              shift::xbox::CapturedVulkanTexture::Format::Rg16Float;
+          total_texture_bytes += fetch.byte_length;
+          prepared.textures.push_back(std::move(texture));
+          continue;
+        }
         const std::array<shift::xbox::TextureComponent, 4> r8_plane_swizzle = {
             shift::xbox::TextureComponent::X,
             shift::xbox::TextureComponent::X,
@@ -1469,14 +1515,19 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                  << " texel_format="
                  << (texture.format == shift::xbox::CapturedVulkanTexture::Format::R8
                          ? "R8_UNORM"
-                         : "RGBA8_UNORM")
+                         : texture.format ==
+                                   shift::xbox::CapturedVulkanTexture::Format::Rg16Float
+                               ? "R16G16_SFLOAT (GPU Copy/Convert image)"
+                               : "RGBA8_UNORM")
                  << " texel_bytes=" << texture.pixels.size()
                  << " texel_fnv1a=0x" << std::hex
                  << Fnv1a64(texture.pixels.data(), texture.pixels.size())
                  << std::dec << "\n";
             const char* texture_dump_prefix =
                 std::getenv("SHIFT_NATIVE_VULKAN_DUMP_TEXTURES_PREFIX");
-            if (diagnostic_submitted_frame != 0 && texture_dump_prefix &&
+            if (texture.guest_copy_source) {
+              dump << "    raw_texture_dump=GPU-resident preceding Copy/Convert image\n";
+            } else if (diagnostic_submitted_frame != 0 && texture_dump_prefix &&
                 *texture_dump_prefix) {
               std::ostringstream texture_path;
               texture_path << texture_dump_prefix << ".frame"
@@ -1485,7 +1536,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                            << (texture.format ==
                                        shift::xbox::CapturedVulkanTexture::Format::R8
                                    ? ".r8"
-                                   : ".rgba8");
+                                   : texture.format ==
+                                             shift::xbox::CapturedVulkanTexture::Format::Rg16Float
+                                         ? ".rg16f"
+                                         : ".rgba8");
               std::ofstream texture_file(texture_path.str(),
                                         std::ios::binary | std::ios::trunc);
               texture_file.write(
@@ -2648,20 +2702,60 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     }
                     shift::xbox::CapturedVulkanCopy prepared_copy{};
                     prepared_copy.state = copy_state;
-                    prepared_copy.source_width = captured_target_width;
-                    prepared_copy.source_height = captured_target_height;
+                    shift::xbox::CapturedRasterState copy_source_raster{};
+                    std::string copy_source_layout_error;
+                    const bool copy_source_raster_ready =
+                        shift::xbox::decode_captured_copy_source_raster_state(
+                            raster_registers, &copy_source_raster,
+                            &copy_source_layout_error, captured_target_width,
+                            captured_target_height);
+                    prepared_copy.source_width = copy_source_raster_ready
+                        ? copy_source_raster.width : captured_target_width;
+                    prepared_copy.source_height = copy_source_raster_ready
+                        ? copy_source_raster.height : captured_target_height;
+                    prepared_copy.color_clear = raster_registers.color_clear;
+                    prepared_copy.color_clear_lo =
+                        raster_registers.color_clear_lo;
+                    prepared_copy.depth_clear = raster_registers.depth_clear;
+                    const bool color_clear_ready =
+                        !copy_state.color_clear_enable ||
+                        (raster_registers.copy_clear_valid_mask & 2u) != 0;
+                    const bool depth_clear_ready =
+                        !copy_state.depth_clear_enable ||
+                        (raster_registers.copy_clear_valid_mask & 1u) != 0;
+                    prepared_copy.clear_values_ready = color_clear_ready &&
+                        depth_clear_ready;
+                    if (!copy_source_raster_ready) {
+                      REXLOG_WARN(
+                          "shift-native: Copy/Convert packet #{} has no decoded "
+                          "source target layout: {} (surface=0x{:08X}, color=0x{:08X}, "
+                          "depth=0x{:08X}, mode=0x{:08X})",
+                          draw_packet_index, copy_source_layout_error,
+                          raster_registers.surface_info, raster_registers.color_info,
+                          raster_registers.depth_info, raster_registers.mode_control);
+                    }
+                    if (!prepared_copy.clear_values_ready) {
+                      REXLOG_WARN(
+                          "shift-native: Copy/Convert packet #{} lacks captured "
+                          "clear register values: clear={}/{} valid_mask=0x{:X}",
+                          draw_packet_index, copy_state.color_clear_enable,
+                          copy_state.depth_clear_enable,
+                          raster_registers.copy_clear_valid_mask);
+                    }
                     prepared_copy.source_gamma = copy_state.source_gamma;
                     shift::xbox::CapturedVulkanOperation operation{};
                     operation.type =
                         shift::xbox::CapturedVulkanOperation::Type::CopyConvert;
                     operation.packet_index = draw_packet_index;
                     operation.copy_state = copy_state;
-                    operation.source_width = captured_target_width;
-                    operation.source_height = captured_target_height;
+                    operation.source_width = prepared_copy.source_width;
+                    operation.source_height = prepared_copy.source_height;
                     operation.source_surface_info = raster_registers.surface_info;
                     operation.source_color_info = raster_registers.color_info;
                     operation.source_depth_info = raster_registers.depth_info;
                     operation.source_mode_control = raster_registers.mode_control;
+                    operation.source_raster_ready = copy_source_raster_ready;
+                    operation.source_raster = copy_source_raster;
                     if (!CompileCapturedCopyResolveShaders(&prepared_copy, &error)) {
                       operation.type =
                           shift::xbox::CapturedVulkanOperation::Type::UnresolvedCopy;
@@ -2730,6 +2824,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     PrepareCapturedDrawResources(draw, frame_draws.size(),
                                                  raster_state, shader_register_state,
                                                  vertex_shader_program, pixel_shader_program,
+                                                 frame_operations,
                                                  diagnostic_submitted_frame,
                                                  &prepared_draw, &shader_inputs_ready,
                                                  &shaders_translated, &error);
@@ -2963,11 +3058,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 #else
                       constexpr bool depth_stencil_resolve_enabled = false;
 #endif
-                      return shift::xbox::submit_captured_vulkan_frame(
+                      return shift::xbox::submit_captured_vulkan_operation_stream(
                           device->physical_device(), device->device(), queue.queue(), family,
                           context->image(), context->image_view(),
                           context->image_ever_written_previously(),
-                          width, height, frame_draws, &render_error,
+                          width, height, frame_draws, frame_operations, &render_error,
                           capture_output ? &output_readback : nullptr,
                           device->properties().geometryShader, copy_for_swap,
                           depth_stencil_resolve_enabled,
@@ -2975,8 +3070,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                            device->properties().maxSamplerAnisotropy},
                           pipeline_cache_, &texture_cache_,
                           capture_source ? &source_readback : nullptr,
-                          capture_draw_visibility ? &draw_visibility : nullptr,
-                          &frame_operations);
+                          capture_draw_visibility ? &draw_visibility : nullptr);
                     });
                 if (refreshed) {
                   ++submitted_frames;
