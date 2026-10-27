@@ -1155,6 +1155,46 @@ int main(int argc, char** argv) {
         return 1;
       }
 
+      auto captured_depth_only_view = packet49_draw;
+      captured_depth_only_view.raster.depth_only = true;
+      captured_depth_only_view.raster.color_format =
+          shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
+      captured_depth_only_view.raster.guest_color_format = 0;
+      captured_depth_only_view.raster.color_write_mask = 0;
+      captured_depth_only_view.raster.depth_test_enabled = true;
+      captured_depth_only_view.raster.depth_write_enabled = true;
+      captured_depth_only_view.raster.depth_control = 6u | (7u << 4);
+      shift::xbox::CapturedVulkanOperation depth_only_operation{};
+      depth_only_operation.type =
+          shift::xbox::CapturedVulkanOperation::Type::Draw;
+      depth_only_operation.packet_index = 25;
+      depth_only_operation.draw_index = 1;
+      std::vector<uint32_t> depth_only_view_direct_readback;
+      std::vector<uint32_t> depth_only_view_ordered_readback;
+      const std::vector<shift::xbox::CapturedVulkanOperation>
+          depth_only_view_operations{packet49_draw_operation,
+                                     depth_only_operation,
+                                     packet49_copy_operation};
+      if (!shift::xbox::submit_captured_vulkan_frame(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720,
+              {packet49_draw, captured_depth_only_view}, &packet49_error,
+              &depth_only_view_direct_readback, enabled_features.geometryShader,
+              &packet49_copy, false, {}, pipeline_cache, nullptr) ||
+          !shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720,
+              {packet49_draw, captured_depth_only_view},
+              depth_only_view_operations, &packet49_error,
+              &depth_only_view_ordered_readback,
+              enabled_features.geometryShader, &packet49_copy, false, {},
+              pipeline_cache, nullptr) ||
+          depth_only_view_ordered_readback != depth_only_view_direct_readback) {
+        std::cerr << "captured gamma-to-depth-only target view did not preserve "
+                     "ordered Draw/Copy execution: " << packet49_error << '\n';
+        return 1;
+      }
+
       auto unsupported_packet49_source = packet49_copy_operation;
       unsupported_packet49_source.source_raster.surface_pitch = 1272;
       std::string unsupported_packet49_error;

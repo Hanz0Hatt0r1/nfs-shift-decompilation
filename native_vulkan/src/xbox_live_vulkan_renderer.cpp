@@ -3746,15 +3746,34 @@ bool submit_captured_vulkan_frame(
         frame_has_gamma_color_target(draws);
     const VkFormat frame_target_format = captured_color_format(
         frame_target.color_format, linear_rgba8_intermediate);
+    const auto is_depth_only_view_of_frame_target =
+        [](const CapturedRasterState& target,
+           const CapturedRasterState& view) {
+            return view.depth_only && view.color_write_mask == 0 &&
+                target.sample_count == view.sample_count &&
+                target.surface_pitch == view.surface_pitch &&
+                target.color_base_tiles == view.color_base_tiles &&
+                target.depth_base_tiles == view.depth_base_tiles &&
+                target.width == view.width && target.height == view.height &&
+                target.depth_format == view.depth_format &&
+                target.guest_color_format == 1 &&
+                target.color_format == CapturedColorTargetFormat::Rgba8Gamma &&
+                view.guest_color_format == 0 &&
+                view.color_format == CapturedColorTargetFormat::Rgba8Linear;
+        };
     for (size_t draw_index = 1; draw_index < draws.size(); ++draw_index) {
         const CapturedRasterState& raster = draws[draw_index].raster;
+        const bool depth_only_view =
+            is_depth_only_view_of_frame_target(frame_target, raster);
         const bool target_layout_changed =
             raster.color_base_tiles != frame_target.color_base_tiles ||
-            raster.guest_color_format != frame_target.guest_color_format ||
+            (!depth_only_view &&
+             raster.guest_color_format != frame_target.guest_color_format) ||
             raster.depth_base_tiles != frame_target.depth_base_tiles ||
             raster.width != frame_target.width ||
             raster.height != frame_target.height ||
-            (copy && captured_color_format(raster.color_format,
+            (copy && !depth_only_view &&
+             captured_color_format(raster.color_format,
                                            linear_rgba8_intermediate) !=
                          frame_target_format) ||
             raster.depth_format != frame_target.depth_format ||
@@ -3965,13 +3984,17 @@ bool submit_captured_vulkan_frame(
         (raster_color_format == VK_FORMAT_UNDEFINED ||
          source_width != frame_target.width || source_height != frame_target.height ||
          std::any_of(draws.begin(), draws.end(), [&](const CapturedVulkanDraw& draw) {
+             const bool depth_only_view =
+                 is_depth_only_view_of_frame_target(frame_target, draw.raster);
              return draw.raster.width != frame_target.width ||
                     draw.raster.height != frame_target.height ||
-                    draw.raster.guest_color_format !=
-                        frame_target.guest_color_format ||
-                    captured_color_format(draw.raster.color_format,
-                                          linear_rgba8_intermediate) !=
-                        raster_color_format;
+                    (!depth_only_view &&
+                     draw.raster.guest_color_format !=
+                         frame_target.guest_color_format) ||
+                    (!depth_only_view &&
+                     captured_color_format(draw.raster.color_format,
+                                           linear_rgba8_intermediate) !=
+                         raster_color_format);
          }))) {
         std::ostringstream message;
         message << "captured Copy/Convert source " << source_width << 'x'
@@ -4890,6 +4913,34 @@ bool submit_captured_vulkan_operation_stream(
                 before.depth_format == after.depth_format &&
                 !before.depth_only && !after.depth_only;
         };
+    const auto is_captured_depth_only_view_transition =
+        [](const CapturedRasterState& before,
+           const CapturedRasterState& after) {
+            if (before.depth_only == after.depth_only) return false;
+            const CapturedRasterState& color =
+                before.depth_only ? after : before;
+            const CapturedRasterState& depth =
+                before.depth_only ? before : after;
+            return depth.color_write_mask == 0 &&
+                color.color_write_mask != 0 &&
+                color.sample_count == depth.sample_count &&
+                color.surface_pitch == depth.surface_pitch &&
+                color.color_base_tiles == depth.color_base_tiles &&
+                color.depth_base_tiles == depth.depth_base_tiles &&
+                color.width == depth.width && color.height == depth.height &&
+                color.depth_format == depth.depth_format &&
+                color.guest_color_format == 1 &&
+                color.color_format == CapturedColorTargetFormat::Rgba8Gamma &&
+                depth.guest_color_format == 0 &&
+                depth.color_format == CapturedColorTargetFormat::Rgba8Linear;
+        };
+    const auto compatible_ordered_target_layout =
+        [&](const CapturedRasterState& before,
+            const CapturedRasterState& after) {
+            return same_target_layout(before, after) ||
+                is_captured_gamma_4x_to_1x_transition(before, after) ||
+                is_captured_depth_only_view_transition(before, after);
+        };
     // Packet 49 in the retail trace uses this source view over the immediately
     // preceding 4x gamma target. The current resolve path can read sample 0
     // from that multisampled image; all other EDRAM reinterpretations stay
@@ -4945,9 +4996,7 @@ bool submit_captured_vulkan_operation_stream(
             const CapturedRasterState& draw_raster =
                 draws[operation.draw_index].raster;
             if (preflight_draw_count != 0 &&
-                !same_target_layout(draws[preflight_layout_draw].raster,
-                                    draw_raster) &&
-                !is_captured_gamma_4x_to_1x_transition(
+                !compatible_ordered_target_layout(
                     draws[preflight_layout_draw].raster, draw_raster)) {
                 std::ostringstream message;
                 message << "draw packet " << operation.packet_index
@@ -5152,9 +5201,7 @@ bool submit_captured_vulkan_operation_stream(
         if (operation.type == CapturedVulkanOperation::Type::Draw) {
             const CapturedVulkanDraw& draw = draws[operation.draw_index];
             if (!stage_draws.empty() &&
-                !same_target_layout(stage_draws[stage_layout_draw].raster,
-                                    draw.raster) &&
-                !is_captured_gamma_4x_to_1x_transition(
+                !compatible_ordered_target_layout(
                     stage_draws[stage_layout_draw].raster, draw.raster)) {
                 std::ostringstream message;
                 message << "draw packet " << operation.packet_index

@@ -1957,6 +1957,15 @@ Vulkan's ordinary color resolve has not been shown to reproduce Xenos EDRAM
 sample/backing semantics. The synthetic regression proves ordered/direct
 executor readback equality only, not retail image parity.
 
+The same v44 run also had a separate 14-draw refresh that stopped at packet 1:
+it changed from the packet-0 RGBA8 gamma view to a depth-only RGBA8 linear view
+with identical color/depth bases, extent, pitch 640, 4x samples, and depth
+format. The ordered path now allows that exact depth-only view only when its
+color write mask is zero, keeping it on the shared render pass and depth
+attachment. Other depth-only aliases remain rejected. A synthetic Draw/Draw/
+Copy regression exercises the shared depth target, but retail depth contents
+and the rest of the 14-draw package have not yet been verified.
+
 Native Linux tests passed 4/4 and plugin tests passed 6/6 with
 `VK_LAYER_KHRONOS_validation`. The Android ARM64/API 26 renderer core and
 regression executable compiled, but no device was attached for execution. P1

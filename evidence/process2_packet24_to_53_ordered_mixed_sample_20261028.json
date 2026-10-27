@@ -25,7 +25,8 @@
         "captured_geometry": {"topology": 2, "index_count": 3, "auto_index": true, "vertex_bytes": 24}
       }
     ],
-    "old_plugin_failure": "draw packet 25 changed the layout from 4x/pitch-640 to 1x/pitch-1280 before Copy/Convert packet 53; the diagnostic repeated seven times. Packet 49 produced no source-layout rejection in this run."
+    "old_plugin_failure": "draw packet 25 changed the layout from 4x/pitch-640 to 1x/pitch-1280 before Copy/Convert packet 53; the diagnostic repeated seven times. Packet 49 produced no source-layout rejection in this run.",
+    "14_draw_failure": "A separate 14-draw refresh failed at packet 1: packet 0 used RGBA8 gamma guest format 1 and packet 1 used a depth-only RGBA8 linear guest format 0 view with the same color/depth bases, 1280x720 extent, pitch 640, 4x samples, and depth format."
   },
   "implementation": {
     "files": [
@@ -33,9 +34,12 @@
       "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
       "native_vulkan/rexglue_plugin/README.md"
     ],
-    "accepted_draw_transition": "A single same-base, same-depth-base, same-format, same-extent RGBA8 gamma 4x-to-1x transition with the same guest format and exactly doubled surface pitch; depth-only layout changes and other pitch/sample reinterpretations still fail closed.",
-    "execution_path": "The ordered segment containing draws 24..28 is sent to the existing mixed-sample Vulkan executor; its 4x color attachment resolves into the 1x color attachment before the captured 1x draws and packet-53 Copy/Convert geometry are submitted.",
-    "sample_and_edram_semantics": "The Vulkan color resolve currently uses its standard multisample resolve operation. This route does not establish that its sample combination or backing representation matches Xenos EDRAM for the retail transition."
+    "accepted_draw_transitions": [
+      "A same-base, same-depth-base, same-format, same-extent RGBA8 gamma 4x-to-1x transition with the same guest format and exactly doubled surface pitch.",
+      "An RGBA8 gamma color target and its depth-only view when bases, extent, pitch, samples, and depth format match exactly, the depth-only color mask is zero, and formats/guest formats match the captured gamma/depth-only pair."
+    ],
+    "execution_path": "The ordered segment containing draws 24..28 is sent to the existing mixed-sample Vulkan executor; its 4x color attachment resolves into the 1x color attachment before the captured 1x draws and packet-53 Copy/Convert geometry are submitted. The depth-only view is submitted in the same render pass against the matching depth attachment.",
+    "sample_and_edram_semantics": "The Vulkan color resolve currently uses its standard multisample resolve operation. These routes do not establish that its sample combination or backing representation matches Xenos EDRAM for the retail transition."
   },
   "verification": {
     "native_linux": {
@@ -44,8 +48,9 @@
       "tests": "4/4",
       "regressions": [
         "Synthetic packet-24..28 4x-to-1x draw sequence followed by Copy 53 submits through the ordered executor and matches the direct mixed-sample executor readback.",
+        "A captured-shaped gamma target followed by its exact 4x depth-only view and Copy/Convert submits through ordered execution and matches direct Vulkan submission.",
         "The captured-shaped 4x pitch 640 to 1x pitch 1280 transition is accepted.",
-        "The near-match 1x pitch 1272 remains fail-closed at packet 25."
+        "The near-match 1x pitch 1272 remains fail-closed at packet 25; unsupported depth-only aliases remain rejected."
       ]
     },
     "linux_plugin": {
@@ -53,16 +58,16 @@
       "result": "passed",
       "tests": "6/6",
       "plugin_path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-20261027/output/librexgpu-shift-native.so",
-      "plugin_sha256": "d0d4584d716698aad3f99c94f230ebf6526b2ba8f606d4345932ded1c79e5d36",
-      "build_id": "006fde601c41b597f6b9254a6d94eb907574dcac"
+      "plugin_sha256": "a0026207902f5fd3a0578138d0c0edd8875cecbd98119d33b26a65a4382b5ccf",
+      "build_id": "e1e9bfa7bf4960893d9ee24f2e06a60af13fcfc0"
     },
     "android_arm64_api26": {
       "command": "cmake --build /home/pes/work/.build-process2-p2161-android-renderer-20261027 --target shift_xbox_live_vulkan_renderer xbox_live_vulkan_renderer_check --parallel 4",
       "result": "renderer core and regression executable compiled",
       "abi": "arm64-v8a",
       "vulkan_minimum": "1.1",
-      "renderer_object_sha256": "341b3b73c0332532878c24c8dd3addd9c332abaf215edd49e4aed99d7766bc93",
-      "renderer_check_sha256": "161b37a1211db719752b880fc60c681a34c317479a4b5acaaa314d2358764447",
+      "renderer_object_sha256": "4d558c134e43b6490a8e34ff5d43f6ffddd3c405d136582c07e6cb815ac0e868",
+      "renderer_check_sha256": "1108b89058c4b1fdc00251ade5410f8fec3eb3d01da0b959b8ed7d7ffe07b020",
       "device_execution": "not run; adb devices -l reported no connected device"
     },
     "p1_interrupt_trace": {
@@ -79,9 +84,9 @@
   },
   "limitations": [
     "This renderer regression uses synthetic shaders and geometry and validates executor routing only; it is not a retail image comparison.",
-    "The new plugin has not yet been replayed against the retail XEX. P1 was given its path, SHA-256, and Build ID for the next same-run capture.",
+    "The rebuilt plugin has not yet been replayed against the retail XEX. P1 was given its path, SHA-256, and Build ID for the next same-run capture.",
     "The Vulkan resolve/sample behavior and persistent representation across the captured Xenos EDRAM transition are not yet validated against retail pixels or an authoritative sample map.",
-    "The remaining draws and Copy/Convert in the wider 14-draw transition, intermediate destination images, later target-layout changes, and presentation still need retail validation.",
+    "The depth-only and mixed-sample routes are regression-tested but not yet confirmed by retail replay. Other draws and Copy/Convert operations in the wider 14-draw transition, intermediate destination images, later target-layout changes, and presentation still need retail validation.",
     "PM4 interrupt packet-to-guest-callback correlation remains off by one in this same-run interval.",
     "The Android renderer core and test executable compile, but no phone was connected for execution."
   ]
