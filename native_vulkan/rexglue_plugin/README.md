@@ -1821,3 +1821,22 @@ same-layout EDRAM targets now persist across submissions, this does not execute
 the captured transition end to end; the 14-draw sequence still cannot be
 presented as retail parity. Details and validation results are in
 [`process2_xenos_guest_color_format_contract_20261027.json`](../../evidence/process2_xenos_guest_color_format_contract_20261027.json).
+
+## Android renderer fixtures and runtime-matched factory smoke (2026-10-27)
+
+The Android renderer-check target now compiles the four gamma SPIR-V inputs
+used by its ordered Copy/Convert regression. Native Linux CTest passed 4/4
+with `VK_LAYER_KHRONOS_validation`; the Android draw-input and synthetic
+offscreen Vulkan checks passed again on the Redmi Note 8 Pro / Mali-G76 MC4
+with Vulkan 1.1.131.
+
+An ARM64 plugin built against the ReXGlue 0.10.0 Android SDK snapshot used by
+the installed runtime passed isolated `dlopen`, ABI-version and graphics-factory
+checks on the phone. The factory returned a graphics object without a
+presentation surface. A plugin built against a newer SDK separately crashed
+inside the runtime during `dlopen`; the root cause is not established. Neither
+plugin was installed into the game. The app APK and data were left unchanged,
+and no game process was running during the check. These tests do not replay the
+retail 14-draw transition, verify swapchain presentation, or establish retail
+parity. See
+[`the evidence record`](../../evidence/process2_android_shader_fixtures_factory_smoke_20261027.json).

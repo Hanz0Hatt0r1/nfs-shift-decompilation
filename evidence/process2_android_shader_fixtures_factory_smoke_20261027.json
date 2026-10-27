@@ -1,0 +1,80 @@
+{
+  "schema": "shift.process2.android_shader_fixtures_factory_smoke.v1",
+  "date": "2026-10-27",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "source_head": "e1c35b6e",
+    "changed_files": [
+      "native_vulkan/android/CMakeLists.txt",
+      "native_vulkan/rexglue_plugin/README.md",
+      "evidence/process2_android_shader_fixtures_factory_smoke_20261027.json"
+    ]
+  },
+  "android_test_fixtures": {
+    "change": "The Android renderer-check target now generates and supplies the same four gamma SPIR-V fixtures used by its argc=18 host regression path.",
+    "shaders": [
+      "gamma_target_encoded.frag",
+      "gamma_target_linear.frag",
+      "xenos_copy_gamma_single.frag",
+      "xenos_copy_gamma_ms.frag"
+    ],
+    "spirv_target_environment": "vulkan1.1"
+  },
+  "validation": {
+    "linux_native_vulkan": {
+      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir native_vulkan/build --output-on-failure",
+      "result": "passed",
+      "tests": "4/4"
+    },
+    "redmi_note_8_pro": {
+      "device": "Redmi Note 8 Pro / begonia",
+      "gpu": "Mali-G76 MC4",
+      "vulkan_api": "1.1.131",
+      "draw_input_check": {
+        "result": "passed",
+        "binary_sha256": "03addae35f5bccb52ede91f41636a36bf7a7823c5a7e7c242fdaf5bb50da68b5"
+      },
+      "renderer_check": {
+        "result": "passed",
+        "binary_sha256": "2c36898a398f6ef5a5892f7ab19001fffc6bf656d1bde1b01c2db39c4d7469ed",
+        "coverage": "Synthetic offscreen Vulkan 1.1 draw, depth/stencil SAMPLE_ZERO preservation, anisotropy, and format-26/31 Copy/Convert cases including ordered format-31 cache sampling."
+      },
+      "validation_layer": "VK_LAYER_KHRONOS_validation is not installed on the device."
+    }
+  },
+  "android_plugin_factory_smoke": {
+    "sdk": "The ReXGlue 0.10.0 Android snapshot used by the installed app runtime; this local snapshot is not a Git checkout.",
+    "runtime_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "plugin_sha256": "68c12f16e0e8df9b1d46ee371826af6fcba691d921257dec3155158fbc0f508d",
+    "plugin_build_id": "18deed9d29b1a314f7e24ddab3d709b876139c75",
+    "platform": "Android arm64-v8a, API 29, NDK 28.2.13676358",
+    "result": "passed",
+    "observations": {
+      "dlopen": "passed with the exact runtime DSO",
+      "gpu_plugin_abi": 1,
+      "factory": "returned a non-null graphics object",
+      "has_presentation": false,
+      "dlclose": "passed"
+    }
+  },
+  "sdk_interaction_experiment": {
+    "runtime_only_dlopen": "passed",
+    "newer_sdk_plugin_dlopen": "failed with SIGSEGV in a librexruntimed.so VmaBufferImageUsage constructor before returning from dlopen",
+    "newer_sdk_plugin_sha256": "b0e8e3b54b44df833b0defba29a9140f64d9863545321f0bebd98b1e9b62c15d",
+    "interpretation": "The failure cause is unresolved. The successful snapshot-matched factory smoke does not prove that SDK version alone caused the difference."
+  },
+  "installed_app": {
+    "package": "com.hanz0hatt0r.nfsshift",
+    "installed_base_apk_sha256": "48d1b0920fe4d616aab5efb5cbdfa5c0e6ab753224c86683d4d9262e1ff83c1a",
+    "game_process_running_at_check": false,
+    "apk_or_plugin_modified": false,
+    "launched_or_restarted": false
+  },
+  "limits": [
+    "The Redmi renderer check is synthetic/offscreen and does not execute the captured retail 14-draw transition or establish retail parity.",
+    "The factory smoke creates no Android surface, so has_presentation=false is expected and does not verify swapchain presentation.",
+    "The successfully loaded plugin was not installed into or loaded by the game.",
+    "The Android device has no Khronos validation layer."
+  ]
+}

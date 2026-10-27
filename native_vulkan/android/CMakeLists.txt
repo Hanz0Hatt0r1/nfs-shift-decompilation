@@ -86,6 +86,22 @@ if(GLSLANG_VALIDATOR)
   )
   list(APPEND SHIFT_ANDROID_LIVE_DRAW_SPIRV
     ${SHIFT_ANDROID_SHADER_DIR}/xenos_copy_black.frag.spv)
+  foreach(shader IN ITEMS gamma_target_encoded.frag
+                          gamma_target_linear.frag
+                          xenos_copy_gamma_single.frag
+                          xenos_copy_gamma_ms.frag)
+    add_custom_command(
+      OUTPUT ${SHIFT_ANDROID_SHADER_DIR}/${shader}.spv
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_ANDROID_SHADER_DIR}
+      COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+              ${CMAKE_CURRENT_SOURCE_DIR}/../shaders/${shader}
+              -o ${SHIFT_ANDROID_SHADER_DIR}/${shader}.spv
+      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../shaders/${shader}
+      VERBATIM
+    )
+    list(APPEND SHIFT_ANDROID_LIVE_DRAW_SPIRV
+      ${SHIFT_ANDROID_SHADER_DIR}/${shader}.spv)
+  endforeach()
   foreach(shader IN ITEMS xenos_copy_4x_u16x4.frag
                           xenos_copy_sample0_rg16f_ms.frag
                           xenos_copy_sample0_rg16f_single.frag)
