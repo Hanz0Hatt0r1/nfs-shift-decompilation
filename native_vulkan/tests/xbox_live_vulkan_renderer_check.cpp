@@ -1646,6 +1646,19 @@ int main(int argc, char** argv) {
     auto unresolved_draw_operations = ordered_operations;
     unresolved_draw_operations[0].type =
         shift::xbox::CapturedVulkanOperation::Type::UnresolvedDraw;
+    unresolved_draw_operations[0].draw_raster_ready = true;
+    unresolved_draw_operations[0].draw_raster = changed_extent_draws[0].raster;
+    const std::string unresolved_draw_trace =
+        shift::xbox::describe_captured_vulkan_operations(unresolved_draw_operations);
+    if (unresolved_draw_trace.find(
+            "unresolved(packet=100,raster={color_base=0xd,depth_base=0x1d,") ==
+            std::string::npos ||
+        unresolved_draw_trace.find("depth_write=1,stencil_test=1") ==
+            std::string::npos) {
+      std::cerr << "unresolved draw trace lost captured target side effects: "
+                << unresolved_draw_trace << '\n';
+      return 1;
+    }
     std::string unresolved_draw_error;
     if (shift::xbox::submit_captured_vulkan_frame(
             physical_device, device, queue, queue_family, output_image,

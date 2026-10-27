@@ -3116,6 +3116,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                         shift::xbox::CapturedVulkanOperation::Type::Draw;
                     operation.draw_index = static_cast<uint32_t>(frame_draws.size());
                     operation.packet_index = draw_packet_index;
+                    operation.draw_raster_ready = raster_state_ready;
+                    operation.draw_raster = raster_state;
                     frame_draws.push_back(std::move(prepared_draw));
                     frame_draw_packet_indices.push_back(draw_packet_index);
                     frame_operations.push_back(std::move(operation));
@@ -3128,6 +3130,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   operation.type =
                       shift::xbox::CapturedVulkanOperation::Type::UnresolvedDraw;
                   operation.packet_index = draw_packet_index;
+                  operation.draw_raster_ready = raster_state_ready;
+                  operation.draw_raster = raster_state;
                   frame_operations.push_back(std::move(operation));
                   const std::string reason =
                       error.empty() ? "unsupported shader or resource form" : error;

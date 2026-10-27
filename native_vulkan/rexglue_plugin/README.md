@@ -2147,3 +2147,23 @@ callback effects inside that wrapper. The complete compressed row trace and
 provider/renderer limits are in
 [`process2_linux_current_head_ordered_capture_20261028.json`](../../evidence/process2_linux_current_head_ordered_capture_20261028.json) and
 [`process2_linux_current_head_source1_interrupt_trace_20261028.jsonl.gz`](../../evidence/process2_linux_current_head_source1_interrupt_trace_20261028.jsonl.gz).
+
+## Retain raster side effects for unresolved PM4 draws (2026-10-28)
+
+When indexed draw decoding and raster-state decoding succeed but shader or
+resource preparation fails, the ordered stream now retains that raster
+snapshot on its `UnresolvedDraw` operation. Its diagnostic includes the color
+and depth bases/formats, extent, pitch, sample count, color write mask,
+depth/stencil enables and controls, and scissor. This lets a future retail
+capture distinguish color-only, depth-only, and stencil-affecting packets
+without treating the unresolved draw as executed. A draw whose raster state
+itself cannot be decoded remains marked without a raster snapshot.
+
+A synthetic regression checks the retained side-effect fields. Linux renderer
+CTest passed 4/4 and ReXGlue plugin CTest passed 6/6 with
+`VK_LAYER_KHRONOS_validation`; the Android ARM64/API 26 renderer and check
+executable compiled. No Android device was connected, and the latest Linux
+replay did not include the retail 14-draw transition. This improves capture
+evidence only; shared aliased EDRAM storage and retail frame parity remain
+unimplemented. Exact build hashes and test results are in
+[`process2_unresolved_draw_raster_trace_20261028.json`](../../evidence/process2_unresolved_draw_raster_trace_20261028.json).

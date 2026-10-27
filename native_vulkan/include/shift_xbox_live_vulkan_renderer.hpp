@@ -100,6 +100,10 @@ struct CapturedVulkanOperation {
     // UnresolvedDraw preserves a packet that could not be decoded or prepared.
     uint32_t draw_index = std::numeric_limits<uint32_t>::max();
     uint32_t packet_index = std::numeric_limits<uint32_t>::max();
+    // Preserve decoded target side effects even when shader/resource preparation
+    // fails, so an unresolved packet remains useful as an ordered GPU trace.
+    bool draw_raster_ready = false;
+    CapturedRasterState draw_raster{};
     CapturedCopyState copy_state{};
     uint32_t source_width = 0;
     uint32_t source_height = 0;

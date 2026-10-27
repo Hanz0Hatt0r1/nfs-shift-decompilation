@@ -1,0 +1,80 @@
+{
+  "schema": "shift.process2.unresolved_draw_raster_trace.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "change": {
+    "files": [
+      "native_vulkan/include/shift_xbox_live_vulkan_renderer.hpp",
+      "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
+      "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp"
+    ],
+    "behavior": "Retain the decoded CapturedRasterState on both prepared and unresolved indexed-draw operations. Unresolved draw diagnostics expose target layout and color/depth/stencil side-effect registers when raster decoding succeeded.",
+    "captured_fields": [
+      "color and depth bases",
+      "guest and Vulkan color/depth formats",
+      "extent, surface pitch, sample count, depth-only mode",
+      "color write mask",
+      "depth test/write and stencil test enables",
+      "depth control and stencil reference/write mask",
+      "scissor bounds and area flag"
+    ]
+  },
+  "regression": {
+    "test": "xbox_live_vulkan_renderer_check",
+    "fixture": "synthetic unresolved PM4 draw with a decoded captured-shaped raster snapshot",
+    "asserts": [
+      "diagnostic retains color/depth base tile addresses",
+      "diagnostic retains depth-write and stencil-test enables",
+      "unresolved draws remain rejected before renderer submission"
+    ],
+    "retail_execution": false
+  },
+  "verification": {
+    "native_linux": {
+      "build_directory": "/tmp/nfs-shift-p2-edram-build-20261028",
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /tmp/nfs-shift-p2-edram-build-20261028 --output-on-failure",
+      "result": "passed 4/4"
+    },
+    "rexglue_linux_plugin": {
+      "build_directory": "/home/pes/work/.build-process2-p2161-vulkan-plugin-20261027",
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
+      "result": "passed 6/6",
+      "sdk_checkout": "/home/pes/work/rexglue-sdk-rexui-vulkan-20261023",
+      "plugin_sha256": "415376606df25e858430ff4d6517c06d2a9b985ab1a8f1a9f56ee1738f57a872",
+      "build_id": "7b8a8780e2106ebd1d6511e3ce65b0dd32309e43",
+      "vulkan_minimum": "1.1"
+    },
+    "android_arm64_api26": {
+      "build_directory": "/home/pes/work/.build-process2-p2161-android-renderer-20261027",
+      "targets": [
+        "shift_xbox_live_vulkan_renderer",
+        "xbox_live_vulkan_renderer_check"
+      ],
+      "result": "compiled",
+      "renderer_archive_sha256": "8fc328984fc72bf247c34e8c95769aa1975ceffd226001df1111c9e45f966665",
+      "check_executable_sha256": "5462016df6a3fd96fe00b855e525cd697d94c546225cb2d0ddca5fef0b6adad2",
+      "device_execution": "not run; adb devices -l listed no devices"
+    },
+    "github_ci_at_parent_head": {
+      "head": "21d39a95e7b843791741f8f0e00579bb15c19056",
+      "passed": [
+        "capture-producer",
+        "coordination",
+        "evidence-fast",
+        "live-memory-dumper",
+        "native",
+        "native-activity-arm64",
+        "python",
+        "vulkan-smoke"
+      ],
+      "skipped": ["retail-startup-regression"]
+    }
+  },
+  "limitations": [
+    "This change preserves diagnostics; it does not implement shared physical Xenos EDRAM backing or alias transfer.",
+    "The branch-head Linux replay contained no 14-draw transition, so this operation capture path has not yet recorded the retail transition's unresolved draws.",
+    "No retail rendering or pixel-parity claim is made."
+  ]
+}

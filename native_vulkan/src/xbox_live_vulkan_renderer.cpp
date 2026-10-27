@@ -3568,6 +3568,27 @@ std::string describe_captured_vulkan_operations(
     std::ostringstream message;
     constexpr size_t kMaxLoggedOperations = 64;
     const size_t count = std::min(operations.size(), kMaxLoggedOperations);
+    const auto append_draw_raster = [&](const CapturedRasterState& raster) {
+        message << ",raster={color_base=0x" << std::hex
+                << raster.color_base_tiles << ",depth_base=0x"
+                << raster.depth_base_tiles << std::dec
+                << ",guest_format=" << raster.guest_color_format
+                << ",color_format=" << static_cast<uint32_t>(raster.color_format)
+                << ",depth_format=" << static_cast<uint32_t>(raster.depth_format)
+                << ",extent=" << raster.width << 'x' << raster.height
+                << ",pitch=" << raster.surface_pitch
+                << ",samples=" << raster.sample_count
+                << ",depth_only=" << raster.depth_only
+                << ",color_mask=0x" << std::hex << raster.color_write_mask
+                << std::dec << ",depth_test=" << raster.depth_test_enabled
+                << ",depth_write=" << raster.depth_write_enabled
+                << ",stencil_test=" << raster.stencil_test_enabled
+                << ",depth_control=0x" << std::hex << raster.depth_control
+                << ",stencil_refmask=0x" << raster.stencil_refmask << std::dec
+                << ",scissor=" << raster.scissor_has_area << '['
+                << raster.scissor_x0 << ',' << raster.scissor_y0 << ".."
+                << raster.scissor_x1 << ',' << raster.scissor_y1 << "]}";
+    };
     for (size_t i = 0; i < count; ++i) {
         if (i) message << ';';
         const CapturedVulkanOperation& operation = operations[i];
@@ -3635,7 +3656,11 @@ std::string describe_captured_vulkan_operations(
                         << ')';
                 break;
             case CapturedVulkanOperation::Type::UnresolvedDraw:
-                message << "unresolved(packet=" << operation.packet_index << ')';
+                message << "unresolved(packet=" << operation.packet_index;
+                if (operation.draw_raster_ready) {
+                    append_draw_raster(operation.draw_raster);
+                }
+                message << ')';
                 break;
             case CapturedVulkanOperation::Type::UnresolvedCopy:
                 message << "unresolved-copy(packet=" << operation.packet_index << ')';
