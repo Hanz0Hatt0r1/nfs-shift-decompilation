@@ -80,6 +80,9 @@ struct CapturedVulkanCopy {
     // Set by the ordered executor for non-presenter writes, including guest
     // format 6 copies whose destination must remain in the resource cache.
     bool retain_destination = false;
+    // Fragment shader used to apply captured post-Copy EDRAM clear side effects
+    // through the original Copy rectangle geometry.
+    std::vector<uint32_t> edram_clear_pixel_shader_spirv;
     std::vector<uint32_t> vertex_shader_spirv;
     std::vector<uint32_t> pixel_shader_spirv;
     std::vector<uint32_t> single_sample_pixel_shader_spirv;

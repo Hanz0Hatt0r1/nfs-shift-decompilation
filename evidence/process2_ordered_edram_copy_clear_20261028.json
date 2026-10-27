@@ -1,0 +1,90 @@
+{
+  "schema": "shift.process2.ordered_edram_copy_clear.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "change": {
+    "execution_order": "After each captured Copy/Convert draw to the destination image, apply the captured clear over the exact source Copy rectangle on that operation's source EDRAM attachment before the next ordered operation.",
+    "supported_color_clear": "Both captured raw color-clear values must be available and equal zero. The clear shader writes zero to enabled color channels.",
+    "supported_depth_stencil_clear": "The source must be D24S8 and the captured raw value must be 0xFFFFFF00, decoded as depth 1.0 and stencil 0. The depth test is ALWAYS with writes enabled; stencil compares ALWAYS, replaces on pass, and writes all bits.",
+    "geometry": "Requires the Copy/Convert packet's captured rectangle vertex/geometry shaders, guest rectangle geometry, and source raster scissor. The clear does not substitute a fullscreen draw.",
+    "fail_closed": "Rejects incomplete clear registers, unsupported raw values, missing captured rectangle geometry, missing clear SPIR-V, and depth clear on other source depth formats before queue submission.",
+    "vulkan": "Uses Vulkan 1.1 render passes and explicit color/depth image and host-buffer barriers."
+  },
+  "retail_capture_reference": {
+    "evidence": "process2_redmi_transition_copy_chain_20261026.json",
+    "sequence": "14-draw transition capture includes a format-26 all-four-sample Copy/Convert with color and depth clear enabled, followed by seven format-31 sample-zero color-clearing copies.",
+    "format_26": {
+      "copy_control": "0x00100360",
+      "destination_base": "0x0BE19000",
+      "destination_extent": [1280, 720],
+      "destination_format": 26,
+      "sample_select": 6,
+      "color_clear": true,
+      "depth_clear": true,
+      "raw_color_clear_values": ["0x00000000", "0x00000000"],
+      "raw_depth_clear_value": "0xFFFFFF00"
+    },
+    "format_31": {
+      "copy_control": "0x00100100",
+      "destination_format": 31,
+      "sample_select": 0,
+      "color_clear": true,
+      "depth_clear": false,
+      "destinations": [
+        {"base": "0x0CC87000", "extent": [256, 243]},
+        {"base": "0x0CC7E000", "extent": [96, 81]},
+        {"base": "0x0CC7D000", "extent": [32, 27]},
+        {"base": "0x0CC7B000", "extent": [32, 9]},
+        {"base": "0x0CC7A000", "extent": [32, 3]},
+        {"base": "0x0CC79000", "extent": [32, 1]},
+        {"base": "0x0CD63000", "extent": [32, 1]}
+      ]
+    },
+    "source_capture_sha256_uncompressed": "114afc59c3c6360d013d6f7089b8d9473e0ee397f6487ac0a865cb91ade1b118",
+    "limits": "Register values specify this captured subset; they do not prove the full transition's source-layout association or successful execution."
+  },
+  "regressions": {
+    "format_26": "Synthetic 4x source executes format-26 Copy/Convert with color and D24S8 depth/stencil clear enabled under the Vulkan validation layer; converted destination values remain exact.",
+    "format_31": "Synthetic format-31 source executes color-only clear; an ordered cached-source Copy/Convert followed by a presenter copy reads back zero from the persisted exact-layout EDRAM target.",
+    "classification": "Synthetic Vulkan renderer regression, not retail framebuffer parity. The test does not independently read back D24S8 planes to compare the cleared depth/stencil bits."
+  },
+  "verification": {
+    "linux_renderer": {
+      "command": "cmake --build /home/pes/work/.build-process2-p2161-native-vulkan-20261028 --target xbox_live_vulkan_renderer_check -j4 && /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-native-vulkan-20261028 --output-on-failure",
+      "result": "passed 4/4"
+    },
+    "linux_renderer_validation": {
+      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-native-vulkan-20261028 -R '^xbox_live_vulkan_renderer_check$' --output-on-failure",
+      "result": "passed 1/1"
+    },
+    "linux_rexglue_plugin": {
+      "command": "cmake --build /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 -j4 && VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
+      "result": "passed 6/6",
+      "plugin_sha256": "a4611d36e9cdd896782ba00b39bfafde7c50038d489192c072120bdecf99dab0",
+      "build_id": "e5bf96174291a2306c879c18a21e89f0a12a3af2",
+      "vulkan_minimum": "1.1"
+    },
+    "android_arm64_renderer": {
+      "command": "cmake --build /home/pes/work/.build-process2-p2161-android-renderer-20261027 --target shift_xbox_live_vulkan_renderer xbox_live_vulkan_renderer_check --parallel 4",
+      "result": "renderer and offscreen check executable compiled; not executed on a phone"
+    },
+    "android_arm64_plugin_source": {
+      "compiler": "NDK r28c aarch64-linux-android29-clang++",
+      "result": "current plugin translation unit compiled successfully (syntax-only; one warning in SDK fpscr.h inline assembly)",
+      "scope": "No plugin DSO link or APK build."
+    },
+    "spirv": {
+      "command": "spirv-val --target-env vulkan1.1 edram_clear.frag.spv (host and Android build outputs)",
+      "result": "passed for both build outputs"
+    },
+    "phone": {
+      "result": "not run; adb devices -l showed no connected devices"
+    }
+  },
+  "remaining_blockers": [
+    "The full retail 14-draw transition still aliases EDRAM across different extents, sample counts, and formats; shared physical EDRAM backing and alias sample/format transfer are not implemented.",
+    "The complete transition has not been replayed from original PM4 operations. This change does not prove intermediate image correctness or video startup.",
+    "D24S8 clear values are configured and executed in a validation-tested synthetic pass, but the depth/stencil plane values are not independently read back in this regression.",
+    "The latest ADB environment has no attached phone, so there is no current Android Mali runtime or game-frame result."
+  ]
+}

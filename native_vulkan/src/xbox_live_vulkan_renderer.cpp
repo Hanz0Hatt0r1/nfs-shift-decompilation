@@ -288,6 +288,8 @@ struct FrameResources {
   VkQueue queue = VK_NULL_HANDLE;
   VkRenderPass render_pass = VK_NULL_HANDLE;
   VkFramebuffer framebuffer = VK_NULL_HANDLE;
+  VkRenderPass edram_clear_render_pass = VK_NULL_HANDLE;
+  VkFramebuffer edram_clear_framebuffer = VK_NULL_HANDLE;
   VkRenderPass copy_render_pass = VK_NULL_HANDLE;
   VkFramebuffer copy_framebuffer = VK_NULL_HANDLE;
   ImageResource multisample_color;
@@ -313,6 +315,7 @@ struct FrameResources {
   uint32_t upload_slot = 0;
   std::vector<DrawResources> draws;
   DrawResources copy_draw;
+  DrawResources edram_clear_draw;
   bool submitted = false;
 
   ~FrameResources() {
@@ -360,8 +363,11 @@ struct FrameResources {
       destroy_buffer(draw.vertices);
     };
     destroy_draw(copy_draw);
+    destroy_draw(edram_clear_draw);
     for (auto it = draws.rbegin(); it != draws.rend(); ++it)
       destroy_draw(*it);
+    if (edram_clear_framebuffer)
+      vkDestroyFramebuffer(device, edram_clear_framebuffer, nullptr);
     if (copy_framebuffer)
       vkDestroyFramebuffer(device, copy_framebuffer, nullptr);
     if (framebuffer)
@@ -383,6 +389,8 @@ struct FrameResources {
     destroy_buffer(source_readback);
     if (copy_render_pass)
       vkDestroyRenderPass(device, copy_render_pass, nullptr);
+    if (edram_clear_render_pass)
+      vkDestroyRenderPass(device, edram_clear_render_pass, nullptr);
     if (render_pass)
       vkDestroyRenderPass(device, render_pass, nullptr);
     if (mixed_msaa_render_pass)
@@ -2449,6 +2457,74 @@ bool create_draw_resources(
   return true;
 }
 
+bool create_edram_clear_render_pass(VkDevice device,
+                                   VkFormat color_format,
+                                   VkSampleCountFlagBits samples,
+                                   bool needs_depth,
+                                   VkRenderPass* render_pass,
+                                   std::string* error) {
+    std::array<VkAttachmentDescription, 2> attachments{};
+    attachments[0].format = color_format;
+    attachments[0].samples = samples;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference color_reference{0,
+                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentReference depth_reference{};
+    if (needs_depth) {
+        attachments[1].format = VK_FORMAT_D24_UNORM_S8_UINT;
+        attachments[1].samples = samples;
+        attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+        attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+        attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[1].initialLayout =
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        attachments[1].finalLayout =
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depth_reference = {1,
+                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+    }
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_reference;
+    subpass.pDepthStencilAttachment = needs_depth ? &depth_reference : nullptr;
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                              VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                              VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                              VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                              VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                               VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                               VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                               VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    VkRenderPassCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    info.attachmentCount = needs_depth ? 2u : 1u;
+    info.pAttachments = attachments.data();
+    info.subpassCount = 1;
+    info.pSubpasses = &subpass;
+    info.dependencyCount = 1;
+    info.pDependencies = &dependency;
+    const VkResult result = vkCreateRenderPass(device, &info, nullptr, render_pass);
+    return result == VK_SUCCESS
+        ? true
+        : vk_fail("vkCreateRenderPass(EDRAM clear)", result, error);
+}
+
 bool create_mixed_msaa_render_pass(
     VkDevice device,
     VkFormat color_format,
@@ -3176,6 +3252,29 @@ bool submit_mixed_sample_copy_frame(
         for (const DrawTextureResources& texture : draw.textures) {
             if (!texture.guest_copy_source)
                 add_host_barrier(&texture.upload, VK_ACCESS_TRANSFER_READ_BIT);
+        }
+    }
+    if (resources.edram_clear_draw.pipeline) {
+        const std::array<std::pair<const BufferResource*, VkAccessFlags>, 4>
+            buffers = {{{&resources.edram_clear_draw.vertices,
+                         VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT},
+                        {&resources.edram_clear_draw.indices,
+                         VK_ACCESS_INDEX_READ_BIT},
+                        {&resources.edram_clear_draw.vertex_constants,
+                         VK_ACCESS_UNIFORM_READ_BIT},
+                        {&resources.edram_clear_draw.pixel_constants,
+                         VK_ACCESS_UNIFORM_READ_BIT}}};
+        for (const auto& [buffer, destination_access] : buffers) {
+            if (!buffer->buffer) continue;
+            VkBufferMemoryBarrier barrier{};
+            barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+            barrier.dstAccessMask = destination_access;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.buffer = buffer->buffer;
+            barrier.size = VK_WHOLE_SIZE;
+            host_barriers.push_back(barrier);
         }
     }
     vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_HOST_BIT,
@@ -3976,6 +4075,37 @@ bool submit_captured_vulkan_frame(
             return fail("captured Copy/Convert is outside the implemented format-6, format-26, and format-31 Vulkan subsets",
                         error);
         }
+        if (state.color_clear_enable || state.depth_clear_enable) {
+            if (!copy->clear_values_ready ||
+                (state.color_clear_enable &&
+                 (copy->color_clear != 0 || copy->color_clear_lo != 0)) ||
+                (state.depth_clear_enable &&
+                 copy->depth_clear != 0xFFFFFF00u)) {
+                return fail("captured Copy/Convert clear values are incomplete or outside the verified zero-color/D24S8-one subset",
+                            error);
+            }
+            if (!geometry_shader_enabled || !copy->source_geometry_ready ||
+                copy->source_geometry.vertex_shader_spirv.empty() ||
+                copy->source_geometry.geometry_shader_spirv.empty() ||
+                copy->edram_clear_pixel_shader_spirv.empty()) {
+                std::ostringstream message;
+                message << "captured Copy/Convert EDRAM clear requires its captured rectangle geometry and translated clear shader (geometry_feature="
+                        << geometry_shader_enabled << ",captured_geometry="
+                        << copy->source_geometry_ready << ",vertex_shader="
+                        << !copy->source_geometry.vertex_shader_spirv.empty()
+                        << ",rectangle_shader="
+                        << !copy->source_geometry.geometry_shader_spirv.empty()
+                        << ",clear_shader="
+                        << !copy->edram_clear_pixel_shader_spirv.empty() << ')';
+                return fail(message.str(), error);
+            }
+            if (state.depth_clear_enable &&
+                copy->source_geometry.raster.depth_format !=
+                    CapturedDepthTargetFormat::D24S8) {
+                return fail("captured Copy/Convert depth clear requires the supported D24S8 source target",
+                            error);
+            }
+        }
         if (state.destination_format != 6) {
             VkFormatProperties destination_properties{};
             vkGetPhysicalDeviceFormatProperties(
@@ -4097,7 +4227,7 @@ bool submit_captured_vulkan_frame(
             return draw.raster.depth_test_enabled ||
                    draw.raster.depth_write_enabled ||
                    draw.raster.stencil_test_enabled;
-        });
+        }) || (copy && copy->state.depth_clear_enable);
     bool source_readback_ready = copy && prepare_source_readback_buffer(
         memory_properties, device, source_width, source_height,
         raster_color_format, samples, samples > 1, resources, source_readback);
@@ -4399,6 +4529,62 @@ bool submit_captured_vulkan_frame(
         resources.destroy_buffer(resources.copy_draw.textures[0].upload);
     }
 
+    if (copy &&
+        (copy->state.color_clear_enable || copy->state.depth_clear_enable)) {
+        if (!create_edram_clear_render_pass(
+                device, raster_color_format, raster_samples, needs_depth,
+                &resources.edram_clear_render_pass, error)) {
+            return false;
+        }
+        const std::array<VkImageView, 2> clear_views = {
+            resources.multisample_color.view, resources.depth.view};
+        VkFramebufferCreateInfo clear_framebuffer_info{};
+        clear_framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        clear_framebuffer_info.renderPass = resources.edram_clear_render_pass;
+        clear_framebuffer_info.attachmentCount = needs_depth ? 2u : 1u;
+        clear_framebuffer_info.pAttachments = clear_views.data();
+        clear_framebuffer_info.width = raster_width;
+        clear_framebuffer_info.height = raster_height;
+        clear_framebuffer_info.layers = 1;
+        result = vkCreateFramebuffer(device, &clear_framebuffer_info, nullptr,
+                                     &resources.edram_clear_framebuffer);
+        if (result != VK_SUCCESS) {
+            return vk_fail("vkCreateFramebuffer(EDRAM clear)", result, error);
+        }
+
+        CapturedVulkanDraw clear_draw = copy->source_geometry;
+        clear_draw.pixel_shader_spirv = copy->edram_clear_pixel_shader_spirv;
+        clear_draw.pixel_shader_spirv_linear_target.clear();
+        clear_draw.raster.sample_count = samples;
+        clear_draw.raster.color_write_mask =
+            copy->state.color_clear_enable ? 0xFu : 0u;
+        clear_draw.raster.blend_control_0 = 0x00010001u;
+        clear_draw.raster.depth_test_enabled =
+            copy->state.depth_clear_enable;
+        clear_draw.raster.depth_write_enabled =
+            copy->state.depth_clear_enable;
+        clear_draw.raster.stencil_test_enabled =
+            copy->state.depth_clear_enable;
+        if (copy->state.depth_clear_enable) {
+            // D24S8 clear 0xFFFFFF00 is depth 1.0 and stencil 0. The pipeline
+            // writes those values only where the captured Copy rectangle lands.
+            clear_draw.raster.depth_control = (7u << 4) | (7u << 8) |
+                                               (2u << 14);
+            clear_draw.raster.stencil_refmask = 0x00FFFF00u;
+        } else {
+            clear_draw.raster.depth_control = 0;
+            clear_draw.raster.stencil_refmask = 0;
+        }
+        if (!create_draw_resources(
+                clear_draw, std::numeric_limits<size_t>::max(),
+                texture_cache_state, memory_properties, device,
+                resources.edram_clear_render_pass, 0, pipeline_cache,
+                geometry_shader_enabled, sampler_capabilities,
+                &resources.edram_clear_draw, error)) {
+            return false;
+        }
+    }
+
     // Pipelines need the render pass compatibility key, so create them after
     // the pass exists. Resource upload and descriptor creation are independent.
     for (size_t i = 0; i < draws.size(); ++i) {
@@ -4469,6 +4655,29 @@ bool submit_captured_vulkan_frame(
         for (const DrawTextureResources& texture : draw.textures) {
             if (!texture.guest_copy_source)
                 add_host_barrier(&texture.upload, VK_ACCESS_TRANSFER_READ_BIT);
+        }
+    }
+    if (resources.edram_clear_draw.pipeline) {
+        const std::array<std::pair<const BufferResource*, VkAccessFlags>, 4>
+            buffers = {{{&resources.edram_clear_draw.vertices,
+                         VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT},
+                        {&resources.edram_clear_draw.indices,
+                         VK_ACCESS_INDEX_READ_BIT},
+                        {&resources.edram_clear_draw.vertex_constants,
+                         VK_ACCESS_UNIFORM_READ_BIT},
+                        {&resources.edram_clear_draw.pixel_constants,
+                         VK_ACCESS_UNIFORM_READ_BIT}}};
+        for (const auto& [buffer, destination_access] : buffers) {
+            if (!buffer->buffer) continue;
+            VkBufferMemoryBarrier barrier{};
+            barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+            barrier.dstAccessMask = destination_access;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.buffer = buffer->buffer;
+            barrier.size = VK_WHOLE_SIZE;
+            host_barriers.push_back(barrier);
         }
     }
     vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_HOST_BIT,
@@ -4788,6 +4997,102 @@ bool submit_captured_vulkan_frame(
         record_copy_resolve_draw(command, resources.copy_draw, *copy,
                                  output_width, output_height);
         vkCmdEndRenderPass(command);
+
+        if (copy->state.color_clear_enable ||
+            copy->state.depth_clear_enable) {
+            VkImageMemoryBarrier color_to_attachment{};
+            color_to_attachment.sType =
+                VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            color_to_attachment.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            color_to_attachment.dstAccessMask =
+                VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            color_to_attachment.oldLayout =
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            color_to_attachment.newLayout =
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            color_to_attachment.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            color_to_attachment.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            color_to_attachment.image = resources.multisample_color.image;
+            color_to_attachment.subresourceRange.aspectMask =
+                VK_IMAGE_ASPECT_COLOR_BIT;
+            color_to_attachment.subresourceRange.levelCount = 1;
+            color_to_attachment.subresourceRange.layerCount = 1;
+            VkImageMemoryBarrier depth_to_attachment{};
+            if (copy->state.depth_clear_enable) {
+                depth_to_attachment.sType =
+                    VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                depth_to_attachment.srcAccessMask =
+                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                depth_to_attachment.dstAccessMask =
+                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                depth_to_attachment.oldLayout =
+                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                depth_to_attachment.newLayout =
+                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                depth_to_attachment.srcQueueFamilyIndex =
+                    VK_QUEUE_FAMILY_IGNORED;
+                depth_to_attachment.dstQueueFamilyIndex =
+                    VK_QUEUE_FAMILY_IGNORED;
+                depth_to_attachment.image = resources.depth.image;
+                depth_to_attachment.subresourceRange.aspectMask =
+                    VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                depth_to_attachment.subresourceRange.levelCount = 1;
+                depth_to_attachment.subresourceRange.layerCount = 1;
+            }
+            vkCmdPipelineBarrier(
+                command,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                    (copy->state.depth_clear_enable
+                         ? VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                               VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
+                         : 0),
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                    (copy->state.depth_clear_enable
+                         ? VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                               VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
+                         : 0),
+                0, 0, nullptr, 0, nullptr,
+                copy->state.depth_clear_enable ? 2u : 1u,
+                copy->state.depth_clear_enable
+                    ? std::array<VkImageMemoryBarrier, 2>{
+                          color_to_attachment, depth_to_attachment}.data()
+                    : &color_to_attachment);
+
+            VkRenderPassBeginInfo clear_begin{};
+            clear_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            clear_begin.renderPass = resources.edram_clear_render_pass;
+            clear_begin.framebuffer = resources.edram_clear_framebuffer;
+            clear_begin.renderArea.extent = {raster_width, raster_height};
+            vkCmdBeginRenderPass(command, &clear_begin,
+                                 VK_SUBPASS_CONTENTS_INLINE);
+
+            record_copy_resolve_draw(command, resources.edram_clear_draw,
+                                     *copy, raster_width, raster_height);
+            vkCmdEndRenderPass(command);
+
+            VkImageMemoryBarrier color_to_sample{};
+            color_to_sample.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            color_to_sample.srcAccessMask =
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            color_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            color_to_sample.oldLayout =
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            color_to_sample.newLayout =
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            color_to_sample.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            color_to_sample.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            color_to_sample.image = resources.multisample_color.image;
+            color_to_sample.subresourceRange.aspectMask =
+                VK_IMAGE_ASPECT_COLOR_BIT;
+            color_to_sample.subresourceRange.levelCount = 1;
+            color_to_sample.subresourceRange.layerCount = 1;
+            vkCmdPipelineBarrier(
+                command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                0, nullptr, 1, &color_to_sample);
+        }
     }
 
     if (persistent_edram_target && !copy) {

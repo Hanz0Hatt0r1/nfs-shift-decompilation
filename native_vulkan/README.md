@@ -434,6 +434,36 @@ operation boundary but does not submit its intermediate image. See
 [`process2_copy_convert_primitives_20261027.json`](../evidence/process2_copy_convert_primitives_20261027.json)
 for the exact tested tuple and limits.
 
+## Captured Copy/Convert EDRAM clear side effects (2026-10-28)
+
+The ordered Vulkan submit path now applies the captured post-Copy/Convert clear
+to its source EDRAM attachment using the Copy packet's captured rectangle
+geometry. The verified subset is deliberately narrow: both raw color clear
+registers must be zero, and an enabled D24S8 depth clear must be exactly
+`0xFFFFFF00` (depth 1.0, stencil 0). The renderer rejects missing clear
+registers, unsupported values, missing captured geometry, and depth clears on
+non-D24S8 sources before submission. Clear draws preserve the source attachment
+outside the captured rectangle and keep color/depth images in Vulkan 1.1
+layouts with explicit barriers.
+
+Regressions run the format-26 four-sample path with color and depth clear
+enabled, the format-31 color-only path, and an ordered format-31 cached-source
+clear followed by a presenter Copy/Convert. The latter reads back zero from the
+persisted target after the clear. Host CTest passed 4/4; the renderer test also
+passed with `VK_LAYER_KHRONOS_validation`; Linux ReXGlue plugin CTest passed
+6/6. The clear shader passes `spirv-val --target-env vulkan1.1`. These are
+synthetic renderer checks; depth/stencil clear values have not yet been
+independently read back and compared, and this does not execute the complete
+retail 14-draw transition. See
+[`process2_ordered_edram_copy_clear_20261028.json`](../evidence/process2_ordered_edram_copy_clear_20261028.json)
+for build details and limits.
+
+The Android ARM64 renderer/check targets compile with NDK r28c. The current
+device has no ADB connection, so this revision has not been run on the phone.
+Shared physical EDRAM storage across overlapping target aliases, sample/format
+reinterpretation, complete Copy/Convert source association, and full
+depth/stencil preservation across the captured target switches remain open.
+
 ## Conservative EDRAM layout switching (2026-10-27)
 
 The ordered-stream preflight now computes color and depth tile footprints for

@@ -126,8 +126,18 @@ if(GLSLANG_VALIDATOR)
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../tests/fixtures/copy_constant.frag
     VERBATIM
   )
+  add_custom_command(
+    OUTPUT ${SHIFT_ANDROID_SHADER_DIR}/edram_clear.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_ANDROID_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/../tests/fixtures/edram_clear.frag
+            -o ${SHIFT_ANDROID_SHADER_DIR}/edram_clear.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../tests/fixtures/edram_clear.frag
+    VERBATIM
+  )
   list(APPEND SHIFT_ANDROID_LIVE_DRAW_SPIRV
-    ${SHIFT_ANDROID_SHADER_DIR}/copy_constant.frag.spv)
+    ${SHIFT_ANDROID_SHADER_DIR}/copy_constant.frag.spv
+    ${SHIFT_ANDROID_SHADER_DIR}/edram_clear.frag.spv)
   # Keep the Android offscreen regression's shader inputs in sync with the
   # host renderer check, including real window-coordinate transform shaders.
   foreach(stage IN ITEMS vert frag)

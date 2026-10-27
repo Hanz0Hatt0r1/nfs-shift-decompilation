@@ -173,8 +173,11 @@ bool read_bytes(const char* path, std::vector<uint8_t>* output) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    const bool has_copy_destination_shaders = argc == 18 || argc == 27;
-    if (argc != 14 && argc != 18 && argc != 23 && argc != 27) {
+    const bool has_copy_destination_shaders =
+        argc == 18 || argc == 19 || argc == 27 || argc == 28;
+    const bool has_edram_clear_shader = argc == 19 || argc == 24 || argc == 28;
+    if (argc != 14 && argc != 18 && argc != 23 && argc != 24 &&
+        argc != 19 && argc != 27 && argc != 28) {
         std::cerr << "usage: xbox_live_vulkan_renderer_check vertex.spv fragment.spv "
                      "geometry.spv copy-vertex.spv copy-fragment.spv "
                      "copy-single-fragment.spv window-vertex.spv window-fragment.spv "
@@ -394,7 +397,7 @@ int main(int argc, char** argv) {
     std::vector<uint32_t> disclaimer_vertex_spirv;
     std::vector<uint32_t> disclaimer_encoded_fragment_spirv;
     std::vector<uint32_t> disclaimer_linear_fragment_spirv;
-    if ((argc == 23 || argc == 27) &&
+    if ((argc == 24 || argc == 28) &&
         (!read_spirv(argv[14], &disclaimer_vertex_spirv) ||
          !read_spirv(argv[15], &disclaimer_encoded_fragment_spirv) ||
          !read_spirv(argv[16], &disclaimer_linear_fragment_spirv))) {
@@ -405,8 +408,10 @@ int main(int argc, char** argv) {
     std::vector<uint32_t> copy_sample0_rg16f_ms_spirv;
     std::vector<uint32_t> copy_sample0_rg16f_single_spirv;
     std::vector<uint32_t> copy_constant_fragment_spirv;
+    std::vector<uint32_t> edram_clear_fragment_spirv;
     if (has_copy_destination_shaders) {
-        const int first_copy_destination_shader = argc == 27 ? 23 : 14;
+        const int first_copy_destination_shader =
+            (argc == 27 || argc == 28) ? 23 : 14;
         if (!read_spirv(argv[first_copy_destination_shader],
                         &copy_4x_u16x4_spirv) ||
             !read_spirv(argv[first_copy_destination_shader + 1],
@@ -414,7 +419,9 @@ int main(int argc, char** argv) {
             !read_spirv(argv[first_copy_destination_shader + 2],
                         &copy_sample0_rg16f_single_spirv) ||
             !read_spirv(argv[first_copy_destination_shader + 3],
-                        &copy_constant_fragment_spirv)) {
+                        &copy_constant_fragment_spirv) ||
+            (has_edram_clear_shader &&
+             !read_spirv(argv[argc - 1], &edram_clear_fragment_spirv))) {
             std::cerr << "could not read Vulkan 1.1 intermediate Copy/Convert shaders\n";
             return 1;
         }
@@ -630,6 +637,14 @@ int main(int argc, char** argv) {
       intermediate_copy.state.sample_select = destination_format == 26 ? 6u : 0u;
       intermediate_copy.state.color_clear_enable = true;
       intermediate_copy.state.depth_clear_enable = destination_format == 26;
+      intermediate_copy.color_clear = 0;
+      intermediate_copy.color_clear_lo = 0;
+      intermediate_copy.depth_clear = 0xFFFFFF00u;
+      intermediate_copy.clear_values_ready = true;
+      intermediate_copy.source_geometry_ready = true;
+      intermediate_copy.source_geometry = operation_copy_geometry;
+      intermediate_copy.edram_clear_pixel_shader_spirv =
+          edram_clear_fragment_spirv;
       intermediate_copy.source_width = source_draws.front().raster.width;
       intermediate_copy.source_height = source_draws.front().raster.height;
       intermediate_copy.pixel_shader_spirv = multisample_shader;
@@ -638,7 +653,8 @@ int main(int argc, char** argv) {
       const bool converted_ok = shift::xbox::submit_captured_vulkan_frame(
           physical_device, device, queue, queue_family, target.image, target.view,
           false, destination_width, destination_height, source_draws, &error,
-          &converted, false, &intermediate_copy, false, {}, pipeline_cache,
+          &converted, enabled_features.geometryShader, &intermediate_copy,
+          false, {}, pipeline_cache,
           &guest_copy_cache);
       bool payload_ok = converted_ok && !converted.empty();
       if (payload_ok && destination_format == 26) {
@@ -672,24 +688,50 @@ int main(int argc, char** argv) {
         const bool reused_ok = shift::xbox::submit_captured_vulkan_frame(
             physical_device, device, queue, queue_family, target.image,
             target.view, false, destination_width, destination_height,
-            source_draws, &error, &reused_output, false, &intermediate_copy,
+            source_draws, &error, &reused_output,
+            enabled_features.geometryShader, &intermediate_copy,
             false, {}, pipeline_cache, &guest_copy_cache);
         payload_ok = reused_ok && reused_output == converted &&
             guest_copy_cache.cached_guest_copy_image_count() ==
                 expected_cached_layouts;
-        if (!reused_ok) error = "cached guest Copy/Convert image reuse failed: " + error;
+        if (!reused_ok) {
+          error = "cached guest Copy/Convert image reuse failed: " + error;
+        } else if (reused_output != converted) {
+          std::ostringstream detail;
+          detail << "cached Copy/Convert output changed across identical submissions; first sizes="
+                 << converted.size() << '/' << reused_output.size();
+          if (!converted.empty() && !reused_output.empty()) {
+            detail << " first texel=0x" << std::hex << converted.front()
+                   << "/0x" << reused_output.front();
+          }
+          error = detail.str();
+        }
       }
       destroy_test_color_image(device, &target);
       if (!payload_ok) {
-        if (converted_ok) {
+        if (converted_ok && error.empty()) {
           std::ostringstream detail;
           detail << "format " << destination_format
                  << " readback size " << converted.size()
                  << " had an unexpected extent or empty payload";
+          detail << ", cached copy images="
+                 << guest_copy_cache.cached_guest_copy_image_count()
+                 << ", expected="
+                 << (destination_format == 26 ? 1u : 2u);
           if (destination_format == 26 && !converted.empty()) {
             const auto* components =
                 reinterpret_cast<const uint16_t*>(converted.data());
             const size_t component_count = converted.size() * 2;
+            for (size_t i = 0; i + 3 < component_count; i += 4) {
+              if (components[i] != 1024 || components[i + 1] != 512 ||
+                  components[i + 2] != 256 || components[i + 3] != 2048) {
+                detail << ", first mismatch at texel " << (i / 4)
+                       << " components=" << components[i] << ','
+                       << components[i + 1] << ',' << components[i + 2]
+                       << ',' << components[i + 3];
+                break;
+              }
+            }
             uint16_t max_alpha = 0;
             for (size_t i = 3; i < component_count; i += 4) {
               max_alpha = std::max(max_alpha, components[i]);
@@ -702,7 +744,8 @@ int main(int argc, char** argv) {
       }
       return true;
     };
-    if (has_copy_destination_shaders &&
+    if (has_edram_clear_shader && has_copy_destination_shaders &&
+        enabled_features.geometryShader &&
         (!exercise_intermediate_copy(
              26, VK_FORMAT_R16G16B16A16_UINT, 1280, 720,
              format26_source_draws, copy_4x_u16x4_spirv, {}) ||
@@ -718,7 +761,8 @@ int main(int argc, char** argv) {
                 << error << '\n';
       return 1;
     }
-    if (has_copy_destination_shaders) {
+    if (has_edram_clear_shader && has_copy_destination_shaders &&
+        enabled_features.geometryShader) {
       shift::xbox::CapturedVulkanCopy operation_copy = copy;
       operation_copy.source_geometry_ready = true;
       operation_copy.source_geometry = operation_copy_geometry;
@@ -734,6 +778,12 @@ int main(int argc, char** argv) {
       intermediate_copy.state.sample_select = 0;
       intermediate_copy.state.color_clear_enable = true;
       intermediate_copy.state.depth_clear_enable = false;
+      intermediate_copy.color_clear = 0;
+      intermediate_copy.color_clear_lo = 0;
+      intermediate_copy.depth_clear = 0xFFFFFF00u;
+      intermediate_copy.clear_values_ready = true;
+      intermediate_copy.edram_clear_pixel_shader_spirv =
+          edram_clear_fragment_spirv;
       intermediate_copy.source_width = 1280;
       intermediate_copy.source_height = 720;
       intermediate_copy.pixel_shader_spirv =
@@ -997,6 +1047,36 @@ int main(int argc, char** argv) {
           persistent_edram_cache.cached_guest_edram_target_count() != 1u) {
         std::cerr << "cached-source Copy/Convert did not preserve the previous Xenos EDRAM color target: "
                   << edram_preserve_error << '\n';
+        return 1;
+      }
+      shift::xbox::CapturedVulkanOperation clear_cached_source{};
+      clear_cached_source.type =
+          shift::xbox::CapturedVulkanOperation::Type::CopyConvert;
+      clear_cached_source.packet_index = 304;
+      clear_cached_source.source_width = 1280;
+      clear_cached_source.source_height = 720;
+      clear_cached_source.source_raster_ready = true;
+      clear_cached_source.source_raster = format31_source.raster;
+      clear_cached_source.copy_state = intermediate_copy.state;
+      clear_cached_source.copy = intermediate_copy;
+      clear_cached_source.copy_shaders_ready = true;
+      auto present_after_clear = present_copy;
+      present_after_clear.packet_index = 305;
+      std::vector<uint32_t> cleared_edram_readback;
+      std::string edram_clear_error;
+      if (!shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, {},
+              {clear_cached_source, present_after_clear}, &edram_clear_error,
+              &cleared_edram_readback, enabled_features.geometryShader,
+              &operation_copy, false, {}, pipeline_cache,
+              &persistent_edram_cache) ||
+          cleared_edram_readback.size() != 1280u * 720u ||
+          !std::all_of(cleared_edram_readback.begin(),
+                       cleared_edram_readback.end(),
+                       [](uint32_t texel) { return texel == 0; })) {
+        std::cerr << "captured Copy/Convert zero clear did not update the exact cached Xenos EDRAM target before the following presenter copy: "
+                  << edram_clear_error << '\n';
         return 1;
       }
       persistent_edram_cache.clear();
@@ -2726,7 +2806,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (argc == 23 || argc == 27) {
+    if (argc == 23 || argc == 24 || argc == 27 || argc == 28) {
         std::vector<uint8_t> disclaimer_texture_source;
         std::vector<uint8_t> disclaimer_texture;
         std::vector<uint8_t> expected_disclaimer_texture;

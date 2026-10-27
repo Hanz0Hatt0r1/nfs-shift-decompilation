@@ -229,6 +229,10 @@ const std::string kCopyResolveSample0Rg16fSingleSamplePixelShader =
     "layout(location=0) out vec4 shift_color0;\n"
     "void main() { ivec2 p=ivec2(gl_FragCoord.xy*pc.c[0].xy); "
     "shift_color0=texelFetch(source_image,p,0); }\n";
+const std::string kCopyEdramClearPixelShader =
+    "#version 450\n"
+    "layout(location=0) out vec4 shift_color0;\n"
+    "void main() { shift_color0=vec4(0.0); gl_FragDepth=1.0; }\n";
 std::string copy_resolve_gamma_pixel_shader(bool multisampled) {
   std::ostringstream source;
   source << "#version 450\n"
@@ -2950,12 +2954,25 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     prepared_copy.depth_clear = raster_registers.depth_clear;
                     const bool color_clear_ready =
                         !copy_state.color_clear_enable ||
-                        (raster_registers.copy_clear_valid_mask & 2u) != 0;
+                        (raster_registers.copy_clear_valid_mask & 6u) == 6u;
                     const bool depth_clear_ready =
                         !copy_state.depth_clear_enable ||
                         (raster_registers.copy_clear_valid_mask & 1u) != 0;
                     prepared_copy.clear_values_ready = color_clear_ready &&
                         depth_clear_ready;
+                    if (prepared_copy.clear_values_ready &&
+                        (copy_state.color_clear_enable ||
+                         copy_state.depth_clear_enable) &&
+                        !CompileVulkanShader(
+                            "copy-edram-clear", EShLangFragment,
+                            kCopyEdramClearPixelShader,
+                            &prepared_copy.edram_clear_pixel_shader_spirv,
+                            &error)) {
+                      REXLOG_WARN(
+                          "shift-native: could not compile captured Copy/Convert EDRAM clear shader for packet #{}: {}",
+                          draw_packet_index, error);
+                      continue;
+                    }
                     if (!copy_source_raster_ready) {
                       REXLOG_WARN(
                           "shift-native: Copy/Convert packet #{} has no decoded "
