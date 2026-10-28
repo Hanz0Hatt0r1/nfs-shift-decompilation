@@ -39,6 +39,12 @@ The long captures exposed a clock-origin bug in the replay harness: GDB and the 
 
 See [head-boundary and immediate-input evidence](../evidence/xbox360_linux_native_event_write_shd_head_frontier_20261028.json) for identities, hashes, packet rows around `3381`, event histograms, and capture limitations.
 
+## GPU dispatch-ID guest-worker correlation
+
+The Process 1 GDB trace now samples the Native plugin's exported `shift_native_gpu_trace_dispatch_id_v1()` at guest callback `sub_823B37B8` for `source=1`. It carries that ID through synchronous guest producer/enqueue records, binds IDs to the queue tuple `(queue, producer_index, slot_value)`, and transfers the ID to dequeue, completion, worker field writes, and event waits. The in-memory queue map is capped at 16,384 records; eviction totals and getter availability/errors are written to `events.json`. The trace does not infer causality from timestamps.
+
+The targeted regression checks the explicitly typed dynamic-symbol call, unavailable-symbol caching, zero IDs, helper errors, callback scope lookup, exact queue-slot matching, map eviction, and trace-field presence. A real GDB smoke check against a stripped shared object confirmed the typed function call reads the active thread-local ID; this GDB build lacks the Python minimal-symbol lookup API, so the trace relies on GDB expression resolution instead. Both embedded GDB Python blocks compile. No new game capture is claimed: the currently available Native DSO (`d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90`) does not export the getter, and Process 2's source tree is still changing. The first capture must use a frozen DSO that exports the getter and must record that DSO's build ID, hash, and source commit.
+
 ## Evidence and reproduction
 
 - [Paired machine-readable record](../evidence/xbox360_linux_native_14841319_paired_physical_counter_20261028.json), including raw hashes, per-backend state, input comparability, queue-write histograms, and the first counter mismatch.
@@ -51,6 +57,6 @@ The archive exporter rejected malformed records in both captures; `gzip -t` and 
 ## Next Process 1 / Process 2 checks
 
 1. Process 2 should audit why Native `RingWorkerLoop()` writes `-6` head changes while Xenos advances the same watched software head only by `+2` in the paired capture. Align those writes to ring batch indices and guest memory before deciding whether they violate the guest queue contract.
-2. Reproduce the head-boundary run with Process 2's per-packet source-IB/batch trace and join the guest callback through `gpu_dispatch_id`; timestamp proximity alone does not prove causality.
+2. Reproduce the head-boundary run with Process 2's per-packet source-IB/batch trace and the new guest queue correlation, after Process 2 provides a frozen DSO exporting the dispatch-ID getter. Join by `gpu_dispatch_id`; timestamp proximity alone does not prove causality.
 3. Trace the exact original scene-state writers and frontend callback after the observed state `1 -> 0` cleanup. The Start/A edges are now confirmed through XAM and the controller object, but the action dispatcher and scene-gate re-entry remain unconfirmed.
 4. Continue to the visible, interactive main menu and first controllable race. Neither has been reached in these captures.
