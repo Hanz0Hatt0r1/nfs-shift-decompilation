@@ -1,0 +1,65 @@
+{
+  "schema": "shift.process2.v95-payload-interrupt-window-review.v1",
+  "date": "2026-10-29",
+  "source_evidence": "/home/pes/work/nfs-shift-xbox360-runtime-p1-20261023/evidence/xbox360_linux_backend_payload_pair_native_v95_xenos_v95_20261029.json",
+  "payload_follow_up": {
+    "matched_builder_inputs": {
+      "manager_plus_11012": 0,
+      "manager_plus_11832_u64": "0x00000000FFFFFFFF",
+      "manager_plus_10942_u8": "0x04",
+      "manager_plus_14904_u32": "0xA95D0000",
+      "manager_plus_14908_u32": "0xA974FFFC"
+    },
+    "payload": {
+      "bytes": 44,
+      "words_u32be": 11,
+      "sha256_both_backends": "85759b3811ff7dc47b03792ac85317be51431a3f9e01dcafce317ed736a391b0",
+      "all_words_zero": true
+    },
+    "descriptor": ["0x8100000B", "payload_guest_address"],
+    "interpretation": "The sampled first tag-11 payload has identical manager inputs, descriptor header, bytes and hash. This rules out payload-content divergence for this sample. The unused r4 words remain excluded. It does not explain the different bounded run frontiers or prove later payloads match."
+  },
+  "source1_interrupt_pair": {
+    "xenos": {
+      "dispatch_id_local": "0x3DE",
+      "source_ib": "0x096861C0",
+      "command_buffer_kind": 2,
+      "byte_offset": "0x2EFC",
+      "packet_ordinal": 88,
+      "header": "0xC0005400",
+      "cpu_mask": "0x04"
+    },
+    "native": {
+      "dispatch_id_local": "0xC53",
+      "source_ib": "0x096558C0",
+      "byte_offset": "0x2EFC",
+      "packet_ordinal": 247,
+      "raw_dwords": ["0xC0005400", "0x00000004"],
+      "cpu_mask": "0x04"
+    },
+    "interpretation": "Both captures place the matching source=1 interrupt at byte offset 0x2EFC in their respective IBs. The packet is two dwords in Native: header plus mask. Backend-local packet ordinals and dispatch IDs are not cross-backend identities."
+  },
+  "assessment_of_fixed_window": {
+    "proposed": "64 dwords before and 32 dwords after the interrupt packet",
+    "raw_window_if_centered_on_packet": {
+      "start_offset": "0x2DFC",
+      "end_offset_exclusive": "0x2F84",
+      "bytes": 392
+    },
+    "sufficient_as_context": true,
+    "guarantees_previous_packet_boundary": false,
+    "guarantees_complete_next_packet": false,
+    "reason": "PM4 packets are variable length. A fixed backward slice can begin in the middle of a preceding packet; a fixed forward slice can end in the middle of the next packet. Matching offsets in this pair do not make those bytes packet-aligned."
+  },
+  "recommended_capture": {
+    "preferred": [
+      "At dispatch, retain the decoder's packet-boundary history and exact raw dwords for the last eight complete packets before the interrupt, the interrupt itself, and the next eight complete packets. Decode each backend independently from a confirmed start of the same IB; do not infer boundaries by aligning offsets across backends.",
+      "For each row, record IB guest base, IB length, byte offset, packet ordinal, type/opcode, header-declared length, raw dwords, and any nested-IB source provenance.",
+      "Starting from the interrupt end (0x2F04 here), inspect the next header and capture exactly the full packet it declares, repeating until eight complete successor packets are collected. Bound every read by the parent IB extent; if the next packet is truncated by that extent or the capture cap, mark it truncated rather than treating the final dword as a boundary.",
+      "If Xenos cannot retain parser history, snapshot the confirmed IB execution prefix from its known packet-stream start through the target plus the parsed successor packets. The target is only about 12 KB from offset zero in this pair, so this remains a small bounded read."
+    ],
+    "fixed_window_use": "Keep the 64/32-dword slice as a cheap cross-check and verify that it contains the logged interrupt header/mask. Do not use it alone to claim adjacent packet boundaries.",
+    "boundary_check": "Re-parse captured raw words from a known IB packet-stream start and verify that the decoded target begins exactly at 0x2EFC with header 0xC0005400 and mask 0x04. If byte offset zero is not a confirmed stream start, use the actual entry offset supplied by the indirect-buffer invocation."
+  },
+  "causality": "This capture is diagnostic only. Even an adjacent raw-stream difference would need correlation with guest callback/queue effects before assigning cause."
+}
