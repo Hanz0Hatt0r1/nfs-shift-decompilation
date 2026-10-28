@@ -118,6 +118,7 @@ def run_capture(
     input_hold_ms: int, input_gap_ms: int, trace_event_write_shd: bool,
 ) -> None:
     env = os.environ.copy()
+    env.pop("SHIFT_NATIVE_VULKAN_TRACE_ONLY", None)
     env.update({
         "SHIFT_QUEUE_TRACE_OUT": str(output),
         "SHIFT_QUEUE_TRACE_BINARY": str(HOST),
