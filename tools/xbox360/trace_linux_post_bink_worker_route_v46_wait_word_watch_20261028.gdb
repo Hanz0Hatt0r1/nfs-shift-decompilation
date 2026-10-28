@@ -1792,8 +1792,12 @@ class Source1Callback(gdb.Breakpoint):
                 event = self.record_source0_sample(context, base, ppc_reg(context, 4))
                 watch = state.get("fixed_guest_word_watch")
                 now = time.monotonic()
-                if (event and watch and watch.get("enabled")
-                        and event["wait_word_value_sampled"] == 1
+                native_wait_is_set = (
+                    watch and watch.get("enabled")
+                    and event and event["wait_word_value_sampled"] == 1
+                )
+                xenos_sample = gpu_plugin_name == "xenos"
+                if (event and (native_wait_is_set or xenos_sample)
                         and now - state["source0_callback_last_return_track_monotonic"] >= 1.0):
                     entry = {
                         "scope_id": next_id(),

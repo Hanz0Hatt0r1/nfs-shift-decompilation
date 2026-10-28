@@ -84,6 +84,7 @@ class WaitWordWatchTests(unittest.TestCase):
 
     def test_source0_entry_return_probe_is_rate_limited_and_captures_inflight_calls(self) -> None:
         self.assertIn('event["wait_word_value_sampled"] == 1', self.trace)
+        self.assertIn('gpu_plugin_name == "xenos"', self.trace)
         self.assertIn('>= 1.0):', self.trace)
         self.assertIn('Source0CallbackFinish(gdb.newest_frame(), entry)', self.trace)
         self.assertIn('"duration_seconds": round(duration, 3)', self.trace)
@@ -156,6 +157,8 @@ class WaitWordWatchTests(unittest.TestCase):
         self.assertEqual(probe["max_tracked_callbacks_per_second"], 1)
         self.assertEqual(probe["wait_word_value"], "0x00000001")
         self.assertFalse(probe["modifies_guest_state"])
+        self.assertIn("independent of the Native-only wait-word watch", probe["xenos_selection"])
+        self.assertIn("recorded as null", probe["pairing_note"])
         self.assertIn("source0_callback_events", self.trace)
 
     def test_p2_vblank_timing_plugin_is_pinned_and_trace_only(self) -> None:
