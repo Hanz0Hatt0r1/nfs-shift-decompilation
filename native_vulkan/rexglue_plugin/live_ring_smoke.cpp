@@ -554,7 +554,19 @@ int main(int argc, char** argv) {
   const char* shader_dump_prefix =
       std::getenv("SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX");
   if (shader_dump_prefix && *shader_dump_prefix) {
-    if (diagnostics.find("selected shader state frame=1 packet=0") ==
+    size_t selected_shader_state_count = 0;
+    for (size_t offset = 0;
+         (offset = diagnostics.find("selected shader state frame=", offset)) !=
+         std::string::npos;
+         offset += sizeof("selected shader state frame=") - 1u) {
+      ++selected_shader_state_count;
+    }
+    if (selected_shader_state_count != 3u ||
+        diagnostics.find("selected shader state frame=1 packet=0") ==
+            std::string::npos ||
+        diagnostics.find("selected shader state frame=2 packet=0") ==
+            std::string::npos ||
+        diagnostics.find("selected shader state frame=3 packet=0") ==
             std::string::npos ||
         diagnostics.find("color_mask=0x") == std::string::npos ||
         diagnostics.find("stencil_write_mask=0x") == std::string::npos ||
@@ -569,16 +581,22 @@ int main(int argc, char** argv) {
       std::ifstream file(path, std::ios::binary);
       return std::vector<uint8_t>(std::istreambuf_iterator<char>(file), {});
     };
-    const auto dumped_vertex_shader = read_shader_dump(
-        std::string(shader_dump_prefix) + ".frame1.packet0.vs.bin");
-    const auto dumped_pixel_shader = read_shader_dump(
-        std::string(shader_dump_prefix) + ".frame1.packet0.ps.bin");
-    if (dumped_vertex_shader != vertex_shader ||
-        dumped_pixel_shader != pixel_shader) {
-      std::cerr << diagnostics << '\n';
-      return fail("selected-frame shader dumps differ from fixture bytecode");
+    for (uint32_t frame = 1u; frame <= 3u; ++frame) {
+      const std::string frame_prefix =
+          std::string(shader_dump_prefix) + ".frame" +
+          std::to_string(frame) + ".packet0.";
+      const auto dumped_vertex_shader =
+          read_shader_dump(frame_prefix + "vs.bin");
+      const auto dumped_pixel_shader =
+          read_shader_dump(frame_prefix + "ps.bin");
+      if (dumped_vertex_shader != vertex_shader ||
+          dumped_pixel_shader != pixel_shader) {
+        std::cerr << diagnostics << '\n';
+        return fail(
+            "repeated selected-frame shader dumps differ from fixture bytecode");
+      }
     }
-    std::cout << "selected-frame raw VS/PS dump matches fixture bytecode\n";
+    std::cout << "selected draw ordinal raw VS/PS dumps match all 3 fixture frames\n";
   }
   const char* texture_dump_prefix =
       std::getenv("SHIFT_NATIVE_VULKAN_DUMP_TEXTURES_PREFIX");

@@ -842,6 +842,18 @@ test/write, stencil test/write mask, and depth control before translation can
 fail. The live-ring selected-draw regression compares both files byte-for-byte
 with its synthetic shader fixtures and checks that raster metadata was logged.
 
+To select a zero-based draw ordinal within each guest swap instead of a presenter
+frame, set `SHIFT_NATIVE_VULKAN_DUMP_DRAW_PACKET_INDEX`. It increments for each
+decoded `DRAW_INDX` or `DRAW_INDX_2` between `XE_SWAP`s. With no
+`SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME` filter, every matching swap is captured;
+the `.frameN` filename component uses the next Vulkan presenter-submit number.
+Set both variables to restrict the dump to one presenter frame. For example,
+set `SHIFT_NATIVE_VULKAN_DUMP_DRAW_PACKET_INDEX=10` and only
+`SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX=/tmp/shift-draw10` to collect the
+original shaders for draw ordinal 10 without writing its geometry or textures.
+The ordinal repeats across swaps, so correlate the frame-numbered files with
+the ordered-operation and submit log before attributing a dump to a scene.
+
 When a texture-sign combination is unsupported, the shader diagnostic now
 includes its fetch-constant index and all four decoded channel signs. This
 retains the exact descriptor-side blocker for the next selected draw without

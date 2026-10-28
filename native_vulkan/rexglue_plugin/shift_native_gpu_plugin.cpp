@@ -73,12 +73,19 @@ constexpr uint32_t kVgtEventInitiatorRegister =
 constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
 constexpr uint32_t kRectangleListInterpolatorCount = 16;
 
-bool parse_positive_environment_frame(const char* text, uint32_t* frame) {
-  if (!text || !*text || !frame) return false;
+bool parse_environment_index(const char* text, uint32_t* index) {
+  if (!text || !*text || !index) return false;
   const char* end = text + std::char_traits<char>::length(text);
   uint32_t parsed = 0;
   const auto result = std::from_chars(text, end, parsed, 10);
-  if (result.ec != std::errc{} || result.ptr != end || parsed == 0) return false;
+  if (result.ec != std::errc{} || result.ptr != end) return false;
+  *index = parsed;
+  return true;
+}
+
+bool parse_positive_environment_frame(const char* text, uint32_t* frame) {
+  uint32_t parsed = 0;
+  if (!parse_environment_index(text, &parsed) || parsed == 0) return false;
   *frame = parsed;
   return true;
 }
@@ -304,7 +311,11 @@ bool CapturedDrawDumpEnabled() {
     if (value && std::string(value) == "1") return true;
     const char* frame = std::getenv("SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME");
     uint32_t parsed_frame = 0;
-    return parse_positive_environment_frame(frame, &parsed_frame);
+    if (parse_positive_environment_frame(frame, &parsed_frame)) return true;
+    const char* packet =
+        std::getenv("SHIFT_NATIVE_VULKAN_DUMP_DRAW_PACKET_INDEX");
+    uint32_t parsed_packet = 0;
+    return parse_environment_index(packet, &parsed_packet);
   }();
   return enabled;
 #endif
@@ -2143,6 +2154,19 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   "SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME value '{}'",
                   frame_text);
     }
+    uint32_t selected_draw_dump_packet_index = 0;
+    bool has_selected_draw_dump_packet_index = false;
+    if (const char* packet_text = std::getenv(
+            "SHIFT_NATIVE_VULKAN_DUMP_DRAW_PACKET_INDEX");
+        packet_text && *packet_text) {
+      has_selected_draw_dump_packet_index = parse_environment_index(
+          packet_text, &selected_draw_dump_packet_index);
+      if (!has_selected_draw_dump_packet_index) {
+        REXLOG_WARN("shift-native: ignoring invalid "
+                    "SHIFT_NATIVE_VULKAN_DUMP_DRAW_PACKET_INDEX value '{}'",
+                    packet_text);
+      }
+    }
     std::map<uint32_t, size_t> traced_indirect_buffers;
     const auto trace_indirect_buffers = [this, &traced_indirect_buffers](
         const shift::xbox::ExpandedGuestCommandStream& stream) {
@@ -3166,11 +3190,22 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 bool shaders_translated = false;
                 shift::xbox::CapturedVulkanDraw prepared_draw{};
                 const uint32_t upcoming_submitted_frame = readback_frame_counter + 1u;
+                const bool selected_draw_frame_matches =
+                    selected_draw_dump_frame != 0u &&
+                    upcoming_submitted_frame == selected_draw_dump_frame;
+                const bool selected_draw_packet_matches =
+                    has_selected_draw_dump_packet_index &&
+                    draw_packet_index == selected_draw_dump_packet_index &&
+                    (selected_draw_dump_frame == 0u ||
+                     selected_draw_frame_matches);
+                const bool selected_draw_dump_matches =
+                    has_selected_draw_dump_packet_index
+                        ? selected_draw_packet_matches
+                        : selected_draw_frame_matches;
                 const uint32_t diagnostic_submitted_frame =
                     (kAndroidDebugReadbackFrame != 0u &&
                      upcoming_submitted_frame == kAndroidDebugReadbackFrame) ||
-                            (selected_draw_dump_frame != 0u &&
-                             upcoming_submitted_frame == selected_draw_dump_frame)
+                            selected_draw_dump_matches
                         ? upcoming_submitted_frame
                         : 0u;
                 const bool resources_resolved =
