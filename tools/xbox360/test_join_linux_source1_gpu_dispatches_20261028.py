@@ -20,11 +20,14 @@ def main() -> None:
     pm4_log = """
 [2026-10-28 15:01:37.830] [info] shift-native: ring trace PM4_INTERRUPT #19 source=1 dispatch_id=0000000000005A17 generation=4 batch_rptr=128 batch_wptr=192 ring_guest=09752580 packet=117 packet_source=095D0120+1464 cpu_mask=0x04 dispatched_cpu_mask=0x04 callback_dispatches=[]
 shift-native: ring trace PM4_INTERRUPT #20 source=1 dispatch_id=0000000000005A18 generation=4 batch_rptr=192 batch_wptr=224 ring_guest=09752580 packet=121 packet_source=095D0120+1512 cpu_mask=0x04 dispatched_cpu_mask=0x00 callback_dispatches=[]
+shift-native: ring trace PM4_INTERRUPT #21 source=1 generation=5 dispatch_id=0000000000005A1A batch_rptr=224 batch_wptr=256 ring_guest=09752580 packet=122 packet_source=095D0120+1520 cpu_mask=0x04 dispatched_cpu_mask=0x04 callback_dispatches=[]
 """
     interrupts = JOIN.parse_interrupt_rows(pm4_log)
     assert interrupts[0x5A17][0]["packet_source_guest"] == 0x095D0120
     assert interrupts[0x5A17][0]["packet_source_offset"] == 1464
     assert interrupts[0x5A18][0]["packet_ordinal"] == 121
+    assert interrupts[0x5A1A][0]["generation"] == 5
+    assert interrupts[0x5A1A][0]["packet_source_offset"] == 1520
 
     with tempfile.TemporaryDirectory() as temporary_directory:
         run_dir = Path(temporary_directory)
@@ -98,7 +101,7 @@ shift-native: ring trace PM4_INTERRUPT #20 source=1 dispatch_id=0000000000005A18
         "0x0000000000005A19"
     ]
     assert report["summary"]["pm4_dispatch_ids_without_source1_callback"] == [
-        "0x0000000000005A18"
+        "0x0000000000005A18", "0x0000000000005A1A",
     ]
     by_id = {row["dispatch_id"]: row for row in report["dispatches"]}
     linked = by_id["0x0000000000005A17"]
