@@ -40,6 +40,16 @@
       "rexgpu_vulkan_resolve_capability_check"
     ]
   },
+  "native_renderer_tests": {
+    "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation ctest --test-dir /home/pes/work/.build-process2-p2161-native-vulkan-20261028 --output-on-failure",
+    "result": "passed 4/4",
+    "tests": [
+      "shift_xbox_draw_input_check",
+      "shift_xbox_guest_ring_check",
+      "shift_xbox_shader_translate_check",
+      "xbox_live_vulkan_renderer_check"
+    ]
+  },
   "process1_runtime_abi_smoke": {
     "result": "plugin factory smoke passed against the existing Process 1 retail-lwsync runtime",
     "runtime": "/home/pes/work/rexglue-sdk-retail-lwsync-20261027/out/linux-amd64/Release/librexruntime.so",
