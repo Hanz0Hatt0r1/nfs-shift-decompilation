@@ -243,6 +243,38 @@
     "change_from_7aa414ab": "One diagnostic sampling guard now continues logging after a WAIT_REG_MEM value change; it adds no polling and does not change wait execution semantics.",
     "availability_note": "Use only for the next coordinated replay after the separate active nfs_shift process exits or Process 2 confirms a safe capture window."
   },
+  "next_capture_source0_timing_plugin_candidate": {
+    "used_in_this_capture": false,
+    "source_commit": "96169b712c1edb679b9309b54efc8ff7ff17b613",
+    "process2_pr": 2161,
+    "artifact_manifest": "/home/pes/work/process2-vblank-dispatch-timing-96169b71/manifest.json",
+    "linux_x86_64_plugin": {
+      "dso_path": "/home/pes/work/process2-vblank-dispatch-timing-96169b71/linux-x86_64/librexgpu-shift-native.so",
+      "sha256": "27f44ab0437b8030967522746618ad43f3c251b4e031a750b22d8821ffb061f6",
+      "build_id": "5f69211f34b983c9576bb8a5452c66a2fdbe2547"
+    },
+    "android_arm64_compile_only_plugin": {
+      "dso_path": "/home/pes/work/process2-vblank-dispatch-timing-96169b71/android-arm64/librexgpu-shift-natived.so",
+      "sha256": "04e0be72317796bf25df23287efb468d5b5115763fd8849eafebb2e4fda75452",
+      "build_id": "ef940e0bb72652b65a70489eb5b9ffd37f28ea14",
+      "verification": "compile-only; not run on device"
+    },
+    "sdk_provider_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6",
+    "source0_trace_fields": [
+      "tick_lag_intervals",
+      "dispatch_gap_ns",
+      "dispatch_elapsed_ns"
+    ],
+    "change_from_prior_plugin": "Trace-only timing fields around source=0 DispatchGuestInterrupt; no VBlank or interrupt behavior change.",
+    "verification": {
+      "linux_build": "passed",
+      "targeted_ctest": "2/2 passed",
+      "source0_fixture": "not exercised; current fixture emits no source-0 VBlank records",
+      "retail_replay": "pending a safe window after the active game process exits or Process 2 confirms it is safe"
+    },
+    "independent_artifact_check": "Linux and Android SHA-256 and ELF Build IDs were independently verified by P1.",
+    "interpretation_limit": "These fields can distinguish a long synchronous dispatch from a long interval between dispatch returns. They do not identify the 0x1B964004 writer or prove that the callback caused the wait-word transition."
+  },
   "next_capture_xenos_plugin_candidate": {
     "used_in_this_capture": false,
     "used_in_previous_paired_capture": true,
