@@ -763,6 +763,27 @@ int main(int argc, char** argv) {
       std::cerr << diagnostics << '\n';
       return fail("PM4_INTERRUPT trace lost its packet, CPU mask, callback, or dispatch result");
     }
+    const size_t interrupt_begin = diagnostics.find(
+        "ring trace PM4_INTERRUPT_BEGIN #0 source=1 generation=1");
+    const size_t dispatch_begin = diagnostics.find(
+        "ring trace guest interrupt dispatch begin packet_trace=#0");
+    const size_t interrupt_return = diagnostics.find(
+        "ring trace PM4_INTERRUPT #0 source=1 generation=1");
+    if (interrupt_begin == std::string::npos ||
+        dispatch_begin == std::string::npos ||
+        interrupt_return == std::string::npos ||
+        interrupt_begin >= dispatch_begin ||
+        dispatch_begin >= interrupt_return ||
+        diagnostics.find("packet_source=00030000+", interrupt_begin) ==
+            std::string::npos ||
+        diagnostics.find("raw-dwords=c0005400,4", interrupt_begin) ==
+            std::string::npos ||
+        diagnostics.find("cpu_mask=0x04", interrupt_begin) ==
+            std::string::npos) {
+      std::cerr << diagnostics << '\n';
+      return fail("PM4_INTERRUPT entry trace did not precede callback dispatch "
+                  "and completion");
+    }
   } else if (ring_trace_environment &&
              std::string(ring_trace_environment) == "0" &&
              diagnostics.find("ring trace PM4_INTERRUPT #") !=

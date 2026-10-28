@@ -1909,7 +1909,15 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   bool DispatchGuestInterrupt(uint32_t source, uint32_t cpu,
                               uint64_t dispatch_id,
                               rex::system::XHostThread* expected_thread,
-                              GuestInterruptDispatchTrace* trace = nullptr) {
+                              GuestInterruptDispatchTrace* trace = nullptr,
+                              bool trace_stages = false,
+                              uint32_t packet_trace_index = 0) {
+    if (trace_stages) {
+      REXLOG_INFO("shift-native: ring trace guest interrupt dispatch begin "
+                  "packet_trace=#{} dispatch_id={:016X} source={} cpu={} "
+                  "stage=before_callback_lock",
+                  packet_trace_index, dispatch_id, source, cpu);
+    }
     uint32_t callback = 0;
     uint32_t callback_data = 0;
     {
@@ -1939,8 +1947,21 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     thread->SetActiveCpu(static_cast<uint8_t>(cpu));
     uint64_t args[] = {source, callback_data};
     if (trace) trace->status = "invoking";
+    if (trace_stages) {
+      REXLOG_INFO("shift-native: ring trace guest interrupt execute begin "
+                  "packet_trace=#{} dispatch_id={:016X} source={} cpu={} "
+                  "callback={:08X} data={:08X} stage=before_execute_interrupt",
+                  packet_trace_index, dispatch_id, source, cpu, callback,
+                  callback_data);
+    }
     ScopedGpuDispatchId dispatch_scope(dispatch_id);
     function_dispatcher_->ExecuteInterrupt(thread->thread_state(), callback, args, 2);
+    if (trace_stages) {
+      REXLOG_INFO("shift-native: ring trace guest interrupt execute return "
+                  "packet_trace=#{} dispatch_id={:016X} source={} cpu={} "
+                  "callback={:08X} stage=after_execute_interrupt",
+                  packet_trace_index, dispatch_id, source, cpu, callback);
+    }
     if (trace) trace->status = "invoked";
     return true;
   }
@@ -3855,13 +3876,42 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               ++interrupt_packets;
               uint32_t dispatched_cpu_mask = 0;
               const uint64_t dispatch_id = NextGpuDispatchId();
+              const bool trace_interrupt = GuestRingTraceEnabled();
+              static std::atomic<uint32_t> interrupt_trace_count{0};
+              const uint32_t trace_index = trace_interrupt
+                  ? interrupt_trace_count.fetch_add(1, std::memory_order_relaxed)
+                  : 0u;
+              const bool trace_interrupt_record =
+                  trace_interrupt &&
+                  trace_index < kMaxGuestInterruptTraceRecords;
+              if (trace_interrupt_record) {
+                std::ostringstream raw_dwords;
+                const size_t dword_count = packet.byte_length / sizeof(uint32_t);
+                for (size_t dword = 0;
+                     dword < std::min(dword_count, size_t{16}); ++dword) {
+                  raw_dwords << (dword == 0 ? "" : ",") << std::hex
+                             << ReadGuestDword(packet_bytes +
+                                               dword * sizeof(uint32_t));
+                }
+                REXLOG_INFO(
+                    "shift-native: ring trace PM4_INTERRUPT_BEGIN #{} source=1 "
+                    "generation={} batch_rptr={} batch_wptr={} ring_guest={:08X} "
+                    "packet={} packet_source={:08X}+{} raw-dwords={} "
+                    "cpu_mask=0x{:02X} dispatch_id={:016X}",
+                    trace_index, ring_generation, read_pointer, write_pointer,
+                    ring_guest_address, packet_ordinal,
+                    resolved.source_guest_address, packet.byte_offset,
+                    raw_dwords.str(), cpu_mask, dispatch_id);
+              }
               std::array<GuestInterruptDispatchTrace, 6> callback_trace{};
               try {
                 for (uint32_t cpu = 0; cpu < 6u; ++cpu) {
                   if ((cpu_mask & (1u << cpu)) != 0 &&
                       DispatchGuestInterrupt(1u, cpu, dispatch_id,
                                              ring_host_worker_.get(),
-                                             &callback_trace[cpu])) {
+                                             &callback_trace[cpu],
+                                             trace_interrupt_record,
+                                             trace_index)) {
                     ++dispatched_interrupt_callbacks;
                     dispatched_cpu_mask |= 1u << cpu;
                   }
@@ -3882,11 +3932,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 }
                 REXLOG_ERROR("shift-native: guest GPU interrupt callback failed");
               }
-              if (GuestRingTraceEnabled()) {
-                static std::atomic<uint32_t> interrupt_trace_count{0};
-                const uint32_t trace_index = interrupt_trace_count.fetch_add(
-                    1, std::memory_order_relaxed);
-                if (trace_index < kMaxGuestInterruptTraceRecords) {
+              if (trace_interrupt) {
+                if (trace_interrupt_record) {
                   std::ostringstream callback_summary;
                   bool first_callback = true;
                   for (uint32_t cpu = 0; cpu < callback_trace.size(); ++cpu) {

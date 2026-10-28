@@ -1,0 +1,80 @@
+{
+  "schema": "process2.p1_v50_interrupt_stage_audit.v1",
+  "captured_on": "2026-10-28",
+  "source_capture": "/dev/shm/nfs-shift-p1-v50-native-p2-96169-20261028-r1",
+  "capture_window": {
+    "start_epoch_ms": 1793202291177,
+    "end_epoch_ms": 1793202435196,
+    "end_local": "2026-10-28 18:47:15.196 +0300"
+  },
+  "observations": {
+    "source1_callbacks_in_final_p1_events": 0,
+    "source1_packets_in_p2_trace_after_cutoff": 3,
+    "first_ring_wptr_local": "2026-10-28 18:47:15.257 +0300",
+    "first_ring_wptr_after_cutoff_ms": 61,
+    "ring_wptr_updates_before_cutoff": 0,
+    "first_ring_snapshot_local": "2026-10-28 18:47:15.257 +0300",
+    "first_source1_packet": {
+      "local_time": "2026-10-28 18:47:15.436 +0300",
+      "generation": 1,
+      "batch_rptr": 25,
+      "batch_wptr": 46,
+      "ring_guest": "0x09752580",
+      "packet_ordinal": 108,
+      "source_ib": "0x095D0120",
+      "source_ib_byte_offset": 1304,
+      "raw_dwords": ["0xC0005400", "0x00000004"],
+      "cpu_mask": "0x04",
+      "dispatched_cpu_mask": "0x04",
+      "callback": "0x823B37B8",
+      "callback_data": "0xB7365F00",
+      "dispatch_id": "0x21AF",
+      "status": "invoked"
+    },
+    "post_cutoff_discarded_records": 3,
+    "v52_guest_main_stack": [
+      "sub_823B9DA0",
+      "sub_823B90F0",
+      "ObReferenceObjectByHandle_entry",
+      "ObjectTable::LookupObject",
+      "pthread_mutex_lock"
+    ],
+    "v52_global_mutex_sample": {
+      "lock": 0,
+      "owner_lwp": 0,
+      "recursion_count": 0
+    }
+  },
+  "runtime_lock_finding": "ReXGlue ObjectTable::LookupObject and FunctionDispatcher::ExecuteInterrupt both use global_critical_region::mutex(), a static shared std::recursive_mutex.",
+  "followup_v55": {
+    "source_capture": "/dev/shm/nfs-shift-p1-v55-native-guestlock-96169-20261028-r2",
+    "native_source1_interrupts_in_25s_window": 0,
+    "native_bink_complete": false,
+    "waiters_on_same_global_mutex": [
+      "guest main: ObReferenceObjectByHandle -> ObjectTable::LookupObject",
+      "XThread: ObReferenceObjectByHandle -> ObjectTable::RetainHandle",
+      "XThread: KernelState::OnThreadExecute"
+    ],
+    "mutex_address": "runtime load bias + 0xE39AB8",
+    "waiter_registers": {
+      "rdi_matches_mutex_address": true,
+      "futex_operation": 128,
+      "futex_expected_value": 2,
+      "rax": -512
+    },
+    "sampled_mutex_state": {
+      "lock": 0,
+      "owner": 0,
+      "kind": 1
+    },
+    "first_32_guest_atomic_lock_calls": "returned in 0.001-0.003 seconds, guest lock word 0->1",
+    "conclusion": "This confirms multiple waiters were observed on the shared mutex, but the sample does not prove a persistent owner or deadlock."
+  },
+  "conclusion": "The v50 finalized live window does not reach guest ring submission/MMIO. Its three decoded and invoked source-1 interrupts occur after the deadline during shutdown-tail activity, so this pair cannot establish a live interrupt decode or dispatch failure.",
+  "limitations": [
+    "The v52 and v55 mutex samples have no owner and do not prove a lock holder or deadlock; v55 does establish three simultaneous waiters at its stop snapshot.",
+    "The v50 capture does not identify why the guest main thread stalls before the first ring WPTR update.",
+    "The old post-return PM4 trace cannot expose a source-1 callback that blocks before returning."
+  ],
+  "next_diagnostic": "Add bounded PM4 interrupt entry, callback-lock entry, ExecuteInterrupt entry, and ExecuteInterrupt return records. Keep legacy completion rows and dispatch semantics unchanged."
+}
