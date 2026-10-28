@@ -532,11 +532,40 @@ physical color tile 16, sample slot 0 maps to pixel `(640, 0)` in draw 0 and
 `(0, 8)` in draw 1. This makes the aliased coordinate relationship explicit
 for a future shared EDRAM transfer path.
 
-This change only maps addresses. The Vulkan renderer still does not populate a
-physical EDRAM backing store, transfer samples between aliased layouts, or
-preserve depth/stencil across the full retail sequence. The captured transition
-is not rendered end to end. Details and CPU regression scope are in
+This address work now feeds one captured color transfer path described below.
+It still does not create a general physical EDRAM backing store or preserve
+depth/stencil across the full retail sequence. The captured transition is not
+rendered end to end. Details and CPU regression scope are in
 [`process2_edram_reverse_sample_mapping_20261027.json`](../evidence/process2_edram_reverse_sample_mapping_20261027.json).
+
+### Captured packet 27 EDRAM color alias transfer (2026-10-28)
+
+The ordered path handles one exact capture transition: a 1280x720 4x
+`RGBA8_GAMMA`, pitch-640 target changes to a 1x `RGBA8_LINEAR`, pitch-1280
+view over the same color/depth bases, then immediately executes a sample-zero
+format-6 Copy/Convert to `0x0975E000`. The tile map for this pair is identity
+across 720 shared color and depth tiles. The renderer now submits the prior
+draw stage, keeps its 4x image in the EDRAM cache, and transfers each tile-local
+sample into the matching pixel of a persistent 1x color target before packet
+27. The transfer is enabled only when packet 27 has depth/stencil disabled,
+the following copy reads the exact 1x layout, and its destination tuple
+matches the capture. Other transitions remain rejected. The prior 4x depth
+image remains intact; this path does not convert depth or stencil.
+
+The Vulkan smoke regression compares the ordered 4x-to-1x transfer with an
+equivalent 1x renderer stream and requires identical output readback. It also
+checks that a changed pitch is rejected. Native Vulkan CTest passed 4/4 with
+`VK_LAYER_KHRONOS_validation`; the Linux ReXGlue plugin suite passed 7/7.
+Both transfer shaders pass `spirv-val --target-env vulkan1.1`. The Android
+ARM64 renderer and check targets compile. ADB reports no attached device, so
+there was no phone run. This is executor evidence with synthetic test shaders,
+not retail pixel parity. It does not execute the full captured 14-draw
+transition: its unresolved predicated shader branch, intermediate format-31
+copies, later target changes, and full game frame still need work. The capture
+and interrupt audit are recorded in
+[`process2_ordered_edram_packet27_alias_transfer_20261028.json`](../evidence/process2_ordered_edram_packet27_alias_transfer_20261028.json)
+and
+[`process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json`](../evidence/process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json).
 
 ## Retail conditional-jump rejection detail (2026-10-27)
 

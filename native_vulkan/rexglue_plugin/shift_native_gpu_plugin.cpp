@@ -202,6 +202,26 @@ const std::string kCopyResolveSingleSamplePixelShader =
     "  color = floor(clamp(color, 0.0, 1.0) * 255.0 + 0.5) / 255.0;\n"
     "  shift_color0 = color;\n"
     "}\n";
+const std::string kEdramAliasTransferPixelShader =
+    "#version 450\n"
+    "layout(set=1,binding=0) uniform sampler2DMS source_image;\n"
+    "layout(location=0) out vec4 shift_color0;\n"
+    "void main() {\n"
+    "  ivec2 dst=ivec2(gl_FragCoord.xy);\n"
+    "  int tile_x=dst.x/80, tile_y=dst.y/16;\n"
+    "  int local_x=dst.x%80, local_y=dst.y%16;\n"
+    "  ivec2 src=ivec2(tile_x*40+local_x/2, tile_y*8+local_y/2);\n"
+    "  int sample_index=(local_y%2)*2+(local_x%2);\n"
+    "  vec4 color=texelFetch(source_image,src,sample_index);\n"
+    "  shift_color0=floor(clamp(color,0.0,1.0)*255.0+0.5)/255.0;\n"
+    "}\n";
+const std::string kEdramAliasTransferVertexShader =
+    "#version 450\n"
+    "void main() {\n"
+    "  const vec2 p[3]=vec2[3](vec2(-1.0,-1.0),vec2(3.0,-1.0),"
+    "vec2(-1.0,3.0));\n"
+    "  gl_Position=vec4(p[gl_VertexIndex],0.0,1.0);\n"
+    "}\n";
 const std::string kCopyResolveAllSamplesU16x4PixelShader =
     "#version 450\n"
     "layout(set=0,binding=15) uniform PixelConstants { vec4 c[256]; } pc;\n"
@@ -435,6 +455,16 @@ bool CompileCapturedCopyResolveShaders(
                                  EShLangFragment,
                                  copy_resolve_gamma_pixel_shader(false),
                                  &copy->gamma_single_sample_pixel_shader_spirv,
+                                 error) &&
+             CompileVulkanShader("edram-alias-transfer-vertex",
+                                 EShLangVertex,
+                                 kEdramAliasTransferVertexShader,
+                                 &copy->edram_alias_transfer_vertex_shader_spirv,
+                                 error) &&
+             CompileVulkanShader("edram-alias-transfer-pixel",
+                                 EShLangFragment,
+                                 kEdramAliasTransferPixelShader,
+                                 &copy->edram_alias_transfer_pixel_shader_spirv,
                                  error);
     case 26:
       return CompileVulkanShader(

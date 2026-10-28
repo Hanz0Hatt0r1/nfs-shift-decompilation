@@ -174,10 +174,11 @@ bool read_bytes(const char* path, std::vector<uint8_t>* output) {
 
 int main(int argc, char** argv) {
     const bool has_copy_destination_shaders =
-        argc == 18 || argc == 19 || argc == 27 || argc == 28;
-    const bool has_edram_clear_shader = argc == 19 || argc == 24 || argc == 28;
+        argc == 18 || argc == 19 || argc == 27 || argc == 28 || argc == 30;
+    const bool has_edram_clear_shader =
+        argc == 19 || argc == 24 || argc == 28 || argc == 30;
     if (argc != 14 && argc != 18 && argc != 23 && argc != 24 &&
-        argc != 19 && argc != 27 && argc != 28) {
+        argc != 19 && argc != 27 && argc != 28 && argc != 30) {
         std::cerr << "usage: xbox_live_vulkan_renderer_check vertex.spv fragment.spv "
                      "geometry.spv copy-vertex.spv copy-fragment.spv "
                      "copy-single-fragment.spv window-vertex.spv window-fragment.spv "
@@ -397,7 +398,7 @@ int main(int argc, char** argv) {
     std::vector<uint32_t> disclaimer_vertex_spirv;
     std::vector<uint32_t> disclaimer_encoded_fragment_spirv;
     std::vector<uint32_t> disclaimer_linear_fragment_spirv;
-    if ((argc == 24 || argc == 28) &&
+    if ((argc == 24 || argc == 28 || argc == 30) &&
         (!read_spirv(argv[14], &disclaimer_vertex_spirv) ||
          !read_spirv(argv[15], &disclaimer_encoded_fragment_spirv) ||
          !read_spirv(argv[16], &disclaimer_linear_fragment_spirv))) {
@@ -411,7 +412,7 @@ int main(int argc, char** argv) {
     std::vector<uint32_t> edram_clear_fragment_spirv;
     if (has_copy_destination_shaders) {
         const int first_copy_destination_shader =
-            (argc == 27 || argc == 28) ? 23 : 14;
+            (argc == 27 || argc == 28 || argc == 30) ? 23 : 14;
         if (!read_spirv(argv[first_copy_destination_shader],
                         &copy_4x_u16x4_spirv) ||
             !read_spirv(argv[first_copy_destination_shader + 1],
@@ -421,11 +422,24 @@ int main(int argc, char** argv) {
             !read_spirv(argv[first_copy_destination_shader + 3],
                         &copy_constant_fragment_spirv) ||
             (has_edram_clear_shader &&
-             !read_spirv(argv[argc - 1], &edram_clear_fragment_spirv))) {
+             !read_spirv(argv[argc == 30 ? 27 : argc - 1],
+                         &edram_clear_fragment_spirv))) {
             std::cerr << "could not read Vulkan 1.1 intermediate Copy/Convert shaders\n";
             return 1;
         }
     }
+    std::vector<uint32_t> edram_alias_transfer_vertex_spirv;
+    std::vector<uint32_t> edram_alias_transfer_fragment_spirv;
+    if (argc == 30 &&
+        (!read_spirv(argv[28], &edram_alias_transfer_vertex_spirv) ||
+         !read_spirv(argv[29], &edram_alias_transfer_fragment_spirv))) {
+        std::cerr << "could not read Vulkan 1.1 EDRAM alias transfer shaders\n";
+        return 1;
+    }
+    copy.edram_alias_transfer_vertex_shader_spirv =
+        edram_alias_transfer_vertex_spirv;
+    copy.edram_alias_transfer_pixel_shader_spirv =
+        edram_alias_transfer_fragment_spirv;
     std::vector<uint32_t> window_vertex_spirv;
     std::vector<uint32_t> window_fragment_spirv;
     if (!read_spirv(argv[7], &window_vertex_spirv) ||
@@ -1211,6 +1225,139 @@ int main(int argc, char** argv) {
           packet49_ordered_readback != packet49_direct_readback) {
         std::cerr << "captured packet-49 4x gamma draw to sample-zero 1x "
                      "linear source replay failed: " << packet49_error << '\n';
+        return 1;
+      }
+      if (edram_alias_transfer_vertex_spirv.empty() ||
+          edram_alias_transfer_fragment_spirv.empty()) {
+        std::cerr << "captured packet-27 alias shaders were not supplied\n";
+        return 1;
+      }
+      auto packet27_draw = packet49_draw;
+      packet27_draw.raster = packet49_source;
+      packet27_draw.pixel_shader_spirv = gamma_linear_fragment_spirv;
+      packet27_draw.pixel_shader_spirv_linear_target.clear();
+      packet27_draw.raster.scissor_x0 = 0;
+      packet27_draw.raster.scissor_y0 = 0;
+      packet27_draw.raster.scissor_x1 = 64;
+      packet27_draw.raster.scissor_y1 = 64;
+      packet27_draw.raster.scissor_has_area = true;
+      auto packet27_seed_draw = packet27_draw;
+      packet27_seed_draw.vertex_shader_spirv =
+          edram_alias_transfer_vertex_spirv;
+      packet27_seed_draw.pixel_shader_spirv = gamma_encoded_fragment_spirv;
+      packet27_seed_draw.raster.scissor_x1 = packet27_seed_draw.raster.width;
+      packet27_seed_draw.raster.scissor_y1 = packet27_seed_draw.raster.height;
+      auto packet27_source_draw = packet49_draw;
+      packet27_source_draw.vertex_shader_spirv =
+          edram_alias_transfer_vertex_spirv;
+      auto packet27_copy = packet49_copy;
+      packet27_copy.edram_alias_transfer_vertex_shader_spirv =
+          edram_alias_transfer_vertex_spirv;
+      packet27_copy.edram_alias_transfer_pixel_shader_spirv =
+          edram_alias_transfer_fragment_spirv;
+      shift::xbox::CapturedVulkanOperation packet26_alias_operation =
+          packet49_draw_operation;
+      packet26_alias_operation.packet_index = 26;
+      shift::xbox::CapturedVulkanOperation packet27_operation =
+          packet49_draw_operation;
+      packet27_operation.packet_index = 27;
+      packet27_operation.draw_index = 1;
+      shift::xbox::CapturedVulkanOperation packet52_copy_operation =
+          packet49_copy_operation;
+      packet52_copy_operation.packet_index = 52;
+      packet52_copy_operation.source_raster = packet49_source;
+      packet52_copy_operation.copy = packet27_copy;
+      packet52_copy_operation.copy_state = packet27_copy.state;
+      std::vector<uint32_t> packet27_alias_readback;
+      std::string packet27_alias_error;
+      shift::xbox::CapturedVulkanTextureCache packet27_alias_cache;
+      if (!shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720,
+              {packet27_source_draw, packet27_draw},
+          {packet26_alias_operation, packet27_operation,
+               packet52_copy_operation},
+              &packet27_alias_error, &packet27_alias_readback,
+              enabled_features.geometryShader, &packet27_copy, false, {},
+              pipeline_cache, &packet27_alias_cache) ||
+          packet27_alias_readback.size() != 1280u * 720u) {
+        std::cerr << "captured packet-27 4x gamma to 1x linear EDRAM alias transfer failed: "
+                  << packet27_alias_error << '\n';
+        return 1;
+      }
+      std::vector<uint32_t> packet27_direct_readback;
+      std::string packet27_direct_error;
+      shift::xbox::CapturedVulkanTextureCache packet27_direct_cache;
+      auto packet26_direct_operation = packet26_alias_operation;
+      packet26_direct_operation.draw_index = 0;
+      auto packet27_direct_draw_operation = packet27_operation;
+      packet27_direct_draw_operation.draw_index = 1;
+      if (!shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720,
+              {packet27_seed_draw, packet27_draw},
+              {packet26_direct_operation, packet27_direct_draw_operation,
+               packet52_copy_operation},
+              &packet27_direct_error, &packet27_direct_readback,
+              enabled_features.geometryShader, &packet27_copy, false, {},
+              pipeline_cache, &packet27_direct_cache) ||
+          packet27_alias_readback != packet27_direct_readback) {
+        size_t mismatch = 0;
+        while (mismatch < std::min(packet27_alias_readback.size(),
+                                   packet27_direct_readback.size()) &&
+               packet27_alias_readback[mismatch] ==
+                   packet27_direct_readback[mismatch]) {
+          ++mismatch;
+        }
+        std::cerr << "packet-27 EDRAM alias transfer differed from the equivalent single-sample executor baseline: "
+                  << packet27_direct_error << " (first pixel " << mismatch
+                  << ", alias=0x" << std::hex
+                  << (mismatch < packet27_alias_readback.size()
+                          ? packet27_alias_readback[mismatch] : 0)
+                  << ", baseline=0x"
+                  << (mismatch < packet27_direct_readback.size()
+                          ? packet27_direct_readback[mismatch] : 0)
+                  << std::dec << ", alias samples=";
+        for (size_t index : {size_t{0}, size_t{10u * 1280u + 10u},
+                             size_t{180u * 1280u + 639u},
+                             size_t{360u * 1280u + 640u}}) {
+          std::cerr << " 0x" << std::hex
+                    << (index < packet27_alias_readback.size()
+                            ? packet27_alias_readback[index] : 0);
+        }
+        std::cerr << std::dec << ", baseline samples=";
+        for (size_t index : {size_t{0}, size_t{10u * 1280u + 10u},
+                             size_t{180u * 1280u + 639u},
+                             size_t{360u * 1280u + 640u}}) {
+          std::cerr << " 0x" << std::hex
+                    << (index < packet27_direct_readback.size()
+                            ? packet27_direct_readback[index] : 0);
+        }
+        std::cerr << std::dec << ", cached EDRAM targets="
+                  << packet27_alias_cache.cached_guest_edram_target_count()
+                  << ")\n";
+        return 1;
+      }
+      auto unsupported_packet27_draws =
+          std::vector<shift::xbox::CapturedVulkanDraw>{packet27_source_draw,
+                                                       packet27_draw};
+      unsupported_packet27_draws[1].raster.surface_pitch = 1272;
+      std::string unsupported_packet27_error;
+      if (shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280, 720, unsupported_packet27_draws,
+              {packet26_alias_operation, packet27_operation,
+               packet52_copy_operation},
+              &unsupported_packet27_error, nullptr,
+              enabled_features.geometryShader, &packet27_copy, false, {},
+              pipeline_cache, nullptr) ||
+          (unsupported_packet27_error.find(
+               "ordered Xenos EDRAM alias transfer is unavailable") ==
+               std::string::npos &&
+           unsupported_packet27_error.find(
+               "invalid target layout transition") == std::string::npos)) {
+        std::cerr << "packet-27 alias executor accepted an unsupported target pitch: "
+                  << unsupported_packet27_error << '\n';
         return 1;
       }
 

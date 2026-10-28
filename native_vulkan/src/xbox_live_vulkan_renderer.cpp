@@ -58,6 +58,7 @@ struct DrawTextureResources {
   bool cached = false;
   bool cached_sampler = false;
   bool guest_copy_source = false;
+  bool external_image = false;
 };
 
 struct DrawResources {
@@ -1735,25 +1736,29 @@ bool create_draw_resources(
     CapturedVulkanTexture::Format format;
     const std::vector<uint8_t> *pixels;
     const CapturedVulkanTexture *captured = nullptr;
+    VkImageView external_image_view = VK_NULL_HANDLE;
   };
   std::vector<TextureInput> texture_inputs;
   if (source.textures.empty()) {
       texture_inputs.push_back({0, &source.texture_sampling, source.texture_width,
                               source.texture_height,
                               CapturedVulkanTexture::Format::Rgba8,
-                              &source.texture_rgba8, nullptr});
+                              &source.texture_rgba8, nullptr,
+                              VK_NULL_HANDLE});
   } else {
     texture_inputs.reserve(source.textures.size());
     for (const CapturedVulkanTexture &texture : source.textures) {
       texture_inputs.push_back({texture.fetch_constant_index, &texture.sampling,
                                 texture.width, texture.height, texture.format,
-                                &texture.pixels, &texture});
+                                &texture.pixels, &texture,
+                                texture.external_image_view});
     }
   }
   uint64_t total_texture_size = 0;
   for (size_t i = 0; i < texture_inputs.size(); ++i) {
     const TextureInput &texture = texture_inputs[i];
     const CapturedVulkanTexture *captured = texture.captured;
+    const bool external_image = texture.external_image_view != VK_NULL_HANDLE;
     const bool captured_copy_source = captured &&
         find_guest_copy_texture(texture_cache, *captured) != nullptr;
     if (captured && captured->guest_copy_source && !captured_copy_source) {
@@ -1789,11 +1794,12 @@ bool create_draw_resources(
     }
     if (texture.fetch_constant_index >= 32 || texture.width == 0 ||
         texture.height == 0 || pixel_count > (uint64_t{1} << 24) ||
-        (!captured_copy_source &&
+        (!captured_copy_source && !external_image &&
          pixel_count * bytes_per_pixel != texture.pixels->size()) ||
         total_texture_size >
             (uint64_t{1} << 26) -
-                (captured_copy_source ? 0 : pixel_count * bytes_per_pixel)) {
+                (captured_copy_source || external_image
+                     ? 0 : pixel_count * bytes_per_pixel)) {
       std::ostringstream message;
       message << "captured Vulkan texture resources are incomplete or oversized"
               << " at texture " << i << " (fetch="
@@ -1810,7 +1816,8 @@ bool create_draw_resources(
                     error);
       }
     }
-    if (!captured_copy_source) total_texture_size += pixel_count * bytes_per_pixel;
+    if (!captured_copy_source && !external_image)
+      total_texture_size += pixel_count * bytes_per_pixel;
   }
   std::sort(texture_inputs.begin(), texture_inputs.end(),
             [](const TextureInput &left, const TextureInput &right) {
@@ -1946,42 +1953,49 @@ bool create_draw_resources(
     texture.fetch_constant_index = input.fetch_constant_index;
     texture.width = input.width;
     texture.height = input.height;
-    const VkFormat image_format =
-        input.format == CapturedVulkanTexture::Format::R8
-            ? VK_FORMAT_R8_UNORM
-            : input.format == CapturedVulkanTexture::Format::Rg16Float
-                  ? VK_FORMAT_R16G16_SFLOAT
-                  : VK_FORMAT_R8G8B8A8_UNORM;
-    CachedGuestCopyImage *guest_copy_image = input.captured
-        ? find_guest_copy_texture(texture_cache, *input.captured)
-        : nullptr;
-    if (input.captured && input.captured->guest_copy_source &&
-        !guest_copy_image) {
-      return fail("captured format-31 texture has no initialized exact-layout Copy/Convert image",
-                  error);
-    }
-    if (guest_copy_image) {
-      texture.image = guest_copy_image->image;
+    if (input.external_image_view) {
+      texture.image.view = input.external_image_view;
       texture.image.borrowed = true;
+      texture.external_image = true;
       texture.cached = true;
-      texture.guest_copy_source = true;
-    }
-    if (texture_cache && input.format == CapturedVulkanTexture::Format::R8) {
-      if (!acquire_cached_r8_texture(texture_cache, memory_properties, device,
-                                     draw_index, input.fetch_constant_index,
-                                     input.width, input.height, *input.pixels,
-                                     &texture, &texture.cached, error)) {
+    } else {
+      const VkFormat image_format =
+          input.format == CapturedVulkanTexture::Format::R8
+              ? VK_FORMAT_R8_UNORM
+              : input.format == CapturedVulkanTexture::Format::Rg16Float
+                    ? VK_FORMAT_R16G16_SFLOAT
+                    : VK_FORMAT_R8G8B8A8_UNORM;
+      CachedGuestCopyImage *guest_copy_image = input.captured
+          ? find_guest_copy_texture(texture_cache, *input.captured)
+          : nullptr;
+      if (input.captured && input.captured->guest_copy_source &&
+          !guest_copy_image) {
+        return fail("captured format-31 texture has no initialized exact-layout Copy/Convert image",
+                    error);
+      }
+      if (guest_copy_image) {
+        texture.image = guest_copy_image->image;
+        texture.image.borrowed = true;
+        texture.cached = true;
+        texture.guest_copy_source = true;
+      }
+      if (texture_cache && input.format == CapturedVulkanTexture::Format::R8) {
+        if (!acquire_cached_r8_texture(texture_cache, memory_properties, device,
+                                       draw_index, input.fetch_constant_index,
+                                       input.width, input.height, *input.pixels,
+                                       &texture, &texture.cached, error)) {
+          return false;
+        }
+      }
+      if (!texture.cached &&
+          (!create_buffer(memory_properties, device, input.pixels->size(),
+                          VK_BUFFER_USAGE_TRANSFER_SRC_BIT, input.pixels->data(),
+                          &texture.upload, error) ||
+           !create_texture_image(memory_properties, device, input.width,
+                                 input.height, image_format, &texture.image,
+                                 error))) {
         return false;
       }
-    }
-    if (!texture.cached &&
-        (!create_buffer(memory_properties, device, input.pixels->size(),
-                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT, input.pixels->data(),
-                        &texture.upload, error) ||
-         !create_texture_image(memory_properties, device, input.width,
-                               input.height, image_format, &texture.image,
-                               error))) {
-      return false;
     }
     bool sampler_supported = true;
     VkSamplerCreateInfo sampler_info{};
@@ -3250,7 +3264,7 @@ bool submit_mixed_sample_copy_frame(
         };
         for (const auto& [buffer, access] : buffers) add_host_barrier(buffer, access);
         for (const DrawTextureResources& texture : draw.textures) {
-            if (!texture.guest_copy_source)
+            if (!texture.guest_copy_source && !texture.external_image)
                 add_host_barrier(&texture.upload, VK_ACCESS_TRANSFER_READ_BIT);
         }
     }
@@ -3287,7 +3301,7 @@ bool submit_mixed_sample_copy_frame(
     for (size_t i = 0; i < resources.draws.size(); ++i) {
         const DrawResources& draw = resources.draws[i];
         for (const DrawTextureResources& texture : draw.textures) {
-            if (texture.guest_copy_source) continue;
+            if (texture.guest_copy_source || texture.external_image) continue;
             VkImageMemoryBarrier to_upload{};
             to_upload.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             to_upload.srcAccessMask = texture.upload_old_layout ==
@@ -4653,7 +4667,7 @@ bool submit_captured_vulkan_frame(
         };
         for (const auto& [buffer, access] : buffers) add_host_barrier(buffer, access);
         for (const DrawTextureResources& texture : draw.textures) {
-            if (!texture.guest_copy_source)
+            if (!texture.guest_copy_source && !texture.external_image)
                 add_host_barrier(&texture.upload, VK_ACCESS_TRANSFER_READ_BIT);
         }
     }
@@ -4717,7 +4731,7 @@ bool submit_captured_vulkan_frame(
     for (size_t i = 0; i < resources.draws.size(); ++i) {
         const DrawResources& draw = resources.draws[i];
         for (const DrawTextureResources& texture : draw.textures) {
-            if (texture.guest_copy_source) continue;
+            if (texture.guest_copy_source || texture.external_image) continue;
             VkImageMemoryBarrier texture_barrier{};
             texture_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             texture_barrier.srcAccessMask = texture.upload_old_layout ==
@@ -5337,6 +5351,64 @@ bool submit_captured_vulkan_operation_stream(
                 is_captured_gamma_4x_to_1x_transition(before, after) ||
                 is_captured_depth_only_view_transition(before, after);
         };
+    const auto has_identity_alias_tiles = [](
+        const CapturedRasterState& before,
+        const CapturedRasterState& after, bool depth_target) {
+        std::vector<CapturedEdramTileAlias> aliases;
+        if (!captured_xenos_edram_alias_tiles(
+                before, after, depth_target, &aliases, nullptr) ||
+            aliases.size() != 720) {
+            return false;
+        }
+        return std::all_of(aliases.begin(), aliases.end(),
+                           [](const CapturedEdramTileAlias& alias) {
+            return alias.source_tile_x == alias.destination_tile_x &&
+                   alias.source_tile_y == alias.destination_tile_y;
+        });
+    };
+    const auto is_captured_packet27_alias_layout =
+        [&](const CapturedRasterState& before,
+            const CapturedRasterState& after) {
+            return before.color_base_tiles == after.color_base_tiles &&
+                before.depth_base_tiles == after.depth_base_tiles &&
+                before.width == 1280 && before.height == 720 &&
+                after.width == before.width && after.height == before.height &&
+                before.surface_pitch == 640 && after.surface_pitch == 1280 &&
+                before.sample_count == 4 && after.sample_count == 1 &&
+                before.guest_color_format == 1 &&
+                before.color_format == CapturedColorTargetFormat::Rgba8Gamma &&
+                after.guest_color_format == 0 &&
+                after.color_format == CapturedColorTargetFormat::Rgba8Linear &&
+                before.depth_format == after.depth_format &&
+                !before.depth_only && !after.depth_only &&
+                has_identity_alias_tiles(before, after, false) &&
+                has_identity_alias_tiles(before, after, true);
+        };
+    const auto has_captured_copy_after_alias = [&] (
+        size_t draw_operation_index, const CapturedRasterState& next_layout) {
+        if (draw_operation_index + 1 >= operations.size() ||
+            next_layout.depth_test_enabled || next_layout.depth_write_enabled ||
+            next_layout.stencil_test_enabled) {
+            return false;
+        }
+        const CapturedVulkanOperation& next =
+            operations[draw_operation_index + 1];
+        return next.type == CapturedVulkanOperation::Type::CopyConvert &&
+            next.copy_shaders_ready &&
+            next.source_raster_ready &&
+            same_target_layout(next.source_raster, next_layout) &&
+            next.copy_state.command == CapturedCopyCommand::Convert &&
+            next.copy_state.source_select == 0 &&
+            next.copy_state.sample_select == 0 &&
+            next.copy_state.destination_base == 0x0975E000u &&
+            next.copy_state.destination_pitch == 1280 &&
+            next.copy_state.destination_height == 720 &&
+            next.copy_state.destination_format == 6 &&
+            next.copy_state.destination_swap_red_blue &&
+            !next.copy_state.depth_clear_enable &&
+            !next.copy.edram_alias_transfer_vertex_shader_spirv.empty() &&
+            !next.copy.edram_alias_transfer_pixel_shader_spirv.empty();
+    };
     // Packet 49 in the retail trace uses this source view over the immediately
     // preceding 4x gamma target. The current resolve path can read sample 0
     // from that multisampled image; all other EDRAM reinterpretations stay
@@ -5492,6 +5564,10 @@ bool submit_captured_vulkan_operation_stream(
             if (preflight_draw_count != 0 &&
                 !compatible_ordered_target_layout(
                     draws[preflight_layout_draw].raster, draw_raster)) {
+                const bool alias_transfer =
+                    is_captured_packet27_alias_layout(
+                        draws[preflight_layout_draw].raster, draw_raster) &&
+                    has_captured_copy_after_alias(i, draw_raster);
                 bool disjoint = false;
                 uint32_t overlap_tile = 2048;
                 std::string layout_error;
@@ -5505,7 +5581,7 @@ bool submit_captured_vulkan_operation_stream(
                             << layout_error;
                     return fail(message.str(), error);
                 }
-                if (!disjoint) {
+                if (!disjoint && !alias_transfer) {
                     std::ostringstream message;
                     message << "draw packet " << operation.packet_index
                             << " changes target layout before a Copy/Convert boundary; "
@@ -5739,6 +5815,13 @@ bool submit_captured_vulkan_operation_stream(
             if (!stage_draws.empty() &&
                 !compatible_ordered_target_layout(
                     stage_draws[stage_layout_draw].raster, draw.raster)) {
+                const CapturedRasterState source_layout =
+                    stage_draws[stage_layout_draw].raster;
+                const bool alias_transfer =
+                    is_captured_packet27_alias_layout(source_layout,
+                                                      draw.raster) &&
+                    has_captured_copy_after_alias(operation_index,
+                                                  draw.raster);
                 bool disjoint = false;
                 uint32_t overlap_tile = 2048;
                 std::string layout_error;
@@ -5752,7 +5835,7 @@ bool submit_captured_vulkan_operation_stream(
                             << layout_error;
                     return fail(message.str(), error);
                 }
-                if (!disjoint) {
+                if (!disjoint && !alias_transfer) {
                     std::ostringstream message;
                     message << "draw packet " << operation.packet_index
                             << " changes target layout before a Copy/Convert boundary; "
@@ -5765,6 +5848,76 @@ bool submit_captured_vulkan_operation_stream(
                 if (!submit_stage(nullptr, false, false,
                                   stage_last_packet_index)) {
                     return false;
+                }
+                if (alias_transfer) {
+                    const CapturedVulkanOperation& copy_operation =
+                        operations[operation_index + 1];
+                    CachedEdramTarget* source_target =
+                        find_initialized_edram_target(texture_cache_state,
+                                                      source_layout);
+                    if (!source_target) {
+                        std::ostringstream message;
+                        message << "draw packet " << operation.packet_index
+                                << " has no initialized cached color image for the captured 4x-to-1x EDRAM alias transfer";
+                        return fail(message.str(), error);
+                    }
+                    CapturedVulkanDraw transfer_draw{};
+                    transfer_draw.raster = draw.raster;
+                    transfer_draw.raster.scissor_x0 = 0;
+                    transfer_draw.raster.scissor_y0 = 0;
+                    transfer_draw.raster.scissor_x1 = draw.raster.width;
+                    transfer_draw.raster.scissor_y1 = draw.raster.height;
+                    transfer_draw.raster.scissor_has_area = true;
+                    transfer_draw.raster.color_write_mask = 0xFu;
+                    transfer_draw.raster.depth_test_enabled = false;
+                    transfer_draw.raster.depth_write_enabled = false;
+                    transfer_draw.raster.stencil_test_enabled = false;
+                    transfer_draw.raster.depth_control = 0;
+                    transfer_draw.raster.blend_control_0 = 0x00010001u;
+                    transfer_draw.vertex_shader_spirv =
+                        copy_operation.copy.edram_alias_transfer_vertex_shader_spirv;
+                    transfer_draw.pixel_shader_spirv =
+                        copy_operation.copy.edram_alias_transfer_pixel_shader_spirv;
+                    transfer_draw.topology = PrimitiveTopology::TriangleList;
+                    transfer_draw.auto_index = true;
+                    transfer_draw.index_count = 3;
+                    transfer_draw.texture_width = 1;
+                    transfer_draw.texture_height = 1;
+                    transfer_draw.texture_rgba8 = {0, 0, 0, 255};
+                    CapturedVulkanTexture source_texture{};
+                    source_texture.fetch_constant_index = 0;
+                    source_texture.width = source_layout.width;
+                    source_texture.height = source_layout.height;
+                    source_texture.external_image_view = source_target->color.view;
+                    source_texture.sampling.clamps = {
+                        TextureClamp::ClampToEdge,
+                        TextureClamp::ClampToEdge,
+                        TextureClamp::ClampToEdge};
+                    source_texture.sampling.mag_filter = TextureFilter::Point;
+                    source_texture.sampling.min_filter = TextureFilter::Point;
+                    source_texture.sampling.mip_filter = TextureFilter::Point;
+                    source_texture.sampling.anisotropy =
+                        TextureAnisotropy::Disabled;
+                    source_texture.sampling.border_color =
+                        TextureBorderColor::AbgrBlack;
+                    source_texture.sampling.border_alpha_known = true;
+                    transfer_draw.textures.push_back(std::move(source_texture));
+                    std::string transfer_error;
+                    if (!submit_captured_vulkan_frame(
+                            physical_device, device, queue,
+                            queue_family_index, output_image, output_view, false,
+                            draw.raster.width, draw.raster.height,
+                            {transfer_draw}, &transfer_error, nullptr,
+                            geometry_shader_enabled, nullptr,
+                            depth_stencil_resolve_enabled, sampler_capabilities,
+                            pipeline_cache, texture_cache, nullptr, nullptr,
+                            nullptr, true)) {
+                        std::ostringstream message;
+                        message << "captured 4x-to-1x EDRAM color transfer before draw packet "
+                                << operation.packet_index << " failed: "
+                                << transfer_error;
+                        return fail(message.str(), error);
+                    }
                 }
             }
             if (stage_draws.empty() ||

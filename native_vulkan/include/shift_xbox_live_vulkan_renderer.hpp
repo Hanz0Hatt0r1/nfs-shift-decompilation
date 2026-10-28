@@ -38,6 +38,9 @@ struct CapturedVulkanTexture {
     // True only when an earlier operation in the same PM4 stream produced an
     // exact-layout Vulkan image for this fetch descriptor.
     bool guest_copy_source = false;
+    // Internal ordered-renderer source view. The image remains owned by the
+    // EDRAM cache and must outlive the submitted draw.
+    VkImageView external_image_view = VK_NULL_HANDLE;
 };
 
 struct CapturedVulkanDraw {
@@ -88,6 +91,9 @@ struct CapturedVulkanCopy {
     std::vector<uint32_t> single_sample_pixel_shader_spirv;
     std::vector<uint32_t> gamma_pixel_shader_spirv;
     std::vector<uint32_t> gamma_single_sample_pixel_shader_spirv;
+    // 4x RGBA8 EDRAM alias view to the captured 1x/pitch-2 view.
+    std::vector<uint32_t> edram_alias_transfer_vertex_shader_spirv;
+    std::vector<uint32_t> edram_alias_transfer_pixel_shader_spirv;
 };
 
 struct CapturedVulkanOperation {
