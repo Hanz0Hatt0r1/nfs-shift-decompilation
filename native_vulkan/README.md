@@ -624,6 +624,13 @@ frame still depends on the provider-confirmed depth/stencil resolve path. This
 does not establish Xenos depth/stencil sample parity or full retail-frame
 parity.
 
+The Vulkan regression also submits all 14 captured target/depth layouts in
+order, including the return to the 4x stencil-only draw and final Copy38. It
+passed on NVIDIA GeForce GTX 950 with `VK_LAYER_KHRONOS_validation` and the
+provider-confirmed `SAMPLE_ZERO` resolve path. The test substitutes smoke point
+shaders and geometry for the retail draw payloads and checks a non-black
+readback; it verifies executor acceptance and ordering, not retail pixels.
+
 The 1280x720 pre-Copy source is single-sample `R16G16B16A16_UNORM`; the
 presenter image is `A2B10G10R10_UNORM_PACK32`. After the Copy's 16-bit to
 8-bit to 10-bit UNORM quantization, 920,250 of 921,600 pixels match exactly

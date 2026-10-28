@@ -2933,6 +2933,77 @@ int main(int argc, char** argv) {
         (resolve_properties.supportedDepthResolveModes & sample_zero) != 0 &&
         (resolve_properties.supportedStencilResolveModes & sample_zero) != 0;
 
+    auto frame622_4x_color = draws[0];
+    frame622_4x_color.raster.color_base_tiles = 0;
+    frame622_4x_color.raster.depth_base_tiles = 720;
+    frame622_4x_color.raster.surface_pitch = 640;
+    frame622_4x_color.raster.sample_count = 4;
+    frame622_4x_color.raster.guest_color_format = 1;
+    frame622_4x_color.raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
+    frame622_4x_color.raster.depth_test_enabled = true;
+    frame622_4x_color.raster.depth_write_enabled = true;
+    frame622_4x_color.raster.stencil_test_enabled = true;
+    frame622_4x_color.raster.depth_control = 0x00008777u;
+    frame622_4x_color.raster.stencil_refmask = 0x00FF0000u;
+
+    auto frame622_depth_only_4x = frame622_4x_color;
+    frame622_depth_only_4x.raster.depth_only = true;
+    frame622_depth_only_4x.raster.color_write_mask = 0;
+    frame622_depth_only_4x.raster.guest_color_format = 0;
+    frame622_depth_only_4x.raster.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
+    frame622_depth_only_4x.raster.depth_test_enabled = false;
+    frame622_depth_only_4x.raster.depth_write_enabled = false;
+    frame622_depth_only_4x.raster.stencil_test_enabled = true;
+    frame622_depth_only_4x.raster.depth_control = 0x00008701u;
+
+    auto frame622_color_1x = frame622_4x_color;
+    frame622_color_1x.raster.surface_pitch = 1280;
+    frame622_color_1x.raster.sample_count = 1;
+    frame622_color_1x.raster.depth_test_enabled = true;
+    frame622_color_1x.raster.depth_write_enabled = false;
+    frame622_color_1x.raster.stencil_test_enabled = false;
+    frame622_color_1x.raster.depth_control = 0x00700772u;
+    frame622_color_1x.raster.stencil_refmask = 0x00FFFF00u;
+
+    std::vector<shift::xbox::CapturedVulkanDraw> frame622_draws;
+    frame622_draws.reserve(14);
+    frame622_draws.push_back(frame622_4x_color);
+    frame622_draws.push_back(frame622_depth_only_4x);
+    for (size_t draw_index = 2; draw_index <= 10; ++draw_index) {
+        frame622_draws.push_back(frame622_color_1x);
+    }
+    frame622_draws.push_back(frame622_depth_only_4x);
+    frame622_draws.push_back(frame622_color_1x);
+    frame622_draws.push_back(frame622_color_1x);
+
+    std::string frame622_error;
+    std::vector<uint32_t> frame622_output;
+    const bool frame622_submitted = shift::xbox::submit_captured_vulkan_frame(
+        physical_device, device, queue, queue_family, output_image, output_view,
+        false, 1280, 720, frame622_draws, &frame622_error, &frame622_output,
+        enabled_features.geometryShader, &copy, can_resolve_sample_zero);
+    if (can_resolve_sample_zero) {
+        if (!frame622_submitted || frame622_output.size() != 1280u * 720u ||
+            std::none_of(frame622_output.begin(), frame622_output.end(),
+                         [](uint32_t pixel) {
+                             return (pixel & 0x3FFFFFFFu) != 0;
+                         })) {
+            std::cerr << "frame-622 captured 14-draw target/depth sequence with "
+                         "Copy38 failed in Vulkan: "
+                      << frame622_error << '\n';
+            return 1;
+        }
+    } else if (frame622_submitted ||
+               frame622_error.find("provider-confirmed enabled resolve capability") ==
+                   std::string::npos) {
+        std::cerr << "frame-622 sequence did not fail closed when depth/stencil "
+                     "resolve was unavailable: "
+                  << frame622_error << '\n';
+        return 1;
+    }
+
     auto depth_preserve_draws = mixed_sample_draws;
     // This fixture exercises Vulkan depth resolve in isolation. Keep its
     // pitch pair outside the retail EDRAM alias path verified above.

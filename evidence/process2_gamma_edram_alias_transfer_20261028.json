@@ -66,6 +66,7 @@
   "implementation": {
     "renderer": "the matching mixed-sample Vulkan executor stores the 4x color attachment, transitions it to shader-read layout, and inserts the Vulkan 1.1 multisample alias transfer before the first 1x guest draw",
     "captured_depth_noop": "a depth test with compare ALWAYS, depth writes disabled, and stencil disabled has no depth/stencil attachment effect; the Vulkan pipeline disables this exact no-op state, avoiding a needless depth resolve for the isolated color transition",
+    "synthetic_frame622_ordered_replay": "the renderer regression submits all 14 captured target/depth layouts in order, including the trailing 4x stencil-only draw and final Copy38, using smoke shaders and geometry",
     "format": "R16G16B16A16_UNORM linear intermediate; transfer fetches and writes values directly without an intermediate RGBA8 quantization",
     "scope_guard": "only 1280x720, pitch 640/1280, 4x-to-1x, same-base, same-depth-format RGBA8 gamma targets with 720 identity aliases",
     "fail_closed": "the exact transition is rejected if its Vulkan 1.1 alias-transfer shaders are unavailable",
@@ -78,9 +79,11 @@
       "ctest_passed": 4,
       "ctest_total": 4,
       "validation_errors_observed": 0,
+      "physical_device": "NVIDIA GeForce GTX 950",
       "covered_regressions": [
         "captured-shaped gamma 4x-to-1x alias transfer",
         "captured 1x ALWAYS/no-write/no-stencil color draw matches its depth-disabled baseline without requiring a depth resolve",
+        "all 14 frame-622 target/depth layouts plus Copy38 submitted with provider-confirmed depth/stencil SAMPLE_ZERO resolve",
         "fail-closed behavior when the exact alias-transfer shaders are absent",
         "mixed-sample Copy/Convert and depth resolve controls"
       ]
@@ -114,6 +117,8 @@
   "result": {
     "exact_capture_layout_recognized": true,
     "synthetic_vulkan_alias_transfer_submitted": true,
+    "synthetic_14_draw_copy38_layout_sequence_submitted_after_change": true,
+    "synthetic_14_draw_copy38_readback_nonblack": true,
     "ordered_retail_14_draw_frame_replayed_after_change": false,
     "post_change_retail_readback_captured": false,
     "xenos_pixel_parity_established": false,
@@ -122,6 +127,7 @@
   "limitations": [
     "The available frame-622 presenter and pre-Copy readbacks were produced by the plugin build named in the capture record, before this change; they are not evidence of this transfer's output.",
     "The regression uses synthetic shader/geometry smoke inputs with the captured raster layout. It verifies Vulkan submission, address selection, and fail-closed behavior, not the retail image.",
+    "The full 14-draw regression uses smoke point geometry/shaders and checks only that the readback is non-black. It is not a replay of captured retail vertex/index/resource payloads and does not establish retail pixel parity.",
     "This is a bounded color transfer, not a shared physical EDRAM store. Prior-frame target persistence and general Copy/Convert or format-31 chains remain separate work.",
     "The isolated color regression removes the no-op 1x ALWAYS depth test but keeps later guest depth/stencil uses conservative. The complete frame includes a later 4x stencil-only operation and may require provider-confirmed depth/stencil resolve; parity with Xenos EDRAM depth/stencil sample addressing is unverified.",
     "The Android ARM64 artifact was compiled only. ADB found no device, so Mali execution and a game replay were not performed."
