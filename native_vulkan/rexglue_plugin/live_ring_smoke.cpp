@@ -554,6 +554,21 @@ int main(int argc, char** argv) {
   const char* shader_dump_prefix =
       std::getenv("SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX");
   if (shader_dump_prefix && *shader_dump_prefix) {
+    std::vector<uint32_t> expected_shader_dump_frames;
+    if (const char* frame_text =
+            std::getenv("SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME");
+        frame_text && *frame_text) {
+      char* end = nullptr;
+      const unsigned long frame = std::strtoul(frame_text, &end, 10);
+      if (end == frame_text || *end != '\0' || frame == 0 ||
+          frame > UINT32_MAX) {
+        std::cerr << diagnostics << '\n';
+        return fail("selected shader dump fixture has an invalid frame filter");
+      }
+      expected_shader_dump_frames.push_back(static_cast<uint32_t>(frame));
+    } else {
+      expected_shader_dump_frames = {1u, 2u, 3u};
+    }
     size_t selected_shader_state_count = 0;
     for (size_t offset = 0;
          (offset = diagnostics.find("selected shader state frame=", offset)) !=
@@ -561,17 +576,24 @@ int main(int argc, char** argv) {
          offset += sizeof("selected shader state frame=") - 1u) {
       ++selected_shader_state_count;
     }
-    if (selected_shader_state_count != 3u ||
-        diagnostics.find("selected shader state frame=1 packet=0") ==
-            std::string::npos ||
-        diagnostics.find("selected shader state frame=2 packet=0") ==
-            std::string::npos ||
-        diagnostics.find("selected shader state frame=3 packet=0") ==
-            std::string::npos ||
-        diagnostics.find("color_mask=0x") == std::string::npos ||
+    bool expected_states_logged = true;
+    for (uint32_t frame : expected_shader_dump_frames) {
+      const std::string selected_state =
+          "selected shader state frame=" + std::to_string(frame) +
+          " packet=0";
+      expected_states_logged &=
+          diagnostics.find(selected_state) != std::string::npos;
+    }
+    const std::string first_expected_loop_constants =
+        "selected shader loop constants frame=" +
+        std::to_string(expected_shader_dump_frames.front()) +
+        " packet=0 loaded_mask=0x80";
+    if (selected_shader_state_count != expected_shader_dump_frames.size() ||
+        !expected_states_logged || diagnostics.find("color_mask=0x") ==
+                                       std::string::npos ||
         diagnostics.find("stencil_write_mask=0x") == std::string::npos ||
-        diagnostics.find("selected shader loop constants frame=1 packet=0 "
-                         "loaded_mask=0x80") == std::string::npos ||
+        diagnostics.find(first_expected_loop_constants) ==
+            std::string::npos ||
         diagnostics.find("loop[7]=0xfe0503(count=3,start=5,step=-2)") ==
             std::string::npos) {
       std::cerr << diagnostics << '\n';
@@ -581,7 +603,7 @@ int main(int argc, char** argv) {
       std::ifstream file(path, std::ios::binary);
       return std::vector<uint8_t>(std::istreambuf_iterator<char>(file), {});
     };
-    for (uint32_t frame = 1u; frame <= 3u; ++frame) {
+    for (uint32_t frame : expected_shader_dump_frames) {
       const std::string frame_prefix =
           std::string(shader_dump_prefix) + ".frame" +
           std::to_string(frame) + ".packet0.";
@@ -596,7 +618,8 @@ int main(int argc, char** argv) {
             "repeated selected-frame shader dumps differ from fixture bytecode");
       }
     }
-    std::cout << "selected draw ordinal raw VS/PS dumps match all 3 fixture frames\n";
+    std::cout << "selected draw ordinal raw VS/PS dumps match "
+              << expected_shader_dump_frames.size() << " fixture frame(s)\n";
   }
   const char* texture_dump_prefix =
       std::getenv("SHIFT_NATIVE_VULKAN_DUMP_TEXTURES_PREFIX");

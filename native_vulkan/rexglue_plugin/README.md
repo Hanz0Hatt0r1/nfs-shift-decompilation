@@ -853,6 +853,9 @@ set `SHIFT_NATIVE_VULKAN_DUMP_DRAW_PACKET_INDEX=10` and only
 original shaders for draw ordinal 10 without writing its geometry or textures.
 The ordinal repeats across swaps, so correlate the frame-numbered files with
 the ordered-operation and submit log before attributing a dump to a scene.
+The selected-draw regression checks three repeated ordinal-0 dumps, and a
+separate frame-filter regression checks that selecting frame 2 emits only its
+matching shader-state record and bytecode dump.
 
 When a texture-sign combination is unsupported, the shader diagnostic now
 includes its fetch-constant index and all four decoded channel signs. This

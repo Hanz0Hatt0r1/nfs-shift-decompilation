@@ -223,6 +223,13 @@ if(SHIFT_REXGLUE_NATIVE_BUILD_TESTS)
     ENVIRONMENT
       "SHIFT_NATIVE_VULKAN_DUMP_DRAW_PACKET_INDEX=0;SHIFT_NATIVE_VULKAN_DUMP_GEOMETRY_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/live-ring-geometry-dump;SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/live-ring-shader-dump;SHIFT_NATIVE_VULKAN_DUMP_TEXTURES_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/live-ring-texture-dump;SHIFT_NATIVE_VULKAN_DUMP_TEXTURE_SOURCE_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/live-ring-texture-source-dump;SHIFT_NATIVE_VULKAN_DUMP_TEXTURE_SOURCE_GUEST_ADDRESS=0x09D57000"
   )
+  add_test(NAME rexgpu_shift_native_live_ring_selected_draw_frame_dump_check
+    COMMAND rexgpu_shift_native_live_ring_check $<TARGET_FILE:rexgpu-shift-native>
+  )
+  set_tests_properties(rexgpu_shift_native_live_ring_selected_draw_frame_dump_check PROPERTIES
+    ENVIRONMENT
+      "SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME=2;SHIFT_NATIVE_VULKAN_DUMP_DRAW_PACKET_INDEX=0;SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/live-ring-frame-shader-dump"
+  )
   add_test(NAME rexgpu_shift_native_live_ring_readback_check
     COMMAND rexgpu_shift_native_live_ring_check $<TARGET_FILE:rexgpu-shift-native>
   )
