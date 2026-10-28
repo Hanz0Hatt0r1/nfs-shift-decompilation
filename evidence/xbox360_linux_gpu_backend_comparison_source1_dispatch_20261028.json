@@ -70,7 +70,10 @@
   },
   "first_producer_record_difference_candidate": {
     "caller_lr_guest": "0x823B342C",
+    "candidate_disposition": "not an actionable producer-output mismatch for this observed call",
+    "function_semantics_evidence": "xbox360_linux_sub_823B31A0_producer_path_ghidra_20261028.json",
     "limitation": "The record layout and causal relationship to the later worker wait are not established.",
+    "disposition_basis": "Ghidra/raw-instruction analysis cross-checked against the generated PPC translation shows that with manager+11012 equal to zero, sub_823B31A0 does not dereference the preexisting r4 buffer. It builds a separate stack record and calls sub_823B2AF0. Both paired first calls had counter_before=0 and delta=0, so these buffer snapshots do not demonstrate consumed-input divergence.",
     "producer_call_ordinal": 1,
     "record_words_native": [
       "0x00000000",
