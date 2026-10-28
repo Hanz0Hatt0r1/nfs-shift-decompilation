@@ -10,6 +10,20 @@
     "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
     "plugin_sha256": "07a953e6879c240867ca9ea0a0995ed53a6a92e165ab49cd946a5a99b304ca9e",
     "plugin_source_commit": "f6f0472bc2e86a952b27c120c5b9545453846f01",
+    "p1_run": {
+      "pair_metadata": "/tmp/nfs-shift-p1-gpu-backend-resolvepr2-20261028/pair_metadata.json",
+      "pair_metadata_sha256": "a6bc4411fbbf94c42c4197f7e81be9e112867c13056356a15cb837cbdf724fae",
+      "native_run_metadata": "/tmp/nfs-shift-p1-gpu-backend-resolvepr2-20261028/runs/shift-native-r1/run_metadata.json",
+      "native_run_metadata_sha256": "f6569a163826d8422377c395a32d7cd9f973f4f59ef3967c7d09f7c29e867dcb",
+      "native_wall_clock_utc": [
+        "2026-10-28T01:15:34.928Z",
+        "2026-10-28T01:17:52.902Z"
+      ],
+      "audited_callback_window_utc": [
+        "2026-10-28T01:16:10.567Z",
+        "2026-10-28T01:17:50.056Z"
+      ]
+    },
     "duration_seconds": 137.974,
     "bink_target": {
       "elapsed_seconds": 35.241,
@@ -53,7 +67,7 @@
         "0x823B37B8": 1063
       }
     },
-    "interpretation": "This is a timestamp/order join to a unique continuous PM4 interrupt window. Process 1 records callbacks observed inside the guest wrapper; Process 2 records the outer guest callback and data passed to ExecuteInterrupt. This does not prove callback payload or guest semantic equivalence.",
+    "interpretation": "This is a timestamp/order join to a unique continuous PM4 interrupt window from the P1/P2 replay identified under capture.p1_run and capture.plugin_sha256. It is not the later draw-10 shader replay, which used a different P2 plugin DSO. Process 1 records callbacks observed inside the guest wrapper; Process 2 records the outer guest callback and data passed to ExecuteInterrupt. This does not prove callback payload or guest semantic equivalence.",
     "regression": {
       "test": "native_vulkan/tests/test_audit_pm4_interrupt_join.py::test_captured_source1_interrupt_join_is_internally_consistent",
       "command": "python3 -m unittest native_vulkan.tests.test_audit_pm4_interrupt_join -v",

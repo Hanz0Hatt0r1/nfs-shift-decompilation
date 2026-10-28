@@ -59,9 +59,27 @@ class InterruptJoinTests(unittest.TestCase):
         summary = audit["summary"]
         rows = audit["rows"]
         first_id, last_id = summary["p2_interrupt_id_range"]
+        shader_capture = json.loads(
+            (
+                RETAIL_EVIDENCE.parent
+                / "process2_selected_shader_state_dump_20261028.json"
+            ).read_text()
+        )
 
         self.assertFalse(capture["guest_memory_modified_by_probe"])
         self.assertEqual(capture["ring_trace_malformed_record_count"], 0)
+        self.assertEqual(
+            capture["p1_run"]["native_wall_clock_utc"],
+            ["2026-10-28T01:15:34.928Z", "2026-10-28T01:17:52.902Z"],
+        )
+        self.assertEqual(
+            capture["xex_sha256"],
+            shader_capture["retail_target"]["capture_identity"]["xex_sha256"],
+        )
+        self.assertNotEqual(
+            capture["plugin_sha256"],
+            shader_capture["retail_target"]["capture_identity"]["plugin_sha256"],
+        )
         self.assertEqual(len(rows), summary["joined_rows"])
         self.assertEqual(
             [row["p1_callback_index"] for row in rows], list(range(len(rows)))

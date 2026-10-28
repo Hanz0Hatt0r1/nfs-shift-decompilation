@@ -670,6 +670,13 @@ join and capture hashes are in
 
 ## Process 1 source-1 interrupt join, resolve PR #2 (2026-10-28)
 
+The resolve-provider replay used P2 DSO `07a953e6…b304ca9e` from source
+`f6f0472…3846f01`. Its paired P1 Native run spans 2026-10-28
+01:15:34.928–01:17:52.902 UTC; callback rows in the audit span
+01:16:10.567–01:17:50.056 UTC. This is a different P2 build from the later
+draw-10 shader replay (`d01405cc…d6d90`); those callback counts are not a
+row-for-row comparison.
+
 The resolve-provider replay recorded 1,803 P2 `PM4_INTERRUPT source=1` rows,
 with no malformed ring records. A unique one-to-one timestamp/order audit
 matches 1,063 P1 callback entries to contiguous P2 interrupt IDs 709..1771.
