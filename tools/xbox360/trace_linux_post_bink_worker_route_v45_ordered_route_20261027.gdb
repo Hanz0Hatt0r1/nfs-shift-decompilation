@@ -186,6 +186,22 @@ def active_source1_gpu_dispatch_id(thread=None):
     return stack[-1].get("gpu_dispatch_id") if stack else None
 
 
+def gpu_dispatch_event_fields(thread=None):
+    if thread is None:
+        thread = thread_id()
+    active_dequeues = state["active_dequeues"].get(thread, [])
+    active_producers = state["active_producers"].get(thread, [])
+    parent_dispatch_id = next((dispatch_id for dispatch_id in (
+        active_dequeues[-1].get("parent_gpu_dispatch_id") if active_dequeues else None,
+        active_producers[-1].get("parent_gpu_dispatch_id") if active_producers else None,
+        active_source1_gpu_dispatch_id(thread),
+    ) if dispatch_id is not None), None)
+    return {
+        "gpu_dispatch_id": active_source1_gpu_dispatch_id(thread),
+        "parent_gpu_dispatch_id": parent_dispatch_id,
+    }
+
+
 def remember_queue_dispatch_id(queue, producer_index, record, dispatch_id):
     if not isinstance(dispatch_id, int) or dispatch_id <= 0:
         return False
@@ -679,6 +695,9 @@ class QueueFieldWrite(gdb.Breakpoint):
                 if match:
                     guest_function = "0x" + match.group(1).upper()
                     break
+            thread = thread_id()
+            active_dequeues = state["active_dequeues"].get(thread, [])
+            active_producers = state["active_producers"].get(thread, [])
             emit("queue_field_write", {
                 "field": self.label,
                 "guest_address": self.guest_address,
@@ -687,7 +706,11 @@ class QueueFieldWrite(gdb.Breakpoint):
                 "size": self.size,
                 "before": self.previous,
                 "after": after,
-                "thread": thread_id(),
+                **gpu_dispatch_event_fields(thread),
+                "parent_dequeue_id": active_dequeues[-1].get("id") if active_dequeues else None,
+                "parent_record": active_dequeues[-1].get("slot_value") if active_dequeues else None,
+                "parent_producer_id": active_producers[-1].get("id") if active_producers else None,
+                "thread": thread,
                 "thread_name": thread_name(),
                 "host_pc": host_pc,
                 "host_symbol": host_symbol,
@@ -1354,6 +1377,9 @@ class CounterWrite(gdb.Breakpoint):
         try:
             value = read_be(self.base, self.guest_address)
             self.write_count += 1
+            thread = thread_id()
+            active_dequeues = state["active_dequeues"].get(thread, [])
+            active_producers = state["active_producers"].get(thread, [])
             stack = gdb.execute("bt 4", to_string=True).splitlines()
             emit("counter_write", {
                 "write_index": self.write_count,
@@ -1361,7 +1387,11 @@ class CounterWrite(gdb.Breakpoint):
                 "before": self.previous,
                 "after": value,
                 "signed_delta": ((value - self.previous + 0x80000000) & 0xFFFFFFFF) - 0x80000000,
-                "thread": thread_id(),
+                **gpu_dispatch_event_fields(thread),
+                "parent_dequeue_id": active_dequeues[-1].get("id") if active_dequeues else None,
+                "parent_record": active_dequeues[-1].get("slot_value") if active_dequeues else None,
+                "parent_producer_id": active_producers[-1].get("id") if active_producers else None,
+                "thread": thread,
                 "thread_name": thread_name(),
                 "host_stack": stack[:4],
             })
