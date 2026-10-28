@@ -2328,3 +2328,32 @@ window. No renderer or wait semantics were changed; a timeout or forced
 completion is not justified by this evidence. See
 [`process2_wait_reg_mem_scratch_correlation_20261028.json`](../../evidence/process2_wait_reg_mem_scratch_correlation_20261028.json)
 for capture identities, raw packet words, timings, and remaining evidence gaps.
+
+## Post-Bink scene-gate source=1 correlation (2026-10-28)
+
+In the P1 scene-gate Native run, P2's ring trace records 1,017 source=1 PM4
+interrupts; every record has CPU mask `0x04`, dispatched mask `0x04`, and an
+invoked `0x823B37B8` callback. P1's one source1 callback event is only one
+sample (`sample_calls=1`), not the total callback count. Its dispatch ID
+`0xC93` joins P2 interrupt #1016 at IB `0x0966DD40+11924`, packet 246, with
+rptr/wptr 3380/3383. The callback is recognized and dispatched on CPU2; this
+capture does not show a missing or masked source=1 packet.
+
+The same IB immediately reaches `WAIT_REG_MEM` at byte offset 11972 for
+`0x1B964004 == 0`. It starts with raw `0x01000000` (decoded 1, false), polls
+about 918 times per second, and observes raw zero after 96.446 seconds. While
+waiting, the PM4 worker preserves stream order; after release it drains through
+rptr/wptr 3389/3389. The separate Bink-trigger run also places a source=1
+dispatch immediately before a ref-zero wait, which lasts 79.277 seconds. This
+temporal alignment does not prove the wait caused the guest scene stall.
+
+The scene-gate Native run completed Bink 281/281 but did not reach the input
+gate, made no XAM calls, entered no captured scene functions, and had empty
+worker queues with zero producer events. The declared input profile was not
+delivered to Native, so Xenos scene progress is not a matched-input control.
+No P2 interrupt or WAIT semantic defect is established, and no guest/runtime
+behavior was changed. The earlier alias-watch wait anomaly and the exact run
+identities, hashes, dispatch join, and poll evidence are recorded in
+[`process2_native_interrupt_wait_correlation_20261028.json`](../../evidence/process2_native_interrupt_wait_correlation_20261028.json)
+and
+[`process2_wait_reg_mem_scratch_correlation_20261028.json`](../../evidence/process2_wait_reg_mem_scratch_correlation_20261028.json).
