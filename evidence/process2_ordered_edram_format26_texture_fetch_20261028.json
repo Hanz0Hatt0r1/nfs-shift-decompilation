@@ -168,6 +168,10 @@
     "build_id": "840e83d01bcb5616539c78c7fc53a8d0f467583d",
     "compile_capability": "SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER=1",
     "validation": "plugin CTest 7/7 with VK_LAYER_KHRONOS_validation; provider check reports NVIDIA GTX 950 Vulkan 1.4, create_renderpass2/depth_stencil_resolve enabled, SAMPLE_ZERO=1, GPU-emulation features disabled",
-    "status": "not yet retail-replayed; Process 1 runtime still calls the two-argument provider factory, so its resolve property remains false until it uses the optional overload"
+    "status": "not yet retail-replayed; Process 1 runtime still calls the two-argument provider factory, so its resolve property remains false until it uses the optional overload",
+    "p2_source_commit": "675d3e43",
+    "plugin_path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028/output/librexgpu-shift-native.so",
+    "capability_check_command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation rexgpu_vulkan_resolve_capability_check",
+    "capability_check_result": "passed on NVIDIA GeForce GTX 950, Vulkan 1.4; resolve extension pair enabled, SAMPLE_ZERO=1, GPU-emulation features disabled"
   }
 }
