@@ -2,7 +2,7 @@
   "schema": "shift.process2.depth_stencil_resolve_provider_integration.v1",
   "date": "2026-10-28",
   "p2_branch": "work/process2-xbox-live-ring-20261023",
-  "p2_source_commit": "f6f0472bc2e86a952b27c120c5b9545453846f01",
+  "p2_source_commit": "ec657d411c25d91a03e7a5991c0dc41f50e1af43",
   "sdk_change": {
     "pull_request": "https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/2",
     "source_branch": "work/process2-vulkan-resolve-capability-20261024",
@@ -11,7 +11,8 @@
   },
   "plugin": {
     "path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028/output/librexgpu-shift-native.so",
-    "sha256": "07a953e6879c240867ca9ea0a0995ed53a6a92e165ab49cd946a5a99b304ca9e",
+    "sha256": "d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90",
+    "build_id": "0fb71ebd09a498fc0515de313289b39ccfc22300",
     "build": "Linux x86-64 Release, Clang 22.1.8; built against SDK PR #2 checkout.",
     "build_note": "The local SDK build required -mssse3 for rexcore/src/core/memory.cpp intrinsics; this was passed only to the external build invocation and did not modify tracked source."
   },
@@ -62,7 +63,50 @@
     "No Android build or device run was performed in this check.",
     "No retail pixel parity is claimed."
   ],
-  "next_evidence": "Replay the SDK-PR-2-built P2 DSO once with the existing Process 1 runtime. Verify the P2 plugin logs its own enabled SAMPLE_ZERO capability and observe whether packet 72 advances. Do not modify the separate Xenos provider or count other presenter batches as submission of that segment.",
+  "next_evidence": "Capture original shader bytes for the remaining unresolved draw ordinals using the packet-index selector, then use those retail bytes to extend the confirmed shader/resource subset.",
+  "latest_resolve_pr2_retail_replay": {
+    "capture_directory": "/home/pes/work/nfs-shift-p1-native-resolve-pr2-replay-20261028",
+    "duration_seconds": 137.73,
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "plugin_sha256": "6eeb19b8d1806a46a570fd9279153de2ee62995b4db1667a54c252e6c7a6d887",
+    "plugin_build_id": "840e83d01bcb5616539c78c7fc53a8d0f467583d",
+    "plugin_source_commit": "a942cd2b7e497dee8f3fa7f0c1f0af477794e78b",
+    "provider_sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "provider_capability_probe": {
+      "device": "NVIDIA GeForce GTX 950",
+      "device_api_version": "1.4.312",
+      "depth_stencil_resolve_sample_zero": true,
+      "gpu_emulation_features": "disabled",
+      "probe_sha256": "350730d97a4ef64a226472da34cc69067e268400fbaa873e2f457909b3095ea6"
+    },
+    "ordered_transition": {
+      "log": "runs/shift-native-r1/bin/logs/nfs_shift_001.2.log",
+      "log_sha256": "e7e8a7d13db0a15342095579a036b7dbdca178dc7283546c817f672aeb008099",
+      "ordered_operation_line": 5403,
+      "ordered_operation_line_sha256": "4fa0c4cde226c5c48b29c1f5333f7f27cae7cc1023f87123641c4bf233c4fd5f",
+      "operation_sequence": "24 resolved draws (packet 24..47, draw index 0..23), then Copy/Convert packet 72",
+      "submit_line": 5407,
+      "submit_line_sha256": "17663c63aa818883fedaf6d130de8ffb4b1ee25f8ee9d633f20429e56bc8db0b",
+      "submit": "the same 24 indexed draws were submitted to the Vulkan presenter 8 ms after the operation snapshot",
+      "repeated_successfully": 182
+    },
+    "unresolved_draws": [12, 36, 0, 11],
+    "frontend": {
+      "bink_frames": "281/281 at 42.808 seconds",
+      "final_scene_state": 0,
+      "final_update_count": 0,
+      "input_gate_observed": false
+    },
+    "events_sha256": "c44a91ff17645204e0959fcd0250a5c97ff361cd25051becedfe1716ac791756",
+    "run_metadata_sha256": "e133ccbfa91235d9f970e3f2f04139d102a996fb6562c8ea496c89e44269f29d",
+    "result": "The earlier packet-72 depth/stencil provider-capability failure did not recur. The ordered transition segment containing draw index 10 was submitted successfully; 182 repetitions confirm this exact operation/submission path on the tested Linux GPU.",
+    "limits": [
+      "This confirms ordered packet processing and Vulkan submission, not retail image parity or correctness of the resolved pixels.",
+      "Eight refresh attempts still rejected other captured draws (indices 12, 36, 0, and 11).",
+      "Bink reached its final frame, but the frontend remained at scene state 0 and no input gate was observed.",
+      "This run used Linux NVIDIA, not Android ARM64/Mali."
+    ]
+  },
   "latest_retail_replay": {
     "capture_directory": "/home/pes/work/nfs-shift-p1-native-format26-exact-fix-20261028",
     "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",

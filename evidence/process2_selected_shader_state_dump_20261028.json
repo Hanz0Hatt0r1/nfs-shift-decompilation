@@ -1,62 +1,54 @@
 {
-  "schema": "SHIFT.Process2SelectedShaderStateDump/1",
+  "schema": "shift.process2.selected_shader_state_dump.v1",
   "date": "2026-10-28",
-  "branch": "work/process2-xbox-live-ring-20261023",
-  "commit": "f92ba76bdd5b2676d8da81aa844f4a47ba3890e3",
-  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
-  "implementation": {
-    "selected_frame_environment": "SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME",
-    "shader_dump_environment": "SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX",
-    "shader_files": [
-      ".frameN.packetM.vs.bin",
-      ".frameN.packetM.ps.bin"
-    ],
-    "capture_timing": "raw guest shader bytes and selected raster state are recorded before shader translation can reject a draw",
-    "raster_fields": [
-      "color/depth target bases and formats",
-      "extent, pitch, sample count",
-      "color write mask",
-      "depth test/write",
-      "stencil test/write mask/reference",
-      "depth control"
-    ],
-    "unsupported_texture_sign_diagnostic": "reports fetch-constant index and all four decoded channel signs"
+  "p2_branch": "work/process2-xbox-live-ring-20261023",
+  "p2_source_commit": "ec657d411c25d91a03e7a5991c0dc41f50e1af43",
+  "selector": {
+    "packet_variable": "SHIFT_NATIVE_VULKAN_DUMP_DRAW_PACKET_INDEX",
+    "frame_variable": "SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME",
+    "ordinal_semantics": "Zero-based DRAW_INDX/DRAW_INDX_2 ordinal since the preceding XE_SWAP; repeated ordinals are captured once per matching presenter frame unless a frame filter is set.",
+    "dump_contents": "Original guest VS and PS instruction bytes are saved before translation. Other resource dumps require their own prefixes.",
+    "path_pattern": ".frameN.packetM.vs.bin and .frameN.packetM.ps.bin"
   },
-  "verification": {
-    "linux_native": {
-      "build_directory": "/home/pes/work/.build-process2-p2161-native-vulkan-20261028",
-      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-native-vulkan-20261028 --output-on-failure",
-      "result": "passed 4/4"
-    },
-    "linux_plugin": {
-      "build_directory": "/home/pes/work/.build-process2-p2161-vulkan-plugin-20261027",
-      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
-      "result": "passed 6/6",
-      "selected_draw_dump_regression": "compares saved VS/PS bytes exactly with fixture input and checks raster state diagnostics",
-      "plugin_path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-20261027/output/librexgpu-shift-native.so",
-      "plugin_sha256": "7d4b53a1070eecd92e210417374c3dfe306e5b951f39249a7304dfa3c0cda54b",
-      "build_id": "92269d84a9678c28ed7705eb1eb8b0bab9f618af",
-      "vulkan_minimum": "1.1"
-    },
-    "github_ci": {
-      "passed": [
-        "capture-producer",
-        "coordination",
-        "evidence-fast",
-        "live-memory-dumper",
-        "native",
-        "native-activity-arm64",
-        "python",
-        "vulkan-smoke"
-      ],
-      "skipped": {
-        "retail-startup-regression": "workflow conditions"
-      }
-    }
+  "regression": {
+    "test": "rexgpu_shift_native_live_ring_selected_draw_dump_check",
+    "fixture": "Three successive guest swaps reuse draw ordinal zero.",
+    "assertion": "Three distinct presenter-frame dumps contain the exact original synthetic VS and PS bytes.",
+    "linux_resolve_pr2_ctest": "passed 7/7 with VK_LAYER_KHRONOS_validation",
+    "linux_compatibility_ctest": "passed 6/6 with VK_LAYER_KHRONOS_validation",
+    "native_renderer_ctest": "passed 4/4 with VK_LAYER_KHRONOS_validation"
   },
-  "limitations": [
-    "The v45 retail capture loaded plugin SHA-256 a0026207902f5fd3a0578138d0c0edd8875cecbd98119d33b26a65a4382b5ccf, not this candidate; no fresh retail shader bytes have been captured with this code.",
-    "The live-ring regression uses synthetic fixture shaders and does not establish retail translation or pixel parity.",
-    "adb devices -l reported no connected device; Android runtime execution was not performed."
+  "linux_plugin": {
+    "path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028/output/librexgpu-shift-native.so",
+    "sha256": "d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90",
+    "build_id": "0fb71ebd09a498fc0515de313289b39ccfc22300",
+    "build": "Linux x86-64 Release, provider SDK PR #2 checkout; GPU emulation disabled."
+  },
+  "android_compile": {
+    "path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-android-matched-20261028/plugin-output/librexgpu-shift-natived.so",
+    "sha256": "751ceaf31d75b498f8b2394add510184786a28ff9869b6b6f0cb0881150026b2",
+    "build_id": "a3ec143512f6262310054e391c0b76892847bc8c",
+    "target": "Android API 26, arm64-v8a, NDK r28c; plugin-only build."
+  },
+  "retail_target": {
+    "capture_directory": "/home/pes/work/nfs-shift-p1-native-resolve-pr2-replay-20261028",
+    "same_run_log": "runs/shift-native-r1/bin/logs/nfs_shift_001.2.log",
+    "ordered_transition_log_line": 5403,
+    "successful_submit_log_line": 5407,
+    "submit_number": 116,
+    "draw_ordinal": 10,
+    "environment": {
+      "SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME": "116",
+      "SHIFT_NATIVE_VULKAN_DUMP_DRAW_PACKET_INDEX": "10",
+      "SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX": "/tmp/shift-draw10"
+    },
+    "status": "Selector and builds are ready; retail raw shader capture is pending a replay with this DSO.",
+    "fallback": "If presenter-frame numbering differs on replay, remove SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME to capture every ordinal-10 occurrence and correlate frame filenames with ordered-operation logs."
+  },
+  "limits": [
+    "Synthetic repeated-frame tests validate selector behavior, not retail shader translation.",
+    "No original retail shader bytes have yet been captured with the selector build.",
+    "The Android artifact was compiled only; it was not installed or run on device.",
+    "No retail image parity is claimed."
   ]
 }
