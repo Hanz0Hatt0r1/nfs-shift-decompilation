@@ -23,6 +23,13 @@ struct ResolvedGuestPacket {
     uint32_t source_guest_address = 0;
     size_t source_guest_buffer_byte_length = 0;
     uint32_t nesting_depth = 0;
+    // Immediate INDIRECT_BUFFER command that introduced this stream. A zero
+    // caller depth identifies the root ring batch; its byte offset is relative
+    // to the captured batch snapshot.
+    uint32_t caller_guest_address = 0;
+    size_t caller_packet_byte_offset = 0;
+    uint32_t caller_nesting_depth = 0;
+    uint32_t caller_packet_ordinal = UINT32_MAX;
     uint32_t event_write_snapshot_index = UINT32_MAX;
 };
 

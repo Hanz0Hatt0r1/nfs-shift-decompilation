@@ -39,7 +39,8 @@ public:
         }
 
         ExpandedGuestCommandStream expanded{};
-        if (!append_stream(bytes, byte_length, 0u, 0u, &expanded, error)) {
+        if (!append_stream(bytes, byte_length, 0u, 0u, 0u, 0u, 0u,
+                           UINT32_MAX, &expanded, error)) {
             return false;
         }
         *output = std::move(expanded);
@@ -60,6 +61,10 @@ private:
         size_t byte_length,
         uint32_t source_guest_address,
         uint32_t nesting_depth,
+        uint32_t caller_guest_address,
+        size_t caller_packet_byte_offset,
+        uint32_t caller_nesting_depth,
+        uint32_t caller_packet_ordinal,
         ExpandedGuestCommandStream* output,
         std::string* error) {
         std::vector<PacketSpan> packet_spans;
@@ -71,8 +76,17 @@ private:
             if (output->packets.size() >= kMaximumPacketCount) {
                 return fail("expanded Xbox PM4 packet limit exceeded", error);
             }
-            ResolvedGuestPacket resolved{packet, source_guest_address,
-                                         byte_length, nesting_depth};
+            ResolvedGuestPacket resolved{};
+            resolved.packet = packet;
+            resolved.source_guest_address = source_guest_address;
+            resolved.source_guest_buffer_byte_length = byte_length;
+            resolved.nesting_depth = nesting_depth;
+            resolved.caller_guest_address = caller_guest_address;
+            resolved.caller_packet_byte_offset = caller_packet_byte_offset;
+            resolved.caller_nesting_depth = caller_nesting_depth;
+            resolved.caller_packet_ordinal = caller_packet_ordinal;
+            const uint32_t current_packet_ordinal =
+                static_cast<uint32_t>(output->packets.size());
             if (packet.type == PacketType::Type3 && packet.opcode == 0x58u &&
                 packet.byte_length == 16u) {
                 std::array<uint8_t, 16> packet_snapshot{};
@@ -131,7 +145,8 @@ private:
             active_buffers_.push_back(indirect_buffer);
             const bool appended = append_stream(
                 indirect_bytes, indirect_byte_length, indirect_buffer.guest_address,
-                nesting_depth + 1u, output, error);
+                nesting_depth + 1u, source_guest_address, packet.byte_offset,
+                nesting_depth, current_packet_ordinal, output, error);
             active_buffers_.pop_back();
             if (!appended) return false;
         }

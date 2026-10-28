@@ -2745,6 +2745,23 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 const size_t source_byte_offset = resolved.nesting_depth == 0u
                     ? root_ring_offset
                     : packet.byte_offset;
+                const bool has_caller_packet =
+                    resolved.caller_packet_ordinal != UINT32_MAX;
+                const uint32_t caller_source = !has_caller_packet
+                    ? 0u
+                    : resolved.caller_nesting_depth == 0u
+                        ? ring_guest_address
+                        : resolved.caller_guest_address;
+                const size_t caller_byte_offset =
+                    !has_caller_packet
+                        ? 0u
+                        : resolved.caller_nesting_depth == 0u
+                            ? static_cast<size_t>(
+                                  (static_cast<uint64_t>(read_pointer) *
+                                       sizeof(uint32_t) +
+                                   resolved.caller_packet_byte_offset) %
+                                  ring_byte_length)
+                            : resolved.caller_packet_byte_offset;
                 const auto now_ns = std::chrono::duration_cast<
                     std::chrono::nanoseconds>(
                     std::chrono::steady_clock::now().time_since_epoch()).count();
@@ -2753,6 +2770,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     "monotonic_ns={} batch={} generation={} batch_rptr={} "
                     "batch_wptr={} ring_guest={:08X} packet={} "
                     "source_ib={:08X} source_offset={} depth={} "
+                    "caller_ib={:08X} caller_offset={} caller_depth={} "
+                    "caller_packet={} "
                     "raw_words=[{}] expanded_words=[{}] "
                     "source_bytes_match={} initiator={:08X} "
                     "encoded_address={:08X} guest_physical={:08X} "
@@ -2762,7 +2781,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     event_write_id, now_ns, batch_id, ring_generation,
                     read_pointer, write_pointer, ring_guest_address,
                     packet_ordinal, source_address, source_byte_offset,
-                    resolved.nesting_depth, packet_words.str(),
+                    resolved.nesting_depth, caller_source, caller_byte_offset,
+                    resolved.caller_nesting_depth,
+                    resolved.caller_packet_ordinal, packet_words.str(),
                     expanded_packet_words.str(), source_bytes_match,
                     event.initiator,
                     ReadGuestDword(event_packet_bytes + 8u), event.guest_address,

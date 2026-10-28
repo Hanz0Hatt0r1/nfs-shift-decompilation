@@ -525,7 +525,9 @@ int main() {
             "out-of-range guest ring pointer was accepted");
 
     shift::xbox::GuestRingBatch indirect_root{};
-    indirect_root.bytes.assign(kCapturedIndirectBufferPacket.begin(),
+    indirect_root.bytes = {0x80, 0x00, 0x00, 0x00};
+    indirect_root.bytes.insert(indirect_root.bytes.end(),
+                               kCapturedIndirectBufferPacket.begin(),
                                kCapturedIndirectBufferPacket.end());
     GuestMemoryFixture indirect_memory{};
     indirect_memory.guest_address = 0x0975B660u;
@@ -537,14 +539,19 @@ int main() {
                 &expanded, &error) &&
                 expanded.indirect_buffer_count == 1u &&
                 expanded.indirect_buffer_bytes == 74u * sizeof(uint32_t) &&
-                expanded.packets.size() == 75u &&
-                expanded.packets.front().packet.opcode == 0x3Fu &&
-                expanded.packets.front().nesting_depth == 0u &&
-                expanded.packets[1].packet.type == shift::xbox::PacketType::ZeroNop &&
-                expanded.packets[1].source_guest_address == 0x0975B660u &&
-                expanded.packets[1].source_guest_buffer_byte_length ==
+                expanded.packets.size() == 76u &&
+                expanded.packets[0].packet.type == shift::xbox::PacketType::Type2 &&
+                expanded.packets[1].packet.opcode == 0x3Fu &&
+                expanded.packets[1].nesting_depth == 0u &&
+                expanded.packets[2].packet.type == shift::xbox::PacketType::ZeroNop &&
+                expanded.packets[2].source_guest_address == 0x0975B660u &&
+                expanded.packets[2].source_guest_buffer_byte_length ==
                     74u * sizeof(uint32_t) &&
-                expanded.packets[1].nesting_depth == 1u,
+                expanded.packets[2].nesting_depth == 1u &&
+                expanded.packets[2].caller_guest_address == 0u &&
+                expanded.packets[2].caller_packet_byte_offset == 4u &&
+                expanded.packets[2].caller_nesting_depth == 0u &&
+                expanded.packets[2].caller_packet_ordinal == 1u,
             "captured indirect span was not expanded with its packet provenance");
 
     shift::xbox::ExpandedGuestCommandStream unchanged_expansion{};
