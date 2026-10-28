@@ -2357,3 +2357,16 @@ identities, hashes, dispatch join, and poll evidence are recorded in
 [`process2_native_interrupt_wait_correlation_20261028.json`](../../evidence/process2_native_interrupt_wait_correlation_20261028.json)
 and
 [`process2_wait_reg_mem_scratch_correlation_20261028.json`](../../evidence/process2_wait_reg_mem_scratch_correlation_20261028.json).
+
+## WAIT_REG_MEM host poll pointer diagnostic build (2026-10-28)
+
+For the next P1 capture, the memory `WAIT_REG_MEM` entry and completion logs
+now include `host_poll_word` (`{:p}`) from the already-translated `poll_word`.
+No per-poll output, wait condition, polling interval, or synchronization
+behavior changed. The Native Linux plugin built successfully against the same
+ReXGlue runtime used in the paired captures. The DSO is
+`/home/pes/work/process2-native-wait-pollptr-20261028/plugin-output/librexgpu-shift-native.so`;
+its SHA-256 is `dbdf91c8f83642927d78cf822f5ec7984b91c652270b104615f812ae1396e19b`
+and Build ID is `1dae6b4dc30d8ae21d65d275564d3c874172c8c8`. This build has not
+been replayed in the game. Full source/build identities are in
+[`process2_wait_reg_mem_host_pointer_build_20261028.json`](../../evidence/process2_wait_reg_mem_host_pointer_build_20261028.json).
