@@ -2183,7 +2183,8 @@ depth, or stencil transfer was added. The copy geometry has not been proven to
 cover every pixel in its scissor, so the rectangle map does not authorize a
 clear or transfer. Linux CTest passed 4/4 under
 `VK_LAYER_KHRONOS_validation`, plugin CTest passed 6/6, and the Android
-ARM64/API 26 address-check executable compiled. ADB listed no connected
-device. See
+ARM64/API 26 address-check executable and plugin DSO compiled and linked. The
+DSO is ELF64 AArch64 and links against `librexruntimed.so` and `libvulkan.so`.
+ADB listed no connected device, so no phone runtime was checked. See
 [`process2_ordered_edram_scissor_tile_map_20261028.json`](../../evidence/process2_ordered_edram_scissor_tile_map_20261028.json)
 for the raw capture references, artifact identities, and limits.
