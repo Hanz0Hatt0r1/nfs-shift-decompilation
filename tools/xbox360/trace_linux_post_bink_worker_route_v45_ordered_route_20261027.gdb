@@ -92,6 +92,14 @@ state = {
     "trace_sequence": 0,
     "active_dequeues": {},
     "active_producers": {},
+    "active_source1_callbacks": {},
+    "queue_record_dispatch_ids": {},
+    "gpu_dispatch_id_symbol_available": None,
+    "gpu_dispatch_id_sample_calls": 0,
+    "gpu_dispatch_id_sample_errors": 0,
+    "gpu_dispatch_id_warning_emitted": False,
+    "queue_dispatch_id_links": 0,
+    "queue_dispatch_id_evictions": 0,
     "finishers": [],
     "mapped_hashes": {},
     "guest_base": None,
@@ -140,6 +148,62 @@ def thread_id():
 def thread_name():
     thread = gdb.selected_thread()
     return thread.name if thread else "?"
+
+
+def gpu_dispatch_id_call_expression():
+    return "((unsigned long long (*)()) shift_native_gpu_trace_dispatch_id_v1)()"
+
+
+def sample_gpu_dispatch_id():
+    state["gpu_dispatch_id_sample_calls"] += 1
+    if state["gpu_dispatch_id_symbol_available"] is False:
+        return None
+    try:
+        expression = gpu_dispatch_id_call_expression()
+        if expression is None:
+            state["gpu_dispatch_id_symbol_available"] = False
+            if not state["gpu_dispatch_id_warning_emitted"]:
+                print("WORKER_RING_GPU_DISPATCH_ID_UNAVAILABLE "
+                      "shift_native_gpu_trace_dispatch_id_v1 not resolved")
+                state["gpu_dispatch_id_warning_emitted"] = True
+            return None
+        dispatch_id = int(gdb.parse_and_eval(expression)) & 0xFFFFFFFFFFFFFFFF
+        state["gpu_dispatch_id_symbol_available"] = True
+        return dispatch_id if dispatch_id else None
+    except Exception as exc:
+        state["gpu_dispatch_id_symbol_available"] = False
+        state["gpu_dispatch_id_sample_errors"] += 1
+        if not state["gpu_dispatch_id_warning_emitted"]:
+            print(f"WORKER_RING_GPU_DISPATCH_ID_ERROR {exc}")
+            state["gpu_dispatch_id_warning_emitted"] = True
+        return None
+
+
+def active_source1_gpu_dispatch_id(thread=None):
+    if thread is None:
+        thread = thread_id()
+    stack = state["active_source1_callbacks"].get(thread, [])
+    return stack[-1].get("gpu_dispatch_id") if stack else None
+
+
+def remember_queue_dispatch_id(queue, producer_index, record, dispatch_id):
+    if not isinstance(dispatch_id, int) or dispatch_id <= 0:
+        return False
+    key = (queue, producer_index, record)
+    records = state["queue_record_dispatch_ids"]
+    records.pop(key, None)
+    records[key] = dispatch_id
+    state["queue_dispatch_id_links"] += 1
+    while len(records) > 16384:
+        del records[next(iter(records))]
+        state["queue_dispatch_id_evictions"] += 1
+    return True
+
+
+def take_queue_dispatch_id(queue, consumer_index, record):
+    return state["queue_record_dispatch_ids"].pop(
+        (queue, consumer_index, record), None,
+    )
 
 
 def next_id():
@@ -929,8 +993,16 @@ class EnqueueFinish(gdb.FinishBreakpoint):
                         "slot_after": current["slots"][slot_index],
                         "slots_after": current["slots"],
                     })
+            parent_dispatch_id = self.saved.get("parent_gpu_dispatch_id")
+            for match in matches:
+                remember_queue_dispatch_id(
+                    match["queue"], match["producer_index"], match["record"],
+                    parent_dispatch_id,
+                )
             emit("enqueue", {
                 "id": self.saved["id"],
+                "gpu_dispatch_id": self.saved.get("gpu_dispatch_id"),
+                "parent_gpu_dispatch_id": parent_dispatch_id,
                 "thread": self.saved["thread"],
                 "manager": self.saved["manager"],
                 "record": self.saved["record"],
@@ -972,6 +1044,8 @@ class CallbackEnqueue(gdb.Breakpoint):
                 "candidate_queues": candidate_queues,
                 "before": before,
                 "thread": thread_id(),
+                "gpu_dispatch_id": active_source1_gpu_dispatch_id(),
+                "parent_gpu_dispatch_id": active_source1_gpu_dispatch_id(),
             }
             keep_finisher(EnqueueFinish(gdb.newest_frame(), saved))
         except gdb.error as exc:
@@ -1011,6 +1085,8 @@ class DequeueFinish(gdb.FinishBreakpoint):
                 "id": self.saved["id"],
                 "queue": self.saved["queue"],
                 "slot_value": self.saved["slot_value"],
+                "gpu_dispatch_id": self.saved.get("gpu_dispatch_id"),
+                "parent_gpu_dispatch_id": self.saved.get("parent_gpu_dispatch_id"),
                 "phase": "return",
                 "consumer_before": self.saved["consumer"],
             }
@@ -1038,6 +1114,10 @@ class QueueDequeue(gdb.Breakpoint):
                 return False
             slot_index = tail & 3
             slot_value = read_be(base, queue + 64 + slot_index * 4)
+            parent_dispatch_id = take_queue_dispatch_id(queue, tail, slot_value)
+            active_dispatch_id = active_source1_gpu_dispatch_id()
+            if parent_dispatch_id is None:
+                parent_dispatch_id = active_dispatch_id
             saved = {
                 "id": next_id(),
                 "context": context,
@@ -1047,11 +1127,15 @@ class QueueDequeue(gdb.Breakpoint):
                 "consumer": tail,
                 "slot_index": slot_index,
                 "slot_value": slot_value,
+                "gpu_dispatch_id": active_dispatch_id,
+                "parent_gpu_dispatch_id": parent_dispatch_id,
                 "thread": thread_id(),
                 "known_worker_queue": queue in state["worker_queues"],
             }
             saved["event"] = emit("dequeue", {
                 "id": saved["id"],
+                "gpu_dispatch_id": saved["gpu_dispatch_id"],
+                "parent_gpu_dispatch_id": saved["parent_gpu_dispatch_id"],
                 "phase": "entry",
                 "thread": saved["thread"],
                 "thread_name": thread_name(),
@@ -1117,6 +1201,12 @@ class WorkerCompletion(gdb.Breakpoint):
             ring_queue = ppc_reg(context, 4)
             stream = ppc_reg(context, 5)
             token = read_be(base, stream) if stream else 0
+            active_dequeues = state["active_dequeues"].get(thread_id(), [])
+            active_dispatch_id = active_source1_gpu_dispatch_id()
+            parent_dispatch_id = (
+                active_dequeues[-1].get("parent_gpu_dispatch_id")
+                if active_dequeues else active_dispatch_id
+            )
             saved = {
                 "id": next_id(),
                 "thread": thread_id(),
@@ -1132,10 +1222,10 @@ class WorkerCompletion(gdb.Breakpoint):
                 "worker76": read_be(base, worker + 76),
                 "ring_producer": read_be(base, ring_queue + 56),
                 "ring_consumer": read_be(base, ring_queue + 60),
-                "parent_dequeue_id": (state["active_dequeues"].get(thread_id(), [])[-1]["id"]
-                                      if state["active_dequeues"].get(thread_id()) else None),
-                "parent_record": (state["active_dequeues"].get(thread_id(), [])[-1]["slot_value"]
-                                  if state["active_dequeues"].get(thread_id()) else None),
+                "gpu_dispatch_id": active_dispatch_id,
+                "parent_gpu_dispatch_id": parent_dispatch_id,
+                "parent_dequeue_id": active_dequeues[-1]["id"] if active_dequeues else None,
+                "parent_record": active_dequeues[-1]["slot_value"] if active_dequeues else None,
                 "context": context,
                 "base": base,
             }
@@ -1170,6 +1260,12 @@ class KernelEventCall(gdb.Breakpoint):
                 "thread_name": thread_label,
                 "event": event,
                 "guest_signal_state": read_be(base, event + 4),
+                "gpu_dispatch_id": active_source1_gpu_dispatch_id(),
+                "parent_gpu_dispatch_id": (
+                    state["active_dequeues"].get(thread, [])[-1].get("parent_gpu_dispatch_id")
+                    if state["active_dequeues"].get(thread)
+                    else active_source1_gpu_dispatch_id()
+                ),
             }
             if self.symbol == "KeWaitForSingleObject":
                 state["ke_wait_calls"] += 1
@@ -1308,9 +1404,13 @@ class Worker72Write(gdb.Breakpoint):
                     "id": parent.get("id"),
                     "queue": parent.get("queue"),
                     "record": parent.get("slot_value"),
+                    "gpu_dispatch_id": parent.get("gpu_dispatch_id"),
+                    "parent_gpu_dispatch_id": parent.get("parent_gpu_dispatch_id"),
                     "phase": "active" if active else "previous_return",
                     "consumer_before": parent.get("consumer", parent.get("consumer_before")),
                 } if parent else None),
+                "gpu_dispatch_id": active_source1_gpu_dispatch_id(),
+                "parent_gpu_dispatch_id": parent.get("parent_gpu_dispatch_id") if parent else None,
                 "worker_queue": queue_snapshot(self.base, parent["queue"])
                     if parent and parent.get("queue") else None,
                 "host_stack": gdb.execute("bt 6", to_string=True).splitlines()[:6],
@@ -1373,6 +1473,8 @@ class QueueProducer(gdb.Breakpoint):
                 "id": next_id(),
                 "thread": thread,
                 "thread_name": thread_name(),
+                "gpu_dispatch_id": active_source1_gpu_dispatch_id(),
+                "parent_gpu_dispatch_id": active_source1_gpu_dispatch_id(),
                 "producer_call": state["producer_calls"],
                 "caller_lr": lr,
                 "manager": manager,
@@ -1414,6 +1516,8 @@ class SubmissionRoute(gdb.Breakpoint):
             event = {
                 "producer_id": active[-1]["id"],
                 "producer_call": active[-1]["producer_call"],
+                "gpu_dispatch_id": active[-1].get("gpu_dispatch_id"),
+                "parent_gpu_dispatch_id": active[-1].get("parent_gpu_dispatch_id"),
                 "symbol": self.symbol,
                 "caller_lr": lr,
                 "arguments_r3_to_r8": args,
@@ -1429,6 +1533,24 @@ class SubmissionRoute(gdb.Breakpoint):
             emit("submission_route", event)
         except gdb.error as exc:
             print(f"WORKER_RING_SUBMISSION_ROUTE_ERROR symbol={self.symbol} error={exc}")
+        return False
+
+
+class Source1CallbackFinish(gdb.FinishBreakpoint):
+    def __init__(self, frame, callback_scope):
+        super().__init__(frame, internal=True)
+        self.callback_scope = callback_scope
+
+    def stop(self):
+        thread = self.callback_scope["thread"]
+        stack = state["active_source1_callbacks"].get(thread, [])
+        for index in range(len(stack) - 1, -1, -1):
+            if stack[index]["scope_id"] == self.callback_scope["scope_id"]:
+                del stack[index]
+                break
+        if not stack:
+            state["active_source1_callbacks"].pop(thread, None)
+        release_finisher(self)
         return False
 
 
@@ -1453,8 +1575,19 @@ class Source1Callback(gdb.Breakpoint):
             manager_flags = read_be(base, manager + 10904)
             queue_head_pointer = read_be(base, manager + 0x2A90)
             state["source1_callback_ordinal"] += 1
+            callback_scope = {
+                "scope_id": next_id(),
+                "thread": thread_id(),
+                "gpu_dispatch_id": sample_gpu_dispatch_id(),
+            }
+            finisher = Source1CallbackFinish(gdb.newest_frame(), callback_scope)
+            state["active_source1_callbacks"].setdefault(
+                callback_scope["thread"], [],
+            ).append(callback_scope)
+            keep_finisher(finisher)
             event = {
                 "entry_ordinal": state["source1_callback_ordinal"],
+                "gpu_dispatch_id": callback_scope["gpu_dispatch_id"],
                 "source": source,
                 "manager": manager,
                 "guest_lr": read_le(context + 256, 8) & 0xFFFFFFFF,
@@ -1613,6 +1746,21 @@ for key in ("enqueue_events", "dequeue_events", "completion_events", "producer_e
     print(f"WORKER_RING_TOTAL {key}={len(state[key])}")
 print("WORKER_RING_TOTAL bink_target_polls=%d" % state["bink_target_polls"])
 print("WORKER_RING_TOTAL event_write_shd_packet_events=%d" % len(state["event_write_shd_packet_events"]))
+print("WORKER_RING_GPU_DISPATCH_ID_SUMMARY " + json.dumps({
+    "getter_available": state["gpu_dispatch_id_symbol_available"] is True,
+    "sample_calls": state["gpu_dispatch_id_sample_calls"],
+    "sample_errors": state["gpu_dispatch_id_sample_errors"],
+    "queue_record_links": state["queue_dispatch_id_links"],
+    "queue_record_evictions": state["queue_dispatch_id_evictions"],
+    "source1_callback_records_with_id": sum(
+        event.get("gpu_dispatch_id") is not None
+        for event in state["source1_callback_events"]
+    ),
+    "queue_dequeue_records_with_parent_id": sum(
+        event.get("parent_gpu_dispatch_id") is not None
+        for event in state["dequeue_events"]
+    ),
+}, sort_keys=True))
 final_queues = []
 final_scene_state = None
 if state["guest_base"]:
@@ -1641,6 +1789,21 @@ payload = {
         "first_samples": state["bink_target_samples"],
     },
     "event_write_shd_packet_events": state["event_write_shd_packet_events"],
+    "gpu_dispatch_id_trace": {
+        "getter_available": state["gpu_dispatch_id_symbol_available"] is True,
+        "sample_calls": state["gpu_dispatch_id_sample_calls"],
+        "sample_errors": state["gpu_dispatch_id_sample_errors"],
+        "queue_record_links": state["queue_dispatch_id_links"],
+        "queue_record_evictions": state["queue_dispatch_id_evictions"],
+        "source1_callback_records_with_id": sum(
+            event.get("gpu_dispatch_id") is not None
+            for event in state["source1_callback_events"]
+        ),
+        "queue_dequeue_records_with_parent_id": sum(
+            event.get("parent_gpu_dispatch_id") is not None
+            for event in state["dequeue_events"]
+        ),
+    },
     "manager": state["manager"],
     "worker_queues": sorted(state["worker_queues"]),
     "final_queue_snapshots": final_queues,
