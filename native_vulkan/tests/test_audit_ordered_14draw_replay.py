@@ -1,3 +1,4 @@
+import bisect
 import gzip
 import hashlib
 import json
@@ -211,6 +212,84 @@ class OrderedRetailReplayEvidenceTests(unittest.TestCase):
                 for record in callback_records
             )
         )
+
+        candidates = callbacks["pm4_nearest_timestamp_candidates"]
+        candidate_archive = ROOT / "evidence" / candidates["archive"]
+        candidate_archive_bytes = candidate_archive.read_bytes()
+        self.assertEqual(
+            hashlib.sha256(candidate_archive_bytes).hexdigest(),
+            candidates["archive_sha256"],
+        )
+        candidate_bytes = gzip.decompress(candidate_archive_bytes)
+        self.assertEqual(
+            hashlib.sha256(candidate_bytes).hexdigest(),
+            candidates["uncompressed_sha256"],
+        )
+        candidate_records = [json.loads(line) for line in candidate_bytes.splitlines()]
+        self.assertEqual(len(candidate_records), candidates["records"])
+        interrupt_timestamps = [record["timestamp_epoch_ms"] for record in records]
+        candidate_ordinals = []
+        signed_deltas = []
+        ties = 0
+        for callback, candidate in zip(callback_records, candidate_records):
+            timestamp = callback["wall_clock_epoch_ms"]
+            insertion = bisect.bisect_left(interrupt_timestamps, timestamp)
+            nearest = [
+                index
+                for index in (insertion - 1, insertion)
+                if 0 <= index < len(records)
+            ]
+            nearest_index = min(
+                nearest, key=lambda index: abs(interrupt_timestamps[index] - timestamp)
+            )
+            interrupt = records[nearest_index]
+            delta = interrupt["timestamp_epoch_ms"] - timestamp
+            tie = len(nearest) == 2 and abs(
+                interrupt_timestamps[nearest[0]] - timestamp
+            ) == abs(interrupt_timestamps[nearest[1]] - timestamp)
+            self.assertEqual(candidate["guest_entry_ordinal"], callback["entry_ordinal"])
+            self.assertEqual(
+                candidate["pm4_interrupt_ordinal"], interrupt["ordinal"]
+            )
+            self.assertEqual(candidate["packet_ordinal"], interrupt["packet_ordinal"])
+            self.assertEqual(candidate["pm4_minus_guest_callback_ms"], delta)
+            self.assertEqual(candidate["candidate_tie"], tie)
+            candidate_ordinals.append(interrupt["ordinal"])
+            signed_deltas.append(delta)
+            ties += tie
+
+        multiplicities = {}
+        for ordinal in candidate_ordinals:
+            multiplicities[ordinal] = multiplicities.get(ordinal, 0) + 1
+        multiplicity_counts = {
+            count: sum(value == count for value in multiplicities.values())
+            for count in set(multiplicities.values())
+        }
+        absolute_deltas = sorted(abs(delta) for delta in signed_deltas)
+        first_candidate, last_candidate = candidates[
+            "candidate_interrupt_ordinal_range"
+        ]
+        self.assertTrue(
+            all(left <= right for left, right in zip(candidate_ordinals, candidate_ordinals[1:]))
+        )
+        self.assertEqual(
+            [min(candidate_ordinals), max(candidate_ordinals)],
+            candidates["candidate_interrupt_ordinal_range"],
+        )
+        self.assertEqual(len(multiplicities), candidates["unique_candidate_interrupts"])
+        self.assertEqual(multiplicity_counts, {1: 469, 2: 134})
+        self.assertEqual(
+            last_candidate - first_candidate + 1 - len(multiplicities),
+            candidates["interrupts_without_candidate_in_range"],
+        )
+        self.assertEqual(ties, candidates["candidate_ties"])
+        self.assertEqual(
+            [min(signed_deltas), max(signed_deltas)], candidates["signed_delta_ms_range"]
+        )
+        self.assertEqual(absolute_deltas[len(absolute_deltas) // 2], 8)
+        self.assertEqual(absolute_deltas[-1], candidates["absolute_delta_ms_max"])
+        self.assertEqual(sum(delta <= 50 for delta in absolute_deltas), 735)
+        self.assertIn("do not establish semantic", candidates["interpretation"])
         self.assertFalse(callbacks["joined_one_to_one_with_pm4_interrupts"])
         self.assertEqual(trace["trace_capture_status"], "partial_log_recovery")
 

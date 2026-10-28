@@ -622,9 +622,14 @@ partial GDB event recovery retained 737 nested source-1 guest callback entries
 (303 at `0x823A4758`, 434 at `0x823B8C60`), preserved verbatim in a separate
 [`callback JSONL.gz`](../evidence/process2_ordered_14draw_copy38_frame622_source1_guest_callbacks.jsonl.gz).
 Those callback entries are recorded separately: this capture does not establish
-a one-to-one join with the outer PM4 interrupt records. The trace, pointer
-ranges, dispatch identity, callback sequence and limitation are covered by the
-ordered replay regression.
+a one-to-one join with the outer PM4 interrupt records. A separate
+[`timestamp-nearest candidate map`](../evidence/process2_ordered_14draw_copy38_frame622_source1_callback_nearest_pm4_candidates.jsonl.gz)
+retains the nearest packet ordinal and ring pointers for each callback: 735 of
+737 candidates are within 50 ms, and the candidate ordinals are nondecreasing.
+The heuristic maps to 603 distinct interrupts (134 candidates share an
+interrupt; 133 interrupts in the candidate span have none). It is useful for
+triage, but is not proof of callback semantics or dispatch identity. The trace,
+candidate map and limits are checked by the ordered replay regression.
 
 ### Captured format-26 Copy/Convert texture fetch (2026-10-28)
 
