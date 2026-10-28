@@ -158,6 +158,20 @@ class WaitWordWatchTests(unittest.TestCase):
         self.assertFalse(probe["modifies_guest_state"])
         self.assertIn("source0_callback_events", self.trace)
 
+    def test_p2_vblank_timing_plugin_is_pinned_and_trace_only(self) -> None:
+        import json
+
+        evidence = json.loads(JOIN_EVIDENCE.read_text(encoding="utf-8"))
+        candidate = evidence["next_capture_source0_timing_plugin_candidate"]
+        self.assertFalse(candidate["used_in_this_capture"])
+        self.assertEqual(candidate["source_commit"], "96169b712c1edb679b9309b54efc8ff7ff17b613")
+        self.assertEqual(candidate["linux_x86_64_plugin"]["sha256"],
+                         "27f44ab0437b8030967522746618ad43f3c251b4e031a750b22d8821ffb061f6")
+        self.assertEqual(candidate["source0_trace_fields"], [
+            "tick_lag_intervals", "dispatch_gap_ns", "dispatch_elapsed_ns",
+        ])
+        self.assertIn("no VBlank or interrupt behavior change", candidate["change_from_prior_plugin"])
+
     def test_next_xenos_comparison_artifact_matches_the_paired_capture(self) -> None:
         import json
 
