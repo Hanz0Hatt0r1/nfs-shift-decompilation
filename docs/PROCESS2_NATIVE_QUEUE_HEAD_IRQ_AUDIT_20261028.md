@@ -96,7 +96,7 @@ The updated logger was built from source commit `7aa414ab9e246765220ae802d8c2b25
 
 An Android ARM64 compile-only artifact is at `/home/pes/work/process2-wait-regmem-shutdown-aware-7aa414ab/android-arm64/librexgpu-shift-natived.so`, SHA-256 `8cb8fe68a55708acd7c17d3b9024e9450e69c230bf26a8c531d96f345f1b3a8f`, Build ID `845cd69356797dbe3cfd32237d28a802a6778426`. It targets API 26 with NDK r28c and the compatible ReXGlue v0.10.0 Android SDK snapshot. It was not run on a device and was not built against the Linux retail-lwsync SDK.
 
-Verification on this source passed 2/2 plugin CTests (`rexgpu_shift_native_factory_check`, `rexgpu_shift_native_live_ring_write_trace_check`), 2/2 guest-ring/draw-input CTests, and 13 Python auditor/interrupt-join tests. The build identities and commands are recorded in the adjacent external artifact `manifest.json`. The 420-second WAIT observation above predates these binaries; no runtime conclusion is attributed to the new logger until a fresh run captures its records.
+Verification on this source passed 2/2 plugin CTests (`rexgpu_shift_native_factory_check`, `rexgpu_shift_native_live_ring_write_trace_check`), 2/2 guest-ring/draw-input CTests, and 13 Python auditor/interrupt-join tests. The build identities and commands are recorded in the adjacent external artifact `manifest.json`. The 420-second WAIT observation above predates these binaries; the 660-second run below captures the entry and completion records from the updated logger.
 
 ## Reproduced long WAIT_REG_MEM with completion
 
@@ -109,3 +109,11 @@ The P1 callback ID 3689 joins to P2 dispatch ID `0xE69` / PM4_INTERRUPT #633, so
 Across this run, EVENT_WRITE_SHD event IDs `0..2297` are complete with no gaps. The 1,146 writes to software head `0x17AF4000` all advance by `+2`; there are no source-byte mismatches, head discontinuities, or regressions. The run ends at head 2293, before 3381, so it neither reproduces nor explains the earlier `3381→3375` rollback. It confirms the exact interrupt-to-callback join and a long wait that eventually released, but does not identify who wrote the wait word or restore the missing guest queue completion.
 
 The raw `run_metadata.json` contains a mistyped `p2_source_commit` because the capture command was passed an incorrect environment override. The compact report and frozen artifact manifest correct it to `7aa414ab9e246765220ae802d8c2b25f7f344e04`, verified with `git rev-parse 7aa414ab` and the DSO's SHA-256/Build ID. The raw metadata is preserved unchanged in the archive.
+
+## Log late WAIT_REG_MEM value changes
+
+Commit `04479dc0a595442033163fad1550c8bb3f371c64` makes `SHIFT_NATIVE_VULKAN_TRACE_RING=1` log memory-value changes even after the first eight periodic samples. It adds no polling and changes no WAIT_REG_MEM or EVENT_WRITE_SHD semantics. The frozen Linux x86-64 build is `/home/pes/work/process2-wait-regmem-value-change-04479dc/linux-x86_64/librexgpu-shift-native.so`, SHA-256 `e5f5e955494c82d0dfbf70707c493183fd82fbc7db67d63053ce1f4f3bbfb0a3`, Build ID `03dde9b89959a918813cc3f9f23263c2bfce4443`.
+
+The matching Android ARM64 compile-only build is `/home/pes/work/process2-wait-regmem-value-change-04479dc/android-arm64/librexgpu-shift-natived.so`, SHA-256 `269a8c10ac65167cf298afc954c0107a4e3a035c2114aa6d1704d5ec52ea78f4`, Build ID `ff08bbe4c5008d9d1660a846853f6383c0a7cd13`, API 26 / NDK r28c / compatible v0.10 Android SDK snapshot. It was not executed on a device. Both builds passed the same 4 targeted CTests and 13 Python regressions listed above. Full artifact identities are in `/home/pes/work/process2-wait-regmem-value-change-04479dc/manifest.json`.
+
+The 660-second capture above used the previous logger build from commit `7aa414ab9e246765220ae802d8c2b25f7f344e04`; it does not contain the later value-change record from this revision. A new retail run is still required to capture that log and identify the writer of `0x1B964004`.
