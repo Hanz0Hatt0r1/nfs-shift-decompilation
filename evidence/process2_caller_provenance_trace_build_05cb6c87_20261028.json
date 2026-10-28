@@ -2,6 +2,7 @@
   "schema": "shift.process2.caller-provenance-build.v1",
   "captured_on": "2026-10-28",
   "source_commit": "05cb6c878b38d84e8867a1b477306b7edcea0dfd",
+  "verification_commit": "7584efa2",
   "scope": "Diagnostic provenance only; no PM4 ordering or execution semantics changed.",
   "trace_fields": [
     "caller_ib",
@@ -34,7 +35,10 @@
   },
   "checks": {
     "shift_xbox_guest_ring_check": "passed (1/1)",
-    "rexgpu_shift_native_live_ring_write_trace_check": "passed (1/1)",
+    "rexgpu_shift_native_live_ring_write_trace_check": {
+      "result": "passed (1/1)",
+      "assertion": "The emitted EVENT_WRITE_SHD row names the root ring as caller_ib, with caller_offset=0, caller_depth=0, and caller_packet=0."
+    },
     "rexgpu_shift_native_live_ring_check": {
       "result": "failed before presenter submission",
       "reason": "The fixture contains unresolved draw packet 2 and reports that the live PM4 fixture did not reach Vulkan presenter submission."
