@@ -704,8 +704,11 @@ int main(int argc, char** argv) {
   if (ring_trace_enabled &&
       (diagnostics.find(
            "ring trace EVENT_WRITE_SHD event=0 monotonic_ns=") ==
-           std::string::npos ||
+       std::string::npos ||
        diagnostics.find("source_ib=00030000 source_offset=") ==
+           std::string::npos ||
+       diagnostics.find(
+           "caller_ib=00010000 caller_offset=0 caller_depth=0 caller_packet=0") ==
            std::string::npos ||
        diagnostics.find("source_bytes_match=true") == std::string::npos ||
        diagnostics.find("value_mode=literal") == std::string::npos)) {
