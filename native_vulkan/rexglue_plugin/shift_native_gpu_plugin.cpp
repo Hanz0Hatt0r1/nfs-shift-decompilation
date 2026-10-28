@@ -69,6 +69,7 @@ constexpr uint32_t kCoherBaseHostRegister = 0x0A30u;
 constexpr uint32_t kCoherStatusHostRegister = 0x0A31u;
 constexpr uint32_t kCoherStatusHostDirty = 0x80000000u;
 constexpr uint32_t kWaitPollWordGuestAddress = 0x1B964004u;
+constexpr uint32_t kWaitPollWordVirtualAliasAddress = 0xFB963004u;
 constexpr uint32_t kVgtEventInitiatorRegister =
     rex::graphics::XE_GPU_REG_VGT_EVENT_INITIATOR;
 constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
@@ -88,6 +89,11 @@ struct GuestWriteProvenance {
   uint32_t packet_offset = UINT32_MAX;
   uint32_t packet_type = UINT32_MAX;
   uint32_t packet_opcode = UINT32_MAX;
+  uint32_t interrupt_source = UINT32_MAX;
+  uint32_t interrupt_cpu = UINT32_MAX;
+  uint32_t callback = 0;
+  uint32_t callback_data = 0;
+  uint32_t guest_thread_id = 0;
 };
 
 std::atomic<uint64_t> next_gpu_dispatch_id{1};
@@ -790,37 +796,103 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     void* translated_address = nullptr;
   };
 
+  struct WaitPollWordSample {
+    const void* physical_host = nullptr;
+    const void* virtual_alias_host = nullptr;
+    uint32_t virtual_alias_physical = UINT32_MAX;
+    uint32_t physical_value = UINT32_MAX;
+    uint32_t virtual_alias_value = UINT32_MAX;
+  };
+
+  WaitPollWordSample SampleWaitPollWordAliases() const {
+    WaitPollWordSample sample{};
+    if (!memory_) return sample;
+    auto* physical_word = memory_->TranslatePhysical<uint32_t*>(
+        kWaitPollWordGuestAddress);
+    sample.physical_host = physical_word;
+    if (physical_word) {
+      const uint32_t raw = __atomic_load_n(physical_word, __ATOMIC_ACQUIRE);
+      sample.physical_value = rex::graphics::xenos::GpuSwap(
+          raw, rex::graphics::xenos::Endian::k8in32);
+    }
+    sample.virtual_alias_physical =
+        memory_->GetPhysicalAddress(kWaitPollWordVirtualAliasAddress);
+    // Only dereference the E-view when ReXGlue resolves it to the watched
+    // physical dword; the returned host pointer may be a distinct alias.
+    if (sample.virtual_alias_physical == kWaitPollWordGuestAddress) {
+      auto* virtual_word = memory_->TranslateVirtual<uint32_t*>(
+          kWaitPollWordVirtualAliasAddress);
+      sample.virtual_alias_host = virtual_word;
+      if (virtual_word) {
+        const uint32_t raw = __atomic_load_n(virtual_word, __ATOMIC_ACQUIRE);
+        sample.virtual_alias_value = rex::graphics::xenos::GpuSwap(
+            raw, rex::graphics::xenos::Endian::k8in32);
+      }
+    }
+    return sample;
+  }
+
   void TraceWaitPollWordWrite(const char* writer, uint32_t guest_address,
                               const void* destination, uint32_t before,
                               uint32_t after, uint32_t register_index,
                               uint32_t register_value,
-                              const GuestWriteProvenance* provenance = nullptr) {
+                              const GuestWriteProvenance* provenance = nullptr,
+                              const char* observed_alias = "physical") {
     auto* poll_word = memory_->TranslatePhysical<uint32_t*>(
         kWaitPollWordGuestAddress);
     if (destination != poll_word && guest_address != kWaitPollWordGuestAddress) {
       return;
     }
+    if (before == after) return;
 
-    static std::atomic<uint32_t> poll_word_write_log_count{0};
+    static std::atomic<uint32_t> clear_log_count{0};
+    static std::atomic<uint32_t> set_log_count{0};
+    static std::atomic<uint32_t> other_transition_log_count{0};
+    std::atomic<uint32_t>* transition_counter = &other_transition_log_count;
+    uint32_t transition_limit = 16u;
+    const char* transition = "other";
+    if (before == 1u && after == 0u) {
+      transition_counter = &clear_log_count;
+      transition_limit = 64u;
+      transition = "1_to_0";
+    } else if (before == 0u && after == 1u) {
+      transition_counter = &set_log_count;
+      transition_limit = 8u;
+      transition = "0_to_1";
+    }
     const uint32_t log_index =
-        poll_word_write_log_count.fetch_add(1, std::memory_order_relaxed);
-    if (log_index >= 64u) return;
+        transition_counter->fetch_add(1, std::memory_order_relaxed);
+    if (log_index >= transition_limit) return;
     const GuestWriteProvenance empty{};
     const GuestWriteProvenance& context = provenance ? *provenance : empty;
+    const WaitPollWordSample aliases = SampleWaitPollWordAliases();
+    std::ostringstream host_thread;
+    host_thread << std::this_thread::get_id();
     REXLOG_INFO(
-        "shift-native: watched WAIT_REG_MEM word write #{} writer={} "
-        "guest={:08X} host={:p} logical={:08X}->{:08X} "
+        "shift-native: watched WAIT_REG_MEM transition={} #{} writer={} "
+        "guest={:08X} observed_alias={} observed_host={:p} logical={:08X}->{:08X} "
+        "physical_host={:p} physical_now={:08X} "
+        "virtual_e_guest={:08X} virtual_e_pa={:08X} virtual_e_host={:p} "
+        "virtual_e_now={:08X} "
         "register_index={:08X} register_value={:08X} "
         "origin={} generation={} batch={} batch_rptr={} batch_wptr={} ring_guest={:08X} "
         "source_ib={:08X} depth={} packet={} packet_offset={} "
-        "packet_type={} packet_opcode={:02X} dispatch_id={:016X}",
-        log_index, writer, guest_address, destination, before, after,
+        "packet_type={} packet_opcode={:02X} dispatch_id={:016X} "
+        "interrupt_source={} cpu={} callback={:08X} callback_data={:08X} "
+        "guest_thread_id={:08X} host_thread={}",
+        transition, log_index, writer, guest_address, observed_alias,
+        destination, before, after, aliases.physical_host,
+        aliases.physical_value, kWaitPollWordVirtualAliasAddress,
+        aliases.virtual_alias_physical, aliases.virtual_alias_host,
+        aliases.virtual_alias_value,
         register_index, register_value, context.writer, context.generation,
         context.batch_id,
         context.batch_rptr, context.batch_wptr, context.ring_guest,
         context.source_ib, context.nesting_depth, context.packet_ordinal,
         context.packet_offset, context.packet_type, context.packet_opcode,
-        context.dispatch_id ? context.dispatch_id : active_gpu_dispatch_id);
+        context.dispatch_id ? context.dispatch_id : active_gpu_dispatch_id,
+        context.interrupt_source, context.interrupt_cpu, context.callback,
+        context.callback_data, context.guest_thread_id, host_thread.str());
   }
 
   static uint32_t ReadRegisterThunk(void*, void* context, uint32_t address) {
@@ -1973,7 +2045,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                               rex::system::XHostThread* expected_thread,
                               GuestInterruptDispatchTrace* trace = nullptr,
                               bool trace_stages = false,
-                              uint32_t packet_trace_index = 0) {
+                              uint32_t packet_trace_index = 0,
+                              const GuestWriteProvenance* packet_provenance = nullptr) {
     if (trace_stages) {
       REXLOG_INFO("shift-native: ring trace guest interrupt dispatch begin "
                   "packet_trace=#{} dispatch_id={:016X} source={} cpu={} "
@@ -2016,8 +2089,49 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   packet_trace_index, dispatch_id, source, cpu, callback,
                   callback_data);
     }
+    // Guest CPU stores bypass the graphics plugin's write handlers. Sampling
+    // both known aliases around this synchronous callback observes changes
+    // delivered during the callback without installing memory-page hooks.
+    const WaitPollWordSample poll_word_before = SampleWaitPollWordAliases();
     ScopedGpuDispatchId dispatch_scope(dispatch_id);
     function_dispatcher_->ExecuteInterrupt(thread->thread_state(), callback, args, 2);
+    const WaitPollWordSample poll_word_after = SampleWaitPollWordAliases();
+    const bool physical_changed =
+        poll_word_before.physical_value != poll_word_after.physical_value;
+    const bool virtual_alias_changed =
+        poll_word_before.virtual_alias_physical == kWaitPollWordGuestAddress &&
+        poll_word_after.virtual_alias_physical == kWaitPollWordGuestAddress &&
+        poll_word_before.virtual_alias_value != poll_word_after.virtual_alias_value;
+    if (physical_changed || virtual_alias_changed) {
+      GuestWriteProvenance provenance =
+          packet_provenance ? *packet_provenance : GuestWriteProvenance{};
+      provenance.writer = packet_provenance ? packet_provenance->writer
+                                            : "vblank callback";
+      provenance.dispatch_id = dispatch_id;
+      provenance.interrupt_source = source;
+      provenance.interrupt_cpu = cpu;
+      provenance.callback = callback;
+      provenance.callback_data = callback_data;
+      provenance.guest_thread_id = thread->thread_id();
+      if (physical_changed) {
+        const bool both_aliases_changed =
+            virtual_alias_changed &&
+            poll_word_before.physical_value == poll_word_before.virtual_alias_value &&
+            poll_word_after.physical_value == poll_word_after.virtual_alias_value;
+        TraceWaitPollWordWrite(
+            "guest interrupt callback observed", kWaitPollWordGuestAddress,
+            poll_word_before.physical_host, poll_word_before.physical_value,
+            poll_word_after.physical_value, UINT32_MAX, UINT32_MAX, &provenance,
+            both_aliases_changed ? "physical+virtual_e" : "physical");
+      } else {
+        TraceWaitPollWordWrite(
+            "guest interrupt callback observed", kWaitPollWordGuestAddress,
+            poll_word_before.virtual_alias_host,
+            poll_word_before.virtual_alias_value,
+            poll_word_after.virtual_alias_value, UINT32_MAX, UINT32_MAX,
+            &provenance, "virtual_e");
+      }
+    }
     if (trace_stages) {
       REXLOG_INFO("shift-native: ring trace guest interrupt execute return "
                   "packet_trace=#{} dispatch_id={:016X} source={} cpu={} "
@@ -4009,6 +4123,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     resolved.source_guest_address, packet.byte_offset,
                     raw_dwords.str(), cpu_mask, dispatch_id);
               }
+              packet_write_provenance.writer = "PM4_INTERRUPT";
               std::array<GuestInterruptDispatchTrace, 6> callback_trace{};
               try {
                 for (uint32_t cpu = 0; cpu < 6u; ++cpu) {
@@ -4017,7 +4132,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                                              ring_host_worker_.get(),
                                              &callback_trace[cpu],
                                              trace_interrupt_record,
-                                             trace_index)) {
+                                             trace_index,
+                                             &packet_write_provenance)) {
                     ++dispatched_interrupt_callbacks;
                     dispatched_cpu_mask |= 1u << cpu;
                   }
