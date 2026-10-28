@@ -265,6 +265,11 @@
       "dispatch_gap_ns",
       "dispatch_elapsed_ns"
     ],
+    "interpretation_guide": {
+      "long_dispatch_elapsed_ns": "The synchronous DispatchGuestInterrupt call took a long time. Match its dispatch ID to the P1 guest callback entry/return probe to test whether time was spent in the guest wrapper.",
+      "long_dispatch_gap_ns_and_high_tick_lag": "The VBlank worker reached its next dispatch late and had missed intervals to catch up. This localizes delay before dispatch but does not by itself prove OS descheduling.",
+      "wait_word_correlation": "A wait-word write observed near dispatch return is temporal correlation only; the hardware write watch and writer stack remain the evidence needed to identify the writer."
+    },
     "change_from_prior_plugin": "Trace-only timing fields around source=0 DispatchGuestInterrupt; no VBlank or interrupt behavior change.",
     "verification": {
       "linux_build": "passed",
