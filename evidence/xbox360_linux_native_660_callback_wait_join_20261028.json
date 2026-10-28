@@ -222,6 +222,7 @@
     "wait_word_address": "0x1B964004",
     "wait_word_value": "0x00000001",
     "selection": "At most one sampled source-0 callback per second while the armed wait word equals 1.",
+    "xenos_selection": "At most one sampled source-0 callback per second, independent of the Native-only wait-word watch.",
     "captures": [
       "Guest callback dispatch ID and entry ordinal",
       "Callback entry and return elapsed times",
@@ -232,6 +233,7 @@
     ],
     "max_tracked_callbacks_per_second": 1,
     "modifies_guest_state": false,
+    "pairing_note": "Both Native and Xenos traces can record selected source-0 guest callback durations; Xenos wait-word values may be unavailable and are recorded as null.",
     "interpretation_limit": "A sampled callback duration can show that a callback remained active across a delay. No tracked callback during a gap is consistent with host descheduling or a delay before callback entry. GDB breakpoints can perturb timing, and this probe does not identify the guest or device writer of the wait word."
   },
   "next_capture_native_plugin_candidate": {
