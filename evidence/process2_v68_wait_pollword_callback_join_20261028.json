@@ -1,0 +1,148 @@
+{
+  "schema": "shift.process2.v68_wait_pollword_callback_join.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "capture": {
+    "root": "/home/pes/work/nfs-shift-p1-v68-native-pollword-four-alias-20261028",
+    "status_at_snapshot": "active; early joined event recorded, final aggregates not yet available",
+    "elapsed_seconds_at_snapshot": 260.518,
+    "same_retail_inputs_as_v66": true,
+    "identity": {
+      "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+      "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+      "native_plugin_sha256": "f213f4ca9b679660e18e17b68aa1cc6f64667388c8f0375ecd80b245db13f1c9",
+      "native_plugin_build_id": "c70bfffdc0ec57c5db33b347749f4c25fbc70ef2",
+      "native_plugin_source_commit": "aa3d2c770e27869655207614c8690f6b51b48c47"
+    }
+  },
+  "target_and_aliases": {
+    "guest_physical_word": "0x1B964004",
+    "physical_host": "0x21B964004",
+    "initial_raw_value_all_watches": "0x00000000",
+    "armed_host_aliases": {
+      "physical_membase": "0x21B964004",
+      "virtual_a": "0x1BB964004",
+      "virtual_c": "0x1DB964004",
+      "virtual_e": "0x1FB963004"
+    },
+    "verified_virtual_e_mapping": {
+      "guest_virtual": "0xFB963004",
+      "resolves_to_guest_physical": "0x1B964004",
+      "host_alias": "0x1FB963004"
+    },
+    "watch_arm_log": "gdb.log:591-594"
+  },
+  "first_callback_interval_observation_and_instruction_watch": {
+    "set": {
+      "timestamp_local": "2026-10-28 22:11:23.662",
+      "log": "bin/logs/nfs_shift_001.3.log:1498",
+      "writer": "ApplyScratchRegisterWrite",
+      "packet": {
+        "type": 0,
+        "ordinal": 96,
+        "byte_offset": 1172,
+        "register_index": "0x0579",
+        "register": "SCRATCH_REG1",
+        "value": "0x00000001"
+      },
+      "guest_word_value": "0x00000000 -> 0x00000001",
+      "ring": {
+        "guest_base": "0x09752580",
+        "generation": 1,
+        "batch": 3,
+        "rptr": 28,
+        "wptr": 31,
+        "source_ib": "0x095D0120",
+        "depth": 1
+      }
+    },
+    "p2_source1_callback_interval_observation": {
+      "timestamp_local": "2026-10-28 22:11:23.664",
+      "log": "bin/logs/nfs_shift_001.3.log:1519",
+      "observation": "word differs across synchronous ExecuteInterrupt boundary; this is an interval sample, not an instruction-level writer attribution",
+      "guest_word_value": "0x00000001 -> 0x00000000",
+      "observed_aliases": ["physical", "virtual_e"],
+      "ring": {
+        "guest_base": "0x09752580",
+        "generation": 1,
+        "batch": 3,
+        "rptr": 28,
+        "wptr": 31,
+        "source_ib": "0x095D0120",
+        "depth": 1,
+        "packet": 104,
+        "byte_offset": 1304,
+        "packet_type": 3,
+        "opcode": "0x54"
+      },
+      "interrupt": {
+        "source": 1,
+        "dispatch_id": "0x3F9",
+        "cpu": 2,
+        "callback": "0x823B37B8",
+        "data": "0xB7365F00",
+        "guest_thread_id": 3,
+        "host_thread_id_string": "140736787904192"
+      }
+    },
+    "separate_p1_instruction_level_watch_pair": {
+      "log": "gdb.log:639",
+      "elapsed_seconds": 19.063,
+      "timestamp_local": "2026-10-28 22:11:23.911",
+      "alias": "virtual_e",
+      "host_address": "0x1FB963004",
+      "guest_word_value": "0x00000001 -> 0x00000000",
+      "preceding_guest_set": {
+        "timestamp_local": "2026-10-28 22:11:23.878",
+        "guest_word_value": "0x00000000 -> 0x00000001"
+      },
+      "guest_writer": "sub_823A4640 + 1058",
+      "gdb_thread": "SHIFT Native VS",
+      "guest_stack": [
+        "sub_823A4640 + 1058",
+        "sub_823B37B8",
+        "FunctionDispatcher::Execute",
+        "FunctionDispatcher::ExecuteInterrupt",
+        "ShiftNativeGraphicsSystem::DispatchGuestInterrupt"
+      ],
+      "dispatch_id_in_gdb_event": null
+    },
+    "join_status": {
+      "status": "not yet joined to dispatch 0x3F9",
+      "reason": "P2 observed 1-to-0 at 22:11:23.664 inside the source=1 interval; the instruction-level GDB clear occurred at 22:11:23.911, after a later GDB-observed 0-to-1 at 22:11:23.878. The GDB record has no dispatch id.",
+      "confirmed_separately": [
+        "P2 observed a 1-to-0 word change inside source=1 ExecuteInterrupt dispatch 0x3F9.",
+        "P1 observed sub_823A4640 + 1058 perform a 1-to-0 guest write through virtual-E on the callback stack for 0x823B37B8."
+      ],
+      "pending": "Determine which exact interrupt dispatch contains the 22:11:23.911 guest store; do not attribute it to dispatch 0x3F9 yet."
+    }
+  },
+  "separate_source0_clears": [
+    {
+      "timestamp_local": "2026-10-28 22:11:23.709",
+      "log": "bin/logs/nfs_shift_001.3.log:1667",
+      "source": 0,
+      "dispatch_id": "0x3FD",
+      "cpu": 2,
+      "callback": "0x823B37B8",
+      "guest_word_value": "0x00000001 -> 0x00000000",
+      "classification": "vblank/source=0 callback transition; separate from the source=1 observation and the later unjoined GDB instruction event"
+    }
+  ],
+  "observations_so_far": {
+    "transition_log_rows_present_in_rotated_logs_at_inspection": 72,
+    "final_aggregate": "pending capture completion",
+    "p1_reported_run_status": "still running when this early event was sent"
+  },
+  "semantics": {
+    "guest_or_renderer_semantics_changed": false,
+    "wait_or_synchronization_semantics_changed": false,
+    "evidence_classification": "original retail execution; not synthetic renderer evidence"
+  },
+  "limitations": [
+    "This is an early event from an active v68 capture. It does not include final counts, stop reason, or final capture hashes beyond the binary identities listed above.",
+    "The P1 instruction-level 1-to-0 event is later than the P2 source=1 interval observation and follows another guest 0-to-1 write; it must not be joined to dispatch 0x3F9 without additional event alignment."
+  ]
+}
