@@ -181,19 +181,58 @@
     ],
     "interpretation_limit": "The 48 memory-write candidate rows describe packet expansions, not confirmed executed CPU or device writes. The three SCRATCH_REG1 writebacks target 0x1B964004 but precede the long wait and each report 0->1. Neither trace identifies the late 1->0 writer or excludes unlogged CPU, DMA, or device writes."
   },
-  "coincident_source0_vblank_burst": {
-    "p2_interrupt_record_count": 18,
-    "p2_interrupt_event_ids": [3069, 3086],
-    "p2_dispatch_ids": ["0x0E78", "0x0E89"],
+  "source0_vblank_gap_and_catchup": {
+    "previous_completed_interrupt": {
+      "p2_event_id": 3068,
+      "p2_dispatch_id": "0x0E77",
+      "timestamp_local": "2026-10-28 16:40:09.216"
+    },
+    "first_catchup_completion": {
+      "p2_event_id": 3069,
+      "p2_dispatch_id": "0x0E78",
+      "timestamp_local": "2026-10-28 16:50:13.455"
+    },
+    "completion_gap_seconds": 604.239,
+    "wait_duration_ms": 604199,
+    "completion_gap_minus_wait_ms": 40,
+    "catchup_interrupt_count": 5123,
+    "catchup_p2_event_ids": [3069, 8191],
+    "catchup_dispatch_ids": ["0x0E78", "0x227B"],
     "source": 0,
     "origin": "vblank",
     "first_timestamp_local": "2026-10-28 16:50:13.455",
-    "last_timestamp_local": "2026-10-28 16:50:13.456",
+    "last_timestamp_local": "2026-10-28 16:50:13.606",
+    "all_callbacks_invoked": true,
     "callback_wrapper": "0x823B37B8",
     "callback_data": "0xB7365F00",
     "cpu_mask": "0x04",
-    "relation_to_wait": "The first source-0 record shares the 1 ms timestamp of natural WAIT_REG_MEM completion; subsequent records follow in the next logged millisecond.",
-    "interpretation_limit": "This is temporal coincidence only. The 660-second P1 trace sampled source 1 callbacks, not source 0, so there is no same-run P1 source-0 guest callback join and no evidence that VBlank caused the 1->0 word transition."
+    "vblank_trace_record_limit": 8192,
+    "vblank_trace_limit_reached": true,
+    "vblank_trace_limit_timestamp_local": "2026-10-28 16:50:13.606",
+    "source_review": {
+      "commit": "7aa414ab9e246765220ae802d8c2b25f7f344e04",
+      "path": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "lines": "1948-1994",
+      "behavior": "VblankWorkerLoop samples current_tick before its inner catch-up loop, calls DispatchGuestInterrupt synchronously, and logs each source-0 callback after that call returns."
+    },
+    "interpretation_limit": "The 604.239-second gap between source-0 callback completion logs is close to the 604.199-second WAIT_REG_MEM duration, and the vblank loop can replay missed ticks after a delayed synchronous callback. This supports a blocked guest callback or host descheduling hypothesis but cannot distinguish them. The 660-second P1 trace sampled source 1 only, so it does not identify the source-0 callback entry/return interval or prove it caused the wait-word transition."
+  },
+  "next_capture_source0_entry_return_probe": {
+    "trace": "v46",
+    "wait_word_address": "0x1B964004",
+    "wait_word_value": "0x00000001",
+    "selection": "At most one sampled source-0 callback per second while the armed wait word equals 1.",
+    "captures": [
+      "Guest callback dispatch ID and entry ordinal",
+      "Callback entry and return elapsed times",
+      "Callback duration",
+      "Wait-word value and hardware write-watch count at entry and return",
+      "Software queue head, tail, predicate, and manager counter at return",
+      "Any selected callback still in flight when capture stops"
+    ],
+    "max_tracked_callbacks_per_second": 1,
+    "modifies_guest_state": false,
+    "interpretation_limit": "A sampled callback duration can show that a callback remained active across a delay. No tracked callback during a gap is consistent with host descheduling or a delay before callback entry. GDB breakpoints can perturb timing, and this probe does not identify the guest or device writer of the wait word."
   },
   "next_capture_native_plugin_candidate": {
     "used_in_this_capture": false,
