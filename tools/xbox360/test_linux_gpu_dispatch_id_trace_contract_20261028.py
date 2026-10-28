@@ -54,6 +54,7 @@ def main() -> None:
         "gpu_dispatch_id_call_expression",
         "sample_gpu_dispatch_id",
         "active_source1_gpu_dispatch_id",
+        "gpu_dispatch_event_fields",
         "remember_queue_dispatch_id",
         "take_queue_dispatch_id",
     }
@@ -71,6 +72,8 @@ def main() -> None:
         "gpu_dispatch_id_sample_errors": 0,
         "gpu_dispatch_id_warning_emitted": False,
         "active_source1_callbacks": {},
+        "active_dequeues": {},
+        "active_producers": {},
         "queue_record_dispatch_ids": {},
         "queue_dispatch_id_links": 0,
         "queue_dispatch_id_evictions": 0,
@@ -99,6 +102,19 @@ def main() -> None:
     state["active_source1_callbacks"][7] = [{"gpu_dispatch_id": 0x55}]
     assert namespace["active_source1_gpu_dispatch_id"]() == 0x55
     assert namespace["active_source1_gpu_dispatch_id"](8) is None
+    state["active_dequeues"][7] = [{"parent_gpu_dispatch_id": 0x66}]
+    state["active_producers"][7] = [{"parent_gpu_dispatch_id": 0x77}]
+    assert namespace["gpu_dispatch_event_fields"]() == {
+        "gpu_dispatch_id": 0x55, "parent_gpu_dispatch_id": 0x66,
+    }
+    state["active_dequeues"].pop(7)
+    assert namespace["gpu_dispatch_event_fields"]() == {
+        "gpu_dispatch_id": 0x55, "parent_gpu_dispatch_id": 0x77,
+    }
+    state["active_producers"].pop(7)
+    assert namespace["gpu_dispatch_event_fields"]() == {
+        "gpu_dispatch_id": 0x55, "parent_gpu_dispatch_id": 0x55,
+    }
 
     remember = namespace["remember_queue_dispatch_id"]
     take = namespace["take_queue_dispatch_id"]
@@ -121,6 +137,10 @@ def main() -> None:
         assert class_name in classes
         class_text = ast.get_source_segment(blocks[0], classes[class_name]) or ""
         assert "gpu_dispatch_id" in class_text, class_name
+    for class_name in ("CounterWrite", "QueueFieldWrite"):
+        assert class_name in classes
+        class_text = ast.get_source_segment(blocks[0], classes[class_name]) or ""
+        assert "gpu_dispatch_event_fields(thread)" in class_text, class_name
     assert "parent_gpu_dispatch_id" in (
         ast.get_source_segment(blocks[0], classes["QueueDequeue"]) or ""
     )
