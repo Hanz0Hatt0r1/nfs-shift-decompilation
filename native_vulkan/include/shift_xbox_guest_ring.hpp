@@ -2,6 +2,7 @@
 
 #include "shift_xbox_draw_input.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -22,10 +23,12 @@ struct ResolvedGuestPacket {
     uint32_t source_guest_address = 0;
     size_t source_guest_buffer_byte_length = 0;
     uint32_t nesting_depth = 0;
+    uint32_t event_write_snapshot_index = UINT32_MAX;
 };
 
 struct ExpandedGuestCommandStream {
     std::vector<ResolvedGuestPacket> packets;
+    std::vector<std::array<uint8_t, 16>> event_write_packet_snapshots;
     size_t indirect_buffer_bytes = 0;
     uint32_t indirect_buffer_count = 0;
 };

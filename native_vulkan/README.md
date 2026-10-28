@@ -820,6 +820,27 @@ identities are in
 [`the join record`](../evidence/process2_p1_native_queuewait_r2_source1_interrupt_join_20261028.json),
 and the regression replays the join from its archived inputs.
 
+## Native queue-head provenance capture
+
+Set `SHIFT_NATIVE_VULKAN_TRACE_RING=1` for a diagnostic Native plugin run to
+emit per-packet `EVENT_WRITE_SHD` records with source ring/IB location, raw
+packet words, decoded value/address/endian fields, and the software-head value
+before and after each write. `audit_event_write_shd_trace.py` validates these
+records and summarizes head regressions; it explicitly does not classify a
+literal stale packet as a renderer defect without comparing the guest command
+and paired run. Source-1 `PM4_INTERRUPT` records also include a numeric
+`dispatch_id`. The plugin export
+`shift_native_gpu_trace_dispatch_id_v1()` returns that ID only synchronously
+inside the dispatched guest callback so a matching Process 1 capture can
+propagate it through callback and queue records.
+
+```bash
+python3 -m unittest native_vulkan/tests/test_audit_event_write_shd_trace.py
+python3 native_vulkan/tools/audit_event_write_shd_trace.py \
+  --log /path/to/native-runner.log --target 0x17AF4000 \
+  --output /path/to/event-write-audit.json
+```
+
 ## Commands
 
 ```bash

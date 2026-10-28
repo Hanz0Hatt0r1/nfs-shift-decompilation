@@ -73,6 +73,25 @@ constexpr uint32_t kVgtEventInitiatorRegister =
 constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
 constexpr uint32_t kRectangleListInterpolatorCount = 16;
 
+std::atomic<uint64_t> next_gpu_dispatch_id{1};
+thread_local uint64_t active_gpu_dispatch_id = 0;
+
+uint64_t NextGpuDispatchId() {
+  return next_gpu_dispatch_id.fetch_add(1, std::memory_order_relaxed);
+}
+
+class ScopedGpuDispatchId {
+ public:
+  explicit ScopedGpuDispatchId(uint64_t dispatch_id)
+      : previous_(active_gpu_dispatch_id) {
+    active_gpu_dispatch_id = dispatch_id;
+  }
+  ~ScopedGpuDispatchId() { active_gpu_dispatch_id = previous_; }
+
+ private:
+  uint64_t previous_;
+};
+
 bool parse_environment_index(const char* text, uint32_t* index) {
   if (!text || !*text || !index) return false;
   const char* end = text + std::char_traits<char>::length(text);
@@ -740,6 +759,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
  private:
   struct GuestInterruptDispatchTrace {
+    uint64_t dispatch_id = 0;
     uint32_t callback = 0;
     uint32_t callback_data = 0;
     const char* status = "not_requested";
@@ -1887,6 +1907,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   }
 
   bool DispatchGuestInterrupt(uint32_t source, uint32_t cpu,
+                              uint64_t dispatch_id,
                               rex::system::XHostThread* expected_thread,
                               GuestInterruptDispatchTrace* trace = nullptr) {
     uint32_t callback = 0;
@@ -1897,6 +1918,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       callback_data = interrupt_callback_data_;
     }
     if (trace) {
+      trace->dispatch_id = dispatch_id;
       trace->callback = callback;
       trace->callback_data = callback_data;
       trace->status = callback ? "not_dispatched" : "no_callback";
@@ -1917,6 +1939,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     thread->SetActiveCpu(static_cast<uint8_t>(cpu));
     uint64_t args[] = {source, callback_data};
     if (trace) trace->status = "invoking";
+    ScopedGpuDispatchId dispatch_scope(dispatch_id);
     function_dispatcher_->ExecuteInterrupt(thread->thread_state(), callback, args, 2);
     if (trace) trace->status = "invoked";
     return true;
@@ -1938,8 +1961,28 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       while (vblank_worker_running_.load(std::memory_order_acquire) &&
              current_tick - last_vblank_tick >= vblank_interval_ticks) {
         last_vblank_tick += vblank_interval_ticks;
-        if (DispatchGuestInterrupt(0u, 2u, vblank_host_worker_.get()) &&
-            dispatched_vblanks < 3u) {
+        const uint64_t dispatch_id = NextGpuDispatchId();
+        GuestInterruptDispatchTrace callback_trace{};
+        const bool dispatched = DispatchGuestInterrupt(
+            0u, 2u, dispatch_id, vblank_host_worker_.get(), &callback_trace);
+        if (GuestRingTraceEnabled()) {
+          static std::atomic<uint32_t> vblank_trace_count{0};
+          const uint32_t trace_index =
+              vblank_trace_count.fetch_add(1, std::memory_order_relaxed);
+          if (trace_index < kMaxGuestInterruptTraceRecords) {
+            REXLOG_INFO(
+                "shift-native: ring trace GPU_INTERRUPT #{} source=0 "
+                "origin=vblank dispatch_id={:016X} cpu_mask=0x04 "
+                "dispatched_cpu_mask=0x{:02X} callback=0x{:08X} "
+                "data=0x{:08X} status={}",
+                trace_index, dispatch_id, dispatched ? 0x04u : 0u,
+                callback_trace.callback, callback_trace.callback_data,
+                callback_trace.status);
+          } else if (trace_index == kMaxGuestInterruptTraceRecords) {
+            REXLOG_WARN("shift-native: vblank interrupt trace limit reached");
+          }
+        }
+        if (dispatched && dispatched_vblanks < 3u) {
           ++dispatched_vblanks;
           REXLOG_INFO("shift-native: dispatched guest vblank callback {} "
                       "at {:.3f} Hz",
@@ -2218,6 +2261,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         }
       }
     };
+    uint64_t ring_batch_sequence = 0;
+    uint64_t event_write_sequence = 0;
     for (;;) {
       uint32_t read_pointer = 0;
       uint32_t write_pointer = 0;
@@ -2237,6 +2282,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         ring_byte_length = ring_byte_length_;
         ring_generation = ring_generation_;
       }
+      const uint64_t batch_id = ring_batch_sequence++;
       if (GuestRingTraceEnabled()) {
         const uint32_t trace_record = NextGuestRingTraceRecord();
         if (trace_record < kMaxGuestRingTraceRecords) {
@@ -2605,9 +2651,18 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
             if (packet.type == shift::xbox::PacketType::Type3 &&
                 packet.opcode == 0x58u) {
+              std::array<uint8_t, 16> executed_event_packet{};
+              if (packet.byte_length == executed_event_packet.size()) {
+                std::copy_n(packet_bytes, executed_event_packet.size(),
+                            executed_event_packet.begin());
+              }
+              const uint8_t* event_packet_bytes =
+                  packet.byte_length == executed_event_packet.size()
+                      ? executed_event_packet.data()
+                      : packet_bytes;
               shift::xbox::DecodedEventWriteShd event{};
               if (!shift::xbox::decode_guest_event_write_shd(
-                      packet_bytes, packet.byte_length, &event, &error) ||
+                      event_packet_bytes, packet.byte_length, &event, &error) ||
                   !physical_span_valid(event.guest_address,
                                        sizeof(uint32_t))) {
                 ++unsupported_draws;
@@ -2637,16 +2692,74 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   rex::memory::load_and_swap<uint32_t>(destination);
               event_initiator_.store(event.initiator & 0x3Fu,
                                      std::memory_order_release);
-              static std::atomic<uint32_t> event_write_log_count{0};
-              const uint32_t event_log_index = event_write_log_count.fetch_add(
-                  1, std::memory_order_relaxed);
-              if (event_log_index < 16u) {
+              const uint64_t event_write_id = event_write_sequence++;
+              if (GuestRingTraceEnabled()) {
+                std::ostringstream packet_words;
+                std::ostringstream expanded_packet_words;
+                for (size_t word = 0; word < 4u; ++word) {
+                  packet_words << (word ? "," : "") << std::hex
+                               << ReadGuestDword(event_packet_bytes + word * 4u);
+                  if (resolved.event_write_snapshot_index <
+                      expanded.event_write_packet_snapshots.size()) {
+                    expanded_packet_words << (word ? "," : "") << std::hex
+                        << ReadGuestDword(
+                            expanded.event_write_packet_snapshots[
+                                resolved.event_write_snapshot_index].data() +
+                            word * 4u);
+                  }
+                }
+                const bool has_expanded_snapshot =
+                    resolved.event_write_snapshot_index <
+                    expanded.event_write_packet_snapshots.size();
+                const bool source_bytes_match = has_expanded_snapshot &&
+                    std::equal(
+                        expanded.event_write_packet_snapshots[
+                            resolved.event_write_snapshot_index].begin(),
+                        expanded.event_write_packet_snapshots[
+                            resolved.event_write_snapshot_index].end(),
+                        event_packet_bytes);
+                const uint32_t root_ring_offset = static_cast<uint32_t>(
+                    (static_cast<uint64_t>(read_pointer) * sizeof(uint32_t) +
+                     packet.byte_offset) % ring_byte_length);
+                const uint32_t source_address = resolved.nesting_depth == 0u
+                    ? ring_guest_address
+                    : resolved.source_guest_address;
+                const size_t source_byte_offset = resolved.nesting_depth == 0u
+                    ? root_ring_offset
+                    : packet.byte_offset;
+                const auto now_ns = std::chrono::duration_cast<
+                    std::chrono::nanoseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()).count();
+                REXLOG_INFO(
+                    "shift-native: ring trace EVENT_WRITE_SHD event={} "
+                    "monotonic_ns={} batch={} generation={} batch_rptr={} "
+                    "batch_wptr={} ring_guest={:08X} packet={} "
+                    "source_ib={:08X} source_offset={} depth={} "
+                    "raw_words=[{}] expanded_words=[{}] "
+                    "source_bytes_match={} initiator={:08X} "
+                    "encoded_address={:08X} guest_physical={:08X} "
+                    "destination_host={:p} endian={} value_mode={} "
+                    "packet_value={:08X} swap_counter={} decoded_value={:08X} "
+                    "raw_store={:08X} guest_value={:08X}->{:08X}",
+                    event_write_id, now_ns, batch_id, ring_generation,
+                    read_pointer, write_pointer, ring_guest_address,
+                    packet_ordinal, source_address, source_byte_offset,
+                    resolved.nesting_depth, packet_words.str(),
+                    expanded_packet_words.str(), source_bytes_match,
+                    event.initiator,
+                    ReadGuestDword(event_packet_bytes + 8u), event.guest_address,
+                    static_cast<void*>(destination), event.endian_mode,
+                    (event.initiator & 0x80000000u) ? "swap_counter" : "literal",
+                    event.value, guest_swap_counter, data_value, stored_value,
+                    previous_guest_value, stored_guest_value);
+              }
+              if (event_write_sequence <= 16u) {
                 REXLOG_INFO(
                     "shift-native: EVENT_WRITE_SHD #{} initiator={:08X} "
                     "guest={:08X} endian={} packet_value={:08X} "
                     "swap_counter={} guest_value={:08X}->{:08X} "
                     "source={:08X} depth={} byte-offset={}",
-                    event_log_index, event.initiator, event.guest_address,
+                    event_write_id, event.initiator, event.guest_address,
                     event.endian_mode, event.value, guest_swap_counter,
                     previous_guest_value, stored_guest_value,
                     resolved.source_guest_address, resolved.nesting_depth,
@@ -3665,11 +3778,12 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               }
               ++interrupt_packets;
               uint32_t dispatched_cpu_mask = 0;
+              const uint64_t dispatch_id = NextGpuDispatchId();
               std::array<GuestInterruptDispatchTrace, 6> callback_trace{};
               try {
                 for (uint32_t cpu = 0; cpu < 6u; ++cpu) {
                   if ((cpu_mask & (1u << cpu)) != 0 &&
-                      DispatchGuestInterrupt(1u, cpu,
+                      DispatchGuestInterrupt(1u, cpu, dispatch_id,
                                              ring_host_worker_.get(),
                                              &callback_trace[cpu])) {
                     ++dispatched_interrupt_callbacks;
@@ -3711,10 +3825,12 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   }
                   REXLOG_INFO(
                       "shift-native: ring trace PM4_INTERRUPT #{} source=1 "
+                      "dispatch_id={:016X} "
                       "generation={} batch_rptr={} batch_wptr={} ring_guest={:08X} "
                       "packet={} packet_source={:08X}+{} cpu_mask=0x{:02X} "
                       "dispatched_cpu_mask=0x{:02X} callback_dispatches=[{}]",
-                      trace_index, ring_generation, read_pointer, write_pointer,
+                      trace_index, dispatch_id, ring_generation, read_pointer,
+                      write_pointer,
                       ring_guest_address, packet_ordinal,
                       resolved.source_guest_address, packet.byte_offset,
                       cpu_mask, dispatched_cpu_mask, callback_summary.str());
@@ -3882,6 +3998,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 };
 
 }  // namespace
+
+extern "C" REX_GPU_PLUGIN_EXPORT uint64_t
+shift_native_gpu_trace_dispatch_id_v1() noexcept {
+  return active_gpu_dispatch_id;
+}
 
 extern "C" REX_GPU_PLUGIN_EXPORT uint32_t rex_gpu_abi_version() {
   return rex::system::kGpuPluginAbiVersion;

@@ -199,9 +199,15 @@ if(SHIFT_REXGLUE_NATIVE_BUILD_TESTS)
   target_include_directories(rexgpu_shift_native_live_ring_check PRIVATE
     "${SHIFT_REXGLUE_SDK_ROOT}/include"
   )
+  target_include_directories(rexgpu_shift_native_live_ring_check SYSTEM PRIVATE
+    "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/fmt/include"
+    "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/spdlog/include"
+    "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/simde"
+    "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/vulkan-headers/include"
+  )
   target_compile_features(rexgpu_shift_native_live_ring_check PRIVATE cxx_std_23)
   target_link_libraries(rexgpu_shift_native_live_ring_check PRIVATE
-    rexruntime
+    ${SHIFT_REXGLUE_PLUGIN_RUNTIME_TARGET}
     ${CMAKE_DL_LIBS}
   )
   add_test(NAME rexgpu_shift_native_live_ring_check
@@ -214,7 +220,7 @@ if(SHIFT_REXGLUE_NATIVE_BUILD_TESTS)
     COMMAND rexgpu_shift_native_live_ring_check $<TARGET_FILE:rexgpu-shift-native>
   )
   set_tests_properties(rexgpu_shift_native_live_ring_write_trace_check PROPERTIES
-    ENVIRONMENT "SHIFT_NATIVE_VULKAN_TRACE_RING=1"
+    ENVIRONMENT "SHIFT_NATIVE_VULKAN_TRACE_RING=1;SHIFT_NATIVE_VULKAN_TRACE_ONLY=1"
   )
   add_test(NAME rexgpu_shift_native_live_ring_selected_draw_dump_check
     COMMAND rexgpu_shift_native_live_ring_check $<TARGET_FILE:rexgpu-shift-native>

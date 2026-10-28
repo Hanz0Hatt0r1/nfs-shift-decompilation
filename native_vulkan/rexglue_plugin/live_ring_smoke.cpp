@@ -488,6 +488,13 @@ int main(int argc, char** argv) {
   const bool event_write_visible_through_alias =
       read_be32(queue_descriptor_physical) == 3u &&
       read_be32(queue_descriptor_virtual) == 3u;
+  if (!event_write_visible_through_alias) {
+    std::cerr << "queue descriptor aliases after EVENT_WRITE_SHD: physical@"
+              << static_cast<const void*>(queue_descriptor_physical) << "=0x"
+              << std::hex << read_be32(queue_descriptor_physical)
+              << " virtual@" << static_cast<const void*>(queue_descriptor_virtual)
+              << "=0x" << read_be32(queue_descriptor_virtual) << std::dec << '\n';
+  }
 
   graphics->Shutdown();
   graphics.reset();
@@ -696,6 +703,18 @@ int main(int argc, char** argv) {
   }
   if (ring_trace_enabled &&
       (diagnostics.find(
+           "ring trace EVENT_WRITE_SHD event=0 monotonic_ns=") ==
+           std::string::npos ||
+       diagnostics.find("source_ib=00030000 source_offset=") ==
+           std::string::npos ||
+       diagnostics.find("source_bytes_match=true") == std::string::npos ||
+       diagnostics.find("value_mode=literal") == std::string::npos)) {
+    std::cerr << diagnostics << '\n';
+    return fail(
+        "EVENT_WRITE_SHD provenance trace lost packet, source, or value fields");
+  }
+  if (ring_trace_enabled &&
+      (diagnostics.find(
            "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=6 "
            "batch_wptr=9 ring_guest=00010000 packet=40 source=00030000 "
            "depth=1 byte-offset=548 guest=1B964004 "
@@ -729,7 +748,8 @@ int main(int argc, char** argv) {
       ++interrupt_trace_count;
     }
     if (interrupt_trace_count != kSubmittedBatches ||
-        diagnostics.find("ring trace PM4_INTERRUPT #0 source=1 generation=") ==
+        diagnostics.find(
+            "ring trace PM4_INTERRUPT #0 source=1 dispatch_id=") ==
             std::string::npos ||
         diagnostics.find("cpu_mask=0x04 dispatched_cpu_mask=0x00") ==
             std::string::npos ||
@@ -773,24 +793,38 @@ int main(int argc, char** argv) {
        offset += std::strlen(coherency_marker)) {
     ++coherency_wait_count;
   }
-  if (submission_count != kSubmittedBatches ||
-      interrupt_count != kSubmittedBatches ||
-      coherency_wait_count != kSubmittedBatches ||
-      diagnostics.find("2 pointer-loaded shader programs (0 unresolved)") ==
-          std::string::npos ||
-      diagnostics.find(
-          "3 captured indexed draw packets (3 with supported raster state") ==
-          std::string::npos ||
-      diagnostics.find("3 with resolved resource bytes (0 unresolved)") ==
-          std::string::npos ||
-      diagnostics.find("1 Vulkan frames submitted") == std::string::npos ||
-      diagnostics.find("source=2/primitive=8:1") == std::string::npos) {
+  const char* trace_only_environment =
+      std::getenv("SHIFT_NATIVE_VULKAN_TRACE_ONLY");
+  const bool trace_only = trace_only_environment &&
+                          std::string(trace_only_environment) == "1";
+  if (interrupt_count != kSubmittedBatches ||
+      coherency_wait_count != kSubmittedBatches) {
+    std::cerr << diagnostics << '\n';
+    return fail("live PM4 fixture lost an interrupt or coherency wait");
+  }
+  if (!trace_only &&
+      (submission_count != kSubmittedBatches ||
+       diagnostics.find("2 pointer-loaded shader programs (0 unresolved)") ==
+           std::string::npos ||
+       diagnostics.find(
+           "3 captured indexed draw packets (3 with supported raster state") ==
+           std::string::npos ||
+       diagnostics.find("3 with resolved resource bytes (0 unresolved)") ==
+           std::string::npos ||
+       diagnostics.find("1 Vulkan frames submitted") == std::string::npos ||
+       diagnostics.find("source=2/primitive=8:1") == std::string::npos)) {
     std::cerr << diagnostics << '\n';
     return fail("live PM4 fixture did not reach Vulkan presenter submission");
   }
-  std::cout << "live ReXGlue PM4 ring consumed three successive MMIO batches "
-               "and submitted each fixture through Vulkan 1.1; fixture uses "
-               "synthetic vertex/resource inputs\n";
+  if (trace_only) {
+    std::cout << "live PM4 trace fixture consumed three MMIO batches and "
+                 "validated EVENT_WRITE_SHD/interrupt provenance; renderer "
+                 "submission was not evaluated\n";
+  } else {
+    std::cout << "live ReXGlue PM4 ring consumed three successive MMIO batches "
+                 "and submitted each fixture through Vulkan 1.1; fixture uses "
+                 "synthetic vertex/resource inputs\n";
+  }
   std::cout << "EVENT_WRITE_SHD physical write was visible through the guest "
                "descriptor virtual alias\n";
   return 0;

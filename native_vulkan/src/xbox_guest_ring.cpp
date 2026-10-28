@@ -71,9 +71,18 @@ private:
             if (output->packets.size() >= kMaximumPacketCount) {
                 return fail("expanded Xbox PM4 packet limit exceeded", error);
             }
-            output->packets.push_back(
-                ResolvedGuestPacket{packet, source_guest_address, byte_length,
-                                    nesting_depth});
+            ResolvedGuestPacket resolved{packet, source_guest_address,
+                                         byte_length, nesting_depth};
+            if (packet.type == PacketType::Type3 && packet.opcode == 0x58u &&
+                packet.byte_length == 16u) {
+                std::array<uint8_t, 16> packet_snapshot{};
+                std::copy_n(bytes + packet.byte_offset, packet_snapshot.size(),
+                            packet_snapshot.begin());
+                resolved.event_write_snapshot_index =
+                    static_cast<uint32_t>(output->event_write_packet_snapshots.size());
+                output->event_write_packet_snapshots.push_back(packet_snapshot);
+            }
+            output->packets.push_back(resolved);
 
             if (packet.type != PacketType::Type3 ||
                 packet.opcode != kIndirectBufferOpcode) {

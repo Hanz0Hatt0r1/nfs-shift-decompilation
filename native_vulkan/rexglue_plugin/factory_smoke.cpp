@@ -21,7 +21,12 @@ int main(int argc, char** argv) {
       dlsym(library, rex::system::kGpuAbiVersionSymbol));
   const auto create = reinterpret_cast<rex::system::GpuCreateFn>(
       dlsym(library, rex::system::kGpuCreateSymbol));
-  if (!abi_version || !create || abi_version() != rex::system::kGpuPluginAbiVersion) {
+  using DispatchIdGetterFn = uint64_t (*)() noexcept;
+  const auto dispatch_id_getter = reinterpret_cast<DispatchIdGetterFn>(
+      dlsym(library, "shift_native_gpu_trace_dispatch_id_v1"));
+  if (!abi_version || !create || !dispatch_id_getter ||
+      abi_version() != rex::system::kGpuPluginAbiVersion ||
+      dispatch_id_getter() != 0u) {
     dlclose(library);
     return 1;
   }

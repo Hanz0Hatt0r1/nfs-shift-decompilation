@@ -489,6 +489,46 @@ class InterruptJoinTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "ambiguously match 2"):
             AUDIT.join_callbacks(p1, p2, 10)
 
+    def test_joins_nested_callbacks_by_exact_gpu_dispatch_id(self):
+        first = p2_interrupt(10, 1000)
+        first["dispatch_id"] = 0x104
+        second = p2_interrupt(12, 1200)
+        second["dispatch_id"] = 0x106
+        callbacks = [p1_callback(900), p1_callback(950)]
+        callbacks[0]["gpu_dispatch_id"] = 0x104
+        callbacks[1]["gpu_dispatch_id"] = 0x104
+
+        rows = AUDIT.join_callbacks(callbacks, [first, second], 0)
+
+        self.assertEqual([row["gpu_dispatch_id"] for row in rows], [0x104, 0x104])
+        self.assertEqual(
+            [row["p2_pm4_interrupt_id"] for row in rows], [10, 10]
+        )
+
+    def test_parses_dispatch_id_from_native_ring_trace(self):
+        line = (
+            "[2026-10-28 03:38:34.183] [info] [core] [t72370] "
+            "shift-native: ring trace PM4_INTERRUPT #7 source=1 "
+            "dispatch_id=0000000000000104 generation=1 batch_rptr=28 "
+            "batch_wptr=31 ring_guest=09752580 packet=104 "
+            "packet_source=095D0120+1304 cpu_mask=0x04 "
+            "dispatched_cpu_mask=0x04 "
+            "callback_dispatches=[cpu2:callback=0x823b37b8,"
+            "data=0xb7365f00,status=invoked]"
+        )
+        parsed = AUDIT.parse_p2_line(line)
+
+        self.assertEqual(parsed["dispatch_id"], 0x104)
+
+    def test_rejects_partial_dispatch_ids_in_p1_capture(self):
+        callbacks = [p1_callback(1000), p1_callback(1100)]
+        callbacks[0]["gpu_dispatch_id"] = 0x104
+
+        with self.assertRaisesRegex(ValueError, "incomplete gpu_dispatch_id"):
+            AUDIT.join_callbacks(
+                callbacks, [p2_interrupt(10, 1000), p2_interrupt(11, 1100)], 120
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

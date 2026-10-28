@@ -609,6 +609,7 @@ int main() {
         0xA9692D24u, 0x00001089u,
     };
     size_t retail_completion_event_index = 0;
+    size_t first_completion_event_offset = 0;
     for (const shift::xbox::ResolvedGuestPacket& resolved :
          retail_completion.packets) {
         if (resolved.packet.type != shift::xbox::PacketType::Type3 ||
@@ -617,9 +618,14 @@ int main() {
         }
         require(resolved.source_guest_address == 0x09692CE0u &&
                     resolved.nesting_depth == 1u &&
+                    resolved.event_write_snapshot_index ==
+                        retail_completion_event_index &&
                     retail_completion_event_index <
                         retail_completion_addresses.size(),
                 "retail EVENT_WRITE_SHD lost its indirect-buffer provenance");
+        if (retail_completion_event_index == 0u) {
+            first_completion_event_offset = resolved.packet.byte_offset;
+        }
         shift::xbox::DecodedEventWriteShd completion_event{};
         require(shift::xbox::decode_guest_event_write_shd(
                     retail_completion_memory.bytes.data() +
@@ -636,6 +642,15 @@ int main() {
     }
     require(retail_completion_event_index == retail_completion_addresses.size(),
             "retail completion IB did not expose both nested EVENT_WRITE_SHD packets");
+    const auto captured_event_packet =
+        retail_completion.event_write_packet_snapshots.front();
+    retail_completion_memory.bytes[first_completion_event_offset + 12u] ^= 0xFFu;
+    require(captured_event_packet[12] == 0xA9u &&
+                captured_event_packet ==
+                    retail_completion.event_write_packet_snapshots.front() &&
+                captured_event_packet[12] != retail_completion_memory.bytes[
+                    first_completion_event_offset + 12u],
+            "expanded EVENT_WRITE_SHD did not retain its source packet snapshot");
 
     shift::xbox::GuestRingBatch large_root{};
     constexpr size_t kFormerPacketLimit = 1u << 18;
