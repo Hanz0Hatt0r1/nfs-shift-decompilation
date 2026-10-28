@@ -22,6 +22,14 @@ QUEUE_WAIT_R2_EVIDENCE = (
     Path(__file__).parents[2]
     / "evidence/process2_p1_native_queuewait_r2_source1_interrupt_join_20261028.json"
 )
+QUEUE_STOP_R3_EVIDENCE = (
+    Path(__file__).parents[2]
+    / "evidence/process2_p1_native_queue_stop_snapshot_r3_source1_join_candidate_20261028.json"
+)
+FRAME622_READBACK = (
+    Path(__file__).parents[2]
+    / "evidence/process2_ordered_14draw_copy38_frame622_readback_20261028.json"
+)
 
 
 def p1_callback(timestamp):
@@ -245,6 +253,207 @@ class InterruptJoinTests(unittest.TestCase):
             {"0x823A4758": 320, "0x823B8C60": 533},
         )
         self.assertIn("does not prove", evidence["interpretation"])
+
+    def test_native_queue_stop_snapshot_records_the_150ms_join_candidate(self):
+        evidence = json.loads(QUEUE_STOP_R3_EVIDENCE.read_text())
+        capture = evidence["source_run"]
+        queue = evidence["queue_stop_observation"]
+        audit = evidence["audit"]
+        archive = QUEUE_STOP_R3_EVIDENCE.parent / evidence["input_archive"]["path"]
+        archive_bytes = archive.read_bytes()
+        self.assertEqual(
+            hashlib.sha256(archive_bytes).hexdigest(),
+            evidence["input_archive"]["sha256"],
+        )
+        raw = gzip.decompress(archive_bytes)
+        self.assertEqual(
+            hashlib.sha256(raw).hexdigest(),
+            evidence["input_archive"]["uncompressed_sha256"],
+        )
+        inputs = [json.loads(line) for line in raw.splitlines()]
+        self.assertEqual(len(inputs), evidence["input_archive"]["records"])
+        callbacks = sorted(
+            (row for row in inputs if row["type"] == "guest_callback"),
+            key=lambda row: row["entry_ordinal"],
+        )
+        raw_interrupts = sorted(
+            (row for row in inputs if row["type"] == "pm4_interrupt"),
+            key=lambda row: row["ordinal"],
+        )
+        queue_waits = [row for row in inputs if row["type"] == "queue_wait"]
+        queue_returns = [
+            row for row in inputs if row["type"] == "queue_wait_return"
+        ]
+        counter_writes = [
+            row for row in inputs if row["type"] == "counter_write"
+        ]
+        stop_rows = [row for row in inputs if row["type"] == "queue_stop_snapshot"]
+        self.assertEqual(len(callbacks), audit["guest_callback_entries"])
+        self.assertEqual(len(raw_interrupts), audit["source1_pm4_interrupt_records"])
+        self.assertEqual(len(queue_waits), queue["queue_wait_calls"])
+        self.assertEqual(len(queue_returns), queue["queue_wait_returns"])
+        self.assertEqual(len(counter_writes), 151)
+        self.assertEqual(len(stop_rows), 1)
+        self.assertEqual(capture["gdb_exit"], 0)
+        self.assertFalse(capture["guest_memory_modified_by_probe"])
+        self.assertFalse(capture["input_gate_emitted"])
+        self.assertEqual(capture["bink_progress"], {"elapsed_seconds": 40.29,
+            "movie": 3866710080, "progress": 281, "target": 281})
+
+        prior_capture = json.loads(FRAME622_READBACK.read_text())["capture"][
+            "capture_identity"
+        ]
+        self.assertEqual(capture["plugin_sha256"], prior_capture["plugin_sha256"])
+        self.assertEqual(capture["xex_sha256"], prior_capture["xex_sha256"])
+        self.assertEqual(capture["runtime_sha256"], prior_capture["runtime_sha256"])
+
+        entry = queue["entry"]
+        self.assertEqual(entry["call"], 258)
+        self.assertEqual(
+            {key: entry[key] for key in ("head", "tail", "wait_target_r30")},
+            {"head": 3247, "tail": 3283, "wait_target_r30": 3281},
+        )
+        self.assertEqual(entry["predicate_byte"], 0x14)
+        self.assertFalse(entry["completion_mask_set"])
+        self.assertFalse(queue["returned_by_capture_stop"])
+        self.assertNotIn(258, {row["call"] for row in queue_returns})
+        stop = queue["stop_snapshot"]
+        self.assertEqual(
+            [stop["head"], stop["tail"], stop["predicate_byte"]],
+            [entry["head"], entry["tail"], entry["predicate_byte"]],
+        )
+        self.assertEqual(stop["manager_11012"], 0xFFFFFF73)
+        self.assertEqual(stop["manager_11008"], 1)
+        self.assertEqual(stop["current_guest_pc_context_slot"], 0x823A0390)
+        self.assertIn("sub_823A0310", stop["guest_main_thread_backtrace"])
+        self.assertEqual(len(stop_rows), 1)
+        self.assertEqual(
+            {key: stop_rows[0][key] for key in ("head", "tail", "predicate_byte")},
+            {"head": entry["head"], "tail": entry["tail"],
+             "predicate_byte": entry["predicate_byte"]},
+        )
+
+        later_callbacks = [
+            row
+            for row in callbacks
+            if row["wall_clock_epoch_ms"] >= entry["wall_clock_epoch_ms"]
+        ]
+        self.assertEqual(len(later_callbacks), 558)
+        self.assertTrue(
+            all(row["manager_words_10904_to_1091c"][1] == 3283
+                for row in later_callbacks)
+        )
+        self.assertTrue(
+            all(not row["manager_flag_bit_set_before"] for row in later_callbacks)
+        )
+        later_counters = [
+            row
+            for row in counter_writes
+            if row["wall_clock_epoch_ms"] >= entry["wall_clock_epoch_ms"]
+        ]
+        self.assertEqual(len(later_counters), 140)
+        self.assertTrue(all(row["signed_delta"] == -1 for row in later_counters))
+        self.assertTrue(
+            all(
+                left["after"] == right["before"]
+                for left, right in zip(later_counters, later_counters[1:])
+            )
+        )
+        self.assertEqual(later_counters[0]["before"], 0xFFFFFFFF)
+        self.assertEqual(later_counters[-1]["after"], 0xFFFFFF73)
+        self.assertTrue(
+            all(
+                row["guest_address"] == int(queue["counter_write_address"], 16)
+                for row in later_counters
+            )
+        )
+
+        self.assertEqual([row["ordinal"] for row in raw_interrupts], list(range(1466)))
+        for row in raw_interrupts:
+            self.assertEqual(row["source"], 1)
+            self.assertEqual(row["generation"], 1)
+            self.assertEqual(row["ring_guest"], 0x09752580)
+            self.assertEqual(row["cpu_mask"], 0x04)
+            self.assertEqual(row["dispatched_cpu_mask"], 0x04)
+            self.assertEqual(
+                row["callbacks"],
+                [{"cpu": 2, "callback": 0x823B37B8,
+                  "data": 0xB7365F00, "status": "invoked"}],
+            )
+
+        p1 = [
+            {
+                key: row[key]
+                for key in (
+                    "entry_ordinal",
+                    "wall_clock_epoch_ms",
+                    "callback_function",
+                    "callback_object",
+                    "callback_data",
+                    "callback_mask",
+                )
+            }
+            for row in callbacks
+        ]
+        p2 = [
+            {
+                "id": row["ordinal"],
+                "timestamp_ms": row["timestamp_epoch_ms"],
+                "generation": row["generation"],
+                "rptr": row["batch_rptr"],
+                "wptr": row["batch_wptr"],
+                "ring": row["ring_guest"],
+                "ordinal": row["packet_ordinal"],
+                "packet_source": row["source_ib"],
+                "packet_offset": row["source_ib_byte_offset"],
+                "mask": row["cpu_mask"],
+                "dispatched": row["dispatched_cpu_mask"],
+                "callbacks": row["callbacks"],
+            }
+            for row in raw_interrupts
+        ]
+        with self.assertRaisesRegex(ValueError, "within 120 ms"):
+            AUDIT.join_callbacks(p1, p2, 120)
+        joined = AUDIT.join_callbacks(p1, p2, 150)
+        self.assertEqual(joined, audit["rows"])
+        self.assertEqual(len(joined), 749)
+        self.assertEqual(
+            [joined[0]["p2_pm4_interrupt_id"], joined[-1]["p2_pm4_interrupt_id"]],
+            [686, 1434],
+        )
+        self.assertEqual(
+            audit["absolute_timestamp_delta_ms_min_median_max"], [0, 22, 150]
+        )
+        self.assertEqual(audit["within_default_120_ms"], 748)
+        self.assertEqual(audit["over_default_120_ms"], 1)
+        self.assertEqual(
+            audit["outlier_rows"],
+            [{
+                "p1_callback_index": 573,
+                "p1_wall_clock_epoch_ms": 1793182081707,
+                "p1_registered_callback_function": "0x823b8c60",
+                "p1_callback_object": "0xfb963000",
+                "p1_callback_data": "0xc95dc100",
+                "p1_cpu_mask": "0x04",
+                "p2_pm4_interrupt_id": 1259,
+                "p2_wall_clock_epoch_ms": 1793182081857,
+                "timestamp_delta_ms_p2_minus_p1": 150,
+                "source": 1,
+                "ring_generation": 1,
+                "batch_rptr": 5471,
+                "batch_wptr": 5476,
+                "ring_guest": "0x09752580",
+                "pm4_packet_ordinal": 181,
+                "packet_source": "095D0440+2628",
+                "cpu_mask": "0x04",
+                "dispatched_cpu_mask": "0x04",
+                "dispatch_cpu": 2,
+                "outer_callback_wrapper": "0x823b37b8",
+                "outer_callback_data": "0xb7365f00",
+                "dispatch_status": "invoked",
+            }],
+        )
+        self.assertIn("not callback causality", evidence["interpretation"])
 
     def test_selects_unique_contiguous_window_with_callback_order(self):
         p1 = [p1_callback(1000), p1_callback(1100), p1_callback(1200)]
