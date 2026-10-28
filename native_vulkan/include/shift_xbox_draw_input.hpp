@@ -457,6 +457,14 @@ struct CapturedEdramSampleCoordinates {
     uint32_t sample_index = 0;
 };
 
+struct CapturedEdramTileAlias {
+    uint32_t tile_index = 0;
+    uint32_t source_tile_x = 0;
+    uint32_t source_tile_y = 0;
+    uint32_t destination_tile_x = 0;
+    uint32_t destination_tile_y = 0;
+};
+
 // Maps one captured target pixel/sample to its Xenos EDRAM byte address.
 // x/y are logical pixels before the MSAA sample expansion; sample_index uses
 // the Xenos row-major sample order. The currently decoded color formats use
@@ -482,6 +490,16 @@ bool captured_xenos_edram_sample_coordinates(
     uint32_t tile_y,
     uint32_t sample_index_in_tile,
     CapturedEdramSampleCoordinates* output,
+    std::string* error);
+
+// Maps the uniquely addressed physical EDRAM tiles shared by two captured
+// layouts. A layout that wraps onto the same tile more than once is rejected:
+// resolving its Vulkan pixels back to physical EDRAM needs draw coverage/order.
+bool captured_xenos_edram_alias_tiles(
+    const CapturedRasterState& source,
+    const CapturedRasterState& destination,
+    bool depth_target,
+    std::vector<CapturedEdramTileAlias>* output,
     std::string* error);
 
 // Compares the color and depth tile footprints of two captured EDRAM layouts.

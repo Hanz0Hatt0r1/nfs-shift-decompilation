@@ -1821,6 +1821,96 @@ bool captured_xenos_edram_sample_coordinates(
     return true;
 }
 
+bool captured_xenos_edram_alias_tiles(
+    const CapturedRasterState& source,
+    const CapturedRasterState& destination,
+    bool depth_target,
+    std::vector<CapturedEdramTileAlias>* output,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    constexpr uint32_t kTileCount = 2048;
+    if (!output) {
+        return fail("missing Xenos EDRAM alias-tile output", error);
+    }
+    output->clear();
+
+    struct TileCoordinate {
+        uint32_t x = 0;
+        uint32_t y = 0;
+        bool present = false;
+    };
+    const auto collect_tiles = [&](const CapturedRasterState& raster,
+                                   std::array<TileCoordinate, kTileCount>* tiles) {
+        if (!tiles || !raster.width || !raster.height || !raster.surface_pitch ||
+            (raster.sample_count != 1 && raster.sample_count != 2 &&
+             raster.sample_count != 4)) {
+            return fail("invalid captured Xenos EDRAM alias layout", error);
+        }
+        const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+        const uint32_t sample_height = raster.sample_count / sample_width;
+        if (raster.width % sample_width || raster.height % sample_height) {
+            return fail("captured Xenos EDRAM alias extent is not sample aligned",
+                        error);
+        }
+        const uint32_t logical_width = raster.width / sample_width;
+        const uint32_t logical_height = raster.height / sample_height;
+        if (raster.surface_pitch < logical_width) {
+            return fail("captured Xenos EDRAM alias pitch is smaller than its extent",
+                        error);
+        }
+        const uint32_t tile_logical_width = kTileWidthSamples / sample_width;
+        const uint32_t tile_logical_height = kTileHeightSamples / sample_height;
+        const uint64_t columns =
+            (static_cast<uint64_t>(logical_width) + tile_logical_width - 1u) /
+            tile_logical_width;
+        const uint64_t rows =
+            (static_cast<uint64_t>(logical_height) + tile_logical_height - 1u) /
+            tile_logical_height;
+        if (columns * rows > kTileCount) {
+            return fail("captured Xenos EDRAM alias layout wraps across the 2048-tile store",
+                        error);
+        }
+        for (uint64_t tile_y = 0; tile_y < rows; ++tile_y) {
+            for (uint64_t tile_x = 0; tile_x < columns; ++tile_x) {
+                CapturedEdramSampleAddress address{};
+                if (!captured_xenos_edram_sample_address(
+                        raster, depth_target,
+                        static_cast<uint32_t>(tile_x * tile_logical_width),
+                        static_cast<uint32_t>(tile_y * tile_logical_height), 0,
+                        &address, error)) {
+                    return false;
+                }
+                TileCoordinate& coordinate = (*tiles)[address.tile_index];
+                if (coordinate.present) {
+                    return fail("captured Xenos EDRAM alias layout maps multiple raster tiles to one physical tile",
+                                error);
+                }
+                coordinate = {static_cast<uint32_t>(tile_x),
+                              static_cast<uint32_t>(tile_y), true};
+            }
+        }
+        return true;
+    };
+
+    std::array<TileCoordinate, kTileCount> source_tiles{};
+    std::array<TileCoordinate, kTileCount> destination_tiles{};
+    if (!collect_tiles(source, &source_tiles) ||
+        !collect_tiles(destination, &destination_tiles)) {
+        return false;
+    }
+    for (uint32_t tile = 0; tile < kTileCount; ++tile) {
+        if (!source_tiles[tile].present || !destination_tiles[tile].present) {
+            continue;
+        }
+        output->push_back({tile, source_tiles[tile].x, source_tiles[tile].y,
+                           destination_tiles[tile].x,
+                           destination_tiles[tile].y});
+    }
+    if (error) error->clear();
+    return true;
+}
+
 bool captured_xenos_edram_layouts_are_tile_disjoint(
     const CapturedRasterState& a,
     const CapturedRasterState& b,

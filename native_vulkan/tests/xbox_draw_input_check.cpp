@@ -1293,6 +1293,62 @@ int main() {
                 edram_address.byte_offset == 4,
             "captured 1x Xenos pixel did not retain its linear EDRAM sample slot");
 
+    auto retail_4x_edram_view = single_sample_edram_target;
+    retail_4x_edram_view.surface_pitch = 640;
+    retail_4x_edram_view.sample_count = 4;
+    std::vector<shift::xbox::CapturedEdramTileAlias> edram_alias_tiles;
+    require(shift::xbox::captured_xenos_edram_alias_tiles(
+                retail_4x_edram_view, single_sample_edram_target, false,
+                &edram_alias_tiles, &error) &&
+                edram_alias_tiles.size() == 720 &&
+                edram_alias_tiles.front().tile_index == 0 &&
+                edram_alias_tiles.front().source_tile_x == 0 &&
+                edram_alias_tiles.front().source_tile_y == 0 &&
+                edram_alias_tiles.front().destination_tile_x == 0 &&
+                edram_alias_tiles.front().destination_tile_y == 0 &&
+                edram_alias_tiles[16].tile_index == 16 &&
+                edram_alias_tiles[16].source_tile_x == 0 &&
+                edram_alias_tiles[16].source_tile_y == 1 &&
+                edram_alias_tiles[16].destination_tile_x == 0 &&
+                edram_alias_tiles[16].destination_tile_y == 1,
+            "captured 4x-to-1x EDRAM view did not map shared physical tiles");
+    for (const bool depth_target : {false, true}) {
+        for (uint32_t sample_in_tile = 0; sample_in_tile < 80u * 16u;
+             ++sample_in_tile) {
+            shift::xbox::CapturedEdramSampleCoordinates source_coordinates{};
+            shift::xbox::CapturedEdramSampleCoordinates destination_coordinates{};
+            shift::xbox::CapturedEdramSampleAddress source_address{};
+            shift::xbox::CapturedEdramSampleAddress destination_address{};
+            require(shift::xbox::captured_xenos_edram_sample_coordinates(
+                        retail_4x_edram_view, depth_target, 0, 0,
+                        sample_in_tile, &source_coordinates, &error) &&
+                    shift::xbox::captured_xenos_edram_sample_coordinates(
+                        single_sample_edram_target, depth_target, 0, 0,
+                        sample_in_tile, &destination_coordinates, &error) &&
+                    shift::xbox::captured_xenos_edram_sample_address(
+                        retail_4x_edram_view, depth_target,
+                        source_coordinates.x, source_coordinates.y,
+                        source_coordinates.sample_index, &source_address,
+                        &error) &&
+                    shift::xbox::captured_xenos_edram_sample_address(
+                        single_sample_edram_target, depth_target,
+                        destination_coordinates.x, destination_coordinates.y,
+                        destination_coordinates.sample_index,
+                        &destination_address, &error) &&
+                    source_address.byte_offset == destination_address.byte_offset,
+                    "4x-to-1x alias sample did not preserve its physical EDRAM address");
+        }
+    }
+    auto retail_oversized_4x_layout = retail_4x_edram_view;
+    retail_oversized_4x_layout.width = 2560;
+    retail_oversized_4x_layout.height = 1440;
+    retail_oversized_4x_layout.surface_pitch = 1280;
+    require(!shift::xbox::captured_xenos_edram_alias_tiles(
+                retail_oversized_4x_layout, retail_4x_edram_view, false,
+                &edram_alias_tiles, &error) &&
+                error == "captured Xenos EDRAM alias layout wraps across the 2048-tile store",
+            "oversized captured EDRAM view was mapped as a unique image layout");
+
     auto small_edram_a = single_sample_edram_target;
     small_edram_a.width = 80;
     small_edram_a.height = 16;

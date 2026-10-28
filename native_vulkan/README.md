@@ -464,6 +464,27 @@ Shared physical EDRAM storage across overlapping target aliases, sample/format
 reinterpretation, complete Copy/Convert source association, and full
 depth/stencil preservation across the captured target switches remain open.
 
+### Captured alias-tile mapping (2026-10-28)
+
+The address layer now enumerates physical EDRAM tiles shared by two captured
+layouts and reports each tile's source and destination coordinates. It rejects
+layouts whose full extent wraps a physical tile more than once, because mapping
+those Vulkan pixels back to one EDRAM tile requires captured draw coverage and
+ordering. A regression based on the transition's 4x/pitch-640 and
+1x/pitch-1280 views maps all 720 common tiles and checks every one of the 1,280
+sample slots in a tile for both color and depth. Each source and destination
+sample resolves to the same physical EDRAM byte address; this is address
+mapping evidence, not a resolve or a rendered frame.
+
+The earlier 2560x1440 4x layout spans 2,880 virtual tiles under the current
+32bpp address model, so the new unique-tile mapper rejects it. The metadata
+alone does not show which tiles its captured draws touch; the model does not
+use per-draw scissor/geometry coverage. Physical Vulkan backing and data
+transfer across aliases are still unimplemented. Native CTest passed 4/4 and
+Linux plugin CTest passed 6/6 under `VK_LAYER_KHRONOS_validation`; Android
+ARM64 renderer and checker targets compiled, but no device was connected. See
+[`process2_edram_alias_tile_map_20261028.json`](../evidence/process2_edram_alias_tile_map_20261028.json).
+
 ## Conservative EDRAM layout switching (2026-10-27)
 
 The ordered-stream preflight now computes color and depth tile footprints for

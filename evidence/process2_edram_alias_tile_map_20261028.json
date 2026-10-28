@@ -1,0 +1,71 @@
+{
+  "schema": "shift.process2.edram_alias_tile_map.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "implementation": {
+    "api": "captured_xenos_edram_alias_tiles",
+    "behavior": "Enumerates shared physical EDRAM tile IDs and source/destination tile coordinates for a pair of captured layouts. It supports differing sample counts through the existing sample-address and reverse-coordinate helpers.",
+    "safety": "Rejects a full layout extent that wraps one physical tile more than once. Such an image-to-backing mapping needs exact draw coverage and operation order. It does not infer color/depth format conversion or transfer Vulkan image data.",
+    "format_scope": "The existing 32bpp EDRAM address model; true 64bpp color addressing remains unsupported."
+  },
+  "retail_layout_regression": {
+    "source": {
+      "draw_range": [1, 1],
+      "extent": [1280, 720],
+      "samples": 4,
+      "pitch": 640,
+      "color_base_tiles": 0,
+      "depth_base_tiles": 720,
+      "guest_color_format": 0
+    },
+    "destination": {
+      "draw_range": [2, 10],
+      "extent": [1280, 720],
+      "samples": 1,
+      "pitch": 1280,
+      "color_base_tiles": 0,
+      "depth_base_tiles": 720,
+      "guest_color_format": 1
+    },
+    "shared_tiles": 720,
+    "tile_coordinate_mapping": "Identity for all shared tile IDs: 16 columns x 45 rows.",
+    "sample_address_regression": "For physical tile 0, all 1,280 tile-local sample slots map through both layouts to the same byte address, independently for color and depth.",
+    "classification": "Captured target metadata drives the address regression; no retail image payload or Vulkan rendering is used."
+  },
+  "first_transition_limit": {
+    "source_draw": 0,
+    "extent": [2560, 1440],
+    "samples": 4,
+    "pitch": 1280,
+    "virtual_tiles_under_current_model": 2880,
+    "result": "Unique full-extent tile mapping fails closed because it spans more than the 2,048-tile EDRAM store.",
+    "interpretation_limit": "The captured metadata does not establish which tiles the draw geometry/scissor touches. This is a limit of the current full-extent mapping model, not proof that the retail draw itself is invalid."
+  },
+  "verification": {
+    "native_linux": {
+      "build": "shift_xbox_draw_input_check and xbox_live_vulkan_renderer_check built successfully.",
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation ctest --test-dir /home/pes/work/.build-process2-p2161-native-vulkan-20261028 --output-on-failure",
+      "result": "passed 4/4"
+    },
+    "linux_rexglue_plugin": {
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
+      "result": "passed 6/6",
+      "plugin_sha256": "22ad3949e35c2d9db11540fc6563e895a8bc2d03f6d1166eb1979222ffb87dac",
+      "build_id": "baeac82aa4c84011ad3c536bbbde2e3add78d0b1"
+    },
+    "android_arm64": {
+      "command": "cmake --build /home/pes/work/.build-process2-p2161-android-renderer-20261027 --target shift_xbox_draw_input_check xbox_live_vulkan_renderer_check --parallel 4",
+      "result": "both targets compiled",
+      "draw_input_library_sha256": "8d76d35c09bb4e1ac8dc45585dc6dcf3569f2939960dea1bc3e20b6a131459a8",
+      "draw_input_check_sha256": "dfb9a30cf35f921f7cc2e6102b0c630ccdf7161bf3744b3fdbcc925b22138586",
+      "device_runtime": "not run; adb devices -l returned no connected devices"
+    },
+    "diff_check": "git diff --check passed"
+  },
+  "remaining_blockers": [
+    "No shared Vulkan physical EDRAM backing or sample data transfer is implemented.",
+    "The 2560x1440 draw-0 full extent wraps under the current 32bpp mapping; actual touched tiles need captured geometry/scissor evidence before backing transfer can be defined.",
+    "The supported 720-tile mapping does not implement raw-format reinterpretation, copy/convert, clear, or depth/stencil persistence.",
+    "This regression is not execution of the full 14-draw retail transition and makes no retail parity claim."
+  ]
+}
