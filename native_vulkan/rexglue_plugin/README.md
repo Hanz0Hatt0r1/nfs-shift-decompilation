@@ -2302,6 +2302,21 @@ while final memory reads as 0. Thus the capture proves that the word became 0,
 but does not identify the writer or its host alias. The 622.731-second report
 is not present in this v63 artifact and remains unjoined to a writer.
 
+The interim v64 follow-up arms physical plus A/C/E aliases and captures the
+release on `virtual_e` at elapsed 13.441 seconds. Its guest stack is
+`sub_823A4640` inside callback `sub_823B37B8`, running on the Native VS thread.
+The Native log places a source-0 VBlank dispatch `0x358` to that callback at
+20:28:04.875, immediately after the watchpoint event at 20:28:04.874; the
+VBlank log is emitted after the callback returns. The ring worker's separate
+source-1 dispatch `0x357` is on the GP thread and precedes its ref-0 wait. That
+wait at `0x09618780+18400` enters with 1 and completes with 0 after 168 ms and
+155 polls. The GDB timestamp is recorded after stack/alias inspection, so the
+ring worker's 20:28:04.872 observation of zero is consistent with the store.
+The writer event itself has no dispatch ID, so this is joined by callback,
+thread, and return ordering rather than a shared event ID. This v64 sequence
+identifies the guest E-alias clear for its own wait; it does not explain the
+separate 230.626-second v63 wait.
+
 For this packet form, Native and Xenos both perform an equality comparison on
 the endian-swapped physical word and use a nominal 1 ms poll interval. Native
 uses an acquire atomic load and sleeps 1 ms between failed polls. ReXGlue's
