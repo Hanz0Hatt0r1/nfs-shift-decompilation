@@ -27,6 +27,9 @@ add_test(NAME shift_xbox_guest_ring_check COMMAND shift_xbox_guest_ring_check)
 
 add_executable(shift_xbox_shader_translate_check tests/xbox_shader_translate_check.cpp)
 target_link_libraries(shift_xbox_shader_translate_check PRIVATE shift_xbox_shader_translate)
+target_compile_definitions(shift_xbox_shader_translate_check PRIVATE
+  SHIFT_XBOX_SHADER_TEST_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures"
+)
 add_test(NAME shift_xbox_shader_translate_check COMMAND shift_xbox_shader_translate_check)
 
 find_package(Vulkan QUIET)

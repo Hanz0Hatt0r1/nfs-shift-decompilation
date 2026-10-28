@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <array>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -94,6 +96,14 @@ void require(bool condition, const char* message) {
         std::cerr << message << '\n';
         std::exit(1);
     }
+}
+
+std::vector<uint8_t> read_shader_fixture(const char* filename) {
+    const std::string path =
+        std::string(SHIFT_XBOX_SHADER_TEST_FIXTURE_DIR) + "/" + filename;
+    std::ifstream file(path, std::ios::binary);
+    require(file.good(), "captured retail shader fixture could not be opened");
+    return std::vector<uint8_t>(std::istreambuf_iterator<char>(file), {});
 }
 
 bool same_translation(const shift::xbox::CapturedShaderTranslation& left,
@@ -240,10 +250,36 @@ void verify_pre_wait_retail_shader_exports() {
             "captured pixel export stopped targeting color output or emitted a memory store");
 }
 
+void verify_retail_draw10_shader_pair() {
+    const auto vertex = read_shader_fixture("retail_draw10_packet10.vert.bin");
+    const auto pixel = read_shader_fixture("retail_draw10_packet10.frag.bin");
+    shift::xbox::CapturedShaderTranslation translated_vertex{};
+    shift::xbox::CapturedShaderTranslation translated_pixel{};
+    std::string error;
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Vertex, vertex.data(),
+                vertex.size(), {}, &translated_vertex, &error),
+            "retail post-Bink draw #10 vertex shader did not translate");
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel, pixel.data(),
+                pixel.size(), {}, &translated_pixel, &error),
+            "retail post-Bink draw #10 pixel shader did not translate");
+    require(vertex.size() == 156 && pixel.size() == 60 &&
+                !translated_vertex.glsl.empty() && !translated_pixel.glsl.empty() &&
+                translated_vertex.executed_instruction_addresses.size() == 9 &&
+                translated_vertex.vertex_input_attributes.size() == 3 &&
+                translated_pixel.executed_instruction_addresses.size() == 2 &&
+                translated_pixel.uses_texture &&
+                translated_pixel.texture_fetch_constant_indices ==
+                    std::vector<uint32_t>{0},
+            "retail post-Bink draw #10 shader reflection changed");
+}
+
 }  // namespace
 
 int main() {
     verify_pre_wait_retail_shader_exports();
+    verify_retail_draw10_shader_pair();
 
     const std::vector<uint8_t> conditional_exec_shader =
         captured_conditional_exec_pixel_shader();
