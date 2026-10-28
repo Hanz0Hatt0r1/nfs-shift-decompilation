@@ -2227,8 +2227,11 @@ its ReXGlue provider was created without depth/stencil resolve enabled. The P2
 renderer already uses Vulkan 1.1 render-pass resolve when the provider confirms
 `SAMPLE_ZERO`; the P2 plugin built against SDK PR #2 reports the capability on
 the GTX 950 with GPU-emulation features disabled. Its validation-enabled plugin
-CTest passed 7/7. The current Process 1 runtime still calls the old two-argument
-provider factory, so that new DSO has not yet been replayed with a capability-
-enabled runtime. Process 1 has been asked for that runtime-side opt-in. No packet-72
+CTest passed 7/7. The older DSO in the retail replay was compiled against an SDK
+header without the resolve overload, so the Native plugin's own
+`CreateShiftVulkanProvider` selected its geometry-only overload. The updated P2
+DSO statically includes the resolve-capable provider and requests it itself;
+Process 1's Xenos provider factory is separate and does not need modification.
+Process 1 has been asked to replay this DSO with its current runtime. No packet-72
 Vulkan draw submission or retail pixel parity is claimed. Full details are in
 [`process2_ordered_edram_format26_texture_fetch_20261028.json`](../../evidence/process2_ordered_edram_format26_texture_fetch_20261028.json).

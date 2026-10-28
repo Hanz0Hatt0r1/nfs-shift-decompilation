@@ -62,7 +62,7 @@
     "No Android build or device run was performed in this check.",
     "No retail pixel parity is claimed."
   ],
-  "next_evidence": "After Process 1 builds the matching runtime with the optional resolve overload requested, replay once with the SDK-PR-2-built P2 DSO and retain the packet-72 operation/readback result. Do not count separate presenter batches as submission of that failed segment.",
+  "next_evidence": "Replay the SDK-PR-2-built P2 DSO once with the existing Process 1 runtime. Verify the P2 plugin logs its own enabled SAMPLE_ZERO capability and observe whether packet 72 advances. Do not modify the separate Xenos provider or count other presenter batches as submission of that segment.",
   "latest_retail_replay": {
     "capture_directory": "/home/pes/work/nfs-shift-p1-native-format26-exact-fix-20261028",
     "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
@@ -77,7 +77,7 @@
       "repetitions": 7,
       "error": "ordered Vulkan segment ending at packet 72 failed before vkCmdDraw/vkQueueSubmit because the provider did not confirm enabled 4x-to-1x depth/stencil SAMPLE_ZERO resolve"
     },
-    "runtime_cause": "The runtime used in this replay still called the two-argument VulkanProvider::Create overload. The optional SDK overload from PR #2 was not requested, so properties().depthStencilResolveSampleZero remained false.",
+    "runtime_cause": "The P2 plugin DSO used in this replay was built against an SDK header lacking the optional resolve overload. Its own CreateShiftVulkanProvider helper therefore selected the geometry-only overload and left resolve false. The runtime-owned Xenos graphics provider is a separate object and does not control the P2 Native provider.",
     "separate_resolve_sdk_plugin_validation": {
       "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
       "plugin_sha256": "6eeb19b8d1806a46a570fd9279153de2ee62995b4db1667a54c252e6c7a6d887",
@@ -87,8 +87,9 @@
       "p2_source_commit": "675d3e43",
       "plugin_path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028/output/librexgpu-shift-native.so",
       "capability_check_command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation rexgpu_vulkan_resolve_capability_check",
-      "capability_check_result": "passed; device NVIDIA GeForce GTX 950, Vulkan 1.4; VK_KHR_create_renderpass2 and VK_KHR_depth_stencil_resolve enabled; SAMPLE_ZERO=1; GPU-emulation features disabled"
+      "capability_check_result": "passed; device NVIDIA GeForce GTX 950, Vulkan 1.4; VK_KHR_create_renderpass2 and VK_KHR_depth_stencil_resolve enabled; SAMPLE_ZERO=1; GPU-emulation features disabled",
+      "provider_owner": "P2 Native plugin itself creates and owns the VulkanProvider; the DSO statically includes the PR2 provider implementation and requests resolve with GPU-emulation features disabled."
     },
-    "status": "The capability-capable P2 plugin has not yet been retail-replayed; Process 1 was asked to build its runtime against SDK PR #2 and opt in to depth/stencil resolve."
+    "status": "P2 has built and validation-tested the corrected provider-aware plugin DSO; Process 1 has been asked to replay that DSO with its existing runtime. No Process 1 provider source change is needed."
   }
 }
