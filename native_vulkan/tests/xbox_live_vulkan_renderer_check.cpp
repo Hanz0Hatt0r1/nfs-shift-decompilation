@@ -2521,6 +2521,8 @@ int main(int argc, char** argv) {
 
     auto gamma_target_draw = draws[0];
     gamma_target_draw.raster.sample_count = 4;
+    gamma_target_draw.raster.guest_color_format = 1;
+    gamma_target_draw.raster.surface_pitch = 640;
     gamma_target_draw.raster.depth_test_enabled = false;
     gamma_target_draw.raster.depth_write_enabled = false;
     gamma_target_draw.raster.stencil_test_enabled = false;
@@ -2588,9 +2590,13 @@ int main(int argc, char** argv) {
 
     auto gamma_linear_tail = gamma_target_draw;
     gamma_linear_tail.raster.sample_count = 1;
+    gamma_linear_tail.raster.surface_pitch = 1280;
+    gamma_linear_tail.raster.guest_color_format = 1;
     gamma_linear_tail.raster.color_format =
-        shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
-    gamma_linear_tail.pixel_shader_spirv = gamma_linear_fragment_spirv;
+        shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
+    gamma_linear_tail.pixel_shader_spirv = gamma_encoded_fragment_spirv;
+    gamma_linear_tail.pixel_shader_spirv_linear_target =
+        gamma_linear_fragment_spirv;
     shift::xbox::CapturedVulkanSourceReadback gamma_mixed_source_readback;
     std::vector<uint32_t> gamma_mixed_output;
     std::string gamma_mixed_error;
@@ -2826,12 +2832,14 @@ int main(int argc, char** argv) {
     mixed_sample_draws[0].raster.color_base_tiles = 0;
     mixed_sample_draws[0].raster.depth_base_tiles = 720;
     mixed_sample_draws[0].raster.surface_pitch = 640;
+    mixed_sample_draws[0].raster.guest_color_format = 1;
     mixed_sample_draws[1].raster.sample_count = 1;
     mixed_sample_draws[1].raster.color_base_tiles = 0;
     mixed_sample_draws[1].raster.depth_base_tiles = 720;
     mixed_sample_draws[1].raster.surface_pitch = 1280;
+    mixed_sample_draws[1].raster.guest_color_format = 1;
     mixed_sample_draws[1].raster.color_format =
-        shift::xbox::CapturedColorTargetFormat::Rgba8Linear;
+        shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
     mixed_sample_draws[1].raster.depth_test_enabled = false;
     mixed_sample_draws[1].raster.depth_write_enabled = false;
     mixed_sample_draws[1].raster.stencil_test_enabled = false;
@@ -2844,6 +2852,21 @@ int main(int argc, char** argv) {
         mixed_sample_output.size() != 1280u * 720u) {
         std::cerr << "mixed 4x-MSAA/1x captured Copy/Convert failed: "
                   << mixed_sample_error << '\n';
+        return 1;
+    }
+    auto missing_alias_shaders = copy;
+    missing_alias_shaders.edram_alias_transfer_vertex_shader_spirv.clear();
+    missing_alias_shaders.edram_alias_transfer_pixel_shader_spirv.clear();
+    std::string missing_alias_error;
+    if (shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, mixed_sample_draws,
+            &missing_alias_error, nullptr, enabled_features.geometryShader,
+            &missing_alias_shaders) ||
+        missing_alias_error.find("requires the Vulkan 1.1 EDRAM sample-alias transfer shaders") ==
+            std::string::npos) {
+        std::cerr << "captured gamma EDRAM alias did not fail closed without its transfer shaders: "
+                  << missing_alias_error << '\n';
         return 1;
     }
     auto mismatched_copy_extent = copy;
@@ -2891,6 +2914,10 @@ int main(int argc, char** argv) {
         (resolve_properties.supportedStencilResolveModes & sample_zero) != 0;
 
     auto depth_preserve_draws = mixed_sample_draws;
+    // This fixture exercises Vulkan depth resolve in isolation. Keep its
+    // pitch pair outside the retail EDRAM alias path verified above.
+    depth_preserve_draws[0].raster.surface_pitch = 1280;
+    depth_preserve_draws[1].raster.surface_pitch = 1280;
     for (auto& depth_draw : depth_preserve_draws) {
         depth_draw.topology = shift::xbox::PrimitiveTopology::TriangleList;
         depth_draw.index_count = 3;

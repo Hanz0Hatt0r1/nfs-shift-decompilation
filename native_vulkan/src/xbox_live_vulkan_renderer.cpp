@@ -326,6 +326,7 @@ struct FrameResources {
   uint32_t upload_slot = 0;
   std::vector<DrawResources> draws;
   DrawResources copy_draw;
+  DrawResources edram_alias_draw;
   DrawResources edram_clear_draw;
   bool submitted = false;
 
@@ -374,6 +375,7 @@ struct FrameResources {
       destroy_buffer(draw.vertices);
     };
     destroy_draw(copy_draw);
+    destroy_draw(edram_alias_draw);
     destroy_draw(edram_clear_draw);
     for (auto it = draws.rbegin(); it != draws.rend(); ++it)
       destroy_draw(*it);
@@ -1393,6 +1395,42 @@ bool is_captured_gamma_depth_only_view_alias(
         color.color_format == CapturedColorTargetFormat::Rgba8Gamma &&
         depth.guest_color_format == 0 &&
         depth.color_format == CapturedColorTargetFormat::Rgba8Linear;
+}
+
+bool is_captured_gamma_4x_to_1x_edram_alias(
+    const CapturedRasterState& source,
+    const CapturedRasterState& destination) {
+    if (source.width != 1280 || source.height != 720 ||
+        destination.width != source.width ||
+        destination.height != source.height ||
+        source.surface_pitch != 640 || destination.surface_pitch != 1280 ||
+        source.sample_count != 4 || destination.sample_count != 1 ||
+        source.color_base_tiles != destination.color_base_tiles ||
+        source.depth_base_tiles != destination.depth_base_tiles ||
+        source.guest_color_format != 1 ||
+        destination.guest_color_format != 1 ||
+        source.color_format != CapturedColorTargetFormat::Rgba8Gamma ||
+        destination.color_format != CapturedColorTargetFormat::Rgba8Gamma ||
+        source.depth_format != destination.depth_format ||
+        source.depth_only || destination.depth_only) {
+        return false;
+    }
+    for (bool depth_target : {false, true}) {
+        std::vector<CapturedEdramTileAlias> aliases;
+        if (!captured_xenos_edram_alias_tiles(
+                source, destination, depth_target, &aliases, nullptr) ||
+            aliases.size() != 720 ||
+            !std::all_of(aliases.begin(), aliases.end(),
+                         [](const CapturedEdramTileAlias& alias) {
+                             return alias.source_tile_x ==
+                                        alias.destination_tile_x &&
+                                    alias.source_tile_y ==
+                                        alias.destination_tile_y;
+                         })) {
+            return false;
+        }
+    }
+    return true;
 }
 
 VkFormat captured_color_format(CapturedColorTargetFormat format,
@@ -2595,6 +2633,7 @@ bool create_mixed_msaa_render_pass(
     VkFormat color_format,
     bool needs_msaa_depth,
     bool resolve_depth_stencil,
+    bool preserve_msaa_color,
     VkRenderPass* render_pass,
     std::string* error) {
     if (resolve_depth_stencil) {
@@ -2617,7 +2656,8 @@ bool create_mixed_msaa_render_pass(
         attachments[0].format = color_format;
         attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
         attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[0].storeOp = preserve_msaa_color
+            ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -2729,7 +2769,8 @@ bool create_mixed_msaa_render_pass(
     attachments[0].format = color_format;
     attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
     attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].storeOp = preserve_msaa_color
+        ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -2860,6 +2901,20 @@ bool submit_mixed_sample_copy_frame(
     }
     if (first_single_sample_draw == draws.size()) {
         return fail("mixed captured frame has no single-sample draw", error);
+    }
+    const bool has_msaa_color_source = std::any_of(
+        draws.begin(), draws.begin() + first_single_sample_draw,
+        [](const CapturedVulkanDraw& draw) {
+            return !draw.raster.depth_only && draw.raster.color_write_mask != 0;
+        });
+    const bool alias_transfer_needed = has_msaa_color_source &&
+        is_captured_gamma_4x_to_1x_edram_alias(
+            target, draws[first_single_sample_draw].raster);
+    if (alias_transfer_needed &&
+        (copy.edram_alias_transfer_vertex_shader_spirv.empty() ||
+         copy.edram_alias_transfer_pixel_shader_spirv.empty())) {
+        return fail("mixed captured frame requires the Vulkan 1.1 EDRAM sample-alias transfer shaders",
+                    error);
     }
     std::vector<bool> remap_trailing_msaa_to_single(draws.size(), false);
     std::vector<bool> later_single_depth_stencil_use(draws.size(), false);
@@ -2996,6 +3051,9 @@ bool submit_mixed_sample_copy_frame(
         1, false, resources, source_readback);
     constexpr VkImageUsageFlags mixed_source_usage =
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    const VkImageUsageFlags mixed_msaa_usage =
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+        (alias_transfer_needed ? VK_IMAGE_USAGE_SAMPLED_BIT : 0u);
     if (source_readback_ready) {
         std::string optional_error;
         if (!create_render_attachment(
@@ -3018,7 +3076,7 @@ bool submit_mixed_sample_copy_frame(
         !create_render_attachment(
             memory_properties, device, target.width, target.height,
             target_format,
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            mixed_msaa_usage,
             VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_4_BIT,
             &resources.mixed_msaa_color, error)) {
         return false;
@@ -3045,7 +3103,8 @@ bool submit_mixed_sample_copy_frame(
     const bool resolve_depth_stencil = needs_msaa_depth && needs_single_depth;
     if (!create_mixed_msaa_render_pass(
             device, target_format, needs_msaa_depth,
-            resolve_depth_stencil, &resources.mixed_msaa_render_pass, error)) {
+            resolve_depth_stencil, alias_transfer_needed,
+            &resources.mixed_msaa_render_pass, error)) {
         return false;
     }
     std::vector<VkImageView> msaa_views{resources.mixed_msaa_color.view,
@@ -3229,6 +3288,51 @@ bool submit_mixed_sample_copy_frame(
             return false;
         }
     }
+    if (alias_transfer_needed) {
+        CapturedVulkanDraw alias_transfer_draw{};
+        alias_transfer_draw.raster = draws[first_single_sample_draw].raster;
+        alias_transfer_draw.raster.scissor_x0 = 0;
+        alias_transfer_draw.raster.scissor_y0 = 0;
+        alias_transfer_draw.raster.scissor_x1 = target.width;
+        alias_transfer_draw.raster.scissor_y1 = target.height;
+        alias_transfer_draw.raster.scissor_has_area = true;
+        alias_transfer_draw.raster.color_write_mask = 0xFu;
+        alias_transfer_draw.raster.depth_test_enabled = false;
+        alias_transfer_draw.raster.depth_write_enabled = false;
+        alias_transfer_draw.raster.stencil_test_enabled = false;
+        alias_transfer_draw.raster.depth_control = 0;
+        alias_transfer_draw.raster.blend_control_0 = 0x00010001u;
+        alias_transfer_draw.vertex_shader_spirv =
+            copy.edram_alias_transfer_vertex_shader_spirv;
+        alias_transfer_draw.pixel_shader_spirv =
+            copy.edram_alias_transfer_pixel_shader_spirv;
+        alias_transfer_draw.topology = PrimitiveTopology::TriangleList;
+        alias_transfer_draw.auto_index = true;
+        alias_transfer_draw.index_count = 3;
+        CapturedVulkanTexture alias_source{};
+        alias_source.fetch_constant_index = 0;
+        alias_source.width = target.width;
+        alias_source.height = target.height;
+        alias_source.format = CapturedVulkanTexture::Format::Rgba16Unorm;
+        alias_source.external_image_view = resources.mixed_msaa_color.view;
+        alias_source.sampling.clamps = {
+            TextureClamp::ClampToEdge, TextureClamp::ClampToEdge,
+            TextureClamp::ClampToEdge};
+        alias_source.sampling.mag_filter = TextureFilter::Point;
+        alias_source.sampling.min_filter = TextureFilter::Point;
+        alias_source.sampling.mip_filter = TextureFilter::Point;
+        alias_source.sampling.anisotropy = TextureAnisotropy::Disabled;
+        alias_source.sampling.border_color = TextureBorderColor::AbgrBlack;
+        alias_source.sampling.border_alpha_known = true;
+        alias_transfer_draw.textures.push_back(std::move(alias_source));
+        if (!create_draw_resources(
+                alias_transfer_draw, std::numeric_limits<size_t>::max(), nullptr,
+                memory_properties, device, resources.mixed_single_render_pass, 0,
+                pipeline_cache, geometry_shader_enabled, sampler_capabilities,
+                &resources.edram_alias_draw, error)) {
+            return false;
+        }
+    }
     CapturedVulkanDraw copy_draw = make_copy_resolve_draw(
         copy, source_width, source_height, output_width, output_height, true);
     if (!create_draw_resources(copy_draw, std::numeric_limits<size_t>::max(), nullptr,
@@ -3317,6 +3421,29 @@ bool submit_mixed_sample_copy_frame(
         for (const DrawTextureResources& texture : draw.textures) {
             if (!texture.guest_copy_source && !texture.external_image)
                 add_host_barrier(&texture.upload, VK_ACCESS_TRANSFER_READ_BIT);
+        }
+    }
+    if (resources.edram_alias_draw.pipeline) {
+        const std::array<std::pair<const BufferResource*, VkAccessFlags>, 4>
+            buffers = {{{&resources.edram_alias_draw.vertices,
+                         VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT},
+                        {&resources.edram_alias_draw.indices,
+                         VK_ACCESS_INDEX_READ_BIT},
+                        {&resources.edram_alias_draw.vertex_constants,
+                         VK_ACCESS_UNIFORM_READ_BIT},
+                        {&resources.edram_alias_draw.pixel_constants,
+                         VK_ACCESS_UNIFORM_READ_BIT}}};
+        for (const auto& [buffer, destination_access] : buffers) {
+            if (!buffer->buffer) continue;
+            VkBufferMemoryBarrier barrier{};
+            barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+            barrier.dstAccessMask = destination_access;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.buffer = buffer->buffer;
+            barrier.size = VK_WHOLE_SIZE;
+            host_barriers.push_back(barrier);
         }
     }
     if (resources.edram_clear_draw.pipeline) {
@@ -3459,6 +3586,24 @@ bool submit_mixed_sample_copy_frame(
         }
     };
 
+    const auto record_alias_transfer = [&] {
+        const DrawResources& draw = resources.edram_alias_draw;
+        VkViewport viewport{};
+        viewport.width = static_cast<float>(target.width);
+        viewport.height = static_cast<float>(target.height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        VkRect2D scissor{{0, 0}, {target.width, target.height}};
+        vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          draw.pipeline);
+        vkCmdSetViewport(command, 0, 1, &viewport);
+        vkCmdSetScissor(command, 0, 1, &scissor);
+        vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                draw.pipeline_layout, 0, 2,
+                                draw.descriptor_sets, 0, nullptr);
+        vkCmdDraw(command, 3, 1, 0, 0);
+    };
+
     const uint32_t msaa_attachment_count = 2u +
         (needs_msaa_depth ? 1u : 0u) + (resolve_depth_stencil ? 1u : 0u);
     std::vector<VkClearValue> msaa_clears(msaa_attachment_count);
@@ -3497,6 +3642,25 @@ bool submit_mixed_sample_copy_frame(
                          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0,
                          0, nullptr, 0, nullptr, 1, &resolve_to_single);
 
+    VkImageMemoryBarrier msaa_to_sample{};
+    msaa_to_sample.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    msaa_to_sample.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    msaa_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    msaa_to_sample.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    msaa_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    msaa_to_sample.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    msaa_to_sample.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    msaa_to_sample.image = resources.mixed_msaa_color.image;
+    msaa_to_sample.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    msaa_to_sample.subresourceRange.levelCount = 1;
+    msaa_to_sample.subresourceRange.layerCount = 1;
+    if (alias_transfer_needed) {
+        vkCmdPipelineBarrier(command,
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
+                             nullptr, 0, nullptr, 1, &msaa_to_sample);
+    }
+
     std::vector<VkClearValue> single_clears(single_attachments.size());
     if (needs_single_depth) {
         single_clears[single_depth_reference.attachment].depthStencil = {1.0f, 0};
@@ -3509,6 +3673,7 @@ bool submit_mixed_sample_copy_frame(
     single_begin.clearValueCount = static_cast<uint32_t>(single_clears.size());
     single_begin.pClearValues = single_clears.data();
     vkCmdBeginRenderPass(command, &single_begin, VK_SUBPASS_CONTENTS_INLINE);
+    if (alias_transfer_needed) record_alias_transfer();
     for (size_t i = first_single_sample_draw; i < draws.size(); ++i) {
         if (draws[i].raster.sample_count == 1 ||
             remap_trailing_msaa_to_single[i]) {
@@ -5388,18 +5553,7 @@ bool submit_captured_vulkan_operation_stream(
     const auto is_captured_gamma_4x_to_1x_transition =
         [](const CapturedRasterState& before,
            const CapturedRasterState& after) {
-            return before.sample_count == 4 && after.sample_count == 1 &&
-                before.surface_pitch <= UINT32_MAX / 2u &&
-                after.surface_pitch == before.surface_pitch * 2u &&
-                before.color_base_tiles == after.color_base_tiles &&
-                before.depth_base_tiles == after.depth_base_tiles &&
-                before.guest_color_format == 1 &&
-                after.guest_color_format == 1 &&
-                before.width == after.width && before.height == after.height &&
-                before.color_format == CapturedColorTargetFormat::Rgba8Gamma &&
-                after.color_format == CapturedColorTargetFormat::Rgba8Gamma &&
-                before.depth_format == after.depth_format &&
-                !before.depth_only && !after.depth_only;
+            return is_captured_gamma_4x_to_1x_edram_alias(before, after);
         };
     const auto is_captured_depth_only_view_transition =
         [](const CapturedRasterState& before,

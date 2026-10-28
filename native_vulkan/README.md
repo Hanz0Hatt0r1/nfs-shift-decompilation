@@ -77,13 +77,17 @@ recorded in
   decoded into a bounded neutral state contract. A CPU-side address helper now
   maps 32bpp 1x/2x/4x samples to the 10 MiB Xenos EDRAM tile address space,
   including the depth half-tile swap. It does not back Vulkan attachments,
-  preserve raster writes between target changes, or support paired-tile 64bpp
-  color. A separate strict decoder now
+  provide general persistence between target changes, or support paired-tile
+  64bpp color. A separate strict decoder now
   recognizes the live 1280x720 color Copy/Convert register tuple
   (`copy_control=0x00100000`, destination `0x0975e000`, format 6 with R/B swap).
-  This is metadata only: the live mode-6 draw is still not submitted, and Xenos
-  EDRAM accumulation/frontbuffer resolve remain unimplemented. The constants
-  decoder resolves
+  The captured mode-6 sample-zero presenter copy has a bounded Vulkan path.
+  The frame-622 1280x720 RGBA8-gamma 4x/pitch-640 to 1x/pitch-1280 color alias
+  now has a tile-mapped Vulkan transfer before the later 1x draws. Its
+  captured-shaped host regression and current limits are recorded in
+  [`process2_gamma_edram_alias_transfer_20261028.json`](../evidence/process2_gamma_edram_alias_transfer_20261028.json).
+  General Xenos EDRAM backing, accumulation, cross-frame persistence, and
+  arbitrary alias layouts remain unimplemented. The constants decoder resolves
   each stage's 256-register float window and the observed PS branch bools,
   including the VS a0-indexed c0-c3 window.
   A bounded decoder parses the captured VS/PS control-flow slots and their

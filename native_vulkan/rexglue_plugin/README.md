@@ -2250,3 +2250,33 @@ Process 1's Xenos provider factory is separate and does not need modification.
 Process 1 has been asked to replay this DSO with its current runtime. No packet-72
 Vulkan draw submission or retail pixel parity is claimed. Full details are in
 [`process2_ordered_edram_format26_texture_fetch_20261028.json`](../../evidence/process2_ordered_edram_format26_texture_fetch_20261028.json).
+
+## Captured 4x-to-1x gamma EDRAM color alias (2026-10-28)
+
+The frame-622 capture identifies draw 0 as 1280x720 RGBA8 gamma at color base
+`0x0`, depth base `0x2d0`, pitch 640 and 4x samples; draws 2–10 switch to the
+same bases and extent with pitch 1280 and 1x samples. The captured Xenos tile
+address helper reports 720 identity tile aliases for both color and depth.
+The existing mixed-sample path now stores the multisample color attachment and,
+for this exact captured layout only, inserts a Vulkan 1.1 full-screen transfer
+between the last 4x draw and the first 1x draw. Each destination pixel selects
+the corresponding source sample within the 80x16 EDRAM tile; the transfer keeps
+the `R16G16B16A16_UNORM` intermediate value without an intermediate 8-bit
+round-trip. The later guest draws and format-6 Copy/Convert remain ordered after
+that transfer.
+
+The renderer check uses a captured-shaped 4x-to-1x gamma target and requires the
+transfer shaders; the existing tile-address regression checks every alias.
+Native Linux CTest passed 4/4 with `VK_LAYER_KHRONOS_validation` forced. The
+ReXGlue Linux plugin built from this worktree, and its validation-enabled CTest
+passed 7/7. The exact DSO SHA-256, build ID, input-capture hashes, and test
+commands are in
+[`process2_gamma_edram_alias_transfer_20261028.json`](../../evidence/process2_gamma_edram_alias_transfer_20261028.json).
+
+This is a bounded Vulkan translation of the captured color address mapping,
+not a complete physical EDRAM backing store. It does not establish Xenos or
+retail pixel parity: the available frame-622 readback predates this transfer,
+and no post-change retail replay/readback has been collected. Depth/stencil
+still follows the existing provider-confirmed Vulkan SAMPLE_ZERO resolve; its
+sample-address parity with Xenos remains unverified. Android ARM64 build/runtime
+status is recorded separately in the evidence file.
