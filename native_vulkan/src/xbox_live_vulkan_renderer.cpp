@@ -2018,7 +2018,7 @@ bool create_draw_resources(
           : nullptr;
       if (input.captured && input.captured->guest_copy_source &&
           !guest_copy_image) {
-        return fail("captured format-31 texture has no initialized exact-layout Copy/Convert image",
+        return fail("captured Copy/Convert texture has no initialized exact-layout source image",
                     error);
       }
       if (guest_copy_image) {

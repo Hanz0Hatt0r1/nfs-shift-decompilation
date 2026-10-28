@@ -568,6 +568,38 @@ and interrupt audit are recorded in
 and
 [`process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json`](../evidence/process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json).
 
+### Captured format-26 Copy/Convert texture fetch (2026-10-28)
+
+Draw #10's captured texture descriptor decodes to guest address `0x0BE19000`,
+format 26, endian mode 1, integer format, tiled 1280x720 storage with pitch
+1280, and a `0x730000` byte tiled footprint. The preceding captured operation
+chain writes that address with 1280x720 format-26 Copy/Convert operations
+using sample-select 6 (all source samples), color and depth clear enabled,
+and the captured destination format/number/endian/exp-bias tuple. The descriptor
+and Copy/Convert register values are taken from the Redmi capture, not inferred
+from a rendered image.
+
+The plugin now treats this descriptor as a Copy/Convert texture only when the
+same ordered operation batch contains a preceding copy with the exact captured
+destination, extent, format 26, unsigned number format 2, endian 1, exp-bias
+11, sample-select 6, both clear flags, and the remaining captured control
+fields. The Vulkan render destination remains
+`VK_FORMAT_R16G16B16A16_UINT`; a compatible UNORM view supplies the sampled
+image, and translated integer-format fetches scale normalized components by
+65535. Unmatched format-26 descriptors fail closed rather than uploading raw
+64bpp guest memory.
+
+The regressions check the captured descriptor decode, reject a descriptor with
+the integer-format bit cleared, and run an ordered synthetic draw/copy/draw/copy
+stream whose format-26 cached sample changes readback relative to a zero-filled
+baseline. Linux Vulkan validation and the Android ARM64 renderer/checker builds
+pass. The capture itself predates this change and was collected with an older
+plugin; no run has yet shown the new plugin processing the retail descriptor.
+This is synthetic executor evidence, not retail pixel parity. The transition's
+other draws, format-31 intermediate copies, shader control flow, and final game
+frame remain unresolved. Build identity and scope are in
+[`process2_ordered_edram_format26_texture_fetch_20261028.json`](../evidence/process2_ordered_edram_format26_texture_fetch_20261028.json).
+
 ## Retail conditional-jump rejection detail (2026-10-27)
 
 The Redmi capture also rejects shader translation at draw #14 for a conditional

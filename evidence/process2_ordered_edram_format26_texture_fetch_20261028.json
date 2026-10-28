@@ -1,0 +1,88 @@
+{
+  "schema": "shift.process2.ordered_edram_format26_texture_fetch.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "implementation_commit": "a06398f88fb5c7d376d06273c63ae0312d90a381",
+  "capture_specification": {
+    "capture_directory": "/tmp/nfs-shift-p1-gpu-backend-resolvepr2-frame322-20261028",
+    "log": "/tmp/nfs-shift-p1-gpu-backend-resolvepr2-frame322-20261028/runs/shift-native-r1/bin/logs/nfs_shift_001.log",
+    "capture_plugin_sha256": "07a953e6879c240867ca9ea0a0995ed53a6a92e165ab49cd946a5a99b304ca9e",
+    "capture_plugin_source_commit": "f6f0472bc2e86a952b27c120c5b9545453846f01",
+    "capture_log_observations": [
+      "Lines 971-1025 report nine preceding Copy/Convert operations writing 0x0BE19000 at 1280x720, format 26, sample-select 6.",
+      "Line 1041 records draw #10 rejected on descriptor words [0x8a024802, 0x0be1905a, 0x0059e4ff, 0x0106ad11, 0x0, 0x210].",
+      "This is an older-plugin capture used as the implementation specification; the new plugin has not yet replayed this retail operation batch."
+    ],
+    "descriptor_decode": {
+      "guest_address": "0x0BE19000",
+      "format": 26,
+      "endian": 1,
+      "integer_format": true,
+      "tiled": true,
+      "extent": [1280, 720],
+      "pitch_pixels": 1280,
+      "tiled_storage_bytes": "0x730000",
+      "swizzle": "0x688",
+      "mag_filter": "point",
+      "min_filter": "point"
+    },
+    "copy_contract": {
+      "copy_control": "0x00100360",
+      "destination_base": "0x0BE19000",
+      "destination_extent": [1280, 720],
+      "destination_format": 26,
+      "destination_number_format": 2,
+      "destination_endian": 1,
+      "destination_exp_bias": 11,
+      "sample_select": 6,
+      "color_clear": true,
+      "depth_clear": true,
+      "source_select": 0,
+      "command": "Convert",
+      "register_evidence": "process2_ordered_edram_copy_clear_20261028.json"
+    },
+    "capture_identity": {
+      "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd"
+    }
+  },
+  "implementation": {
+    "ordered_match": "Treats a format-26 texture as a cached Copy/Convert source only if a preceding operation in the same ordered batch has the exact captured address, 1280x720 extent and pitch, format/number/endian/exp-bias, all-sample selection, clear flags, source selection, and Convert command.",
+    "vulkan_format": "Creates a mutable VK_FORMAT_R16G16B16A16_UINT color attachment and samples it through a compatible VK_FORMAT_R16G16B16A16_UNORM view.",
+    "integer_fetch": "For the captured integer-format descriptor, translated shader sampling scales UNORM components by 65535 before applying the captured swizzle.",
+    "fail_closed": "Unmatched format-26 descriptors reject. Raw uncached 64bpp tiled format-26 uploads remain unsupported."
+  },
+  "verification": {
+    "native_linux": {
+      "build": "cmake --build /home/pes/work/.build-process2-p2161-native-vulkan-20261028 -j6",
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-native-vulkan-20261028 --output-on-failure",
+      "result": "passed 4/4",
+      "format26_regression": "Synthetic ordered draw/copy/draw/copy execution reads from the cached format-26 image; its readback differs from the otherwise identical zero-filled texture baseline."
+    },
+    "linux_rexglue": {
+      "build": "cmake --build /home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028 --target rexgpu-shift-native -j6",
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028 --output-on-failure",
+      "ctest_result": "passed 7/7",
+      "plugin_sha256": "6f2a88990a590ca9cdffe680c27bbfb724c2ac589eaa8d535dd55726566f03b6",
+      "build_id": "ec5936367d1abbdac00ed2b24848c505169e7b6f"
+    },
+    "android_arm64": {
+      "build": "cmake --build /home/pes/work/.build-process2-p2161-android-renderer-20261027 --target shift_xbox_live_vulkan_renderer xbox_live_vulkan_renderer_check -j6",
+      "result": "renderer library and offscreen checker compiled",
+      "device_runtime": "not run; adb devices -l returned no attached devices"
+    },
+    "diff_check": "git diff --check passed"
+  },
+  "parallel_interrupt_audit": {
+    "evidence": "process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json",
+    "scope": "Existing P2 source-1 packet/callback correlation evidence; this format-26 change does not alter PM4 interrupt dispatch and adds no new interrupt capture."
+  },
+  "limitations": [
+    "The renderer regression is synthetic and is not retail framebuffer parity or visual confirmation of the captured texture contents.",
+    "The newer plugin has not been run against the 14-draw retail transition, so acceptance of this exact descriptor in a live retail frame remains unverified.",
+    "Only the captured 1280x720 format-26 Copy/Convert texture contract is supported; other extents and unmatched copy states fail closed.",
+    "The complete 14-draw transition remains incomplete, including format-31 intermediate copies and unsupported shader control flow; no full original game frame is established.",
+    "No Android Mali runtime validation was possible because ADB had no connected device."
+  ]
+}
