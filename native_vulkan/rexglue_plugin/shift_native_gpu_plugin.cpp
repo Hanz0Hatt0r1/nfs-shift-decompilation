@@ -1955,27 +1955,45 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     const uint64_t vblank_interval_ticks = std::max(
         uint64_t{1}, uint64_t(double(guest_tick_frequency) / refresh_rate_hz));
     uint64_t last_vblank_tick = rex::chrono::Clock::QueryGuestTickCount();
+    auto previous_vblank_return = std::chrono::steady_clock::now();
     uint32_t dispatched_vblanks = 0;
     while (vblank_worker_running_.load(std::memory_order_acquire)) {
       const uint64_t current_tick = rex::chrono::Clock::QueryGuestTickCount();
       while (vblank_worker_running_.load(std::memory_order_acquire) &&
              current_tick - last_vblank_tick >= vblank_interval_ticks) {
+        const uint64_t tick_lag_intervals =
+            (current_tick - last_vblank_tick) / vblank_interval_ticks;
         last_vblank_tick += vblank_interval_ticks;
         const uint64_t dispatch_id = NextGpuDispatchId();
+        const bool trace_vblank = GuestRingTraceEnabled();
+        const auto dispatch_started = trace_vblank
+            ? std::chrono::steady_clock::now()
+            : std::chrono::steady_clock::time_point{};
         GuestInterruptDispatchTrace callback_trace{};
         const bool dispatched = DispatchGuestInterrupt(
             0u, 2u, dispatch_id, vblank_host_worker_.get(), &callback_trace);
-        if (GuestRingTraceEnabled()) {
+        if (trace_vblank) {
           static std::atomic<uint32_t> vblank_trace_count{0};
           const uint32_t trace_index =
               vblank_trace_count.fetch_add(1, std::memory_order_relaxed);
           if (trace_index < kMaxGuestInterruptTraceRecords) {
+            const auto dispatch_returned = std::chrono::steady_clock::now();
+            const auto dispatch_gap_ns =
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    dispatch_started - previous_vblank_return).count();
+            const auto dispatch_elapsed_ns =
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    dispatch_returned - dispatch_started).count();
+            previous_vblank_return = dispatch_returned;
             REXLOG_INFO(
                 "shift-native: ring trace GPU_INTERRUPT #{} source=0 "
-                "origin=vblank dispatch_id={:016X} cpu_mask=0x04 "
+                "origin=vblank dispatch_id={:016X} tick_lag_intervals={} "
+                "dispatch_gap_ns={} dispatch_elapsed_ns={} cpu_mask=0x04 "
                 "dispatched_cpu_mask=0x{:02X} callback=0x{:08X} "
                 "data=0x{:08X} status={}",
-                trace_index, dispatch_id, dispatched ? 0x04u : 0u,
+                trace_index, dispatch_id, tick_lag_intervals,
+                dispatch_gap_ns, dispatch_elapsed_ns,
+                dispatched ? 0x04u : 0u,
                 callback_trace.callback, callback_trace.callback_data,
                 callback_trace.status);
           } else if (trace_index == kMaxGuestInterruptTraceRecords) {
