@@ -76,6 +76,21 @@
       "source1_cpu_mask": "0x04",
       "source1_callback": "0x823B37B8",
       "raw_shader_dump": "Exact draw-10 pixel-shader bytes were not retained; the run-time dump selector still did not select this packet."
+    },
+    "format26_followup_replay": {
+      "capture_directory": "/home/pes/work/nfs-shift-p1-native-format26-exact-fix-20261028",
+      "plugin_sha256": "f65edaa4b95627871d334cbaa5ccb4e545c0784552f16e776e5ece02aff261eb",
+      "plugin_build_id": "71abe9ca09b7e14ea6b0da1867a7676e17180484",
+      "log1_sha256": "57a013eea5ae5142060a736eafea5f2914f40e6e63006ba060a0165f2d60b5e0",
+      "log2_sha256": "ff43bd0baee593554cbd99e42f3e48456b783a55894a672825867e3eeab0aa90",
+      "draw10": "No unresolved draw #10 entry; format-26 matcher passed.",
+      "next_failure": "seven 24-draw refreshes reject packet 72 before vkCmdDraw/vkQueueSubmit because the runtime provider did not enable depth/stencil resolve; one other refresh fails at incomplete raster state.",
+      "representative_error_line": 7124,
+      "representative_error_sha256": "2a4087ac605404df8e5026d7b8d7e9d8a62e766a0924bb2b37c53bdd0a9321ed",
+      "source1_interrupts": 1972,
+      "source1_cpu_mask": "0x04",
+      "source1_callback": "0x823B37B8",
+      "limits": "There are separate presenter submissions in these logs, but they are not submissions of the packet-72 segment and do not establish retail parity."
     }
   },
   "implementation": {
@@ -84,7 +99,7 @@
       "native_vulkan/tests/xbox_shader_translate_check.cpp"
     ],
     "behavior": "Count executed texture fetches by fetch constant. Keep existing GLSL local names for a single use; when a fetch constant is sampled multiple times, suffix each sampled/fetched temporary with its fetch ordinal. The sampler uniform binding and fetch semantics are unchanged.",
-    "runtime_status": "A bounded Native-only replay with the shader-fix DSO passed draw 10 through translation; it then exposed a distinct format-26 Copy/Convert source-layout mismatch. The format-26 source-layout correction is being validated in a follow-up DSO."
+    "runtime_status": "Two bounded Native-only replays confirm progression: the shader-local fix passes draw #10 translation, and the format-26 source-layout fix removes draw #10 from unresolved diagnostics. The latest stream now reaches packet 72, where the Process 1-created provider has resolve disabled; no Vulkan submission for that segment is confirmed."
   },
   "regression": {
     "basis": "A bounded reproduction extends the repository's captured retail pixel-shader slice with a second executed texture fetch at instruction 6 using the same fetch constant as instruction 4.",
@@ -124,7 +139,7 @@
     "diff_check": "git diff --check passed"
   },
   "remaining_blockers": [
-    "Replay the follow-up DSO with the exact 2560x1440, 4x source-raster contract to verify draw 10 clears the format-26 resource gate.",
+    "Process 1 runtime must opt into the SDK depth/stencil resolve provider overload; replay the matching runtime and SDK-PR2-built P2 DSO to check packet 72.",
     "The original draw-10 pixel-shader bytes were not preserved; the unit regression reproduces the duplicate-local failure pattern rather than those exact bytes.",
     "Draws 12, 22, and 24 still have separately reported unsupported shader control-flow or texture-sign cases.",
     "The ordered 14-draw EDRAM/Copy/Convert transition still lacks shared physical EDRAM persistence, generic copy/conversion, and intermediate-image parity."

@@ -62,5 +62,29 @@
     "No Android build or device run was performed in this check.",
     "No retail pixel parity is claimed."
   ],
-  "next_evidence": "Rerun the captured retail transition with the plugin SHA above, retaining XEX/runtime hashes and packet order. Capture draw geometry/scissor plus Copy/Convert source/destination state for the 14-draw packet-0 sequence before implementing aliased backing transfer."
+  "next_evidence": "After Process 1 builds the matching runtime with the optional resolve overload requested, replay once with the SDK-PR-2-built P2 DSO and retain the packet-72 operation/readback result. Do not count separate presenter batches as submission of that failed segment.",
+  "latest_retail_replay": {
+    "capture_directory": "/home/pes/work/nfs-shift-p1-native-format26-exact-fix-20261028",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "p2_plugin_sha256": "f65edaa4b95627871d334cbaa5ccb4e545c0784552f16e776e5ece02aff261eb",
+    "format26_result": "draw #10 no longer appears in unresolved-draw diagnostics; the captured source-layout matcher passed",
+    "next_gate": {
+      "log": "runs/shift-native-r1/bin/logs/nfs_shift_001.2.log",
+      "log_sha256": "ff43bd0baee593554cbd99e42f3e48456b783a55894a672825867e3eeab0aa90",
+      "line": 7124,
+      "line_sha256": "2a4087ac605404df8e5026d7b8d7e9d8a62e766a0924bb2b37c53bdd0a9321ed",
+      "repetitions": 7,
+      "error": "ordered Vulkan segment ending at packet 72 failed before vkCmdDraw/vkQueueSubmit because the provider did not confirm enabled 4x-to-1x depth/stencil SAMPLE_ZERO resolve"
+    },
+    "runtime_cause": "The runtime used in this replay still called the two-argument VulkanProvider::Create overload. The optional SDK overload from PR #2 was not requested, so properties().depthStencilResolveSampleZero remained false.",
+    "separate_resolve_sdk_plugin_validation": {
+      "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+      "plugin_sha256": "6eeb19b8d1806a46a570fd9279153de2ee62995b4db1667a54c252e6c7a6d887",
+      "build_id": "840e83d01bcb5616539c78c7fc53a8d0f467583d",
+      "ctest": "passed 7/7 with VK_LAYER_KHRONOS_validation",
+      "provider_probe": "NVIDIA GeForce GTX 950, Vulkan 1.4; resolve extensions enabled; SAMPLE_ZERO=1; GPU-emulation features disabled"
+    },
+    "status": "The capability-capable P2 plugin has not yet been retail-replayed; Process 1 was asked to build its runtime against SDK PR #2 and opt in to depth/stencil resolve."
+  }
 }

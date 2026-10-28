@@ -2191,20 +2191,44 @@ for the raw capture references, artifact identities, and limits.
 
 ## Repeated texture-fetch GLSL symbols (2026-10-28)
 
-The exact paired Native replay completed Bink progress 281/281, submitted frame
-322, and refreshed the ordered 14-draw list. Draw #10 had complete raster and
-input state but was rejected by glslang because two generated declarations
-used `sampled_0`. The retained run does not include that draw's pixel-shader
-bytes, so the regression extends a captured retail shader slice with a second
-fetch of the same sampler; it does not claim to reproduce the exact draw-10
-program.
+The first bounded Native replay completed Bink progress 281/281 and reached
+draw #10 with complete raster/input state. Its generated GLSL used a duplicate
+`sampled_0` local. The run did not retain that draw's pixel-shader bytes, so the
+regression extends a captured retail shader slice with a second fetch of the
+same sampler; it does not claim to reproduce the exact draw-10 program.
 
 The translator now suffixes per-fetch local names only when a sampler is used
 more than once. Existing sampler bindings, fetch ordering, swizzle, and
 single-fetch names stay the same. The duplicate-fetch GLSL compiled and passed
-`spirv-val` for Vulkan 1.1. Native CTest passed 4/4 and plugin CTest passed 6/6
-with Vulkan validation; Linux and Android ARM64/API 26 plugin builds succeeded.
-The new DSO has not yet been replayed against the retail capture, and no Android
-device was connected. Capture hashes, build IDs, test results, and remaining
-shader/EDRAM blockers are in
+`spirv-val` for Vulkan 1.1. A Native replay with that DSO passed draw #10
+through shader translation, exposing the next format-26 Copy/Convert matching
+gate. The source-layout fix then removed draw #10 from unresolved diagnostics
+in a second Native replay. That run reached packet 72, where seven refreshes
+stopped before `vkCmdDraw`/`vkQueueSubmit` because the Process 1 runtime had not
+enabled provider depth/stencil resolve. These are execution-frontier results,
+not retail parity. The exact shader bytes remain unavailable. Capture hashes,
+build IDs, test results, and limits are in
 [`process2_repeated_sampler_glsl_symbols_20261028.json`](../../evidence/process2_repeated_sampler_glsl_symbols_20261028.json).
+
+## Captured format-26 copy source layout and packet-72 resolve gate (2026-10-28)
+
+The retail format-26 texture is 1280x720 with pitch 1280, but its preceding
+all-sample Copy/Convert reads a physical 2560x1440, 4x raster with surface pitch
+1280, color base 0, depth base `0x400`, and guest color format 12. The earlier
+matcher incorrectly required the source extent to equal the texture extent.
+It now checks the captured source raster and the exact format-26 destination,
+sample-select, clear, endian, exp-bias, and Convert fields. The regression
+accepts this captured 4x source and rejects a logical-size or single-sample
+source.
+
+The exact-source-layout DSO cleared draw #10's resource gate in a second
+Native-only replay. The captured packet-72 segment then failed closed because
+its ReXGlue provider was created without depth/stencil resolve enabled. The P2
+renderer already uses Vulkan 1.1 render-pass resolve when the provider confirms
+`SAMPLE_ZERO`; the P2 plugin built against SDK PR #2 reports the capability on
+the GTX 950 with GPU-emulation features disabled. Its validation-enabled plugin
+CTest passed 7/7. The current Process 1 runtime still calls the old two-argument
+provider factory, so that new DSO has not yet been replayed with a capability-
+enabled runtime. Process 1 has been asked for that runtime-side opt-in. No packet-72
+Vulkan draw submission or retail pixel parity is claimed. Full details are in
+[`process2_ordered_edram_format26_texture_fetch_20261028.json`](../../evidence/process2_ordered_edram_format26_texture_fetch_20261028.json).

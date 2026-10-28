@@ -106,15 +106,68 @@
   },
   "limitations": [
     "The renderer regression is synthetic and is not retail framebuffer parity or visual confirmation of captured texture contents.",
-    "The post-fix plugin has not yet been replayed against the 14-draw retail transition; the exact captured format-26 descriptor acceptance remains pending that run.",
+    "The source-layout DSO passes draw #10 resource matching in the retail capture but does not submit the packet-72 segment because the Process 1 runtime did not enable provider resolve capability.",
+    "A new DSO compiled with the optional resolve-capable SDK API passed provider tests but has not yet been replayed with a runtime that opts in.",
     "Only the captured 1280x720 format-26 Copy/Convert texture contract is supported; other extents and unmatched copy states fail closed.",
-    "The complete ordered transition remains incomplete, including other format-31 intermediate copies and unsupported shader control flow; no full original game frame is established.",
-    "No Android Mali runtime validation was possible because ADB had no connected device."
+    "The complete ordered transition remains incomplete, including remaining format-31 intermediate copies and shader ordinals 12, 22, and 24; no full original game frame is established.",
+    "No Android Mali runtime validation was part of this Linux replay."
   ],
   "replay_after_fix": {
-    "status": "requested from Process 1",
-    "plugin_sha256": "f65edaa4b95627871d334cbaa5ccb4e545c0784552f16e776e5ece02aff261eb",
-    "build_id": "71abe9ca09b7e14ea6b0da1867a7676e17180484",
-    "requested_scope": "One 135-second Native-only replay with the same XEX/runtime/resources. Verify draw #10 advances past the format-26 gate and report any next shader/resource blocker or draw submission. No Xenos comparison replay."
+    "status": "completed; format-26 matching now passes in the retail Native capture, next blocker is provider depth/stencil resolve opt-in",
+    "capture_directory": "/home/pes/work/nfs-shift-p1-native-format26-exact-fix-20261028",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+    "plugin_used_sha256": "f65edaa4b95627871d334cbaa5ccb4e545c0784552f16e776e5ece02aff261eb",
+    "plugin_used_build_id": "71abe9ca09b7e14ea6b0da1867a7676e17180484",
+    "plugin_build_source": "P2 HEAD c35dd5cf plus dirty source diff SHA-256 b96822739d15a92516eb97f011d2652bbbc748c9e1f0db753489bf2c28883264; diff contains the exact committed source-layout matcher now at 675d3e43",
+    "native_duration_seconds": 137.632,
+    "gdb_exit": 0,
+    "bink_progress": "281/281",
+    "ordered_snapshot": {
+      "log": "runs/shift-native-r1/bin/logs/nfs_shift_001.1.log",
+      "log_sha256": "57a013eea5ae5142060a736eafea5f2914f40e6e63006ba060a0165f2d60b5e0",
+      "line": 2059,
+      "line_sha256": "217dbc0b5e910ca151f56a4753e82ecff716b1713db024651a2a8864202a604a",
+      "shape": "14 Draw operations for packets 0..13 followed by Copy packet 38; capture is an ordered command snapshot, not proof of submission"
+    },
+    "draw10": "No unresolved draw #10 entry was emitted; the format-26 rejection is gone.",
+    "next_blocker": {
+      "log": "runs/shift-native-r1/bin/logs/nfs_shift_001.2.log",
+      "log_sha256": "ff43bd0baee593554cbd99e42f3e48456b783a55894a672825867e3eeab0aa90",
+      "line": 7124,
+      "line_sha256": "2a4087ac605404df8e5026d7b8d7e9d8a62e766a0924bb2b37c53bdd0a9321ed",
+      "message": "ordered Vulkan segment ending at packet 72 failed: mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability",
+      "repetitions": 7,
+      "other_refresh_failures": 1,
+      "submission": "The packet-72 segment returns before vkCmdDraw/vkQueueSubmit. Other presenter submissions in those logs belong to separate batches."
+    },
+    "source1": {
+      "interrupts": 1972,
+      "cpu_mask": "0x04",
+      "callback": "0x823B37B8",
+      "rptr_wraps": 3,
+      "wptr_wraps": 4,
+      "queue_producer_consumer": "623/414",
+      "completion_dequeue": "413/414",
+      "qualification": "Outer callback dispatch evidence only; does not prove nested callback effects or game progress."
+    },
+    "other_unresolved_ordinals": [
+      12,
+      22,
+      24
+    ],
+    "exact_draw10_shader_bytes": "not retained; only the already-known first-draw/frame322 selector is available",
+    "end_state": "final scene state_348=0/update_count_356=0; no input gate observed and no Start/A pulses sent"
+  },
+  "provider_resolve_followup": {
+    "sdk_pull_request": "https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/2",
+    "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "plugin_build": "/home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028/output/librexgpu-shift-native.so",
+    "plugin_sha256": "6eeb19b8d1806a46a570fd9279153de2ee62995b4db1667a54c252e6c7a6d887",
+    "build_id": "840e83d01bcb5616539c78c7fc53a8d0f467583d",
+    "compile_capability": "SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER=1",
+    "validation": "plugin CTest 7/7 with VK_LAYER_KHRONOS_validation; provider check reports NVIDIA GTX 950 Vulkan 1.4, create_renderpass2/depth_stencil_resolve enabled, SAMPLE_ZERO=1, GPU-emulation features disabled",
+    "status": "not yet retail-replayed; Process 1 runtime still calls the two-argument provider factory, so its resolve property remains false until it uses the optional overload"
   }
 }
