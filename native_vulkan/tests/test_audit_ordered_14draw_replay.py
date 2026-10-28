@@ -57,6 +57,32 @@ class OrderedRetailReplayEvidenceTests(unittest.TestCase):
         self.assertEqual(operations["draw_packets"], list(range(14)))
         self.assertEqual(operations["copy_packet"], 38)
         self.assertEqual(operations["ordered_operation_count"], 15)
+        layout_groups = operations["draw_target_layout_groups"]
+        self.assertEqual(
+            [group["draw_packets"] for group in layout_groups],
+            [[0], [1], list(range(2, 11)), [11], [12, 13]],
+        )
+        self.assertTrue(
+            all(
+                group["color_base_tiles"] == "0x0"
+                and group["depth_base_tiles"] == "0x2d0"
+                and group["extent"] == [1280, 720]
+                for group in layout_groups
+            )
+        )
+        self.assertEqual(
+            [(group["surface_pitch"], group["samples"], group["depth_only"])
+             for group in layout_groups],
+            [(640, 4, False), (640, 4, True), (1280, 1, False),
+             (640, 4, True), (1280, 1, False)],
+        )
+        self.assertEqual(
+            [(group["depth_test"], group["depth_write"], group["stencil_test"])
+             for group in layout_groups],
+            [(True, True, True), (False, False, True),
+             (True, False, False), (False, False, True),
+             (True, False, False)],
+        )
         readback = READBACK["readback"]
         presenter = readback["presenter"]
         source = readback["pre_copy_source"]

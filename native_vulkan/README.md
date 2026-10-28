@@ -601,6 +601,13 @@ compressed raw captures:
 [`A2B10G10R10 output`](../evidence/process2_ordered_14draw_copy38_frame622_presenter_a2b10g10r10.bin.gz),
 [`RGBA16 pre-Copy source`](../evidence/process2_ordered_14draw_copy38_frame622_precopy_rgba16_unorm.bin.gz).
 
+The renderer snapshot records target layouts for packets 0–13: 4x color at
+pitch 640, a 4x depth-only view, 1x color at pitch 1280 for packets 2–10, a
+second 4x depth-only view, and 1x color for packets 12–13. All views use
+color base 0 and depth base `0x2d0`; Copy38 follows. The readback confirms that
+this captured sequence reached the presenter. It does not prove independent
+Xenos depth/stencil contents or general EDRAM alias behavior.
+
 The 1280x720 pre-Copy source is single-sample `R16G16B16A16_UNORM`; the
 presenter image is `A2B10G10R10_UNORM_PACK32`. After the Copy's 16-bit to
 8-bit to 10-bit UNORM quantization, 920,250 of 921,600 pixels match exactly
@@ -755,6 +762,26 @@ status, ring bounds, and timestamp limits. This proves a consistent ordered
 correspondence in the capture, not callback payload equivalence or guest
 semantic equivalence. The full trace, hashes, and limits are in
 [`process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json`](../evidence/process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json).
+
+## P1 Native queue-wait run: same-run source-1 interrupt join (2026-10-28)
+
+Process 1 supplied its completed Native queue-wait capture, which used P2
+plugin `d01405cc…d6d90` and recorded both renderer PM4 ring interrupts and
+guest callback entries in one run. The exact normalized inputs are archived in
+[`the join input trace`](../evidence/process2_p1_native_queuewait_r2_source1_join_inputs_20261028.jsonl.gz).
+A unique strict timestamp/order join matches all 853 guest callback entries to
+continuous renderer interrupt IDs 699–1551. The absolute time delta is 0–79 ms
+(median 21 ms); all rows report source 1, ring `0x09752580`, generation 1,
+CPU/dispatched mask `0x04`, and an invoked CPU 2 dispatch through
+`0x823B37B8`/`0xB7365F00`.
+
+This is a same-run ordered correspondence, not proof that callback payloads are
+equivalent or that the guest queue head/tail advanced. Process 1's capture shows
+`sub_823B34A0` still polling its software queue predicate at the bounded stop;
+the renderer trace does not establish the cause. The per-row audit and run
+identities are in
+[`the join record`](../evidence/process2_p1_native_queuewait_r2_source1_interrupt_join_20261028.json),
+and the regression replays the join from its archived inputs.
 
 ## Commands
 

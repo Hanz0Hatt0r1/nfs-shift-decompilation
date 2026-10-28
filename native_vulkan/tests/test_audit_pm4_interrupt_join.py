@@ -2,6 +2,8 @@
 """Regression coverage for contiguous PM4-to-guest callback alignment."""
 
 import importlib.util
+import gzip
+import hashlib
 import json
 from pathlib import Path
 import unittest
@@ -14,6 +16,10 @@ SPEC.loader.exec_module(AUDIT)
 RETAIL_EVIDENCE = (
     Path(__file__).parents[2]
     / "evidence/process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json"
+)
+QUEUE_WAIT_R2_EVIDENCE = (
+    Path(__file__).parents[2]
+    / "evidence/process2_p1_native_queuewait_r2_source1_interrupt_join_20261028.json"
 )
 
 
@@ -114,6 +120,97 @@ class InterruptJoinTests(unittest.TestCase):
         )
         self.assertIn("timestamp/order join", audit["interpretation"])
         self.assertIn("does not prove", audit["interpretation"])
+
+    def test_same_run_native_queue_wait_interrupt_join_replays_from_archived_inputs(self):
+        evidence = json.loads(QUEUE_WAIT_R2_EVIDENCE.read_text())
+        capture = evidence["source_run"]
+        audit = evidence["audit"]
+        archive = (
+            QUEUE_WAIT_R2_EVIDENCE.parent / evidence["join_input_archive"]["path"]
+        )
+        archive_bytes = archive.read_bytes()
+        self.assertEqual(
+            hashlib.sha256(archive_bytes).hexdigest(),
+            evidence["join_input_archive"]["sha256"],
+        )
+        raw = gzip.decompress(archive_bytes)
+        self.assertEqual(
+            hashlib.sha256(raw).hexdigest(),
+            evidence["join_input_archive"]["uncompressed_sha256"],
+        )
+        inputs = [json.loads(line) for line in raw.splitlines()]
+        self.assertEqual(len(inputs), evidence["join_input_archive"]["records"])
+        p1_callbacks = sorted(
+            (row for row in inputs if row["type"] == "guest_callback"),
+            key=lambda row: row["entry_ordinal"],
+        )
+        raw_interrupts = sorted(
+            (row for row in inputs if row["type"] == "pm4_interrupt"),
+            key=lambda row: row["ordinal"],
+        )
+        self.assertEqual(len(p1_callbacks), audit["guest_callback_entries"])
+        self.assertEqual(len(raw_interrupts), audit["source1_pm4_interrupt_records"])
+        self.assertEqual(capture["gdb_exit"], 0)
+        self.assertFalse(capture["guest_memory_modified_by_probe"])
+        self.assertEqual(capture["ring_trace_malformed_records"], 0)
+        self.assertEqual(
+            capture["plugin_build_id"],
+            "0fb71ebd09a498fc0515de313289b39ccfc22300",
+        )
+        for row in raw_interrupts:
+            self.assertEqual(row["source"], 1)
+            self.assertEqual(row["generation"], 1)
+            self.assertEqual(row["ring_guest"], 0x09752580)
+            self.assertEqual(row["cpu_mask"], 0x04)
+            self.assertEqual(row["dispatched_cpu_mask"], 0x04)
+            self.assertEqual(
+                row["callbacks"],
+                [
+                    {
+                        "cpu": 2,
+                        "callback": 0x823B37B8,
+                        "data": 0xB7365F00,
+                        "status": "invoked",
+                    }
+                ],
+            )
+            self.assertLess(row["batch_rptr"], 8192)
+            self.assertLess(row["batch_wptr"], 8192)
+            self.assertGreater((row["batch_wptr"] - row["batch_rptr"]) % 8192, 0)
+
+        p2_interrupts = [
+            {
+                "id": row["ordinal"],
+                "timestamp_ms": row["timestamp_epoch_ms"],
+                "generation": row["generation"],
+                "rptr": row["batch_rptr"],
+                "wptr": row["batch_wptr"],
+                "ring": row["ring_guest"],
+                "ordinal": row["packet_ordinal"],
+                "packet_source": row["source_ib"],
+                "packet_offset": row["source_ib_byte_offset"],
+                "mask": row["cpu_mask"],
+                "dispatched": row["dispatched_cpu_mask"],
+                "callbacks": row["callbacks"],
+            }
+            for row in raw_interrupts
+        ]
+        joined = AUDIT.join_callbacks(p1_callbacks, p2_interrupts, 120)
+        self.assertEqual(joined, audit["rows"])
+        self.assertEqual(len(joined), 853)
+        self.assertEqual(
+            [joined[0]["p2_pm4_interrupt_id"], joined[-1]["p2_pm4_interrupt_id"]],
+            audit["interrupt_id_range"],
+        )
+        self.assertEqual(audit["interrupt_id_range"], [699, 1551])
+        self.assertEqual(
+            audit["absolute_timestamp_delta_ms_min_median_max"], [0, 21, 79]
+        )
+        self.assertEqual(
+            audit["p1_registered_callback_targets"],
+            {"0x823A4758": 320, "0x823B8C60": 533},
+        )
+        self.assertIn("does not prove", evidence["interpretation"])
 
     def test_selects_unique_contiguous_window_with_callback_order(self):
         p1 = [p1_callback(1000), p1_callback(1100), p1_callback(1200)]
