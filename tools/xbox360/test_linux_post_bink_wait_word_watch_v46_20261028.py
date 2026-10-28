@@ -14,6 +14,7 @@ TRACE = ROOT / "tools/xbox360/trace_linux_post_bink_worker_route_v46_wait_word_w
 RUNNER = ROOT / "tools/xbox360/capture_linux_post_bink_worker_route_v46_wait_word_watch_20261028.py"
 JOIN_EVIDENCE = ROOT / "evidence/xbox360_linux_native_660_callback_wait_join_20261028.json"
 FRONTIER_EVIDENCE = ROOT / "evidence/xbox360_linux_native_wait_reg_mem_frontier_20261028.json"
+PAIRED_EVIDENCE = ROOT / "evidence/xbox360_linux_gpu_backend_comparison_process1_20261028.json"
 
 
 def python_blocks(script: str) -> list[str]:
@@ -143,6 +144,17 @@ class WaitWordWatchTests(unittest.TestCase):
         self.assertEqual(burst["p2_dispatch_ids"], ["0x0E78", "0x0E89"])
         self.assertIn("temporal coincidence only", burst["interpretation_limit"])
         self.assertIn("source0_callback_events", self.trace)
+
+    def test_next_xenos_comparison_artifact_matches_the_paired_capture(self) -> None:
+        import json
+
+        evidence = json.loads(JOIN_EVIDENCE.read_text(encoding="utf-8"))
+        candidate = evidence["next_capture_xenos_plugin_candidate"]
+        paired = json.loads(PAIRED_EVIDENCE.read_text(encoding="utf-8"))
+        self.assertFalse(candidate["used_in_this_capture"])
+        self.assertTrue(candidate["used_in_previous_paired_capture"])
+        self.assertEqual(candidate["sha256"], paired["identity"]["xenos_plugin"]["sha256"])
+        self.assertEqual(candidate["build_id"], paired["identity"]["xenos_plugin"]["build_id"])
 
 
 if __name__ == "__main__":
