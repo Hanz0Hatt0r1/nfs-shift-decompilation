@@ -1,0 +1,444 @@
+{
+  "capture_root_at_run": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028",
+  "captured_on": "2026-10-28",
+  "conclusion": "This paired run does not reproduce the 3381->3375 write: the Native guest software head reaches only 3017. All captured writes to 0x17AF4000 are +2, and captured EVENT_WRITE_SHD source bytes match execution bytes. The exact source=1 dispatch join succeeds once (ID 4892), while P1 records only one Native callback and no queue dequeue/completion or scene transition; P2 logs 820 source=1 interrupts. Therefore the stale/replayed-command cause remains unresolved, and the Native/P1 callback progression mismatch is a separate follow-up.",
+  "event_write_shd_audit": {
+    "final_target_write": {
+      "batch": 1815,
+      "batch_rptr": 869,
+      "batch_wptr": 875,
+      "decoded_value": 3017,
+      "destination_host": "0x217af4000",
+      "encoded_address": 397361154,
+      "endian": 2,
+      "event": 3021,
+      "expanded_words": [
+        3221379072,
+        3,
+        397361154,
+        3017
+      ],
+      "generation": 1,
+      "guest_physical": 397361152,
+      "guest_value_after": 3017,
+      "guest_value_before": 3015,
+      "initiator": 3,
+      "monotonic_ns": 50924227402839,
+      "nesting_depth": 1,
+      "packet_ordinal": 66,
+      "packet_value": 3017,
+      "raw_store": 3372941312,
+      "raw_words": [
+        3221379072,
+        3,
+        397361154,
+        3017
+      ],
+      "ring_guest": 158672256,
+      "source_bytes_match": true,
+      "source_ib": 158594176,
+      "source_offset": 344,
+      "swap_counter": 820,
+      "value_mode": "literal"
+    },
+    "interpretation_limit": "A complete trace attributes each store to its executed packet and its expanded-byte snapshot. A packet with an explicit stale value is not by itself proof of a Native bug; compare its original guest command and the paired run before classifying the behavior.",
+    "regressions": [],
+    "source_byte_mismatches": [],
+    "summary": {
+      "event_sequence_range": [
+        0,
+        3021
+      ],
+      "event_write_records": 3022,
+      "expanded_to_execution_byte_mismatches": 0,
+      "missing_event_sequence_ids": [],
+      "target_previous_after_mismatches": 0,
+      "target_regression_count": 0,
+      "target_transition_delta_counts": {
+        "2": 1508
+      },
+      "target_write_count": 1508
+    },
+    "target_previous_after_mismatches": []
+  },
+  "interrupt_dispatch_join": {
+    "interpretation": "This is a timestamp/order join to a unique continuous PM4 interrupt window. Process 1 records callbacks observed inside the guest wrapper; Process 2 records the outer guest callback and data passed to ExecuteInterrupt. This does not prove callback payload or guest semantic equivalence.",
+    "join_method": "exact gpu_dispatch_id; one P2 interrupt may own multiple nested P1 callbacks",
+    "max_absolute_timestamp_delta_ms": 120,
+    "rows": [
+      {
+        "batch_rptr": 866,
+        "batch_wptr": 869,
+        "cpu_mask": "0x04",
+        "dispatch_cpu": 2,
+        "dispatch_status": "invoked",
+        "dispatched_cpu_mask": "0x04",
+        "gpu_dispatch_id": 4892,
+        "outer_callback_data": "0xb7365f00",
+        "outer_callback_wrapper": "0x823b37b8",
+        "p1_callback_data": "0x00000208",
+        "p1_callback_index": 0,
+        "p1_callback_object": "0xfb963000",
+        "p1_cpu_mask": "0x04",
+        "p1_registered_callback_function": "0x823a4758",
+        "p1_wall_clock_epoch_ms": 1793192928899,
+        "p2_pm4_interrupt_id": 819,
+        "p2_wall_clock_epoch_ms": 1793192928901,
+        "packet_source": "0973C380+11924",
+        "pm4_packet_ordinal": 246,
+        "ring_generation": 1,
+        "ring_guest": "0x09752580",
+        "source": 1,
+        "timestamp_delta_ms_p2_minus_p1": 2
+      }
+    ],
+    "schema": "shift.process2.pm4_interrupt_join_audit.v2",
+    "summary": {
+      "absolute_timestamp_delta_ms": {
+        "max": 2,
+        "median": 2,
+        "min": 2
+      },
+      "joined_rows": 1,
+      "p1_registered_callback_targets": {
+        "0x823A4758": 1
+      },
+      "p2_events_outside_joined_window": 819,
+      "p2_ids_contiguous": true,
+      "p2_interrupt_id_range": [
+        819,
+        819
+      ],
+      "p2_outer_callback_wrappers": {
+        "0x823B37B8": 1
+      },
+      "p2_source1_events_considered": 820
+    }
+  },
+  "p1_native_guest_observation": {
+    "event_counts": {
+      "bink_complete_events": 1,
+      "completion_events": 0,
+      "controller_return_events": 0,
+      "controller_update_events": 0,
+      "counter_write_events": 0,
+      "dequeue_events": 0,
+      "enqueue_events": 0,
+      "event_call_events": 1,
+      "event_write_shd_packet_events": 0,
+      "host_input_events": 0,
+      "input_gate_events": 0,
+      "ke_wait_return_events": 0,
+      "producer_call_events": 2,
+      "producer_events": 0,
+      "queue_field_write_events": 0,
+      "retail_queue_wait_events": 0,
+      "retail_queue_wait_return_events": 0,
+      "scene_function_events": 0,
+      "scene_function_return_events": 0,
+      "scene_state_events": 0,
+      "source1_callback_events": 1,
+      "submission_route_events": 2,
+      "worker72_write_events": 0,
+      "xam_input_events": 0,
+      "xam_input_return_events": 0
+    },
+    "final_scene_state": {
+      "child_words_264": [
+        3147612464,
+        3146350240,
+        3146350288,
+        1
+      ],
+      "list_count_36": 1,
+      "object": 2199806340,
+      "state_348": 1,
+      "update_count_356": 312
+    },
+    "guest_main_backtrace": "#0  0x00005555560158a0 in sub_823B2AF0 ()\n#1  0x0000555557634255 in sub_823B31A0 ()\n#2  0x0000555557dea8f7 in sub_823B33A0 ()\n#3  0x00005555584a8a4a in sub_823A4E48 ()\n#4  0x0000555557431658 in sub_823A5610 ()\n#5  0x00005555594f59be in sub_8264F868 ()\n#6  0x000055555604a811 in sub_8301DB18 ()\n#7  0x00005555587c7439 in sub_82FC1880 ()",
+    "ring_worker_backtrace": "#0  0x00007ffff68a0952 in ?? () from /usr/lib/libc.so.6\n#1  0x00007ffff68e4aed in clock_nanosleep () from /usr/lib/libc.so.6\n#2  0x00007ffff68f0f27 in nanosleep () from /usr/lib/libc.so.6\n#3  0x00007ffff5404d60 in (anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() () from /dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/shift-native-r1/bin/librexgpu-shift-native.so\n#4  0x00007ffff53fe559 in std::_Function_handler<int (), (anonymous namespace)::ShiftNativeGraphicsSystem::SetupGuestGpu(rex::runtime::FunctionDispatcher*, rex::system::KernelState*)::{lambda()#1}>::_M_invoke(std::_Any_data const&) () from /dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/shift-native-r1/bin/librexgpu-shift-native.so\n#5  0x00007ffff757c015 in rex::system::XHostThread::Execute() () from /dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/shift-native-r1/bin/librexruntime.so\n#6  0x00007ffff757c574 in std::_Function_handler<void (), rex::system::XThread::Create()::$_0>::_M_invoke(std::_Any_data const&) () from /dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/shift-native-r1/bin/librexruntime.so\n#7  0x00007ffff73919d0 in rex::thread::PosixCondition<rex::thread::Thread>::ThreadStartRoutine(void*) () from /dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/shift-native-r1/bin/librexruntime.so\n#8  0x00007ffff68980a2 in ?? () from /usr/lib/libc.so.6\n#9  0x00007ffff692080c in ?? () from /usr/lib/libc.so.6",
+    "source1_callback_events": [
+      {
+        "arguments_r3_to_r10": [
+          1,
+          3073793792,
+          2199006128,
+          69015,
+          2199006128,
+          0,
+          3073810444,
+          1
+        ],
+        "callback_bit_index": 2,
+        "callback_bit_mask": 4,
+        "callback_data": 520,
+        "callback_function": 2184857432,
+        "callback_mask": 4,
+        "callback_object": 4220923904,
+        "elapsed_seconds": 69.577,
+        "entry_ordinal": 1,
+        "gpu_dispatch_id": 4892,
+        "guest_lr": 3166485692,
+        "kind": "source1_callback",
+        "manager": 3073793792,
+        "manager_counter_before": 0,
+        "manager_flag_bit_set_before": false,
+        "manager_flags_before": 0,
+        "manager_words_10904_to_1091c": [
+          0,
+          3017,
+          0,
+          8206,
+          263168,
+          67584,
+          3017
+        ],
+        "software_queue": {
+          "head": 3013,
+          "head_pointer": 3081715712,
+          "predicate_byte": 20,
+          "tail": 3017
+        },
+        "source": 1,
+        "thread": 11,
+        "thread_name": "SHIFT Native GP",
+        "trace_sequence": 7,
+        "wall_clock_epoch_ms": 1793192928899
+      }
+    ],
+    "stop_signal": "Last stopped for thread 11 (Thread 0x7fffd63ff6c0 (LWP 415344)).\n\tUsing the running image of child process 415315.\nProgram stopped at 0x7ffff68a0952.\nIt stopped with signal SIGINT, Interrupt.",
+    "stop_thread": "SHIFT Native GP"
+  },
+  "paired_comparison": {
+    "first_submission_record_difference_candidate": {
+      "caller_lr": "0x823B342C",
+      "delta": 0,
+      "interpretation": "The same producer call ordinal, tag, caller and route carry different captured words. The tag's record layout and causal relation to later guest/GPU state are not established.",
+      "kind": "producer_record_words_mismatch_candidate",
+      "producer_call_ordinal": 1,
+      "route": [
+        "sub_823B2AF0"
+      ],
+      "shift_native_record_words": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "tag": 11,
+      "xenos_record_words": [
+        0,
+        0,
+        3221299713,
+        0
+      ]
+    },
+    "input_comparability": {
+      "declared_profiles_match": true,
+      "delivered_profiles": {
+        "shift_native": [],
+        "xenos": [
+          [
+            "Start",
+            "0x0010"
+          ]
+        ]
+      },
+      "gates_match": true,
+      "same_three_pulse_profile_delivered": false
+    },
+    "milestones": {
+      "shift_native": {
+        "bink_281_of_281": true,
+        "controller_input_gate": false,
+        "scene_transitions": []
+      },
+      "xenos": {
+        "bink_281_of_281": true,
+        "controller_input_gate": false,
+        "scene_transitions": [
+          {
+            "child_slots_populated": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "first_elapsed_seconds": 57.944,
+            "first_update_count_356": 161,
+            "last_elapsed_seconds": 57.944,
+            "last_update_count_356": 161,
+            "list_count_36": 1,
+            "samples": 1,
+            "state_348": 1
+          },
+          {
+            "child_slots_populated": [
+              false,
+              false,
+              false,
+              false
+            ],
+            "first_elapsed_seconds": 58.209,
+            "first_update_count_356": 0,
+            "last_elapsed_seconds": 58.209,
+            "last_update_count_356": 0,
+            "list_count_36": 1,
+            "samples": 1,
+            "state_348": 0
+          }
+        ]
+      }
+    },
+    "post_bink_event_counts": {
+      "shift_native": {
+        "bink_complete": 1,
+        "event_call": 1,
+        "producer_call": 2,
+        "source1_callback": 1,
+        "submission_route": 2
+      },
+      "xenos": {
+        "bink_complete": 1,
+        "controller_return": 3,
+        "controller_update": 4,
+        "event_call": 602,
+        "host_input": 3,
+        "ke_wait_return": 601,
+        "producer_call": 1294,
+        "retail_queue_wait": 490,
+        "retail_queue_wait_return": 311,
+        "scene_function": 194,
+        "scene_function_return": 193,
+        "scene_state": 2,
+        "source1_callback": 336,
+        "submission_route": 1294,
+        "xam_input": 36,
+        "xam_input_return": 36
+      }
+    },
+    "run_outcome": {
+      "shift_native": {
+        "bink_reached": true,
+        "duration_seconds": 360.591,
+        "gdb_exit": 0
+      },
+      "xenos": {
+        "bink_reached": true,
+        "duration_seconds": 371.317,
+        "gdb_exit": 0
+      }
+    }
+  },
+  "raw_capture_archive": "process2_native_queue_dispatch_pair_36aad927_20261028_raw.tar.gz",
+  "raw_capture_inputs": [
+    {
+      "bytes": 3611,
+      "path_at_capture": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/pair_metadata.json",
+      "sha256": "246b913999e76fd892ce0de05092f65cfc333adc9943b7af3e901d0ac554c5f4"
+    },
+    {
+      "bytes": 172662,
+      "path_at_capture": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/comparison-r1.json",
+      "sha256": "1f669593963e30e5f37c47916f0decc8cc0e6751e784407a56ec7988bca0a788"
+    },
+    {
+      "bytes": 437544,
+      "path_at_capture": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/shift-native-r1/events.json",
+      "sha256": "226dca18cbb0c5d93ab0f7af00bf6fadec2af906cea23a9becc69d7df176e5ae"
+    },
+    {
+      "bytes": 5829,
+      "path_at_capture": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/shift-native-r1/run_metadata.json",
+      "sha256": "fe1b4131d8875b53120fa6776703a5ef26cbce686a7e22de93fb078fa378d47d"
+    },
+    {
+      "bytes": 30717,
+      "path_at_capture": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/shift-native-r1/gdb.log",
+      "sha256": "384d0cf599b72c007290b2492c49748c9c2ce6aeee8a6cda826b2c19239c3a2a"
+    },
+    {
+      "bytes": 31561,
+      "path_at_capture": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/shift-native-r1/runner.log",
+      "sha256": "13468411d4e50adc8f57c8c2d243ebf8b307b0a28cc15705ca8679abafba2571"
+    },
+    {
+      "bytes": 5242840,
+      "path_at_capture": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/shift-native-r1/bin/logs/nfs_shift_001.1.log",
+      "sha256": "909e2fd43a656316d19ee36ce40dab99537ac5433459cbbd6db9cd99f65df6cb"
+    },
+    {
+      "bytes": 5242854,
+      "path_at_capture": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/shift-native-r1/bin/logs/nfs_shift_001.2.log",
+      "sha256": "5a22b97a048e335b37ebafe6dbd6fe69b4f46c44eed3417dc11e5fedacb9c899"
+    },
+    {
+      "bytes": 277881,
+      "path_at_capture": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/shift-native-r1/bin/logs/nfs_shift_001.log",
+      "sha256": "dc55bfaac2a7c5c9f5476ae45d7476e00e935eaf46f36f0d3710e9b0dc44bf7b"
+    },
+    {
+      "bytes": 4295860,
+      "path_at_capture": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/xenos-r1/events.json",
+      "sha256": "9e1db2f5df282ac024b141708f531b51ff8712c1d078239d89ef57a88493c55c"
+    },
+    {
+      "bytes": 4892,
+      "path_at_capture": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/xenos-r1/run_metadata.json",
+      "sha256": "4c4b0d4caf7cb2a5b615087be7917be77dfb1a7ef072aab363f5bf50c42006be"
+    },
+    {
+      "bytes": 2764996,
+      "path_at_capture": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/xenos-r1/gdb.log",
+      "sha256": "97dc57bb2e0803b2b36e5c371685c694608c52a5f22d8b4fd03dee9702f76699"
+    },
+    {
+      "bytes": 2765826,
+      "path_at_capture": "/dev/shm/nfs-shift-p1-gpu-dispatch-pair-36aad927-20261028/runs/xenos-r1/runner.log",
+      "sha256": "2899983fe28af49cd2ce0b04cfef8e54b83b5d019700a656cefe978490db7b82"
+    },
+    {
+      "bytes": 1355484,
+      "path_at_capture": "/tmp/p2-final-event-write-audit.json",
+      "sha256": "e56148130b60ea75f8bb7496e2c450bac0b14227195e47efbcaebc3a92adcf0b"
+    },
+    {
+      "bytes": 1798,
+      "path_at_capture": "/tmp/p2-final-interrupt-join.json",
+      "sha256": "b7bb96056d74b9438295726e15799ffd81f8fce221ca795483ea6ba14967119b"
+    }
+  ],
+  "run_identity": {
+    "linux_plugin_build_id": "b3a4dcc4f3b45c41779f773c9295f20d7805ebf1",
+    "linux_plugin_sha256": "cf9ffc3775db83c874d69da6dc3e6995976a2ab8243409d8e2ef048c4aa61deb",
+    "native_duration_seconds": 360.591,
+    "native_gdb_exit": 0,
+    "p2_source_commit": "36aad9274f6c39be9c60028da085300fcafeccf8",
+    "same_host_runtime_game_and_resource_manifest": {
+      "host_sha256": {
+        "match": true,
+        "shift_native": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+        "xenos": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178"
+      },
+      "resource_manifest_sha256": {
+        "match": true,
+        "shift_native": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+        "xenos": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6"
+      },
+      "runtime_sha256": {
+        "match": true,
+        "shift_native": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+        "xenos": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd"
+      },
+      "xex_sha256": {
+        "match": true,
+        "shift_native": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+        "xenos": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+      }
+    },
+    "sdk_provider_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6",
+    "xenos_duration_seconds": 371.317,
+    "xenos_gdb_exit": 0
+  },
+  "schema": "shift.process2.native-queue-head-dispatch-pair.v1"
+}
