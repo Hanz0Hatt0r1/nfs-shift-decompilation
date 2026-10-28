@@ -1373,6 +1373,34 @@ int main() {
                             raster_tile_use_counts.end(),
                             [](uint32_t count) { return count == 1 || count == 2; }),
             "retail 14-draw raster grid did not preserve its 832 modulo-wrapped tile aliases");
+    std::vector<shift::xbox::CapturedEdramRasterTile> depth_raster_tiles;
+    std::array<uint32_t, 2048> depth_tile_use_counts{};
+    shift::xbox::CapturedEdramRasterTile first_depth_tile{};
+    shift::xbox::CapturedEdramRasterTile second_depth_tile{};
+    uint32_t depth_tile_1024_count = 0;
+    require(shift::xbox::captured_xenos_edram_raster_tiles(
+                retail_oversized_4x_layout, true, &depth_raster_tiles, &error) &&
+                depth_raster_tiles.size() == 2880,
+            "retail draw-0 depth plane did not enumerate its wrapped raster tiles");
+    for (const auto& raster_tile : depth_raster_tiles) {
+        ++depth_tile_use_counts[raster_tile.physical_tile_index];
+        if (raster_tile.physical_tile_index == 1024) {
+            if (depth_tile_1024_count == 0) first_depth_tile = raster_tile;
+            if (depth_tile_1024_count == 1) second_depth_tile = raster_tile;
+            ++depth_tile_1024_count;
+        }
+    }
+    const uint32_t multiply_mapped_depth_tile_count = static_cast<uint32_t>(
+        std::count_if(depth_tile_use_counts.begin(), depth_tile_use_counts.end(),
+                      [](uint32_t count) { return count > 1; }));
+    require(depth_tile_1024_count == 2 &&
+                first_depth_tile.tile_x == 0 && first_depth_tile.tile_y == 0 &&
+                second_depth_tile.tile_x == 0 && second_depth_tile.tile_y == 64 &&
+                multiply_mapped_depth_tile_count == 832 &&
+                std::all_of(depth_tile_use_counts.begin(),
+                            depth_tile_use_counts.end(),
+                            [](uint32_t count) { return count == 1 || count == 2; }),
+            "retail draw-0 depth plane modulo wrap diverged from its captured tile base");
     require(!shift::xbox::captured_xenos_edram_alias_tiles(
                 retail_oversized_4x_layout, retail_4x_edram_view, false,
                 &edram_alias_tiles, &error) &&
