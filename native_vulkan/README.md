@@ -484,6 +484,12 @@ transfer across aliases are still unimplemented. Native CTest passed 4/4 and
 Linux plugin CTest passed 6/6 under `VK_LAYER_KHRONOS_validation`; Android
 ARM64 renderer and checker targets compiled, but no device was connected. See
 [`process2_edram_alias_tile_map_20261028.json`](../evidence/process2_edram_alias_tile_map_20261028.json).
+`captured_xenos_edram_raster_tiles` now enumerates wrapped virtual raster tiles
+without discarding repeated physical EDRAM indices. The captured draw-0 layout
+enumerates 2,880 raster tiles and aliases 832 physical tiles twice; the
+renderer still rejects transfer from that layout because it has no captured
+draw-coverage/order mapping to decide which Vulkan pixels represent each
+physical tile.
 When an ordered stream hits an alias, its rejection now reports the shared
 color/depth tile counts or the exact reason that a unique tile mapping could
 not be built. The retail draw-0/draw-1 regression checks that this diagnostic

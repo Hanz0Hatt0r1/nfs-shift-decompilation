@@ -1343,6 +1343,36 @@ int main() {
     retail_oversized_4x_layout.width = 2560;
     retail_oversized_4x_layout.height = 1440;
     retail_oversized_4x_layout.surface_pitch = 1280;
+    retail_oversized_4x_layout.color_base_tiles = 0;
+    retail_oversized_4x_layout.depth_base_tiles = 1024;
+    std::vector<shift::xbox::CapturedEdramRasterTile> raster_tiles;
+    std::array<uint32_t, 2048> raster_tile_use_counts{};
+    shift::xbox::CapturedEdramRasterTile first_tile_zero{};
+    shift::xbox::CapturedEdramRasterTile second_tile_zero{};
+    uint32_t tile_zero_count = 0;
+    require(shift::xbox::captured_xenos_edram_raster_tiles(
+                retail_oversized_4x_layout, false, &raster_tiles, &error) &&
+                raster_tiles.size() == 2880,
+            "retail 14-draw layout did not enumerate its 2880 wrapped raster tiles");
+    for (const auto& raster_tile : raster_tiles) {
+        ++raster_tile_use_counts[raster_tile.physical_tile_index];
+        if (raster_tile.physical_tile_index == 0) {
+            if (tile_zero_count == 0) first_tile_zero = raster_tile;
+            if (tile_zero_count == 1) second_tile_zero = raster_tile;
+            ++tile_zero_count;
+        }
+    }
+    const uint32_t multiply_mapped_tile_count = static_cast<uint32_t>(
+        std::count_if(raster_tile_use_counts.begin(), raster_tile_use_counts.end(),
+                      [](uint32_t count) { return count > 1; }));
+    require(tile_zero_count == 2 &&
+                first_tile_zero.tile_x == 0 && first_tile_zero.tile_y == 0 &&
+                second_tile_zero.tile_x == 0 && second_tile_zero.tile_y == 64 &&
+                multiply_mapped_tile_count == 832 &&
+                std::all_of(raster_tile_use_counts.begin(),
+                            raster_tile_use_counts.end(),
+                            [](uint32_t count) { return count == 1 || count == 2; }),
+            "retail 14-draw raster grid did not preserve its 832 modulo-wrapped tile aliases");
     require(!shift::xbox::captured_xenos_edram_alias_tiles(
                 retail_oversized_4x_layout, retail_4x_edram_view, false,
                 &edram_alias_tiles, &error) &&

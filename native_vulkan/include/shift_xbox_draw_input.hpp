@@ -465,6 +465,12 @@ struct CapturedEdramTileAlias {
     uint32_t destination_tile_y = 0;
 };
 
+struct CapturedEdramRasterTile {
+    uint32_t physical_tile_index = 0;
+    uint32_t tile_x = 0;
+    uint32_t tile_y = 0;
+};
+
 // Maps one captured target pixel/sample to its Xenos EDRAM byte address.
 // x/y are logical pixels before the MSAA sample expansion; sample_index uses
 // the Xenos row-major sample order. The currently decoded color formats use
@@ -490,6 +496,15 @@ bool captured_xenos_edram_sample_coordinates(
     uint32_t tile_y,
     uint32_t sample_index_in_tile,
     CapturedEdramSampleCoordinates* output,
+    std::string* error);
+
+// Enumerates every raster tile and its wrapped physical EDRAM tile index.
+// Unlike the unique-alias helper below, this preserves repeated physical
+// indices when a large raster layout wraps the 2,048-tile store.
+bool captured_xenos_edram_raster_tiles(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    std::vector<CapturedEdramRasterTile>* output,
     std::string* error);
 
 // Maps the uniquely addressed physical EDRAM tiles shared by two captured
