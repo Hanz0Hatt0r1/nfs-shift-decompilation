@@ -1,0 +1,114 @@
+{
+  "schema": "shift.process2.wait_reg_mem_scratch_correlation.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "capture": {
+    "root": "/home/pes/work/nfs-shift-p1-v63-native-physical-waitword-04479dc-20261028-r1",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+    "native_plugin_sha256": "e5f5e955494c82d0dfbf70707c493183fd82fbc7db67d63053ce1f4f3bbfb0a3",
+    "native_plugin_build_id": "03dde9b89959a918813cc3f9f23263c2bfce4443",
+    "native_plugin_source_commit": "04479dc0a595442033163fad1550c8bb3f371c64",
+    "sdk_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6",
+    "duration_seconds": 266.623,
+    "stop_reason": "The user requested closing the unresponsive game window; this is not a natural run completion."
+  },
+  "physical_write_watch": {
+    "guest_address": "0x1B964004",
+    "host_alias": "physical_membase",
+    "host_address": "0x21B964004",
+    "before": "0x00000000",
+    "after": "0x00000001",
+    "elapsed_seconds": 1.625,
+    "thread_name": "SHIFT Native GP",
+    "thread_id": 11,
+    "plugin_pc_rva": "0x5E29E",
+    "host_stack_top": "ShiftNativeGraphicsSystem::ApplyScratchRegisterWrite(unsigned int, unsigned int)",
+    "final_watch_summary": {
+      "write_count": 1,
+      "last_value": "0x00000001",
+      "final_physical_alias_value": "0x00000000",
+      "interpretation": "The word reached 0 by run end, but the physical-alias watch did not capture the later transition. The release writer and alias remain unknown."
+    }
+  },
+  "pm4_correlation": {
+    "source_ib": "0x095D0120",
+    "source_ib_depth": 1,
+    "ib_dump": "bin/logs/nfs_shift_001.2.log",
+    "register_write": {
+      "byte_offset": "0x494",
+      "ib_local_packet_ordinal": 52,
+      "raw_dwords": ["0x00000579", "0x00000001"],
+      "packet_type": 0,
+      "register_index": "0x579",
+      "decoded_register": "SCRATCH_REG1",
+      "scratch_base": "0x1B964000",
+      "scratch_umsk": "0x00020037",
+      "guest_store": "0x1B964004: 0x00000000 -> 0x00000001",
+      "endian": "k8in32"
+    },
+    "following_wait": {
+      "byte_offset": "0x49C",
+      "expanded_packet_ordinal": 97,
+      "raw_dwords": [
+        "0xC0043C00",
+        "0x00000013",
+        "0x1B964006",
+        "0x00000001",
+        "0xFFFFFFFF",
+        "0x00000100"
+      ],
+      "guest_word": "0x1B964004",
+      "reference": "0x00000001",
+      "compare": "equal",
+      "mask": "0xFFFFFFFF",
+      "endian_mode": 2,
+      "poll_interval": "0x100",
+      "result": "Immediately observed raw 0x01000000, decoded 1, and completed with zero polls."
+    },
+    "classification": "The watchpoint store is the Type-0 scratch-register packet immediately preceding and satisfying the ref=1 WAIT_REG_MEM. It is not an EVENT_WRITE_SHD packet; that opcode has a separate direct-store handler."
+  },
+  "later_wait": {
+    "source_ib": "0x09730140",
+    "byte_offset": 11972,
+    "expanded_packet_ordinal": 254,
+    "guest_word": "0x1B964004",
+    "reference": "0x00000000",
+    "compare": "equal",
+    "entry_wall_time": "2026-10-28 19:52:04.339 local",
+    "entry_observed": "0x00000001; condition false",
+    "completion_wall_time": "2026-10-28 19:55:54.966 local",
+    "completion_observed": "0x00000000; condition true",
+    "polls": 74,
+    "elapsed_ms": 230626,
+    "classification": "A distinct ref=0 wait on the same guest word. The log proves the word changed before completion but has no timestamp or packet attribution for the 1-to-0 writer. This v63 wait is not the separate 622.731-second report."
+  },
+  "implementation_comparison": {
+    "native": {
+      "load": "__atomic_load_n with acquire ordering, then Xenos endian swap",
+      "failed_poll": "check shutdown, increment poll count, sleep_for(1 ms)",
+      "timeout": "none"
+    },
+    "xenos": {
+      "load": "TranslatePhysical word read, then Xenos endian swap",
+      "failed_poll_for_interval_0x100": "sleep 1 ms when vsync is enabled, then SyncMemory() full barrier",
+      "wait_condition": "same equal/reference/mask semantics"
+    },
+    "runtime_comparison": "Available local Xenos v50 used the same XEX, runtime, and resources, but had P2 ring tracing disabled and no wait-word watch. It cannot establish matching poll cadence or writer identity."
+  },
+  "findings": [
+    "The 0-to-1 store is a confirmed retail Type-0 scratch write and directly feeds the immediately following ref=1 wait.",
+    "The same word is later polled for zero. The v63 log shows a 230.626-second wait with 74 polls; the requested 1 ms interval cannot account for that elapsed time by itself.",
+    "Low poll count over a long interval is consistent with the ring worker receiving very little run time or being suspended, but current data does not distinguish scheduler/debugger pauses from writer timing.",
+    "The final physical-alias value is zero while the physical watch reports only the initial 0-to-1 event. An alternate guest alias or a watchpoint limitation is possible, not proven.",
+    "No renderer/wait behavior was changed and no timeout or forced completion is justified."
+  ],
+  "remaining_evidence": [
+    "Capture the exact 1-to-0 writer, PM4 packet or CPU store, and timestamp using the correct physical and guest virtual host aliases.",
+    "Collect time-based per-poll samples or scheduler state for a long wait to separate host thread descheduling from late guest writes.",
+    "Run a same-XEX Xenos capture with WAIT_REG_MEM poll/writer evidence before claiming paired backend behavior."
+  ]
+}

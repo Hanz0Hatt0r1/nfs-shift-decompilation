@@ -2280,3 +2280,36 @@ and no post-change retail replay/readback has been collected. Depth/stencil
 still follows the existing provider-confirmed Vulkan SAMPLE_ZERO resolve; its
 sample-address parity with Xenos remains unverified. Android ARM64 build/runtime
 status is recorded separately in the evidence file.
+
+## Retail scratch write and `WAIT_REG_MEM` correlation (2026-10-28)
+
+The v63 Native capture joins the early GDB write at physical guest word
+`0x1B964004` to its exact PM4 setup packet. The dump of IB `0x095D0120` has a
+Type-0 register write at byte offset `0x494`: header `0x00000579`, value
+`0x00000001`. Native decodes register `0x579` as `SCRATCH_REG1`; with scratch
+base `0x1B964000` and mask `0x00020037`, it stores logical value 1 to
+`0x1B964004`. The next packet at offset `0x49C` is the captured equality wait
+for value 1, endian mode 2, full mask, and poll interval `0x100`. It observes
+raw `0x01000000`, decodes 1, and completes with zero polls. This is an original
+scratch-register write, not an `EVENT_WRITE_SHD` store, and it directly
+satisfies that immediately following wait.
+
+The same v63 log later records a distinct wait for value 0 at IB
+`0x09730140+11972`. It enters while the word is 1 and completes with value 0
+after 230.626 seconds and 74 polls. The GDB watch was armed only on the
+physical host alias: its event record has `write_count=1` and `last_value=1`,
+while final memory reads as 0. Thus the capture proves that the word became 0,
+but does not identify the writer or its host alias. The 622.731-second report
+is not present in this v63 artifact and remains unjoined to a writer.
+
+For this packet form, Native and Xenos both perform an equality comparison on
+the endian-swapped physical word and use a nominal 1 ms poll interval. Native
+uses an acquire atomic load and sleeps 1 ms between failed polls. ReXGlue's
+Xenos command processor additionally calls `SyncMemory()` after the sleep.
+The local Xenos v50 capture did not enable P2 ring tracing or a wait-word
+watch, so it provides no paired poll/writer timing. The Native v63 run also
+ended at 266.623 seconds after the user requested closing the unresponsive
+window. No renderer or wait semantics were changed; a timeout or forced
+completion is not justified by this evidence. See
+[`process2_wait_reg_mem_scratch_correlation_20261028.json`](../../evidence/process2_wait_reg_mem_scratch_correlation_20261028.json)
+for capture identities, raw packet words, timings, and remaining evidence gaps.
