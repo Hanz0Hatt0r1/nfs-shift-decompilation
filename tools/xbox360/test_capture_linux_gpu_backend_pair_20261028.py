@@ -65,7 +65,10 @@ def main() -> None:
 
         with patch.object(MODULE.subprocess, "run", side_effect=fake_run), patch.dict(
             MODULE.os.environ,
-            {"SHIFT_QUEUE_TRACE_QUEUE_FIELD_ALIAS_PROBE": "physical_head_counter"},
+            {
+                "SHIFT_QUEUE_TRACE_QUEUE_FIELD_ALIAS_PROBE": "physical_head_counter",
+                "SHIFT_NATIVE_VULKAN_TRACE_ONLY": "1",
+            },
         ):
             MODULE.run_capture(
                 output=output,
@@ -94,6 +97,7 @@ def main() -> None:
         assert env["SHIFT_QUEUE_TRACE_INPUT_GAP_MS"] == "100"
         assert env["SHIFT_QUEUE_TRACE_EVENT_WRITE_SHD"] == "1"
         assert env["SHIFT_QUEUE_TRACE_QUEUE_FIELD_ALIAS_PROBE"] == "physical_head_counter"
+        assert "SHIFT_NATIVE_VULKAN_TRACE_ONLY" not in env
 
     print("Native-only selection skips Xenos; selected Native draw frame enables geometry and shader dump prefixes")
 
