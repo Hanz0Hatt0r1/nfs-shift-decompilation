@@ -1260,6 +1260,19 @@ VkCompareOp compare_op(uint32_t value) {
     return kCompareOps[value & 7u];
 }
 
+bool captured_depth_test_is_noop(const CapturedRasterState& raster) {
+    return raster.depth_test_enabled && !raster.depth_write_enabled &&
+           !raster.stencil_test_enabled &&
+           ((raster.depth_control >> 4) & 7u) == 7u;
+}
+
+bool captured_depth_stencil_attachment_used(
+    const CapturedRasterState& raster) {
+    return raster.depth_write_enabled || raster.stencil_test_enabled ||
+           (raster.depth_test_enabled &&
+            !captured_depth_test_is_noop(raster));
+}
+
 VkStencilOp stencil_op(uint32_t value) {
     static constexpr VkStencilOp kStencilOps[] = {
         VK_STENCIL_OP_KEEP, VK_STENCIL_OP_ZERO, VK_STENCIL_OP_REPLACE,
@@ -2449,7 +2462,8 @@ bool create_draw_resources(
     multisample.rasterizationSamples = raster_samples;
     VkPipelineDepthStencilStateCreateInfo depth{};
     depth.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depth.depthTestEnable = source.raster.depth_test_enabled;
+    depth.depthTestEnable = source.raster.depth_test_enabled &&
+                            !captured_depth_test_is_noop(source.raster);
     depth.depthWriteEnable = source.raster.depth_write_enabled;
     depth.depthCompareOp = compare_op((source.raster.depth_control >> 4) & 7u);
     depth.stencilTestEnable = source.raster.stencil_test_enabled;
@@ -2923,6 +2937,9 @@ bool submit_mixed_sample_copy_frame(
         later_single_depth_stencil_use[i] =
             has_later_single_depth_stencil_use;
         const CapturedRasterState& raster = draws[i].raster;
+        // Keep a conservative read of the guest's declared DS use here: a
+        // later guest operation may observe an earlier stencil side effect,
+        // even when its own depth compare is ALWAYS.
         has_later_single_depth_stencil_use |= raster.sample_count == 1 &&
             (raster.depth_test_enabled || raster.depth_write_enabled ||
              raster.stencil_test_enabled);
@@ -3008,11 +3025,9 @@ bool submit_mixed_sample_copy_frame(
         const bool render_as_single_sample = raster.sample_count == 1 ||
             remap_trailing_msaa_to_single[i];
         needs_msaa_depth |= !render_as_single_sample &&
-            (raster.depth_test_enabled || raster.depth_write_enabled ||
-             raster.stencil_test_enabled);
+            captured_depth_stencil_attachment_used(raster);
         needs_single_depth |= render_as_single_sample &&
-            (raster.depth_test_enabled || raster.depth_write_enabled ||
-             raster.stencil_test_enabled);
+            captured_depth_stencil_attachment_used(raster);
     }
     if (needs_msaa_depth && needs_single_depth &&
         !depth_stencil_resolve_enabled) {

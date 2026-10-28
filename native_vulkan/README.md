@@ -612,6 +612,18 @@ color base 0 and depth base `0x2d0`; Copy38 follows. The readback confirms that
 this captured sequence reached the presenter. It does not prove independent
 Xenos depth/stencil contents or general EDRAM alias behavior.
 
+The captured 1x color draws declare depth test enabled with compare `ALWAYS`,
+depth writes disabled, and stencil disabled (`depth_control=0x700772`). The
+Vulkan executor treats that exact state as a no-op and does not allocate a 1x
+depth attachment for the isolated color-only substream. A validation-backed
+regression compares the captured state against an otherwise identical
+depth-disabled fixture and requires equal output without requesting 4x-to-1x
+depth resolve. It keeps later guest depth/stencil declarations conservative:
+Draw11 is a 4x stencil-only operation, so preserving the complete ordered
+frame still depends on the provider-confirmed depth/stencil resolve path. This
+does not establish Xenos depth/stencil sample parity or full retail-frame
+parity.
+
 The 1280x720 pre-Copy source is single-sample `R16G16B16A16_UNORM`; the
 presenter image is `A2B10G10R10_UNORM_PACK32`. After the Copy's 16-bit to
 8-bit to 10-bit UNORM quantization, 920,250 of 921,600 pixels match exactly

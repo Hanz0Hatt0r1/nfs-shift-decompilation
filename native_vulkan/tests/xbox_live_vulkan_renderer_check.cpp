@@ -2840,9 +2840,14 @@ int main(int argc, char** argv) {
     mixed_sample_draws[1].raster.guest_color_format = 1;
     mixed_sample_draws[1].raster.color_format =
         shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
-    mixed_sample_draws[1].raster.depth_test_enabled = false;
+    // Frame 622's 1x color draws use an enabled depth test with ALWAYS,
+    // depth writes disabled, and stencil disabled. This test has no depth
+    // effect, so the renderer must not require an MSAA depth resolve for it.
+    mixed_sample_draws[1].raster.depth_test_enabled = true;
     mixed_sample_draws[1].raster.depth_write_enabled = false;
     mixed_sample_draws[1].raster.stencil_test_enabled = false;
+    mixed_sample_draws[1].raster.depth_control = 0x00700772u;
+    mixed_sample_draws[1].raster.stencil_refmask = 0x00FFFF00u;
     std::string mixed_sample_error;
     std::vector<uint32_t> mixed_sample_output;
     if (!shift::xbox::submit_captured_vulkan_frame(
@@ -2852,6 +2857,21 @@ int main(int argc, char** argv) {
         mixed_sample_output.size() != 1280u * 720u) {
         std::cerr << "mixed 4x-MSAA/1x captured Copy/Convert failed: "
                   << mixed_sample_error << '\n';
+        return 1;
+    }
+    auto no_depth_test_baseline_draws = mixed_sample_draws;
+    no_depth_test_baseline_draws[1].raster.depth_test_enabled = false;
+    std::string no_depth_test_baseline_error;
+    std::vector<uint32_t> no_depth_test_baseline_output;
+    if (!shift::xbox::submit_captured_vulkan_frame(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, no_depth_test_baseline_draws,
+            &no_depth_test_baseline_error, &no_depth_test_baseline_output,
+            enabled_features.geometryShader, &copy) ||
+        no_depth_test_baseline_output != mixed_sample_output) {
+        std::cerr << "captured ALWAYS/no-write/no-stencil depth test changed the "
+                     "mixed-sample color output or requested a depth resolve: "
+                  << no_depth_test_baseline_error << '\n';
         return 1;
     }
     auto missing_alias_shaders = copy;

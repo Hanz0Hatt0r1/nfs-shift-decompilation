@@ -24,6 +24,34 @@
       "color_base_tiles": "0x0",
       "depth_base_tiles": "0x2d0"
     },
+    "depth_states": {
+      "draw_0_4x_color": {
+        "depth_test": true,
+        "depth_write": true,
+        "stencil_test": true,
+        "depth_control": "0x8777"
+      },
+      "draw_1_4x_depth_only": {
+        "depth_test": false,
+        "depth_write": false,
+        "stencil_test": true,
+        "depth_control": "0x8701"
+      },
+      "draw_2_first_1x_color": {
+        "depth_test": true,
+        "depth_compare_code": 7,
+        "depth_compare": "ALWAYS",
+        "depth_write": false,
+        "stencil_test": false,
+        "depth_control": "0x700772"
+      },
+      "draw_11_4x_depth_only": {
+        "depth_test": false,
+        "depth_write": false,
+        "stencil_test": true,
+        "depth_control": "0x8701"
+      }
+    },
     "source_capture_plugin_sha256": "d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90",
     "source_capture_gpu_emulation": "disabled"
   },
@@ -37,6 +65,7 @@
   },
   "implementation": {
     "renderer": "the matching mixed-sample Vulkan executor stores the 4x color attachment, transitions it to shader-read layout, and inserts the Vulkan 1.1 multisample alias transfer before the first 1x guest draw",
+    "captured_depth_noop": "a depth test with compare ALWAYS, depth writes disabled, and stencil disabled has no depth/stencil attachment effect; the Vulkan pipeline disables this exact no-op state, avoiding a needless depth resolve for the isolated color transition",
     "format": "R16G16B16A16_UNORM linear intermediate; transfer fetches and writes values directly without an intermediate RGBA8 quantization",
     "scope_guard": "only 1280x720, pitch 640/1280, 4x-to-1x, same-base, same-depth-format RGBA8 gamma targets with 720 identity aliases",
     "fail_closed": "the exact transition is rejected if its Vulkan 1.1 alias-transfer shaders are unavailable",
@@ -45,12 +74,13 @@
   "verification": {
     "native_linux": {
       "build_directory": "/dev/shm/nfs-shift-p2-native-edram-alias-retry-20261028",
-      "command": "cmake --build ... --parallel 4; VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation ctest --output-on-failure",
+      "command": "TMPDIR=/dev/shm/nfs-shift-p2-tmp-20261028 cmake --build ... --parallel 4; VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --output-on-failure",
       "ctest_passed": 4,
       "ctest_total": 4,
       "validation_errors_observed": 0,
       "covered_regressions": [
         "captured-shaped gamma 4x-to-1x alias transfer",
+        "captured 1x ALWAYS/no-write/no-stencil color draw matches its depth-disabled baseline without requiring a depth resolve",
         "fail-closed behavior when the exact alias-transfer shaders are absent",
         "mixed-sample Copy/Convert and depth resolve controls"
       ]
@@ -66,16 +96,16 @@
       "ctest_passed": 7,
       "ctest_total": 7,
       "validation_layer_forced": true,
-      "plugin_sha256": "0d320ede0a41d2e12314518a58915292e373fb2cabdb18a79f89e22ba496be78",
-      "plugin_build_id": "266b389a3e5e97b879dfc2c67787b6891c2fc7d2"
+      "plugin_sha256": "f794272592ea955c66f00a11c784a56bc77baa6f2205c83fdad8269fdac5443f",
+      "plugin_build_id": "ebbb619ab5a5142d3392b62867b88848744492c0"
     },
     "android_arm64_compile": {
       "abi": "arm64-v8a",
       "minimum_api": 26,
       "ndk": "28.2.13676358",
       "sdk_commit": "b3648b0",
-      "plugin_sha256": "0568abae8623cc60382a3c8c4db17b64a9095555fb2a372f19f42c00745f4f8f",
-      "plugin_build_id": "8625e59be003e9e98f3f1ad79b55952fa215c081",
+      "plugin_sha256": "7186786583751a10d130ebc9add099f02906f790292ce28bb575988fb7a3df21",
+      "plugin_build_id": "3787a8b3f3f5afed30bf3a55971d9b0cc229881f",
       "elf_machine": "AArch64",
       "device_execution": false
     },
@@ -93,7 +123,7 @@
     "The available frame-622 presenter and pre-Copy readbacks were produced by the plugin build named in the capture record, before this change; they are not evidence of this transfer's output.",
     "The regression uses synthetic shader/geometry smoke inputs with the captured raster layout. It verifies Vulkan submission, address selection, and fail-closed behavior, not the retail image.",
     "This is a bounded color transfer, not a shared physical EDRAM store. Prior-frame target persistence and general Copy/Convert or format-31 chains remain separate work.",
-    "Depth/stencil still uses the provider-confirmed Vulkan SAMPLE_ZERO path; parity with Xenos EDRAM depth/stencil sample addressing is unverified.",
+    "The isolated color regression removes the no-op 1x ALWAYS depth test but keeps later guest depth/stencil uses conservative. The complete frame includes a later 4x stencil-only operation and may require provider-confirmed depth/stencil resolve; parity with Xenos EDRAM depth/stencil sample addressing is unverified.",
     "The Android ARM64 artifact was compiled only. ADB found no device, so Mali execution and a game replay were not performed."
   ]
 }
