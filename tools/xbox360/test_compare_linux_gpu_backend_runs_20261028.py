@@ -138,6 +138,7 @@ def main():
             "WORKER_RING {\"kind\":\"retail_queue_wait_return\",\"call\":1,\"return_r3\":0,\"trace_sequence\":5}\n"
             "WORKER_RING {\"kind\":\"ke_wait_return\",\"wait_call\":7,\"return_status\":0,\"trace_sequence\":6}\n"
             "WORKER_RING {\"kind\":\"queue_field_write\",\"field\":\"software_tail\",\"before\":21,\"after\":22,\"trace_sequence\":7}\n"
+            "WORKER_RING_EVENT_WRITE_SHD {\"index\":3,\"guest_address\":\"0x17af4000\",\"packet_value\":\"0x00000009\",\"head_before\":7,\"packet_bytes\":\"c00258000000000317af400200000009\"}\n"
             "WORKER_RING_STOP_DIAGNOSTICS {\"software_gpu_queue\":{\"head\":19,\"tail\":21,\"predicate_byte\":20},\"guest_main_thread\":{\"current_guest_pc_context_slot\":2211449680}}\n",
             encoding="utf-8",
         )
@@ -150,6 +151,8 @@ def main():
         assert recovered["events"]["retail_queue_wait_return_events"][0]["call"] == 1
         assert recovered["events"]["ke_wait_return_events"][0]["wait_call"] == 7
         assert recovered["events"]["queue_field_write_events"][0]["after"] == 22
+        assert recovered["counts"]["event_write_shd_packet_events"] == 1
+        assert recovered["event_write_shd_packet_events"][0]["packet_value"] == "0x00000009"
         assert recovered["worker_queues"] == [0xB7368BE0]
         assert recovered["stop_context"]["diagnostics"]["software_gpu_queue"] == {
             "head": 19, "tail": 21, "predicate_byte": 20,
@@ -161,6 +164,23 @@ def main():
         assert CAPTURE.bink_complete_elapsed(bink_log) == 42.125
         assert not CAPTURE.input_trigger_ready(bink_log, "bink_complete", 42.624, 0.5)
         assert CAPTURE.input_trigger_ready(bink_log, "bink_complete", 42.625, 0.5)
+        wall_clock_bink_log = (
+            'WORKER_RING {"kind":"bink_complete","elapsed_seconds":42.125,'
+            '"wall_clock_epoch_ms":100000}\n'
+        )
+        assert CAPTURE.bink_complete_wall_clock_epoch_ms(wall_clock_bink_log) == 100000
+        assert not CAPTURE.input_trigger_ready(
+            wall_clock_bink_log, "bink_complete", 42.625, 0, 99999,
+        )
+        assert CAPTURE.input_trigger_ready(
+            wall_clock_bink_log, "bink_complete", 42.625, 0, 100000,
+        )
+        assert not CAPTURE.input_trigger_ready(
+            wall_clock_bink_log, "bink_complete", 42.625, 1, 100999,
+        )
+        assert CAPTURE.input_trigger_ready(
+            wall_clock_bink_log, "bink_complete", 42.625, 1, 101000,
+        )
         assert not CAPTURE.input_trigger_ready(bink_log, "scene_gate", 43.0, 0)
         assert CAPTURE.input_trigger_ready(
             bink_log + "GPU_COMPARE_INPUT_GATE\n", "scene_gate", 43.0, 0,

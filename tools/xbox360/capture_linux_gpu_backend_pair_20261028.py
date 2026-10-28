@@ -115,6 +115,7 @@ def run_capture(
     *, output: Path, backend: str, plugin: Path, plugin_hash: str,
     resource_hash: str, duration: float, p2_commit: str | None,
     native_draw_frame: int, input_trigger: str, input_trigger_delay_seconds: float,
+    input_hold_ms: int, input_gap_ms: int, trace_event_write_shd: bool,
 ) -> None:
     env = os.environ.copy()
     env.update({
@@ -129,6 +130,9 @@ def run_capture(
         "SHIFT_QUEUE_TRACE_INPUT_REPLAY": "1",
         "SHIFT_QUEUE_TRACE_INPUT_TRIGGER": input_trigger,
         "SHIFT_QUEUE_TRACE_INPUT_DELAY_SECONDS": str(input_trigger_delay_seconds),
+        "SHIFT_QUEUE_TRACE_INPUT_HOLD_MS": str(input_hold_ms),
+        "SHIFT_QUEUE_TRACE_INPUT_GAP_MS": str(input_gap_ms),
+        "SHIFT_QUEUE_TRACE_EVENT_WRITE_SHD": "1" if trace_event_write_shd else "0",
         "SHIFT_QUEUE_TRACE_DURATION_SECONDS": str(duration),
         "SHIFT_QUEUE_TRACE_P2_PLUGIN_BUILD_ID": P2_PLUGIN_BUILD_ID if backend == "shift-native" else "",
         "SHIFT_QUEUE_TRACE_P2_SOURCE_COMMIT": p2_commit or "",
@@ -194,6 +198,12 @@ def main() -> int:
         help="start the same Start/A/Start pulse sequence at the scene gate or after Bink completion",
     )
     parser.add_argument("--input-trigger-delay-seconds", type=float, default=0.5)
+    parser.add_argument("--input-hold-ms", type=int, default=3000)
+    parser.add_argument("--input-gap-ms", type=int, default=3000)
+    parser.add_argument(
+        "--trace-event-write-shd", action="store_true",
+        help="capture raw EVENT_WRITE_SHD packets targeting the retail software head",
+    )
     args = parser.parse_args()
     out = args.output_root.expanduser().resolve()
     if out.exists():
@@ -206,6 +216,10 @@ def main() -> int:
         raise SystemExit("--native-draw-frame cannot be negative")
     if args.input_trigger_delay_seconds < 0:
         raise SystemExit("--input-trigger-delay-seconds cannot be negative")
+    if args.input_hold_ms <= 0:
+        raise SystemExit("--input-hold-ms must be positive")
+    if args.input_gap_ms < 0:
+        raise SystemExit("--input-gap-ms cannot be negative")
 
     artifacts = out / "artifacts"
     artifacts.mkdir(parents=True)
@@ -249,6 +263,7 @@ def main() -> int:
         "trace_script_sha256": sha256(ROOT / "tools/xbox360/trace_linux_post_bink_worker_route_v45_ordered_route_20261027.gdb"),
         "trace_options": {
             "queue_field_alias_probe": os.environ.get("SHIFT_QUEUE_TRACE_QUEUE_FIELD_ALIAS_PROBE", "") or None,
+            "event_write_shd_packet_trace": args.trace_event_write_shd,
         },
         "comparator_sha256": sha256(COMPARATOR),
         "plugins": {
@@ -273,10 +288,11 @@ def main() -> int:
             "requested": args.native_draw_frame > 0,
         },
         "input_profile": [
-            {"button": "Start", "mask": "0x0010", "hold_ms": 3000},
-            {"button": "A", "mask": "0x1000", "hold_ms": 3000},
-            {"button": "Start", "mask": "0x0010", "hold_ms": 3000},
+            {"button": "Start", "mask": "0x0010", "hold_ms": args.input_hold_ms},
+            {"button": "A", "mask": "0x1000", "hold_ms": args.input_hold_ms},
+            {"button": "Start", "mask": "0x0010", "hold_ms": args.input_hold_ms},
         ],
+        "input_gap_ms": args.input_gap_ms,
         "input_gate": "first scene manager update after Bink clear with state_348=1 and update_count_356>=1",
         "input_trigger": args.input_trigger,
         "input_trigger_delay_seconds": args.input_trigger_delay_seconds if args.input_trigger == "bink_complete" else 0,
@@ -308,6 +324,9 @@ def main() -> int:
                 native_draw_frame=args.native_draw_frame if backend == "shift-native" else 0,
                 input_trigger=args.input_trigger,
                 input_trigger_delay_seconds=args.input_trigger_delay_seconds,
+                input_hold_ms=args.input_hold_ms,
+                input_gap_ms=args.input_gap_ms,
+                trace_event_write_shd=args.trace_event_write_shd,
             )
             metadata_path = output / "run_metadata.json"
             events_path = output / "events.json"

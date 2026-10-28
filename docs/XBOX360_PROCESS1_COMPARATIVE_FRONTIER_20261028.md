@@ -29,6 +29,16 @@ The same plugin also completed Bink 281/281 and reached the scene gate in one 13
 
 Together, the paired and Native-only runs show variable Native scene-gate behavior on the same plugin. They do not show a stable Native main menu.
 
+## Raw Native EVENT_WRITE_SHD and immediate input replay
+
+An additional decoder-entry trace used the frozen Native plugin SHA-256 `f794272592ea955c66f00a11c784a56bc77baa6f2205c83fdad8269fdac5443f` (Build ID `ebbb619ab5a5142d3392b62867b88848744492c0`, source commit `14841319`). It recorded every raw 16-byte `EVENT_WRITE_SHD` packet targeting guest physical `0x17AF4000` and sampled the host alias immediately before decoding. A clean 320-second Native run ended just below the earlier regression range: the final packet value was `3349`, with sampled head `3347`. A second run crossed that range and retained strictly `+2` packet values through `3971`; however, GDB exited 1 after the trace script was edited while that run was still reading it. Its runner log preserves the raw packet records, but it is partial evidence rather than a clean repeat. Around the reported boundary, packet values were `3377, 3379, 3381, 3383, 3385`; each `head_before` matched the previous packet value, and no regression was observed. This does not disprove the separate `3381 -> 3375` observation.
+
+A separate clean 360-second Native run injected Start/A/Start immediately after Bink completion. The original game reached Bink `281/281`; the input probe observed XAM masks `0x0010` and `0x1000`, and the original controller object recorded both rising edges. The scene manager briefly had state `1` with populated children, then returned to state `0` with empty children. The frontend input gate did not recur, so this confirms input delivery but not action consumption or a main menu.
+
+The long captures exposed a clock-origin bug in the replay harness: GDB and the outer runner started their monotonic timers at different times. Bink-triggered input scheduling now compares their shared wall-clock epoch values, and a regression covers nonzero startup skew. Partial-log recovery also preserves raw `EVENT_WRITE_SHD` records, and XAM returns are sampled for six seconds after host input changes so a missing scene gate no longer hides button masks.
+
+See [head-boundary and immediate-input evidence](../evidence/xbox360_linux_native_event_write_shd_head_frontier_20261028.json) for identities, hashes, packet rows around `3381`, event histograms, and capture limitations.
+
 ## Evidence and reproduction
 
 - [Paired machine-readable record](../evidence/xbox360_linux_native_14841319_paired_physical_counter_20261028.json), including raw hashes, per-backend state, input comparability, queue-write histograms, and the first counter mismatch.
@@ -41,6 +51,6 @@ The archive exporter rejected malformed records in both captures; `gzip -t` and 
 ## Next Process 1 / Process 2 checks
 
 1. Process 2 should audit why Native `RingWorkerLoop()` writes `-6` head changes while Xenos advances the same watched software head only by `+2` in the paired capture. Align those writes to ring batch indices and guest memory before deciding whether they violate the guest queue contract.
-2. Join the first manager-counter mismatch to its exact source-1 interrupt and completion work item. The supplied same-run archive is timestamp/order input only; it does not prove causality.
-3. Reproduce Native scene-gate entry with paired inputs, then verify whether A reaches XAM and the original action dispatcher. A green controller gate or a later frame alone is not proof of a working menu.
+2. Reproduce the head-boundary run with Process 2's per-packet source-IB/batch trace and join the guest callback through `gpu_dispatch_id`; timestamp proximity alone does not prove causality.
+3. Trace the exact original scene-state writers and frontend callback after the observed state `1 -> 0` cleanup. The Start/A edges are now confirmed through XAM and the controller object, but the action dispatcher and scene-gate re-entry remain unconfirmed.
 4. Continue to the visible, interactive main menu and first controllable race. Neither has been reached in these captures.

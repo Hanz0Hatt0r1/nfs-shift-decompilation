@@ -71,6 +71,8 @@ INPUT_GATE_MARKER = "GPU_COMPARE_INPUT_GATE"
 BINK_INPUT_TRIGGER = "bink_complete"
 INPUT_TRIGGER = os.environ.get("SHIFT_QUEUE_TRACE_INPUT_TRIGGER", "scene_gate")
 INPUT_TRIGGER_DELAY_SECONDS = float(os.environ.get("SHIFT_QUEUE_TRACE_INPUT_DELAY_SECONDS", "0.5"))
+INPUT_HOLD_MS = int(os.environ.get("SHIFT_QUEUE_TRACE_INPUT_HOLD_MS", "3000"))
+INPUT_GAP_MS = int(os.environ.get("SHIFT_QUEUE_TRACE_INPUT_GAP_MS", "3000"))
 RING_INTERRUPT_PATTERN = re.compile(
     r"ring trace PM4_INTERRUPT #(\d+) source=(\d+) generation=(\d+) "
     r"batch_rptr=(\d+) batch_wptr=(\d+) ring_guest=([0-9A-Fa-f]+) "
@@ -149,12 +151,32 @@ def bink_complete_elapsed(log_text: str) -> float | None:
     return None
 
 
+def bink_complete_wall_clock_epoch_ms(log_text: str) -> int | None:
+    marker = "WORKER_RING "
+    for line in log_text.splitlines():
+        position = line.find(marker)
+        if position < 0:
+            continue
+        try:
+            event = json.loads(line[position + len(marker):])
+        except json.JSONDecodeError:
+            continue
+        value = event.get("wall_clock_epoch_ms")
+        if event.get("kind") == "bink_complete" and isinstance(value, int):
+            return value
+    return None
+
+
 def input_trigger_ready(
     log_text: str, trigger: str, elapsed_seconds: float, delay_seconds: float,
+    now_wall_clock_epoch_ms: int | None = None,
 ) -> bool:
     if trigger == "scene_gate":
         return INPUT_GATE_MARKER in log_text
     if trigger == BINK_INPUT_TRIGGER:
+        completed_wall_clock = bink_complete_wall_clock_epoch_ms(log_text)
+        if completed_wall_clock is not None and now_wall_clock_epoch_ms is not None:
+            return now_wall_clock_epoch_ms >= completed_wall_clock + delay_seconds * 1000
         completed = bink_complete_elapsed(log_text)
         return completed is not None and elapsed_seconds >= completed + delay_seconds
     raise ValueError(f"unsupported controller input trigger: {trigger}")
@@ -223,7 +245,7 @@ TRACE_EVENT_KEYS = (
     "input_gate_events", "scene_function_events", "scene_function_return_events",
     "scene_state_events", "retail_queue_wait_events",
     "retail_queue_wait_return_events", "queue_field_write_events",
-    "ke_wait_return_events",
+    "ke_wait_return_events", "event_write_shd_packet_events",
 )
 
 
@@ -249,6 +271,15 @@ def recover_trace_events_from_log(path: Path, backend: str) -> dict | None:
             match = re.match(r"WORKER_RING_WORKER_LOOP queue=(0x[0-9a-fA-F]+)", line)
             if match:
                 worker_queues.add(int(match.group(1), 16))
+            continue
+        packet_marker = "WORKER_RING_EVENT_WRITE_SHD "
+        if line.startswith(packet_marker):
+            try:
+                events["event_write_shd_packet_events"].append(
+                    json.loads(line[len(packet_marker):])
+                )
+            except json.JSONDecodeError:
+                pass
             continue
         marker = "WORKER_RING "
         if marker not in line:
@@ -288,6 +319,7 @@ def recover_trace_events_from_log(path: Path, backend: str) -> dict | None:
             if stop_diagnostics is not None else {"partial_log_recovery": True}
         ),
         "counts": {key: len(events[key]) for key in TRACE_EVENT_KEYS},
+        "event_write_shd_packet_events": events["event_write_shd_packet_events"],
         "mapped_hashes": mapped_hashes,
         "events": events,
     }
@@ -354,6 +386,8 @@ def main() -> int:
         raise SystemExit(f"invalid GPU plugin name: {GPU_PLUGIN_NAME!r}")
     if INPUT_TRIGGER not in ("scene_gate", BINK_INPUT_TRIGGER):
         raise SystemExit(f"invalid controller input trigger: {INPUT_TRIGGER!r}")
+    if INPUT_HOLD_MS <= 0 or INPUT_GAP_MS < 0:
+        raise SystemExit("controller input hold must be positive and gap cannot be negative")
     if not HOST.is_file() or not RUNTIME.is_file() or not PLUGIN.is_file():
         raise SystemExit(f"missing trace input: host={HOST} runtime={RUNTIME} plugin={PLUGIN}")
     xex = DATABUNDLE / "default.xex"
@@ -397,6 +431,8 @@ def main() -> int:
         "enabled": INPUT_REPLAY,
         "trigger": INPUT_TRIGGER,
         "trigger_delay_seconds": INPUT_TRIGGER_DELAY_SECONDS if INPUT_TRIGGER == BINK_INPUT_TRIGGER else 0,
+        "hold_ms": INPUT_HOLD_MS,
+        "gap_ms": INPUT_GAP_MS,
         "trigger_observed": False,
         "gate": "first scene manager update after Bink clear with state_348=1 and update_count_356>=1",
         "gate_observed": False,
@@ -423,12 +459,21 @@ def main() -> int:
                 except OSError:
                     current_log = ""
                 elapsed = time.monotonic() - started
+                now_wall_clock_epoch_ms = int(time.time() * 1000)
                 if input_trigger_ready(
                     current_log, INPUT_TRIGGER, elapsed, INPUT_TRIGGER_DELAY_SECONDS,
+                    now_wall_clock_epoch_ms,
                 ):
                     input_sequence_sent = True
                     controller_input["trigger_observed"] = True
                     controller_input["trigger_elapsed_seconds"] = round(elapsed, 3)
+                    controller_input["trigger_wall_clock_epoch_ms"] = now_wall_clock_epoch_ms
+                    bink_wall_clock_epoch_ms = bink_complete_wall_clock_epoch_ms(current_log)
+                    if bink_wall_clock_epoch_ms is not None:
+                        controller_input["observed_bink_to_input_delay_seconds"] = round(
+                            (now_wall_clock_epoch_ms - bink_wall_clock_epoch_ms) / 1000,
+                            3,
+                        )
                     controller_input["gate_observed"] = INPUT_GATE_MARKER in current_log
                     if controller_input["gate_observed"]:
                         controller_input["gate_elapsed_seconds"] = round(elapsed, 3)
@@ -446,11 +491,11 @@ def main() -> int:
                         controller_input["pulses"].append(pulse)
                         emit_button(gamepad, code, label, True, pulse)
                         print(f"controller {label} down at {time.monotonic() - started:.3f}s", file=output, flush=True)
-                        time.sleep(3.0)
+                        time.sleep(INPUT_HOLD_MS / 1000)
                         emit_button(gamepad, code, label, False, pulse)
                         print(f"controller {label} up at {time.monotonic() - started:.3f}s", file=output, flush=True)
                         if index != 2:
-                            time.sleep(3.0)
+                            time.sleep(INPUT_GAP_MS / 1000)
             time.sleep(0.25)
         if process.poll() is None:
             process.send_signal(signal.SIGINT)

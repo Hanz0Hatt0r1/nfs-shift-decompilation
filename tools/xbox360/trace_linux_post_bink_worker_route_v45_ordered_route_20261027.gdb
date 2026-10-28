@@ -27,6 +27,7 @@ gdb.execute("set logging enabled on")
 gdb.execute(f"set environment LD_LIBRARY_PATH {out / 'bin'}")
 gdb.execute("set environment SDL_GAMECONTROLLER_IGNORE_DEVICES 0x045e/0x0b12")
 gpu_plugin_name = os.environ.get("SHIFT_QUEUE_TRACE_GPU_PLUGIN_NAME", "shift-native")
+trace_event_write_shd = os.environ.get("SHIFT_QUEUE_TRACE_EVENT_WRITE_SHD", "0") == "1"
 game_data_root = os.environ.get(
     "SHIFT_QUEUE_TRACE_GAME_DATA_ROOT",
     "/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
@@ -53,6 +54,11 @@ started = time.monotonic()
 wall_started_ms = int(time.time() * 1000)
 state = {
     "bink_target": None,
+    "bink_target_polls": 0,
+    "bink_target_last": None,
+    "bink_target_max_progress": 0,
+    "bink_target_samples": [],
+    "event_write_shd_packet_events": [],
     "manager": None,
     "worker_queues": set(),
     "enqueue_events": [],
@@ -95,6 +101,7 @@ state = {
     "queue_field_watches_armed": False,
     "last_dequeue_by_thread": {},
     "last_host_button_mask": None,
+    "input_trace_until": 0.0,
     "input_gate_emitted": False,
     "post_bink_scene_cleared": False,
     "host_input_breakpoints_installed": False,
@@ -239,6 +246,19 @@ class BinkTarget(gdb.Breakpoint):
             movie = read_be(base, wrapper + 4) if wrapper else 0
             target = read_be(base, movie + 8) if movie else 0
             progress = read_be(base, movie + 12) if movie else 0
+            poll = {
+                "movie": movie,
+                "target": target,
+                "progress": progress,
+                "elapsed_seconds": round(time.monotonic() - started, 3),
+            }
+            state["bink_target_polls"] += 1
+            state["bink_target_last"] = poll
+            state["bink_target_max_progress"] = max(
+                state["bink_target_max_progress"], progress,
+            )
+            if len(state["bink_target_samples"]) < 8:
+                state["bink_target_samples"].append(poll)
             if target == 281 and progress >= 281 and state["bink_target"] is None:
                 state["bink_target"] = {
                     "progress": progress,
@@ -274,6 +294,11 @@ class HostInputReturn(gdb.FinishBreakpoint):
             buttons = int.from_bytes(raw[4:6], "big")
             if buttons != state["last_host_button_mask"]:
                 state["last_host_button_mask"] = buttons
+                # Keep tracing XAM state returns briefly after each host input
+                # transition. The frontend gate may never be reached, but the
+                # trace still needs to show whether a replayed button reached
+                # the guest input API.
+                state["input_trace_until"] = time.monotonic() + 6.0
                 emit("host_input", {
                     "user": self.user,
                     "status": status,
@@ -314,7 +339,8 @@ class XamInputEntry(gdb.Breakpoint):
             state["xam_input_calls"] += 1
             if state_ptr:
                 XamInputReturn(gdb.newest_frame(), state["xam_input_calls"], user, flags, state_ptr)
-            if state["xam_input_calls"] <= 8 or state["input_gate_emitted"]:
+            if (state["xam_input_calls"] <= 8 or state["input_gate_emitted"]
+                    or time.monotonic() <= state["input_trace_until"]):
                 guest_state_ptr = state_ptr
                 if state["guest_base"] and state_ptr >= state["guest_base"]:
                     guest_state_ptr = (state_ptr - state["guest_base"]) & 0xFFFFFFFF
@@ -340,7 +366,8 @@ class XamInputReturn(gdb.FinishBreakpoint):
 
     def stop(self):
         try:
-            if self.call > 8 and not state["input_gate_emitted"]:
+            if (self.call > 8 and not state["input_gate_emitted"]
+                    and time.monotonic() > state["input_trace_until"]):
                 return False
             base = state["guest_base"]
             status = int(gdb.parse_and_eval("$eax")) & 0xFFFFFFFF
@@ -607,6 +634,66 @@ class QueueFieldWrite(gdb.Breakpoint):
         except (gdb.error, OSError, OverflowError) as exc:
             print("WORKER_RING_QUEUE_FIELD_WRITE_ERROR field=%s error=%r" %
                   (self.label, exc))
+        return False
+
+
+class EventWriteShdPacket(gdb.Breakpoint):
+    def __init__(self):
+        self.calls = 0
+        super().__init__("shift::xbox::decode_guest_event_write_shd", internal=True)
+
+    def stop(self):
+        try:
+            packet_pointer = int(gdb.parse_and_eval("$rdi"))
+            packet_length = int(gdb.parse_and_eval("$rsi"))
+            if packet_length != 16:
+                return False
+            raw = bytes(gdb.selected_inferior().read_memory(packet_pointer, 16))
+            words = [int.from_bytes(raw[offset:offset + 4], "big") for offset in range(0, 16, 4)]
+            encoded_address = words[2]
+            guest_address = encoded_address & ~3
+            if guest_address != 0x17AF4000:
+                return False
+            if len(state["event_write_shd_packet_events"]) >= 4096:
+                return False
+            self.calls += 1
+            stack_pointer = int(gdb.parse_and_eval("$rsp"))
+            return_pc = int.from_bytes(
+                bytes(gdb.selected_inferior().read_memory(stack_pointer, 8)), "little",
+            )
+            try:
+                head_before = read_be_host(0x217AF4000)
+            except gdb.error:
+                head_before = None
+            try:
+                caller = gdb.execute(
+                    "info symbol %#x" % return_pc, to_string=True,
+                ).strip()
+            except gdb.error:
+                caller = None
+            record = {
+                "index": self.calls - 1,
+                "thread": thread_id(),
+                "thread_name": thread_name(),
+                "packet_pointer": packet_pointer,
+                "packet_length": packet_length,
+                "packet_bytes": raw.hex(),
+                "packet_words": ["0x%08x" % word for word in words],
+                "initiator": "0x%08x" % words[1],
+                "guest_address": "0x%08x" % guest_address,
+                "endian_mode": encoded_address & 3,
+                "packet_value": "0x%08x" % words[3],
+                "head_before": head_before,
+                "caller_return_pc": return_pc,
+                "caller": caller,
+                "elapsed_seconds": round(time.monotonic() - started, 3),
+                "wall_clock_epoch_ms": int(time.time() * 1000),
+            }
+            if len(state["event_write_shd_packet_events"]) < 4096:
+                state["event_write_shd_packet_events"].append(record)
+            print("WORKER_RING_EVENT_WRITE_SHD " + json.dumps(record, sort_keys=True))
+        except (gdb.error, OSError, OverflowError) as exc:
+            print("WORKER_RING_EVENT_WRITE_SHD_ERROR %r" % exc)
         return False
 
 
@@ -1403,6 +1490,8 @@ class Source1Callback(gdb.Breakpoint):
 
 
 BinkTarget()
+if trace_event_write_shd:
+    EventWriteShdPacket()
 WorkerLoop()
 ControllerMethod("sub_8230CD00")
 ControllerMethod("sub_82308E60")
@@ -1522,6 +1611,8 @@ for key in ("enqueue_events", "dequeue_events", "completion_events", "producer_e
             "queue_field_write_events",
             "ke_wait_return_events"):
     print(f"WORKER_RING_TOTAL {key}={len(state[key])}")
+print("WORKER_RING_TOTAL bink_target_polls=%d" % state["bink_target_polls"])
+print("WORKER_RING_TOTAL event_write_shd_packet_events=%d" % len(state["event_write_shd_packet_events"]))
 final_queues = []
 final_scene_state = None
 if state["guest_base"]:
@@ -1543,6 +1634,13 @@ payload = {
     "run_end_wall_clock_epoch_ms": int(time.time() * 1000),
     "captured_on": "2026-10-27",
     "bink_target": state["bink_target"],
+    "bink_target_diagnostics": {
+        "poll_count": state["bink_target_polls"],
+        "max_progress": state["bink_target_max_progress"],
+        "last_poll": state["bink_target_last"],
+        "first_samples": state["bink_target_samples"],
+    },
+    "event_write_shd_packet_events": state["event_write_shd_packet_events"],
     "manager": state["manager"],
     "worker_queues": sorted(state["worker_queues"]),
     "final_queue_snapshots": final_queues,
@@ -1564,7 +1662,7 @@ payload = {
                 "scene_function_events", "scene_function_return_events", "scene_state_events",
                 "retail_queue_wait_events", "retail_queue_wait_return_events",
                 "queue_field_write_events",
-                "ke_wait_return_events")},
+                "ke_wait_return_events", "event_write_shd_packet_events")},
     "mapped_hashes": state["mapped_hashes"],
     "events": {key: state[key] for key in ("enqueue_events", "dequeue_events", "completion_events",
                 "producer_events", "producer_call_events", "submission_route_events",
