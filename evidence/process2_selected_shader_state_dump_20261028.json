@@ -2,7 +2,7 @@
   "schema": "shift.process2.selected_shader_state_dump.v1",
   "date": "2026-10-28",
   "p2_branch": "work/process2-xbox-live-ring-20261023",
-  "p2_source_commit": "ec657d411c25d91a03e7a5991c0dc41f50e1af43",
+  "p2_source_commit": "197ec44ef38f2e4a5701f5869f2137af7739b86a",
   "selector": {
     "packet_variable": "SHIFT_NATIVE_VULKAN_DUMP_DRAW_PACKET_INDEX",
     "frame_variable": "SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME",
@@ -14,14 +14,15 @@
     "test": "rexgpu_shift_native_live_ring_selected_draw_dump_check",
     "fixture": "Three successive guest swaps reuse draw ordinal zero.",
     "assertion": "Three distinct presenter-frame dumps contain the exact original synthetic VS and PS bytes.",
-    "linux_resolve_pr2_ctest": "passed 7/7 with VK_LAYER_KHRONOS_validation",
-    "linux_compatibility_ctest": "passed 6/6 with VK_LAYER_KHRONOS_validation",
+    "linux_resolve_pr2_ctest": "passed 8/8 with VK_LAYER_KHRONOS_validation",
+    "linux_compatibility_ctest": "passed 7/7 with VK_LAYER_KHRONOS_validation",
     "native_renderer_ctest": "passed 4/4 with VK_LAYER_KHRONOS_validation"
   },
   "linux_plugin": {
     "path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028/output/librexgpu-shift-native.so",
     "sha256": "d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90",
     "build_id": "0fb71ebd09a498fc0515de313289b39ccfc22300",
+    "plugin_source_commit": "ec657d411c25d91a03e7a5991c0dc41f50e1af43",
     "build": "Linux x86-64 Release, provider SDK PR #2 checkout; GPU emulation disabled."
   },
   "android_compile": {
@@ -42,7 +43,7 @@
       "SHIFT_NATIVE_VULKAN_DUMP_DRAW_PACKET_INDEX": "10",
       "SHIFT_NATIVE_VULKAN_DUMP_SHADER_PREFIX": "/tmp/shift-draw10"
     },
-    "status": "Selector and builds are ready; retail raw shader capture is pending a replay with this DSO.",
+    "status": "Selector and builds are ready; retail raw shader capture is pending. The requested frame 116 filter did not emit a dump in the first replay, so Process 1 is rerunning with the frame filter omitted.",
     "fallback": "If presenter-frame numbering differs on replay, remove SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME to capture every ordinal-10 occurrence and correlate frame filenames with ordered-operation logs."
   },
   "limits": [

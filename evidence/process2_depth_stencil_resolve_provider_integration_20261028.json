@@ -2,7 +2,7 @@
   "schema": "shift.process2.depth_stencil_resolve_provider_integration.v1",
   "date": "2026-10-28",
   "p2_branch": "work/process2-xbox-live-ring-20261023",
-  "p2_source_commit": "ec657d411c25d91a03e7a5991c0dc41f50e1af43",
+  "p2_source_commit": "197ec44ef38f2e4a5701f5869f2137af7739b86a",
   "sdk_change": {
     "pull_request": "https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/2",
     "source_branch": "work/process2-vulkan-resolve-capability-20261024",
@@ -13,6 +13,7 @@
     "path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028/output/librexgpu-shift-native.so",
     "sha256": "d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90",
     "build_id": "0fb71ebd09a498fc0515de313289b39ccfc22300",
+    "plugin_source_commit": "ec657d411c25d91a03e7a5991c0dc41f50e1af43",
     "build": "Linux x86-64 Release, Clang 22.1.8; built against SDK PR #2 checkout.",
     "build_note": "The local SDK build required -mssse3 for rexcore/src/core/memory.cpp intrinsics; this was passed only to the external build invocation and did not modify tracked source."
   },
@@ -30,13 +31,14 @@
   },
   "plugin_tests": {
     "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028 --output-on-failure",
-    "result": "passed 7/7",
+    "result": "passed 8/8",
     "tests": [
       "rexgpu_shift_native_r8_upload_scratch_check",
       "rexgpu_shift_native_factory_check",
       "rexgpu_shift_native_live_ring_check",
       "rexgpu_shift_native_live_ring_write_trace_check",
       "rexgpu_shift_native_live_ring_selected_draw_dump_check",
+      "rexgpu_shift_native_live_ring_selected_draw_frame_dump_check",
       "rexgpu_shift_native_live_ring_readback_check",
       "rexgpu_vulkan_resolve_capability_check"
     ]
