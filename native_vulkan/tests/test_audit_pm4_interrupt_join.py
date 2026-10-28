@@ -2,6 +2,7 @@
 """Regression coverage for contiguous PM4-to-guest callback alignment."""
 
 import importlib.util
+import json
 from pathlib import Path
 import unittest
 
@@ -10,6 +11,10 @@ SCRIPT = Path(__file__).parents[1] / "tools/audit_pm4_interrupt_join.py"
 SPEC = importlib.util.spec_from_file_location("audit_pm4_interrupt_join", SCRIPT)
 AUDIT = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(AUDIT)
+RETAIL_EVIDENCE = (
+    Path(__file__).parents[2]
+    / "evidence/process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json"
+)
 
 
 def p1_callback(timestamp):
@@ -47,6 +52,51 @@ def p2_interrupt(interrupt_id, timestamp):
 
 
 class InterruptJoinTests(unittest.TestCase):
+    def test_captured_source1_interrupt_join_is_internally_consistent(self):
+        evidence = json.loads(RETAIL_EVIDENCE.read_text())
+        capture = evidence["capture"]
+        audit = evidence["audit"]
+        summary = audit["summary"]
+        rows = audit["rows"]
+        first_id, last_id = summary["p2_interrupt_id_range"]
+
+        self.assertFalse(capture["guest_memory_modified_by_probe"])
+        self.assertEqual(capture["ring_trace_malformed_record_count"], 0)
+        self.assertEqual(len(rows), summary["joined_rows"])
+        self.assertEqual(
+            [row["p1_callback_index"] for row in rows], list(range(len(rows)))
+        )
+        self.assertEqual(
+            [row["p2_pm4_interrupt_id"] for row in rows],
+            list(range(first_id, last_id + 1)),
+        )
+        self.assertEqual(len(rows), last_id - first_id + 1)
+        for row in rows:
+            with self.subTest(interrupt_id=row["p2_pm4_interrupt_id"]):
+                self.assertEqual(row["source"], 1)
+                self.assertEqual(row["ring_generation"], 1)
+                self.assertLess(row["batch_rptr"], 8192)
+                self.assertLess(row["batch_wptr"], 8192)
+                self.assertGreater(
+                    (row["batch_wptr"] - row["batch_rptr"]) % 8192, 0
+                )
+                self.assertEqual(row["p1_cpu_mask"], "0x04")
+                self.assertEqual(row["cpu_mask"], row["p1_cpu_mask"])
+                self.assertEqual(row["dispatched_cpu_mask"], row["cpu_mask"])
+                self.assertEqual(row["dispatch_cpu"], 2)
+                self.assertEqual(row["dispatch_status"], "invoked")
+                self.assertEqual(row["outer_callback_wrapper"], "0x823b37b8")
+                self.assertLessEqual(
+                    abs(row["timestamp_delta_ms_p2_minus_p1"]), 93
+                )
+
+        self.assertEqual(
+            summary["p1_registered_callback_targets"],
+            {"0x823A4758": 375, "0x823B8C60": 688},
+        )
+        self.assertIn("timestamp/order join", audit["interpretation"])
+        self.assertIn("does not prove", audit["interpretation"])
+
     def test_selects_unique_contiguous_window_with_callback_order(self):
         p1 = [p1_callback(1000), p1_callback(1100), p1_callback(1200)]
         p2 = [
