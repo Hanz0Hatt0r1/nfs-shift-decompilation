@@ -170,6 +170,10 @@ class WaitWordWatchTests(unittest.TestCase):
         self.assertEqual(candidate["source0_trace_fields"], [
             "tick_lag_intervals", "dispatch_gap_ns", "dispatch_elapsed_ns",
         ])
+        self.assertIn("synchronous DispatchGuestInterrupt",
+                      candidate["interpretation_guide"]["long_dispatch_elapsed_ns"])
+        self.assertIn("does not by itself prove OS descheduling",
+                      candidate["interpretation_guide"]["long_dispatch_gap_ns_and_high_tick_lag"])
         self.assertIn("no VBlank or interrupt behavior change", candidate["change_from_prior_plugin"])
 
     def test_next_xenos_comparison_artifact_matches_the_paired_capture(self) -> None:
