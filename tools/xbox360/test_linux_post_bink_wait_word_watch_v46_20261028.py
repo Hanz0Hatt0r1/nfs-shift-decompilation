@@ -82,6 +82,14 @@ class WaitWordWatchTests(unittest.TestCase):
         self.assertIn('state["source0_callback_capture_until"] = now + 0.300', self.trace)
         self.assertIn('now - state["source0_callback_last_sample_monotonic"] < 0.200', self.trace)
 
+    def test_source0_entry_return_probe_is_rate_limited_and_captures_inflight_calls(self) -> None:
+        self.assertIn('event["wait_word_value_sampled"] == 1', self.trace)
+        self.assertIn('>= 1.0):', self.trace)
+        self.assertIn('Source0CallbackFinish(gdb.newest_frame(), entry)', self.trace)
+        self.assertIn('"duration_seconds": round(duration, 3)', self.trace)
+        self.assertIn('snapshot["active_source0_callbacks"]', self.trace)
+        self.assertIn('"source0_callback_return_events"', self.trace)
+
     def test_native_dispatch_join_and_wait_target_are_consistent(self) -> None:
         import json
 
@@ -138,11 +146,16 @@ class WaitWordWatchTests(unittest.TestCase):
         import json
 
         evidence = json.loads(JOIN_EVIDENCE.read_text(encoding="utf-8"))
-        burst = evidence["coincident_source0_vblank_burst"]
-        self.assertEqual(burst["p2_interrupt_record_count"], 18)
-        self.assertEqual(burst["source"], 0)
-        self.assertEqual(burst["p2_dispatch_ids"], ["0x0E78", "0x0E89"])
-        self.assertIn("temporal coincidence only", burst["interpretation_limit"])
+        burst = evidence["source0_vblank_gap_and_catchup"]
+        self.assertEqual(burst["catchup_interrupt_count"], 5123)
+        self.assertEqual(burst["catchup_dispatch_ids"], ["0x0E78", "0x227B"])
+        self.assertEqual(burst["completion_gap_minus_wait_ms"], 40)
+        self.assertTrue(burst["vblank_trace_limit_reached"])
+        self.assertIn("cannot distinguish them", burst["interpretation_limit"])
+        probe = evidence["next_capture_source0_entry_return_probe"]
+        self.assertEqual(probe["max_tracked_callbacks_per_second"], 1)
+        self.assertEqual(probe["wait_word_value"], "0x00000001")
+        self.assertFalse(probe["modifies_guest_state"])
         self.assertIn("source0_callback_events", self.trace)
 
     def test_next_xenos_comparison_artifact_matches_the_paired_capture(self) -> None:

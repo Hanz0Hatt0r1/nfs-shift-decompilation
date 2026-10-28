@@ -69,6 +69,9 @@ state = {
     "submission_route_events": [],
     "source0_callback_events": [],
     "source0_callback_ordinal": 0,
+    "source0_callback_call_ordinal": 0,
+    "source0_callback_return_events": [],
+    "source0_callback_last_return_track_monotonic": 0.0,
     "source0_callback_last_sample_monotonic": 0.0,
     "source0_callback_last_wait_word_value": None,
     "source0_callback_last_wait_write_count": 0,
@@ -98,6 +101,7 @@ state = {
     "trace_sequence": 0,
     "active_dequeues": {},
     "active_producers": {},
+    "active_source0_callbacks": {},
     "active_source1_callbacks": {},
     "queue_record_dispatch_ids": {},
     "gpu_dispatch_id_symbol_available": None,
@@ -252,7 +256,8 @@ def emit(kind, fields):
     if sum(len(state[key]) for key in (
         "enqueue_events", "dequeue_events", "completion_events",
         "producer_events", "producer_call_events", "submission_route_events",
-        "source0_callback_events", "source1_callback_events", "event_call_events", "counter_write_events",
+        "source0_callback_events", "source0_callback_return_events",
+        "source1_callback_events", "event_call_events", "counter_write_events",
         "worker72_write_events", "controller_update_events", "controller_return_events",
         "host_input_events", "xam_input_events", "xam_input_return_events",
         "bink_complete_events", "input_gate_events",
@@ -1630,6 +1635,67 @@ class SubmissionRoute(gdb.Breakpoint):
         return False
 
 
+class Source0CallbackFinish(gdb.FinishBreakpoint):
+    def __init__(self, frame, entry):
+        super().__init__(frame, internal=True)
+        self.entry = entry
+
+    def stop(self):
+        entry = self.entry
+        thread = entry["thread"]
+        stack = state["active_source0_callbacks"].get(thread, [])
+        for index in range(len(stack) - 1, -1, -1):
+            if stack[index]["scope_id"] == entry["scope_id"]:
+                del stack[index]
+                break
+        if not stack:
+            state["active_source0_callbacks"].pop(thread, None)
+
+        now = time.monotonic()
+        watch = state.get("fixed_guest_word_watch")
+        wait_value = None
+        write_count = 0
+        if watch and watch.get("enabled"):
+            try:
+                wait_value = read_be_host(watch["host_address"])
+            except gdb.error:
+                pass
+            write_count = watch.get("write_count", 0)
+        duration = now - entry["entry_monotonic"]
+        try:
+            base = entry["guest_base"]
+            manager = entry["manager"]
+            head_pointer = read_be(base, manager + 0x2A90)
+            queue_state = {
+                "head_pointer": head_pointer,
+                "head": read_be(base, head_pointer) if head_pointer else None,
+                "tail": read_be(base, manager + 0x2A9C),
+                "predicate_byte": read_be(base, manager + 0x2ABD, 1),
+                "manager_counter": read_be(base, manager + 11012),
+            }
+        except gdb.error as exc:
+            queue_state = {"error": str(exc)}
+        emit("source0_callback_return", {
+            "callback_call_ordinal": entry["callback_call_ordinal"],
+            "entry_ordinal": entry["entry_ordinal"],
+            "gpu_dispatch_id": entry["gpu_dispatch_id"],
+            "source": 0,
+            "manager": entry["manager"],
+            "entry_elapsed_seconds": entry["entry_elapsed_seconds"],
+            "return_elapsed_seconds": round(now - started, 3),
+            "duration_seconds": round(duration, 3),
+            "wait_word_value_at_entry": entry["wait_word_value_at_entry"],
+            "wait_word_value_at_return": wait_value,
+            "wait_word_write_count_at_entry": entry["wait_word_write_count_at_entry"],
+            "wait_word_write_count_at_return": write_count,
+            "software_queue_at_return": queue_state,
+            "thread": thread,
+            "thread_name": entry["thread_name"],
+        })
+        release_finisher(self)
+        return False
+
+
 class Source1CallbackFinish(gdb.FinishBreakpoint):
     def __init__(self, frame, callback_scope):
         super().__init__(frame, internal=True)
@@ -1689,7 +1755,8 @@ class Source1Callback(gdb.Breakpoint):
         callback_data = read_be(base, callback_object + 20) if callback_object else 0
         manager_flags = read_be(base, manager + 10904)
         queue_head_pointer = read_be(base, manager + 0x2A90)
-        emit("source0_callback", {
+        return emit("source0_callback", {
+            "callback_call_ordinal": state["source0_callback_call_ordinal"],
             "entry_ordinal": state["source0_callback_ordinal"],
             "gpu_dispatch_id": sample_gpu_dispatch_id(),
             "source": 0,
@@ -1721,7 +1788,31 @@ class Source1Callback(gdb.Breakpoint):
             context, base = context_base()
             source = ppc_reg(context, 3)
             if source == 0:
-                self.record_source0_sample(context, base, ppc_reg(context, 4))
+                state["source0_callback_call_ordinal"] += 1
+                event = self.record_source0_sample(context, base, ppc_reg(context, 4))
+                watch = state.get("fixed_guest_word_watch")
+                now = time.monotonic()
+                if (event and watch and watch.get("enabled")
+                        and event["wait_word_value_sampled"] == 1
+                        and now - state["source0_callback_last_return_track_monotonic"] >= 1.0):
+                    entry = {
+                        "scope_id": next_id(),
+                        "callback_call_ordinal": state["source0_callback_call_ordinal"],
+                        "entry_ordinal": event["entry_ordinal"],
+                        "gpu_dispatch_id": event["gpu_dispatch_id"],
+                        "entry_monotonic": now,
+                        "entry_elapsed_seconds": event["elapsed_seconds"],
+                        "wait_word_value_at_entry": event["wait_word_value_sampled"],
+                        "wait_word_write_count_at_entry": event["wait_word_watch_write_count"],
+                        "guest_base": base,
+                        "manager": ppc_reg(context, 4),
+                        "thread": thread_id(),
+                        "thread_name": thread_name(),
+                    }
+                    state["source0_callback_last_return_track_monotonic"] = now
+                    finisher = Source0CallbackFinish(gdb.newest_frame(), entry)
+                    state["active_source0_callbacks"].setdefault(entry["thread"], []).append(entry)
+                    keep_finisher(finisher)
                 return False
             if source != 1:
                 return False
@@ -1856,6 +1947,22 @@ def capture_stop_diagnostics():
         except Exception as exc:
             snapshot["guest_main_thread_error"] = str(exc)
         break
+    stop_time = time.monotonic()
+    snapshot["active_source0_callbacks"] = [
+        {
+            "callback_call_ordinal": entry["callback_call_ordinal"],
+            "entry_ordinal": entry["entry_ordinal"],
+            "gpu_dispatch_id": entry["gpu_dispatch_id"],
+            "thread": thread_id,
+            "thread_name": entry["thread_name"],
+            "entry_elapsed_seconds": entry["entry_elapsed_seconds"],
+            "duration_at_stop_seconds": round(stop_time - entry["entry_monotonic"], 3),
+            "wait_word_value_at_entry": entry["wait_word_value_at_entry"],
+            "wait_word_write_count_at_entry": entry["wait_word_write_count_at_entry"],
+        }
+        for thread_id, entries in state["active_source0_callbacks"].items()
+        for entry in entries
+    ]
     return snapshot
 
 try:
@@ -1895,6 +2002,7 @@ except Exception as exc:
     stop_context["diagnostics_error"] = str(exc)
 for key in ("enqueue_events", "dequeue_events", "completion_events", "producer_events",
             "producer_call_events", "submission_route_events", "source0_callback_events",
+            "source0_callback_return_events",
             "source1_callback_events",
             "event_call_events", "counter_write_events", "worker72_write_events",
             "controller_update_events", "controller_return_events", "host_input_events",
@@ -1912,6 +2020,7 @@ print("WORKER_RING_GPU_DISPATCH_ID_SUMMARY " + json.dumps({
     "sample_errors": state["gpu_dispatch_id_sample_errors"],
     "queue_record_links": state["queue_dispatch_id_links"],
     "queue_record_evictions": state["queue_dispatch_id_evictions"],
+    "source0_callback_calls": state["source0_callback_call_ordinal"],
     "source1_callback_records_with_id": sum(
         event.get("gpu_dispatch_id") is not None
         for event in state["source1_callback_events"]
@@ -1991,7 +2100,8 @@ payload = {
     ),
     "counts": {key: len(state[key]) for key in ("enqueue_events", "dequeue_events", "completion_events",
                 "producer_events", "producer_call_events", "submission_route_events",
-                "source0_callback_events", "source1_callback_events", "event_call_events", "counter_write_events",
+                "source0_callback_events", "source0_callback_return_events",
+                "source1_callback_events", "event_call_events", "counter_write_events",
                 "worker72_write_events", "controller_update_events", "controller_return_events",
                 "host_input_events", "xam_input_events", "xam_input_return_events",
                 "bink_complete_events", "input_gate_events",
@@ -2002,7 +2112,8 @@ payload = {
     "mapped_hashes": state["mapped_hashes"],
     "events": {key: state[key] for key in ("enqueue_events", "dequeue_events", "completion_events",
                 "producer_events", "producer_call_events", "submission_route_events",
-                "source0_callback_events", "source1_callback_events", "event_call_events", "counter_write_events",
+                "source0_callback_events", "source0_callback_return_events",
+                "source1_callback_events", "event_call_events", "counter_write_events",
                 "worker72_write_events", "controller_update_events", "controller_return_events",
                 "host_input_events", "xam_input_events", "xam_input_return_events",
                 "bink_complete_events", "input_gate_events",
