@@ -516,10 +516,11 @@ passed with validation enabled. The ARM64 plugin linked against the exact
 `librexruntime.so` extracted read-only from the installed APK; that DSO was not
 installed and the game stayed open. The device went offline before the new
 ARM64 input regression could be executed there. These are synthetic layout and
-Vulkan checks, not retail rendering evidence. The captured 14-draw transition
-still aliases at its first target change and remains unsupported; shared EDRAM
-storage, partial-copy clear effects, depth/stencil persistence, and full
-resolve behavior remain open. Build hashes and limits are in
+Vulkan checks, not retail rendering evidence. The exact 1280x720 packet-27
+color alias is handled by the narrow path below. Larger wrapped layouts and
+other transitions in the captured 14-draw sequence remain unsupported;
+general shared EDRAM storage, partial-copy clear effects, depth/stencil
+persistence, and full resolve behavior remain open. Build hashes and limits are in
 [`process2_ordered_edram_tile_disjoint_20261027.json`](../evidence/process2_ordered_edram_tile_disjoint_20261027.json).
 
 ### Reverse EDRAM sample coordinates (2026-10-27)

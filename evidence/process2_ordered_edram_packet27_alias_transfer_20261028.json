@@ -1,0 +1,88 @@
+{
+  "schema": "shift.process2.ordered_edram_packet27_alias_transfer.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "source_commit": "fe2253bcef1bf0e04d15708a477b6947eefcd8e3",
+  "capture": {
+    "directory": "/tmp/nfs-shift-p1-gpu-backend-resolvepr2-20261028",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40c0a2c58",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "prior_plugin_sha256": "07a953e6879c240867ca9ea0a0995ed53a6a92e165ab49cd946a5a99b304ca9e",
+    "prior_plugin_source_commit": "f6f0472bc2e86a952b27c120c5b9545453846f01",
+    "capture_duration_seconds": 137.974,
+    "capture_geometry": {
+      "transition_draw_packets": [24, 25, 26, 27],
+      "packet_24": "1280x720 4x RGBA8_GAMMA, pitch 640, color base 0, depth base 0x2d0",
+      "packet_25": "4x depth-only view, pitch 640, no color writes",
+      "packet_26": "1280x720 4x RGBA8_GAMMA, pitch 640, depth base 0x2d0",
+      "packet_27": "1280x720 1x RGBA8_LINEAR, pitch 1280, same color/depth bases; depth/stencil disabled",
+      "following_copy_packet": 52,
+      "copy": "mode-6 Convert, source 1x sample 0, destination 0x0975E000 1280x720 format 6, no depth clear"
+    },
+    "pre_change_failure": "Before this change the renderer rejected packet 27 because the 4x/pitch-640 and 1x/pitch-1280 views overlap physical EDRAM tiles and no alias transfer was available."
+  },
+  "tile_mapping": {
+    "source_layout": "1280x720 4x, pitch 640",
+    "destination_layout": "1280x720 1x, pitch 1280",
+    "shared_physical_tiles": 720,
+    "coordinate_mapping": "Identity for each shared tile, 16 columns by 45 rows.",
+    "tile_local_sample_slots": 1280,
+    "address_regression": "All tile-local sample slots resolve to the same physical byte offset through both layouts for color and depth; see process2_edram_alias_tile_map_20261028.json.",
+    "format_scope": "32bpp guest EDRAM addressing. The Vulkan source is the renderer's RGBA8_GAMMA representation in its VK_FORMAT_R16G16B16A16_UNORM linear-light intermediate, and the destination is its RGBA8_LINEAR VK_FORMAT_R8G8B8A8_UNORM target; this is not a raw dump of physical EDRAM bytes."
+  },
+  "implementation": {
+    "behavior": [
+      "Submits the preceding captured draw segment into its persistent 4x Vulkan EDRAM cache target.",
+      "Runs a backend-owned fullscreen triangle that unpacks each 1x destination tile-local pixel into its source 4x pixel and MSAA lane, quantizes to 8-bit, and stores into the cached 1x color target.",
+      "Submits packet 27 and its immediately following captured Copy/Convert in PM4 order."
+    ],
+    "strict_activation": "Requires the exact 1280x720, shared-base, 4x/pitch-640 RGBA8_GAMMA to 1x/pitch-1280 RGBA8_LINEAR tuple; 720 identity alias tiles; packet-27 depth/stencil disabled; and an immediately following same-layout sample-zero format-6 copy to 0x0975E000 at 1280x720 with no depth clear.",
+    "depth_stencil": "No depth/stencil samples are transferred. The previous 4x depth target remains in its separate cache entry; packet 27 and the associated copy do not use or clear it.",
+    "other_layouts": "Unsupported layouts remain fail-closed. The 2560x1440 wrapped layout and format-31 intermediate-copy sequence are not covered by this change."
+  },
+  "verification": {
+    "native_linux": {
+      "build": "cmake --build /home/pes/work/.build-process2-p2161-native-vulkan-20261028 -j6",
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-native-vulkan-20261028 --output-on-failure",
+      "result": "passed 4/4",
+      "alias_regression": "Synthetic source and 1x baseline produce identical full output readbacks through the ordered executor.",
+      "fail_closed_regression": "A pitch-1272 variant is rejected during transition preflight."
+    },
+    "spirv": {
+      "validator": "spirv-val --target-env vulkan1.1",
+      "shaders": [
+        "xenos_edram_alias_4x_to_1x.vert.spv",
+        "xenos_edram_alias_4x_to_1x.frag.spv"
+      ],
+      "result": "both passed"
+    },
+    "linux_rexglue": {
+      "build": "cmake --build /home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028 --target rexgpu-shift-native -j6",
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028 --output-on-failure",
+      "ctest_result": "passed 7/7",
+      "plugin_sha256": "2323b9f4cafd67f5e3465d6022b9d7bd5ae60dc6c2cb845c99eebc237e663fc2",
+      "build_id": "500e576f70b55c5089e57d9a2a707d1d825ad800",
+      "source_commit": "fe2253bcef1bf0e04d15708a477b6947eefcd8e3"
+    },
+    "android_arm64": {
+      "build": "cmake --build /home/pes/work/.build-process2-p2161-android-renderer-20261027 --target shift_xbox_live_vulkan_renderer xbox_live_vulkan_renderer_check -j6",
+      "result": "renderer library and Vulkan check executable compiled",
+      "device_runtime": "not run; adb devices -l returned no connected devices"
+    },
+    "source1_interrupts": {
+      "audit": "process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json",
+      "p2_source1_events": 1803,
+      "p1_callback_rows_joined": 1063,
+      "p2_interrupt_id_window": [709, 1771],
+      "join_limit": "Timestamp/order correlation only; it does not prove callback payload equivalence or guest semantic completion."
+    },
+    "diff_check": "git diff --check passed"
+  },
+  "limitations": [
+    "This test uses synthetic shaders and is renderer executor evidence, not retail parity or visual confirmation of the captured bytes.",
+    "The real captured 14-draw operation stream has not been rerun with this plugin. The prior capture still contains an unresolved conditional shader branch and later intermediate-copy/layout work.",
+    "This does not complete P2.1, prove all fourteen draws execute, or establish a full original game frame.",
+    "No Android GPU runtime was available for validation."
+  ]
+}
