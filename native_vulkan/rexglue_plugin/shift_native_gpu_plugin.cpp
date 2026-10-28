@@ -2911,7 +2911,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 const bool periodic_wait_sample =
                     poll_count != 0u && (poll_count % 1000u) == 0u;
                 if (GuestRingTraceEnabled() && wait.memory &&
-                    wait_value_samples < 8u &&
+                    (wait_value_samples < 8u || wait_value_changed) &&
                     (wait_value_changed || periodic_wait_sample)) {
                   const auto elapsed =
                       std::chrono::duration_cast<std::chrono::milliseconds>(
