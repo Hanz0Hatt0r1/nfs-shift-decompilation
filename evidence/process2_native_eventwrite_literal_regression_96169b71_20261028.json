@@ -1,0 +1,137 @@
+{
+  "schema": "shift.process2.event-write-live-replay.v1",
+  "captured_on": "2026-10-28",
+  "capture_window_local": "2026-10-28 17:56:46.801\u201317:58:57.083 Europe/Moscow (approx. from log timestamps)",
+  "source": {
+    "commit": "96169b712c1edb679b9309b54efc8ff7ff17b613",
+    "plugin_sha256": "27f44ab0437b8030967522746618ad43f3c251b4e031a750b22d8821ffb061f6",
+    "plugin_build_id": "5f69211f34b983c9576bb8a5452c66a2fdbe2547",
+    "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "capture": {
+    "game_data_root": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+    "trace_env": "SHIFT_NATIVE_VULKAN_TRACE_RING=1",
+    "ring_guest": "0x09752580",
+    "ring_dwords": 8192,
+    "window": "X11 window was moved offscreen; process exited after SIGINT following trace capture"
+  },
+  "raw_archive": {
+    "path": "/home/pes/work/process2-eventwrite-96169b71/logs.tar.gz",
+    "sha256": "ba3cec3446e70250a076630dff372bd03362ca8974310f795e20e90b9aed48ce",
+    "bytes": 2416345
+  },
+  "trace_summary": {
+    "event_write_records": 13972,
+    "event_sequence_range": [
+      0,
+      13971
+    ],
+    "missing_event_sequence_ids": [],
+    "target_write_count": 6983,
+    "target_transition_delta_counts": {
+      "-6": 1104,
+      "2": 5879
+    },
+    "target_regression_count": 1104,
+    "expanded_to_execution_byte_mismatches": 0,
+    "target_previous_after_mismatches": 0
+  },
+  "regression": {
+    "first_event": 5147,
+    "last_event": 13971,
+    "count": 1104,
+    "transition_counts": {
+      "5141->5135": 1104
+    },
+    "source_ib": "0x09710480",
+    "source_offset": 24,
+    "depth": 1,
+    "literal_value": "0x0000140F (5135)",
+    "raw_words": [
+      "0xC0025800",
+      "0x00000003",
+      "0x17AF4002",
+      "0x0000140F"
+    ],
+    "source_bytes_match_all": true,
+    "first_packet": {
+      "event": 5147,
+      "monotonic_ns": 57205913664190,
+      "batch": 1493,
+      "generation": 1,
+      "batch_rptr": 7267,
+      "batch_wptr": 7305,
+      "packet_ordinal": 562,
+      "guest_value_before": 5141,
+      "guest_value_after": 5135
+    },
+    "last_packet": {
+      "event": 13971,
+      "monotonic_ns": 57242929589488,
+      "batch": 1509,
+      "generation": 1,
+      "batch_rptr": 1837,
+      "batch_wptr": 1835,
+      "packet_ordinal": 228706,
+      "guest_value_before": 5141,
+      "guest_value_after": 5135
+    },
+    "batch_ids_with_regressions": {
+      "first": 1493,
+      "last": 1509,
+      "distinct": 17
+    },
+    "packet_ordinals_within_batch_1509": {
+      "first": 562,
+      "last": 228706,
+      "count": 169
+    }
+  },
+  "head_3381_checkpoint": {
+    "reached_3381": {
+      "event": 3385,
+      "batch": 960,
+      "generation": 1,
+      "batch_rptr": 1961,
+      "batch_wptr": 1973,
+      "packet_ordinal": 295,
+      "source_ib": 157189248,
+      "source_offset": 12612,
+      "raw_words": [
+        3221379072,
+        3,
+        397361154,
+        3381
+      ],
+      "guest_value_before": 3379,
+      "guest_value_after": 3381
+    },
+    "next_write_after_3381": {
+      "event": 3387,
+      "batch": 960,
+      "generation": 1,
+      "batch_rptr": 1961,
+      "batch_wptr": 1973,
+      "packet_ordinal": 362,
+      "source_ib": 157201888,
+      "source_offset": 344,
+      "raw_words": [
+        3221379072,
+        3,
+        397361154,
+        3383
+      ],
+      "guest_value_before": 3381,
+      "guest_value_after": 3383
+    }
+  },
+  "interpretation": [
+    "The exact earlier 3381->3375 transition was not reproduced. This run advanced 3379->3381->3383.",
+    "A related stale-literal regression was reproduced 1104 times: the guest PM4 packet explicitly stores 5135 after the head reached 5141.",
+    "For all captured regressions, execution-time raw words match expansion-time snapshots. Initiator 3 selects literal-value mode; address 0x17AF4002 decodes to physical 0x17AF4000 with endian mode 2, and the decoded/stored guest value is 5135.",
+    "Regressions span 17 distinct advancing ring batches (1493..1509), and the same source packet appears at different expanded packet ordinals. No missing event IDs, source-byte mismatches, or previous-after discontinuities were found. This excludes decoder/endian corruption and exact ring-batch replay for this captured pattern.",
+    "The trace attributes the reproduced stores to explicit guest command bytes. It does not identify the guest producer or prove that the earlier exact 3381->3375 rows used this same source IB."
+  ]
+}
