@@ -206,7 +206,8 @@ const char* vertex_format_name(uint32_t format) {
 bool append_fetch(std::ostringstream& glsl,
                   CapturedShaderStage stage,
                   const CapturedShaderFetchInstruction& fetch,
-                  uint32_t vertex_input_location,
+                  uint32_t fetch_ordinal,
+                  bool disambiguate_texture_symbols,
                   const CapturedShaderTranslationOptions& options,
                   bool* texture_declared,
                   uint32_t* sampler_register,
@@ -227,9 +228,9 @@ bool append_fetch(std::ostringstream& glsl,
             return fail("captured vertex fetch is outside the float3/float4 layout", error);
         }
         const std::string input =
-            "shift_vertex_input_" + std::to_string(vertex_input_location);
+            "shift_vertex_input_" + std::to_string(fetch_ordinal);
         const std::string fetched =
-            "fetched_vertex_" + std::to_string(vertex_input_location);
+            "fetched_vertex_" + std::to_string(fetch_ordinal);
         glsl << "  vec4 " << fetched << " = ";
         if (fetch.vertex_format == 57) {
             glsl << "vec4(" << input << ", 1.0);\n";
@@ -296,33 +297,40 @@ bool append_fetch(std::ostringstream& glsl,
     const uint32_t sampler = fetch.fetch_constant_index;
     const uint32_t coord_x = fetch.source_swizzle & 3u;
     const uint32_t coord_y = (fetch.source_swizzle >> 2) & 3u;
-    glsl << "  vec4 sampled_" << sampler << " = texture(shift_sampler_"
+    const std::string symbol_suffix = disambiguate_texture_symbols
+        ? "_fetch_" + std::to_string(fetch_ordinal)
+        : std::string{};
+    const std::string sampled = "sampled_" + std::to_string(sampler) +
+                                symbol_suffix;
+    const std::string fetched = "fetched_" + std::to_string(sampler) +
+                                symbol_suffix;
+    glsl << "  vec4 " << sampled << " = texture(shift_sampler_"
          << sampler << ", r[" << fetch.source_register << "]."
          << component_name(coord_x)
          << component_name(coord_y) << ");\n";
     if (texture_options.integer_scale != 0) {
-        glsl << "  sampled_" << sampler << " *= "
+        glsl << "  " << sampled << " *= "
              << texture_options.integer_scale << ".0;\n";
     }
     for (uint32_t lane = 0; lane < 4; ++lane) {
         if (texture_options.signs[lane] == TextureSign::Gamma) {
-            glsl << "  sampled_" << sampler << '.' << component_name(lane)
-                 << "=shift_pwl_gamma_to_linear(sampled_" << sampler << '.'
+            glsl << "  " << sampled << '.' << component_name(lane)
+                 << "=shift_pwl_gamma_to_linear(" << sampled << '.'
                  << component_name(lane) << ");\n";
         }
     }
-    glsl << "  vec4 fetched_" << sampler << " = vec4(";
+    glsl << "  vec4 " << fetched << " = vec4(";
     for (uint32_t lane = 0; lane < 4; ++lane) {
         if (lane) glsl << ", ";
         const uint32_t selector = texture_options.swizzle[lane];
-        if (selector < 4) glsl << "sampled_" << sampler << "." << component_name(selector);
+        if (selector < 4) glsl << sampled << "." << component_name(selector);
         else glsl << (selector == 4 ? "0.0" : "1.0");
     }
     glsl << ");\n";
     for (uint32_t lane = 0; lane < 4; ++lane) {
         const uint32_t selector = (fetch.destination_swizzle >> (lane * 3)) & 7u;
         std::string value;
-        if (!fetch_lane_expression(selector, ("fetched_" + std::to_string(sampler)).c_str(), &value)) {
+        if (!fetch_lane_expression(selector, fetched.c_str(), &value)) {
             return fail("captured texture fetch destination swizzle is unsupported", error);
         }
         if (!value.empty()) glsl << "  r[" << fetch.destination_register << "]." << component_name(lane) << " = "
@@ -770,6 +778,13 @@ bool translate_captured_shader_glsl(
         }
     }
 
+    std::array<uint32_t, 32> texture_fetch_counts{};
+    for (const CapturedShaderFetchInstruction& fetch : executed_fetches) {
+        if (fetch.kind == CapturedShaderFetchKind::Texture2D) {
+            ++texture_fetch_counts[fetch.fetch_constant_index];
+        }
+    }
+
     std::ostringstream glsl;
     glsl << "#version 450\n";
     if (stage == CapturedShaderStage::Vertex) {
@@ -912,8 +927,13 @@ bool translate_captured_shader_glsl(
                 }
                 const CapturedShaderFetchInstruction& fetch =
                     executed_fetches[fetch_index];
+                const bool disambiguate_texture_symbols =
+                    stage == CapturedShaderStage::Pixel &&
+                    fetch.kind == CapturedShaderFetchKind::Texture2D &&
+                    texture_fetch_counts[fetch.fetch_constant_index] > 1;
                 if (!append_fetch(glsl, stage, fetch,
-                                  static_cast<uint32_t>(fetch_index), options,
+                                  static_cast<uint32_t>(fetch_index),
+                                  disambiguate_texture_symbols, options,
                                   &has_texture, &sampler_register, error)) {
                     return false;
                 }

@@ -157,6 +157,17 @@ std::vector<uint8_t> captured_pixel_shader_slice() {
     return shader;
 }
 
+std::vector<uint8_t> captured_repeated_sampler_pixel_shader_slice() {
+    std::vector<uint8_t> shader = captured_pixel_shader_slice();
+    // Extend the captured EXEC clause from fetch@4 + ALU@5 to include a
+    // second fetch@6 using the same fetch constant. This reproduces the
+    // duplicate GLSL local names reported by retail draw #10.
+    write_be32(shader.data() + 4, 0x3004B200u);
+    write_be32(shader.data() + 8, 0x12000019u);
+    std::copy_n(shader.data() + 4 * 12, 12, shader.data() + 6 * 12);
+    return shader;
+}
+
 void verify_pre_wait_retail_shader_exports() {
     // Exact shader-program dwords from the captured outer and nested IBs;
     // provenance and program hashes are in the matching evidence JSON.
@@ -447,6 +458,24 @@ int main() {
                     std::string::npos &&
                 translated.glsl.find("shift_color0") != std::string::npos,
             "captured sampler swizzle or color export was lost");
+
+    const std::vector<uint8_t> repeated_sampler_shader =
+        captured_repeated_sampler_pixel_shader_slice();
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                repeated_sampler_shader.data(), repeated_sampler_shader.size(),
+                options, &translated, &error) &&
+                translated.executed_instruction_addresses ==
+                    std::vector<uint32_t>{4, 5, 6, 8} &&
+                translated.glsl.find("vec4 sampled_0_fetch_0 =") !=
+                    std::string::npos &&
+                translated.glsl.find("vec4 sampled_0_fetch_1 =") !=
+                    std::string::npos &&
+                translated.glsl.find("vec4 fetched_0_fetch_0 =") !=
+                    std::string::npos &&
+                translated.glsl.find("vec4 fetched_0_fetch_1 =") !=
+                    std::string::npos,
+            "repeated captured fetch constant reused GLSL local symbols");
 
     auto integer_texture_options = options;
     integer_texture_options.textures[0].integer_scale = 65535u;
