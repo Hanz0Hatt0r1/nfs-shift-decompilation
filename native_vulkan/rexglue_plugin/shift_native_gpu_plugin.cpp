@@ -2890,12 +2890,14 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 if (wait.memory) {
                   REXLOG_INFO(
                       "shift-native: entering captured WAIT_REG_MEM guest={:08X} "
-                      "poll-address={:08X} reference={:08X} mask={:08X} "
+                      "poll-address={:08X} host_poll_word={:p} "
+                      "reference={:08X} mask={:08X} "
                       "endian={} compare={} poll-interval={:08X} "
                       "packet_words=[{:08X},{:08X},{:08X},{:08X},{:08X},{:08X}] "
                       "source={:08X} depth={} byte-offset={}",
-                      wait.guest_address, wait.poll_address, wait.reference,
-                      wait.mask, wait.endian_mode,
+                      wait.guest_address, wait.poll_address,
+                      static_cast<void*>(poll_word), wait.reference, wait.mask,
+                      wait.endian_mode,
                       static_cast<uint32_t>(wait.compare), wait.poll_interval,
                       ReadGuestDword(packet_bytes + 0u),
                       ReadGuestDword(packet_bytes + 4u),
@@ -3031,11 +3033,13 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     std::chrono::steady_clock::now() - wait_started);
                 REXLOG_INFO(
                     "shift-native: completed captured WAIT_REG_MEM guest={:08X} "
-                    "poll-address={:08X} reference={:08X} mask={:08X} "
+                    "poll-address={:08X} host_poll_word={:p} "
+                    "reference={:08X} mask={:08X} "
                     "endian={} compare={} polls={} raw={:08X} observed={:08X} "
                     "source={:08X} depth={} byte-offset={} elapsed_ms={}",
-                    wait.guest_address, wait.poll_address, wait.reference,
-                    wait.mask, wait.endian_mode,
+                    wait.guest_address, wait.poll_address,
+                    static_cast<void*>(poll_word), wait.reference, wait.mask,
+                    wait.endian_mode,
                     static_cast<uint32_t>(wait.compare), poll_count,
                     final_raw_value, final_observed_value,
                     resolved.source_guest_address,
