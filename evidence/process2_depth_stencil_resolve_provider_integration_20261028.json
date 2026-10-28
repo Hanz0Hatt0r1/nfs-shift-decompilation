@@ -1,0 +1,56 @@
+{
+  "schema": "shift.process2.depth_stencil_resolve_provider_integration.v1",
+  "date": "2026-10-28",
+  "p2_branch": "work/process2-xbox-live-ring-20261023",
+  "p2_source_commit": "f6f0472bc2e86a952b27c120c5b9545453846f01",
+  "sdk_change": {
+    "pull_request": "https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/2",
+    "source_branch": "work/process2-vulkan-resolve-capability-20261024",
+    "source_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "summary": "Optional VK_KHR_create_renderpass2 and VK_KHR_depth_stencil_resolve provider capability; Vulkan 1.1 extension path, SAMPLE_ZERO capability reported independently of GPU-emulation features."
+  },
+  "plugin": {
+    "path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028/output/librexgpu-shift-native.so",
+    "sha256": "07a953e6879c240867ca9ea0a0995ed53a6a92e165ab49cd946a5a99b304ca9e",
+    "build": "Linux x86-64 Release, Clang 22.1.8; built against SDK PR #2 checkout.",
+    "build_note": "The local SDK build required -mssse3 for rexcore/src/core/memory.cpp intrinsics; this was passed only to the external build invocation and did not modify tracked source."
+  },
+  "provider_capability_check": {
+    "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation rexgpu_vulkan_resolve_capability_check",
+    "result": "passed",
+    "device": "NVIDIA GeForce GTX 950",
+    "device_api_version": "1.4",
+    "enabled_extensions": [
+      "VK_KHR_create_renderpass2",
+      "VK_KHR_depth_stencil_resolve"
+    ],
+    "depth_stencil_resolve_sample_zero": true,
+    "gpu_emulation_features": "disabled"
+  },
+  "plugin_tests": {
+    "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028 --output-on-failure",
+    "result": "passed 7/7",
+    "tests": [
+      "rexgpu_shift_native_r8_upload_scratch_check",
+      "rexgpu_shift_native_factory_check",
+      "rexgpu_shift_native_live_ring_check",
+      "rexgpu_shift_native_live_ring_write_trace_check",
+      "rexgpu_shift_native_live_ring_selected_draw_dump_check",
+      "rexgpu_shift_native_live_ring_readback_check",
+      "rexgpu_vulkan_resolve_capability_check"
+    ]
+  },
+  "process1_runtime_abi_smoke": {
+    "result": "plugin factory smoke passed against the existing Process 1 retail-lwsync runtime",
+    "runtime": "/home/pes/work/rexglue-sdk-retail-lwsync-20261027/out/linux-amd64/Release/librexruntime.so",
+    "observed_warning": "The older runtime emitted duplicate Vulkan cvar registration messages while loading the plugin; the smoke test returned success."
+  },
+  "limits": [
+    "This validates the optional provider capability and plugin ABI smoke, not execution of a retail frame or the ordered 14-draw transition.",
+    "The prior capture's packet-72 depth/stencil resolve rejection is addressed for this Linux device at provider capability level; a fresh same-XEX game capture with this plugin is still required to verify the operation stream advances.",
+    "The first draw remains unresolved because the capture does not establish exact raster geometry/scissor coverage needed to map its wrapped EDRAM aliases.",
+    "No Android build or device run was performed in this check.",
+    "No retail pixel parity is claimed."
+  ],
+  "next_evidence": "Rerun the captured retail transition with the plugin SHA above, retaining XEX/runtime hashes and packet order. Capture draw geometry/scissor plus Copy/Convert source/destination state for the 14-draw packet-0 sequence before implementing aliased backing transfer."
+}
