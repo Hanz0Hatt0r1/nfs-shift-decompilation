@@ -68,10 +68,27 @@ constexpr uint32_t kCoherSizeHostRegister = 0x0A2Fu;
 constexpr uint32_t kCoherBaseHostRegister = 0x0A30u;
 constexpr uint32_t kCoherStatusHostRegister = 0x0A31u;
 constexpr uint32_t kCoherStatusHostDirty = 0x80000000u;
+constexpr uint32_t kWaitPollWordGuestAddress = 0x1B964004u;
 constexpr uint32_t kVgtEventInitiatorRegister =
     rex::graphics::XE_GPU_REG_VGT_EVENT_INITIATOR;
 constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
 constexpr uint32_t kRectangleListInterpolatorCount = 16;
+
+struct GuestWriteProvenance {
+  const char* writer = "unknown";
+  uint64_t generation = 0;
+  uint64_t batch_id = 0;
+  uint64_t dispatch_id = 0;
+  uint32_t batch_rptr = 0;
+  uint32_t batch_wptr = 0;
+  uint32_t ring_guest = 0;
+  uint32_t source_ib = 0;
+  uint32_t nesting_depth = 0;
+  uint32_t packet_ordinal = UINT32_MAX;
+  uint32_t packet_offset = UINT32_MAX;
+  uint32_t packet_type = UINT32_MAX;
+  uint32_t packet_opcode = UINT32_MAX;
+};
 
 std::atomic<uint64_t> next_gpu_dispatch_id{1};
 thread_local uint64_t active_gpu_dispatch_id = 0;
@@ -773,6 +790,39 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     void* translated_address = nullptr;
   };
 
+  void TraceWaitPollWordWrite(const char* writer, uint32_t guest_address,
+                              const void* destination, uint32_t before,
+                              uint32_t after, uint32_t register_index,
+                              uint32_t register_value,
+                              const GuestWriteProvenance* provenance = nullptr) {
+    auto* poll_word = memory_->TranslatePhysical<uint32_t*>(
+        kWaitPollWordGuestAddress);
+    if (destination != poll_word && guest_address != kWaitPollWordGuestAddress) {
+      return;
+    }
+
+    static std::atomic<uint32_t> poll_word_write_log_count{0};
+    const uint32_t log_index =
+        poll_word_write_log_count.fetch_add(1, std::memory_order_relaxed);
+    if (log_index >= 64u) return;
+    const GuestWriteProvenance empty{};
+    const GuestWriteProvenance& context = provenance ? *provenance : empty;
+    REXLOG_INFO(
+        "shift-native: watched WAIT_REG_MEM word write #{} writer={} "
+        "guest={:08X} host={:p} logical={:08X}->{:08X} "
+        "register_index={:08X} register_value={:08X} "
+        "origin={} generation={} batch={} batch_rptr={} batch_wptr={} ring_guest={:08X} "
+        "source_ib={:08X} depth={} packet={} packet_offset={} "
+        "packet_type={} packet_opcode={:02X} dispatch_id={:016X}",
+        log_index, writer, guest_address, destination, before, after,
+        register_index, register_value, context.writer, context.generation,
+        context.batch_id,
+        context.batch_rptr, context.batch_wptr, context.ring_guest,
+        context.source_ib, context.nesting_depth, context.packet_ordinal,
+        context.packet_offset, context.packet_type, context.packet_opcode,
+        context.dispatch_id ? context.dispatch_id : active_gpu_dispatch_id);
+  }
+
   static uint32_t ReadRegisterThunk(void*, void* context, uint32_t address) {
     return static_cast<ShiftNativeGraphicsSystem*>(context)->ReadRegister(address);
   }
@@ -828,6 +878,18 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
           }
         }
       }
+    }
+
+    if (result.translated_address) {
+      GuestWriteProvenance provenance{};
+      provenance.writer = phase;
+      provenance.generation = generation;
+      provenance.batch_rptr = expected_read_pointer;
+      provenance.batch_wptr = next_read_pointer;
+      TraceWaitPollWordWrite("RPTR writeback", result.guest_address,
+                             result.translated_address, result.previous_value,
+                             result.stored_value, UINT32_MAX, next_read_pointer,
+                             &provenance);
     }
 
     if (writeback_outside_memory) {
@@ -2051,7 +2113,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     ++coherency_generation_;
   }
 
-  void ApplyScratchRegisterWrite(uint32_t index, uint32_t value) {
+  void ApplyScratchRegisterWrite(
+      uint32_t index, uint32_t value,
+      const GuestWriteProvenance* provenance = nullptr) {
     if (index == rex::graphics::XE_GPU_REG_SCRATCH_ADDR) {
       scratch_address_.store(value, std::memory_order_release);
       return;
@@ -2093,11 +2157,16 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     }
 
     constexpr auto kScratchEndian = rex::graphics::xenos::Endian::k8in32;
-    const uint32_t previous_value = rex::graphics::xenos::GpuSwap(
-        __atomic_load_n(destination, __ATOMIC_ACQUIRE), kScratchEndian);
-    __atomic_store_n(destination,
-                     rex::graphics::xenos::GpuSwap(value, kScratchEndian),
-                     __ATOMIC_RELEASE);
+    const uint32_t raw_previous_value =
+        __atomic_load_n(destination, __ATOMIC_ACQUIRE);
+    const uint32_t previous_value =
+        rex::graphics::xenos::GpuSwap(raw_previous_value, kScratchEndian);
+    const uint32_t raw_stored_value =
+        rex::graphics::xenos::GpuSwap(value, kScratchEndian);
+    __atomic_store_n(destination, raw_stored_value, __ATOMIC_RELEASE);
+    TraceWaitPollWordWrite("ApplyScratchRegisterWrite",
+                           static_cast<uint32_t>(guest_address), destination,
+                           previous_value, value, index, value, provenance);
     static std::atomic<uint32_t> scratch_write_log_count{0};
     const uint32_t log_index =
         scratch_write_log_count.fetch_add(1, std::memory_order_relaxed);
@@ -2129,7 +2198,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
   void NotifyWriteRegister(uint32_t address, uint32_t value) {
     const uint32_t index = (address & 0xFFFFu) / sizeof(uint32_t);
-    ApplyScratchRegisterWrite(index, value);
+    GuestWriteProvenance provenance{};
+    provenance.writer = "MMIO register callback";
+    provenance.dispatch_id = active_gpu_dispatch_id;
+    ApplyScratchRegisterWrite(index, value, &provenance);
     ApplyCoherencyRegisterWrite(index, value);
     if (index != kRingWritePointerRegister) return;
 
@@ -2433,6 +2505,27 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               packet_bytes = source_bytes + packet.byte_offset;
             }
 
+            GuestWriteProvenance packet_write_provenance{};
+            packet_write_provenance.writer = "expanded_pm4_packet";
+            packet_write_provenance.generation = ring_generation;
+            packet_write_provenance.batch_id = batch_id;
+            packet_write_provenance.dispatch_id = active_gpu_dispatch_id;
+            packet_write_provenance.batch_rptr = read_pointer;
+            packet_write_provenance.batch_wptr = write_pointer;
+            packet_write_provenance.ring_guest = ring_guest_address;
+            packet_write_provenance.source_ib = resolved.source_guest_address;
+            packet_write_provenance.nesting_depth = resolved.nesting_depth;
+            packet_write_provenance.packet_ordinal =
+                static_cast<uint32_t>(packet_ordinal);
+            packet_write_provenance.packet_offset =
+                static_cast<uint32_t>(packet.byte_offset);
+            packet_write_provenance.packet_type =
+                static_cast<uint32_t>(packet.type);
+            packet_write_provenance.packet_opcode =
+                packet.type == shift::xbox::PacketType::Type3
+                    ? packet.opcode
+                    : UINT32_MAX;
+
             if (GuestRingTraceEnabled() &&
                 packet.type == shift::xbox::PacketType::Type3 &&
                 IsGuestMemoryWriteCandidateOpcode(packet.opcode)) {
@@ -2729,6 +2822,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               rex::memory::store(destination, stored_value);
               const uint32_t stored_guest_value =
                   rex::memory::load_and_swap<uint32_t>(destination);
+              packet_write_provenance.writer = "PM4 EVENT_WRITE_SHD";
+              TraceWaitPollWordWrite("EVENT_WRITE_SHD", event.guest_address,
+                                     destination, previous_guest_value,
+                                     stored_guest_value, UINT32_MAX,
+                                     data_value, &packet_write_provenance);
               event_initiator_.store(event.initiator & 0x3Fu,
                                      std::memory_order_release);
               const uint64_t event_write_id = event_write_sequence++;
@@ -3051,8 +3149,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               if (shift::xbox::decode_guest_register_writes(
                       packet_bytes, packet.byte_length, &writes, &error)) {
                 raw_register_writes += static_cast<uint32_t>(writes.size());
+                packet_write_provenance.writer = "PM4 register packet";
                 for (const shift::xbox::GuestRegisterWrite& write : writes) {
-                  ApplyScratchRegisterWrite(write.register_index, write.value);
+                  ApplyScratchRegisterWrite(write.register_index, write.value,
+                                            &packet_write_provenance);
                   ApplyCoherencyRegisterWrite(write.register_index, write.value);
                   raster_register_state.apply(write);
                   shader_register_state.apply(write);
@@ -3071,8 +3171,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   source_byte_length >= load.byte_length &&
                   shift::xbox::decode_captured_constant_load_data(
                       load, source_bytes, load.byte_length, &writes, &error)) {
+                packet_write_provenance.writer = "PM4 constant load";
                 for (const shift::xbox::GuestRegisterWrite& write : writes) {
-                  ApplyScratchRegisterWrite(write.register_index, write.value);
+                  ApplyScratchRegisterWrite(write.register_index, write.value,
+                                            &packet_write_provenance);
                   ApplyCoherencyRegisterWrite(write.register_index, write.value);
                   raster_register_state.apply(write);
                   shader_register_state.apply(write);

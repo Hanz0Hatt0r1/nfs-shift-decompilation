@@ -1,0 +1,81 @@
+{
+  "schema": "shift.process2.v65_wait_pollword_writer_diagnostics.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "target": {
+    "guest_address": "0x1B964004",
+    "host_alias_in_v65": "0x21B964004",
+    "log_limit": 64,
+    "writers_instrumented": [
+      "ApplyScratchRegisterWrite from PM4 Type-0/Type-1 packets",
+      "ApplyScratchRegisterWrite from PM4 constant-load packets",
+      "ApplyScratchRegisterWrite from MMIO register callbacks",
+      "EVENT_WRITE_SHD direct guest-memory store",
+      "RPTR writeback"
+    ],
+    "recorded_fields": [
+      "writer and origin",
+      "guest destination and resolved host pointer",
+      "logical value before and after",
+      "register index and decoded register value when applicable",
+      "ring generation, batch id, batch RPTR/WPTR, and ring base",
+      "source IB, nesting depth, expanded packet ordinal, packet byte offset/type/opcode",
+      "active GPU dispatch id when present"
+    ]
+  },
+  "change": {
+    "purpose": "bounded diagnostic only",
+    "wait_predicate_changed": false,
+    "poll_loop_or_sleep_changed": false,
+    "synchronization_changed": false,
+    "guest_memory_write_semantics_changed": false,
+    "capture_replayed_with_this_build": false
+  },
+  "prior_capture": {
+    "root": "/home/pes/work/nfs-shift-p1-p2-14841319-paired-physical-counter-20261028",
+    "native_wait_observations": 11530,
+    "source1_interrupt_dispatches": 5765,
+    "source1_callback_returns": 5765,
+    "physical_alias_watch": {
+      "host_address": "0x21B964004",
+      "captured_write": "0x00000000 -> 0x00000001",
+      "writer_stack": "ShiftNativeGraphicsSystem::ApplyScratchRegisterWrite <- RingWorkerLoop",
+      "captured_1_to_0_writer": false
+    },
+    "interpretation": "The v65 capture confirms the scratch-register set operation but does not identify the later clear. The wait completing with zero proves the word changed, not which writer changed it."
+  },
+  "related_prior_alias_evidence": {
+    "capture": "/home/pes/work/nfs-shift-p1-v63-native-physical-waitword-04479dc-20261028-r1",
+    "follow_up_version": "v64",
+    "guest_writer": "sub_823A4640 + 1058 through callback 0x823B37B8",
+    "writer_thread": "SHIFT Native VS",
+    "writer_host_alias": "0x1FB963004",
+    "writer_guest_virtual": "0xEB963004",
+    "observed_value_change": "0x00000001 -> 0x00000000",
+    "join_confidence": "strong for that v64 run; separate from v65 and not used to label v65 causality"
+  },
+  "build": {
+    "source_commit_before_change": "09693910d67b1d4edd6df91e4d5d72a70f7637ad",
+    "source_file": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+    "source_file_sha256": "9d78e8fd5e626bc6e57bdfbf6d396234337ab125cd546e2082736e7d23a5bd4e",
+    "target": "rexgpu-shift-native",
+    "result": "success",
+    "build_type": "Release",
+    "tests_enabled": false,
+    "tests_run": false,
+    "sdk_runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd"
+  },
+  "artifact": {
+    "path": "/home/pes/work/process2-native-wait-pollptr-20261028/plugin-output/librexgpu-shift-native.so",
+    "architecture": "x86-64 Linux ELF shared object",
+    "sha256": "93ea894c609e80407ae63cb64527bc985b36bb2da81c56bc6acfcd3c2bbaab2c",
+    "build_id": "fe3b4ff03ee63a51686ede4dbf41c38973dceb92",
+    "stripped": false
+  },
+  "limits": [
+    "This artifact has not yet been replayed against the retail game; request a same-XEX run to attribute future target-word writes.",
+    "The v64 virtual-alias writer identifies the analogous clear in that run, but does not establish the v65 writer.",
+    "This is a Linux x86-64 diagnostic artifact, not an Android ARM64 build."
+  ]
+}
