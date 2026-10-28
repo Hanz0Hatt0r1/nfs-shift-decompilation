@@ -1,0 +1,123 @@
+{
+  "schema": "shift.xbox360.linux.native-wait-reg-mem-frontier.v1",
+  "capture_id": "native-only-420-36aad927-20261028-r1",
+  "capture_root": "/dev/shm/nfs-shift-p2-native-only-420-36aad927-20261028",
+  "authority": "controlled-replay",
+  "scope": "One Native Vulkan retail run; this is not a paired Xenos comparison.",
+  "identity": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "game_data_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+    "sdk_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6",
+    "native_plugin_sha256": "cf9ffc3775db83c874d69da6dc3e6995976a2ab8243409d8e2ef048c4aa61deb",
+    "native_plugin_build_id": "b3a4dcc4f3b45c41779f73c9295f20d7805ebf1",
+    "native_plugin_source_commit": "36aad9274f6c39be9c60028da085300fcafeccf8",
+    "p1_repository_commit_at_capture": "398b703c1c1fb08fcf4473148a11fb94d977bce9",
+    "p1_trace_script_sha256": "d1aa0f26294e4a234f5b8db2c8dbc833912dcd4cfdc9c555390124a2b2bad43a"
+  },
+  "run": {
+    "duration_seconds": 421.338,
+    "gdb_exit": 0,
+    "bink_progress": "281/281",
+    "bink_complete_elapsed_seconds": 236.366,
+    "source1_callback_count": 1,
+    "source1_callback_dispatch_id": "0x39c3",
+    "outer_gpu_callback_entry": "0x823b37b8",
+    "registered_guest_callback": "0x823a4758",
+    "source1_callback_elapsed_seconds": 237.282,
+    "queue_at_callback": {
+      "head": 2735,
+      "tail": 2741,
+      "wait_target": 2739,
+      "predicate_byte": "0x04",
+      "manager_counter": 0,
+      "manager_completion_flag_set": false
+    },
+    "retail_queue_wait": {
+      "elapsed_seconds": 237.255,
+      "duration_seconds": 0.002,
+      "head_at_return": 2735,
+      "tail_at_return": 2741,
+      "wait_target": 2739,
+      "predicate_byte_at_return": "0x14"
+    },
+    "scene_at_stop": {
+      "state_348": 1,
+      "update_count_356": 407,
+      "list_count_36": 1,
+      "child_words_264": [3147612464, 3146370976, 3146371024, 1]
+    },
+    "input": {
+      "configured_sequence": ["Start", "A", "Start"],
+      "scene_gate_observed": false,
+      "xam_input_calls": 0,
+      "xam_input_returns": 0,
+      "action_consumption_confirmed": false
+    },
+    "stop": {
+      "reason": "420-second bounded capture; GDB interrupted process with SIGINT",
+      "guest_fault_observed": false,
+      "guest_main_backtrace": "pthread_mutex_lock -> sub_821A2238 -> sub_822F8D38 -> sub_822D7C28 -> sub_822D6030 -> sub_82FC1880 -> sub_82D30380",
+      "gpu_worker_backtrace": "ShiftNativeGraphicsSystem::RingWorkerLoop at nanosleep"
+    }
+  },
+  "wait_reg_mem": {
+    "source_ib": "0x0969e640",
+    "packet_ordinal": 250,
+    "source_byte_offset": 11972,
+    "batch_rptr": 32,
+    "batch_wptr": 35,
+    "ring_guest": "0x09752580",
+    "guest_address": "0x1b964004",
+    "poll_address": "0x1b964006",
+    "reference": "0x00000000",
+    "mask": "0xffffffff",
+    "endian": 2,
+    "compare": 3,
+    "observed_raw": "0x01000000",
+    "observed_guest_dword": "0x00000001",
+    "plugin_reported_condition": false,
+    "samples": [
+      {"timestamp_local": "2026-10-28 16:23:13.483", "poll": 0, "elapsed_ms": 0, "observed": "0x00000001", "condition": false},
+      {"timestamp_local": "2026-10-28 16:23:14.570", "poll": 1000, "elapsed_ms": 1087, "observed": "0x00000001", "condition": false},
+      {"timestamp_local": "2026-10-28 16:23:15.681", "poll": 2000, "elapsed_ms": 2198, "observed": "0x00000001", "condition": false},
+      {"timestamp_local": "2026-10-28 16:23:16.795", "poll": 3000, "elapsed_ms": 3312, "observed": "0x00000001", "condition": false},
+      {"timestamp_local": "2026-10-28 16:23:17.912", "poll": 4000, "elapsed_ms": 4428, "observed": "0x00000001", "condition": false},
+      {"timestamp_local": "2026-10-28 16:23:19.023", "poll": 5000, "elapsed_ms": 5540, "observed": "0x00000001", "condition": false},
+      {"timestamp_local": "2026-10-28 16:23:20.154", "poll": 6000, "elapsed_ms": 6670, "observed": "0x00000001", "condition": false},
+      {"timestamp_local": "2026-10-28 16:23:21.352", "poll": 7000, "elapsed_ms": 7868, "observed": "0x00000001", "condition": false}
+    ],
+    "interpretation_limit": "The false predicate is directly observed through poll 7000 (7.868 s). The trace has no per-execution token linking these samples to a later packet in the same source IB, so persistence beyond that interval and the guest-memory writer remain unknown."
+  },
+  "later_packet_observation": {
+    "timestamp_local": "2026-10-28 16:26:15.678",
+    "source_ib": "0x0969e640",
+    "packet_ordinal": 290,
+    "source_byte_offset": 12508,
+    "batch_rptr": 32,
+    "batch_wptr": 35,
+    "event_id": 2741,
+    "source_bytes_match": true,
+    "guest_address": "0x17af4000",
+    "guest_value_before": 2735,
+    "guest_value_after": 2737,
+    "packet_value": 2737,
+    "capture_teardown_seconds_after": 0.473,
+    "context": "Shutdown-tail activity immediately before process teardown; it is not ordinary gameplay progress.",
+    "interpretation_limit": "This later EVENT_WRITE_SHD record shares source-IB and batch coordinates with the WAIT_REG_MEM samples but is not execution-instance joined to them. It does not prove that the waited address changed or that the same wait instance returned."
+  },
+  "process2_source_review_report": {
+    "status": "reported; exact source commit and location pending",
+    "wait_loop_behavior": "The Native WAIT_REG_MEM loop has no timeout and does not modify the polled value; it polls until the decoded predicate succeeds or the GPU worker is shutting down.",
+    "provenance_limit": "This is a Process 2 source-review report, separate from the frozen-run packet samples above."
+  },
+  "capture_file_sha256": {
+    "capture_metadata.json": "ce99599c4edb26403802057c2d796a32b3e4b3e816ae8bbe4b99f6d8c54c5cba",
+    "run_metadata.json": "9d201e04b2757962f2a9f5a36a4c3e424b952a50e91a5f4e8f3af29cb37e2c32",
+    "events.json": "e7a0ad922a6b84c602c1428f2c1e9e9dce6abb8bbb4bd00536536b17ae619b8b",
+    "nfs_shift_001.1.log": "3527c73c2a0cc5af52d33e20d61859f317f84f2bcf8fc3e8acda22fc1f6ec391",
+    "nfs_shift_001.log": "23b890c74063c5be5cb4c0a54984258b23fe21b8f84ba8e2fccc18c51311c1e0"
+  },
+  "conclusion": "A specific Native WAIT_REG_MEM instance reported a false condition through poll 7000 (7.868 s) while the guest queue remained at head 2735/tail 2741 and the scene gate did not run. Process 2 reports the loop waits without timeout or changing the value, and exits on predicate success or worker shutdown; the exact source revision/location is pending. The later EVENT_WRITE_SHD records are shutdown-tail activity and do not establish a natural guest-memory release. This is a concrete Native diagnostic target, not yet a paired backend comparison or a proven runtime defect."
+}

@@ -65,6 +65,16 @@ The exact Native callback/PM4 join matched P1 dispatch ID 4892 (`0x131C`) to P2 
 
 The same Start/A/Start sequence was scheduled after Bink for both backends. Xenos XAM returns contained Start `0x0010` and no A `0x1000`; Native produced no XAM returns after its queue stop. Input action consumption, the visible main menu, and a race remain unconfirmed. The machine-readable capture summary and hashes are in [paired source-1 dispatch evidence](../evidence/xbox360_linux_gpu_backend_comparison_source1_dispatch_20261028.json). The P2 ring trace captured `EVENT_WRITE_SHD` directly; the separate legacy P1 packet tap was disabled in this run.
 
+## Native-only WAIT_REG_MEM frontier
+
+Process 2 completed a separate 420-second Native-only replay with the same XEX, host, runtime, resource manifest, and frozen Native plugin (`36aad927`, SHA-256 `cf9ffc37…a61deb`). GDB exited 0 after the bounded capture. Bink completed 281/281 at 236.366 seconds. The run is not a paired Xenos comparison.
+
+At 237.282 seconds, source-1 dispatch ID `0x39C3` entered registered guest callback `0x823A4758` (the ReXGlue callback entry is `0x823B37B8`). The guest software queue was at head 2735, tail 2741, target 2739, predicate byte `0x04`, and manager counter 0. The retail queue wait returned after 2 ms with the same head/tail and predicate byte `0x14`; no dequeue or completion event was recorded. The final scene snapshot was state 1 with update count 407. The configured Start/A/Start input sequence did not reach an XAM call or return, and the scene gate was not observed.
+
+P2's ring trace recorded packet 250 in source IB `0x0969E640` at byte offset 11972: WAIT_REG_MEM polled guest address `0x1B964004` (poll address `0x1B964006`) with reference 0, mask `0xFFFFFFFF`, endian 2, compare 3. The captured guest dword was 1 and the plugin reported the predicate false from poll 0 through poll 7000, spanning 7.868 seconds. Process 2 reports from source inspection that this wait has no timeout, does not change the polled value, and exits only when the predicate succeeds or the worker shuts down; its exact source revision/location is pending. This makes the unwritten or late-written guest-memory value a concrete Process 2 investigation target.
+
+An EVENT_WRITE_SHD packet from the same source IB and root-batch coordinates appears 0.473 seconds before capture teardown, but no execution-instance link or write to `0x1B964004` was recorded. Treat it as shutdown-tail activity; it does not show the guest wait released naturally. The bounded stop had no guest fault, and the GPU worker was in `RingWorkerLoop()` at `nanosleep`. Full fields and log hashes are in [Native WAIT_REG_MEM frontier evidence](../evidence/xbox360_linux_native_wait_reg_mem_frontier_20261028.json).
+
 ## Evidence and reproduction
 
 - [Paired machine-readable record](../evidence/xbox360_linux_native_14841319_paired_physical_counter_20261028.json), including raw hashes, per-backend state, input comparability, queue-write histograms, and the first counter mismatch.
@@ -76,7 +86,8 @@ The archive exporter rejected malformed records in both captures; `gzip -t` and 
 
 ## Next Process 1 / Process 2 checks
 
-1. Process 2 should audit why Native `RingWorkerLoop()` writes `-6` head changes while Xenos advances the same watched software head only by `+2` in the paired capture. Align those writes to ring batch indices and guest memory before deciding whether they violate the guest queue contract.
-2. Cross the unvisited 3381 head range with a Native-only replay using the same frozen Process 2 DSO and ring trace; compare the exact source packet and guest queue state before classifying any write. The completed pair stopped at 3017.
-3. Trace the exact original scene-state writers and frontend callback after the observed state `1 -> 0` cleanup. The Start/A edges are now confirmed through XAM and the controller object, but the action dispatcher and scene-gate re-entry remain unconfirmed.
-4. Continue to the visible, interactive main menu and first controllable race. Neither has been reached in these captures.
+1. Process 2 should identify all writers to guest `0x1B964004`, then correlate the write value and time to WAIT_REG_MEM packet 250. The 420-second capture saw the predicate false for 7.868 seconds and did not record a natural release.
+2. Capture the same WAIT_REG_MEM packet and guest-memory value under Xenos at a matched guest state. Do not infer that Xenos is correct solely because it progresses farther.
+3. Continue the software-head `3381` investigation only with the queue-field and wait observations aligned to the relevant source packets; the paired capture stopped at 3017, and the 420-second Native-only follow-up did not establish a natural release.
+4. Trace the exact original scene-state writers and frontend callback after the observed state `1 -> 0` cleanup. The Start/A edges are confirmed in earlier captures, but action dispatch and a stable scene-gate re-entry remain unconfirmed.
+5. Continue to the visible, interactive main menu and first controllable race. Neither has been reached in these captures.
