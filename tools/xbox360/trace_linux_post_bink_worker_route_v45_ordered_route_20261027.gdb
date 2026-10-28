@@ -167,7 +167,12 @@ def sample_gpu_dispatch_id():
                       "shift_native_gpu_trace_dispatch_id_v1 not resolved")
                 state["gpu_dispatch_id_warning_emitted"] = True
             return None
-        dispatch_id = int(gdb.parse_and_eval(expression)) & 0xFFFFFFFFFFFFFFFF
+        scheduler_locking = gdb.parameter("scheduler-locking")
+        gdb.execute("set scheduler-locking on")
+        try:
+            dispatch_id = int(gdb.parse_and_eval(expression)) & 0xFFFFFFFFFFFFFFFF
+        finally:
+            gdb.execute(f"set scheduler-locking {scheduler_locking}")
         state["gpu_dispatch_id_symbol_available"] = True
         return dispatch_id if dispatch_id else None
     except Exception as exc:

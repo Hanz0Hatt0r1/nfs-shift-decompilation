@@ -18,6 +18,14 @@ class FakeGdb:
         self.value = 0
         self.error: Exception | None = None
         self.expressions: list[str] = []
+        self.scheduler_changes: list[str] = []
+
+    def parameter(self, name: str):
+        assert name == "scheduler-locking"
+        return "replay"
+
+    def execute(self, command: str):
+        self.scheduler_changes.append(command)
 
     def parse_and_eval(self, expression: str):
         if self.error:
@@ -86,8 +94,12 @@ def main() -> None:
     assert sample() is None
     assert state["gpu_dispatch_id_symbol_available"] is False
     assert fake_gdb.expressions[-1] == "((unsigned long long (*)()) shift_native_gpu_trace_dispatch_id_v1)()"
+    assert fake_gdb.scheduler_changes == [
+        "set scheduler-locking on", "set scheduler-locking replay",
+    ]
     assert sample() is None
     assert len(fake_gdb.expressions) == 1
+    assert len(fake_gdb.scheduler_changes) == 2
     state["gpu_dispatch_id_symbol_available"] = None
     fake_gdb.symbol_present = True
     fake_gdb.value = 0x1234
@@ -98,6 +110,8 @@ def main() -> None:
     assert sample() is None
     assert state["gpu_dispatch_id_sample_calls"] == 5
     assert state["gpu_dispatch_id_sample_errors"] == 2
+    assert len(fake_gdb.scheduler_changes) == 8
+    assert fake_gdb.scheduler_changes[-1] == "set scheduler-locking replay"
 
     state["active_source1_callbacks"][7] = [{"gpu_dispatch_id": 0x55}]
     assert namespace["active_source1_gpu_dispatch_id"]() == 0x55

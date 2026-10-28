@@ -13,11 +13,14 @@ from typing import Any
 
 
 PM4_INTERRUPT_RE = re.compile(
-    r"ring trace PM4_INTERRUPT #(?P<event>\d+) source=1 "
-    r"dispatch_id=(?P<dispatch_id>[0-9A-Fa-f]+) "
-    r"generation=(?P<generation>\d+) batch_rptr=(?P<batch_rptr>\d+) "
-    r"batch_wptr=(?P<batch_wptr>\d+) ring_guest=(?P<ring_guest>[0-9A-Fa-f]+) "
-    r"packet=(?P<packet>\d+) packet_source=(?P<packet_source>[0-9A-Fa-f]+)\+(?P<source_offset>\d+)"
+    r"ring trace PM4_INTERRUPT #(?P<event>\d+) source=1\b"
+    r"(?=[^\n]*\bdispatch_id=(?P<dispatch_id>[0-9A-Fa-f]+))"
+    r"(?=[^\n]*\bgeneration=(?P<generation>\d+))"
+    r"(?=[^\n]*\bbatch_rptr=(?P<batch_rptr>\d+))"
+    r"(?=[^\n]*\bbatch_wptr=(?P<batch_wptr>\d+))"
+    r"(?=[^\n]*\bring_guest=(?P<ring_guest>[0-9A-Fa-f]+))"
+    r"(?=[^\n]*\bpacket=(?P<packet>\d+))"
+    r"(?=[^\n]*\bpacket_source=(?P<packet_source>[0-9A-Fa-f]+)\+(?P<source_offset>\d+))"
 )
 EVENT_GROUPS = (
     "enqueue_events", "dequeue_events", "completion_events", "producer_events",
