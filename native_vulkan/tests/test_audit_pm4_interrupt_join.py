@@ -508,17 +508,23 @@ class InterruptJoinTests(unittest.TestCase):
     def test_parses_dispatch_id_from_native_ring_trace(self):
         line = (
             "[2026-10-28 03:38:34.183] [info] [core] [t72370] "
-            "shift-native: ring trace PM4_INTERRUPT #7 source=1 "
-            "dispatch_id=0000000000000104 generation=1 batch_rptr=28 "
-            "batch_wptr=31 ring_guest=09752580 packet=104 "
+            "shift-native: ring trace PM4_INTERRUPT #7 source=1 generation=1 "
+            "batch_rptr=28 batch_wptr=31 ring_guest=09752580 packet=104 "
             "packet_source=095D0120+1304 cpu_mask=0x04 "
             "dispatched_cpu_mask=0x04 "
             "callback_dispatches=[cpu2:callback=0x823b37b8,"
-            "data=0xb7365f00,status=invoked]"
+            "data=0xb7365f00,status=invoked] "
+            "dispatch_id=0000000000000104"
         )
         parsed = AUDIT.parse_p2_line(line)
 
         self.assertEqual(parsed["dispatch_id"], 0x104)
+
+        legacy_order = line.replace(
+            "source=1 generation=1",
+            "source=1 dispatch_id=0000000000000104 generation=1",
+        ).rsplit(" dispatch_id=0000000000000104", 1)[0]
+        self.assertEqual(AUDIT.parse_p2_line(legacy_order)["dispatch_id"], 0x104)
 
     def test_rejects_partial_dispatch_ids_in_p1_capture(self):
         callbacks = [p1_callback(1000), p1_callback(1100)]

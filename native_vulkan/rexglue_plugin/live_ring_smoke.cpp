@@ -749,8 +749,9 @@ int main(int argc, char** argv) {
     }
     if (interrupt_trace_count != kSubmittedBatches ||
         diagnostics.find(
-            "ring trace PM4_INTERRUPT #0 source=1 dispatch_id=") ==
+            "ring trace PM4_INTERRUPT #0 source=1 generation=1") ==
             std::string::npos ||
+        diagnostics.find(" dispatch_id=") == std::string::npos ||
         diagnostics.find("cpu_mask=0x04 dispatched_cpu_mask=0x00") ==
             std::string::npos ||
         diagnostics.find(

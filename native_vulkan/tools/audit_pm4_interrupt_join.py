@@ -16,14 +16,15 @@ from pathlib import Path
 
 P2_RE = re.compile(
     r"^\[(?P<time>[^]]+)\].*?ring trace PM4_INTERRUPT #(?P<id>\d+) "
-    r"source=1(?: dispatch_id=(?P<dispatch_id>[0-9a-fA-F]+))? "
+    r"source=1(?: dispatch_id=(?P<dispatch_id_prefix>[0-9a-fA-F]+))? "
     r"generation=(?P<generation>\d+) "
     r"batch_rptr=(?P<rptr>\d+) batch_wptr=(?P<wptr>\d+) "
     r"ring_guest=(?P<ring>[0-9a-fA-F]+) packet=(?P<ordinal>\d+) "
     r"packet_source=(?P<source>[0-9a-fA-F]+)\+(?P<offset>\d+) "
     r"cpu_mask=0x(?P<mask>[0-9a-fA-F]+) "
     r"dispatched_cpu_mask=0x(?P<dispatched>[0-9a-fA-F]+) "
-    r"callback_dispatches=\[(?P<callbacks>.*)\]$"
+    r"callback_dispatches=\[(?P<callbacks>.*)\]"
+    r"(?: dispatch_id=(?P<dispatch_id_suffix>[0-9a-fA-F]+))?$"
 )
 CALLBACK_RE = re.compile(
     r"cpu(?P<cpu>\d+):callback=0x(?P<callback>[0-9a-fA-F]+),"
@@ -42,7 +43,9 @@ def parse_p2_line(line):
         timestamp_ms=round(timestamp.astimezone().timestamp() * 1000),
         id=int(row["id"]),
         dispatch_id=(
-            int(row["dispatch_id"], 16) if row["dispatch_id"] else None
+            int(row["dispatch_id_prefix"] or row["dispatch_id_suffix"], 16)
+            if row["dispatch_id_prefix"] or row["dispatch_id_suffix"]
+            else None
         ),
         generation=int(row["generation"]),
         rptr=int(row["rptr"]),

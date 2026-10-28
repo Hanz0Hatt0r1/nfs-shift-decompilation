@@ -3825,15 +3825,15 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   }
                   REXLOG_INFO(
                       "shift-native: ring trace PM4_INTERRUPT #{} source=1 "
-                      "dispatch_id={:016X} "
                       "generation={} batch_rptr={} batch_wptr={} ring_guest={:08X} "
                       "packet={} packet_source={:08X}+{} cpu_mask=0x{:02X} "
-                      "dispatched_cpu_mask=0x{:02X} callback_dispatches=[{}]",
-                      trace_index, dispatch_id, ring_generation, read_pointer,
-                      write_pointer,
+                      "dispatched_cpu_mask=0x{:02X} callback_dispatches=[{}] "
+                      "dispatch_id={:016X}",
+                      trace_index, ring_generation, read_pointer, write_pointer,
                       ring_guest_address, packet_ordinal,
                       resolved.source_guest_address, packet.byte_offset,
-                      cpu_mask, dispatched_cpu_mask, callback_summary.str());
+                      cpu_mask, dispatched_cpu_mask, callback_summary.str(),
+                      dispatch_id);
                 } else if (trace_index == kMaxGuestInterruptTraceRecords) {
                   REXLOG_WARN(
                       "shift-native: ring trace PM4_INTERRUPT limit reached; "
