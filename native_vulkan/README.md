@@ -490,10 +490,10 @@ enumerates 2,880 raster tiles and aliases 832 physical tiles twice in both
 color (base 0) and depth (base 1024). The renderer still rejects transfer
 from that layout because it has no captured draw-coverage/order mapping to
 decide which Vulkan pixels represent each physical tile.
-When an ordered stream hits an alias, its rejection now reports the shared
-color/depth tile counts or the exact reason that a unique tile mapping could
-not be built. The retail draw-0/draw-1 regression checks that this diagnostic
-is produced during preflight, before any draw reaches Vulkan.
+When an ordered stream hits an alias, its rejection now reports source and
+destination raster-to-physical tile counts plus a repeated-tile coordinate
+example. The retail draw-0/draw-1 regression checks the exact color and depth
+wrap diagnostics during preflight, before any draw reaches Vulkan.
 
 ## Conservative EDRAM layout switching (2026-10-27)
 

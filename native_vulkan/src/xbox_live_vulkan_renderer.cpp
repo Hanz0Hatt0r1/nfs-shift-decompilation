@@ -5402,6 +5402,52 @@ bool submit_captured_vulkan_operation_stream(
     const auto describe_alias_tiles = [](
         const CapturedRasterState& source,
         const CapturedRasterState& destination) {
+        const auto describe_raster_tiles = [](
+            const CapturedRasterState& raster, bool depth_target) {
+            constexpr size_t kTileCount = 2048;
+            std::vector<CapturedEdramRasterTile> raster_tiles;
+            std::string raster_error;
+            if (!captured_xenos_edram_raster_tiles(
+                    raster, depth_target, &raster_tiles, &raster_error)) {
+                return std::string("invalid: ") + raster_error;
+            }
+            std::array<uint32_t, kTileCount> use_counts{};
+            for (const CapturedEdramRasterTile& tile : raster_tiles) {
+                ++use_counts[tile.physical_tile_index];
+            }
+            const size_t unique_tiles = static_cast<size_t>(std::count_if(
+                use_counts.begin(), use_counts.end(),
+                [](uint32_t count) { return count != 0; }));
+            const size_t repeated_tiles = static_cast<size_t>(std::count_if(
+                use_counts.begin(), use_counts.end(),
+                [](uint32_t count) { return count > 1; }));
+            std::ostringstream summary;
+            summary << raster_tiles.size() << " raster tiles -> "
+                    << unique_tiles << " physical tiles";
+            if (repeated_tiles) {
+                const auto first_repeated = std::find_if(
+                    use_counts.begin(), use_counts.end(),
+                    [](uint32_t count) { return count > 1; });
+                const uint32_t tile_index = static_cast<uint32_t>(
+                    std::distance(use_counts.begin(), first_repeated));
+                const auto first = std::find_if(
+                    raster_tiles.begin(), raster_tiles.end(),
+                    [tile_index](const CapturedEdramRasterTile& tile) {
+                        return tile.physical_tile_index == tile_index;
+                    });
+                const auto second = std::find_if(
+                    first + 1, raster_tiles.end(),
+                    [tile_index](const CapturedEdramRasterTile& tile) {
+                        return tile.physical_tile_index == tile_index;
+                    });
+                summary << "; " << repeated_tiles
+                        << " physical tiles repeat (tile " << tile_index
+                        << " at (" << first->tile_x << ',' << first->tile_y
+                        << ") and (" << second->tile_x << ',' << second->tile_y
+                        << "))";
+            }
+            return summary.str();
+        };
         std::vector<CapturedEdramTileAlias> color_tiles;
         std::vector<CapturedEdramTileAlias> depth_tiles;
         std::string color_error;
@@ -5413,10 +5459,20 @@ bool submit_captured_vulkan_operation_stream(
         std::ostringstream description;
         description << "alias tile map={color=";
         if (color_mapped) description << color_tiles.size();
-        else description << "unavailable: " << color_error;
+        else {
+            description << "unavailable: " << color_error << "; source{"
+                        << describe_raster_tiles(source, false)
+                        << "}; destination{"
+                        << describe_raster_tiles(destination, false) << '}';
+        }
         description << ",depth=";
         if (depth_mapped) description << depth_tiles.size();
-        else description << "unavailable: " << depth_error;
+        else {
+            description << "unavailable: " << depth_error << "; source{"
+                        << describe_raster_tiles(source, true)
+                        << "}; destination{"
+                        << describe_raster_tiles(destination, true) << '}';
+        }
         description << '}';
         return description.str();
     };

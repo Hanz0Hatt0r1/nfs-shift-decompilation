@@ -64,6 +64,11 @@
     },
     "transfer_status": "enumeration only; the unique-layout alias transfer helper still rejects this layout because captured geometry/scissor coverage and last-writer order are unavailable"
   },
+  "renderer_preflight_diagnostic": {
+    "color": "source{2880 raster tiles -> 2048 physical tiles; 832 physical tiles repeat (tile 0 at (0,0) and (0,64))}; destination{720 raster tiles -> 720 physical tiles}",
+    "depth": "source{2880 raster tiles -> 2048 physical tiles; 832 physical tiles repeat (tile 1024 at (0,0) and (0,64))}; destination{720 raster tiles -> 720 physical tiles}",
+    "execution": "The exact 14-draw preflight regression asserts both details before any Vulkan draw submission."
+  },
   "verification": {
     "native_linux": {
       "build": "shift_xbox_draw_input_check and xbox_live_vulkan_renderer_check built successfully.",
@@ -73,16 +78,16 @@
     "linux_rexglue_plugin": {
       "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
       "result": "passed 6/6",
-      "plugin_sha256": "83309c296c7b095b9a5bd0cc4ad880ec58da529699de7089a7308da87e2c1348",
-      "build_id": "f56defb7ffe90d7f80f3e6f0496539797f3a6eb1"
+      "plugin_sha256": "24a9fe0b93c002f2ed041ae28e6374cb67adb316c71fde465fcda4a0815afbc7",
+      "build_id": "badb711c47a0fe1084eb688d4cd736b2dd899820"
     },
     "android_arm64": {
       "command": "cmake --build /home/pes/work/.build-process2-p2161-android-renderer-20261027 --target shift_xbox_draw_input_check xbox_live_vulkan_renderer_check --parallel 4",
       "result": "both targets compiled",
       "draw_input_library_sha256": "9746ac0dcea7e5364ac6d26491678240193b3fcb053030ae43747e6dfc474177",
       "draw_input_check_sha256": "3db0d2ab0c8cbacc8aec9d9af1d131c172ae6c927dd264ea5b8d410515c0a1ab",
-      "renderer_library_sha256": "36775acee974d473337130d5aedb79214e4ea2f1caf0a305f25694f756e2487f",
-      "renderer_check_sha256": "90a0e33162e7b42d8dc5f2da56e5aaa7eaf5c410dbbe0210e294ee97f2ccc80f",
+      "renderer_library_sha256": "fb7c8f472f24dc03aac3a556f36d34d76463f679682aa51970e8dd7377571b4a",
+      "renderer_check_sha256": "d0901c7b44ffe0f09afb562017a92b0a52ff5020f02913808d1dd70f5703f67e",
       "device_runtime": "not run; adb devices -l returned no connected devices"
     },
     "diff_check": "git diff --check passed"

@@ -1595,17 +1595,23 @@ int main(int argc, char** argv) {
       retail_transition_operations.push_back(operation);
     }
     std::string retail_ordered_alias_error;
-    const std::string expected_retail_alias_map =
-        "alias tile map={color=unavailable: captured Xenos EDRAM alias layout "
-        "wraps across the 2048-tile store,depth=unavailable: captured Xenos "
-        "EDRAM alias layout wraps across the 2048-tile store}";
+    const std::string expected_retail_color_alias_map =
+        "source{2880 raster tiles -> 2048 physical tiles; 832 physical tiles "
+        "repeat (tile 0 at (0,0) and (0,64))}; destination{720 raster tiles -> "
+        "720 physical tiles}";
+    const std::string expected_retail_depth_alias_map =
+        "source{2880 raster tiles -> 2048 physical tiles; 832 physical tiles "
+        "repeat (tile 1024 at (0,0) and (0,64))}; destination{720 raster tiles -> "
+        "720 physical tiles}";
     if (shift::xbox::submit_captured_vulkan_operation_stream(
             physical_device, device, queue, queue_family, output_image,
             output_view, false, 1280, 720, retail_transition_draws,
             retail_transition_operations, &retail_ordered_alias_error, nullptr,
             enabled_features.geometryShader, nullptr, false, {}, pipeline_cache,
             nullptr) ||
-        retail_ordered_alias_error.find(expected_retail_alias_map) ==
+        retail_ordered_alias_error.find(expected_retail_color_alias_map) ==
+            std::string::npos ||
+        retail_ordered_alias_error.find(expected_retail_depth_alias_map) ==
             std::string::npos) {
       std::cerr << "ordered retail layout rejection omitted the exact alias-map limit: "
                 << retail_ordered_alias_error << '\n';
