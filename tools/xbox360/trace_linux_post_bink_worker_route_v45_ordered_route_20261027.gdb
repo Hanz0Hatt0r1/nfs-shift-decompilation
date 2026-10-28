@@ -112,6 +112,10 @@ def read_be(base, address, size=4):
     return int.from_bytes(bytes(gdb.selected_inferior().read_memory(base + address, size)), "big")
 
 
+def read_be_host(address, size=4):
+    return int.from_bytes(bytes(gdb.selected_inferior().read_memory(address, size)), "big")
+
+
 def context_base():
     return int(gdb.parse_and_eval("$rdi")), int(gdb.parse_and_eval("$rsi"))
 
@@ -511,9 +515,12 @@ class RetailQueueWait(gdb.Breakpoint):
                 self.last_condition = condition
                 if is_main_thread:
                     queue_depth = (snapshot["tail"] - snapshot["head"]) & 0xFFFFFFFF
-                    if (not state["queue_field_watches_armed"]
-                            and 32 <= queue_depth <= 64
-                            and not snapshot["completion_mask_set"]):
+                    alias_probe = os.environ.get("SHIFT_QUEUE_TRACE_QUEUE_FIELD_ALIAS_PROBE", "")
+                    should_arm_queue_watches = (
+                        alias_probe in ("software_head", "physical_head_counter")
+                        or (32 <= queue_depth <= 64 and not snapshot["completion_mask_set"])
+                    )
+                    if not state["queue_field_watches_armed"] and should_arm_queue_watches:
                         arm_queue_field_watches(
                             base, manager, head_pointer, self.calls,
                         )
@@ -554,20 +561,23 @@ class RetailQueueWaitReturn(gdb.FinishBreakpoint):
 
 
 class QueueFieldWrite(gdb.Breakpoint):
-    def __init__(self, base, label, guest_address, size, initial_value):
+    def __init__(self, base, label, guest_address, size, initial_value,
+                 host_address=None, alias_name="guest_base"):
         self.base = base
         self.label = label
         self.guest_address = guest_address
         self.size = size
         self.previous = initial_value
+        self.host_address = host_address if host_address is not None else base + guest_address
+        self.alias_name = alias_name
         ctype = "unsigned char" if size == 1 else "unsigned int"
-        super().__init__("*(%s*)%#x" % (ctype, base + guest_address),
+        super().__init__("*(%s*)%#x" % (ctype, self.host_address),
                          type=gdb.BP_WATCHPOINT, wp_class=gdb.WP_WRITE,
                          internal=True)
 
     def stop(self):
         try:
-            after = read_be(self.base, self.guest_address, self.size)
+            after = read_be_host(self.host_address, self.size)
             host_pc = int(gdb.parse_and_eval("$pc"))
             host_symbol = gdb.execute("info symbol $pc", to_string=True).strip()
             stack = gdb.execute("bt 8", to_string=True).splitlines()[:8]
@@ -581,6 +591,8 @@ class QueueFieldWrite(gdb.Breakpoint):
             emit("queue_field_write", {
                 "field": self.label,
                 "guest_address": self.guest_address,
+                "host_address": self.host_address,
+                "memory_alias": self.alias_name,
                 "size": self.size,
                 "before": self.previous,
                 "after": after,
@@ -598,10 +610,56 @@ class QueueFieldWrite(gdb.Breakpoint):
         return False
 
 
+def guest_queue_field_aliases(base, guest_address):
+    if not 0xA0000000 <= guest_address < 0xC0000000:
+        return [("virtual_a", base + guest_address)]
+    physical_offset = guest_address - 0xA0000000
+    return [
+        ("virtual_a", base + guest_address),
+        ("physical", base + 0x100000000 + physical_offset),
+        ("virtual_c", base + 0xC0000000 + physical_offset),
+        ("virtual_e", base + 0xE0000000 + physical_offset),
+    ]
+
+
 def arm_queue_field_watches(base, manager, head_pointer, trigger_call):
     if state["queue_field_watches_armed"]:
         return
     state["queue_field_watches_armed"] = True
+    alias_probe = os.environ.get("SHIFT_QUEUE_TRACE_QUEUE_FIELD_ALIAS_PROBE", "")
+    if alias_probe in ("software_head", "physical_head_counter"):
+        watch_keys = ("counter_watch", "worker72_watch") if alias_probe == "software_head" else ("worker72_watch",)
+        for watch_key in watch_keys:
+            watch = state.get(watch_key)
+            if watch is not None:
+                watch.enabled = False
+        if alias_probe == "physical_head_counter":
+            if state.get("counter_watch") is None:
+                counter_address = manager + 11012
+                state["counter_watch"] = CounterWrite(base, counter_address)
+            state["counter_watch"].enabled = True
+        expected = read_be(base, head_pointer)
+        aliases = guest_queue_field_aliases(base, head_pointer)
+        if alias_probe == "physical_head_counter":
+            aliases = [alias for alias in aliases if alias[0] == "physical"]
+        for alias_name, host_address in aliases:
+            try:
+                initial = read_be_host(host_address)
+                if initial != expected:
+                    print("WORKER_RING_QUEUE_FIELD_ALIAS_MISMATCH alias=%s host=%#x guest_base_value=%#x alias_value=%#x" %
+                          (alias_name, host_address, expected, initial))
+                    continue
+                watch = QueueFieldWrite(
+                    base, "software_head", head_pointer, 4, initial,
+                    host_address=host_address, alias_name=alias_name,
+                )
+                state["queue_field_watches"].append(watch)
+                print("WORKER_RING_QUEUE_FIELD_ALIAS_WATCH field=software_head alias=%s guest=%#x host=%#x initial=%#x trigger_call=%d" %
+                      (alias_name, head_pointer, host_address, initial, trigger_call))
+            except gdb.error as exc:
+                print("WORKER_RING_QUEUE_FIELD_ALIAS_WATCH_ERROR alias=%s host=%#x error=%r" %
+                      (alias_name, host_address, str(exc)))
+        return
     # The manager counter watch remains armed; retire the worker+72 watch to
     # leave three x86 hardware slots for the guest queue gates.
     worker_watch = state.get("worker72_watch")
@@ -1306,6 +1364,7 @@ class Source1Callback(gdb.Breakpoint):
             callback = read_be(base, callback_object + 16) if callback_object else 0
             callback_data = read_be(base, callback_object + 20) if callback_object else 0
             manager_flags = read_be(base, manager + 10904)
+            queue_head_pointer = read_be(base, manager + 0x2A90)
             state["source1_callback_ordinal"] += 1
             event = {
                 "entry_ordinal": state["source1_callback_ordinal"],
@@ -1323,6 +1382,12 @@ class Source1Callback(gdb.Breakpoint):
                 "manager_flag_bit_set_before": bool(
                     callback_bit_index < 32 and manager_flags & (1 << callback_bit_index)
                 ),
+                "software_queue": {
+                    "head_pointer": queue_head_pointer,
+                    "head": read_be(base, queue_head_pointer) if queue_head_pointer else None,
+                    "tail": read_be(base, manager + 0x2A9C),
+                    "predicate_byte": read_be(base, manager + 0x2ABD, 1),
+                },
                 "manager_counter_before": read_be(base, manager + 11012),
                 "manager_words_10904_to_1091c": [
                     read_be(base, manager + offset)
