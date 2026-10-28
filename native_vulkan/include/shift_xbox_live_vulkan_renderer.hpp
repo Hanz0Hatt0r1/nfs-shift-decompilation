@@ -19,6 +19,7 @@ struct CapturedVulkanTexture {
         Rgba8,
         R8,
         Rg16Float,
+        Rgba16Unorm,
     };
 
     uint32_t fetch_constant_index = 0;
@@ -35,6 +36,7 @@ struct CapturedVulkanTexture {
     uint32_t guest_pitch = 0;
     bool guest_tiled = false;
     bool guest_packed_mips = false;
+    bool guest_integer_format = false;
     // True only when an earlier operation in the same PM4 stream produced an
     // exact-layout Vulkan image for this fetch descriptor.
     bool guest_copy_source = false;

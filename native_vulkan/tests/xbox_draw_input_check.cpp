@@ -730,6 +730,36 @@ int main() {
                 &unsupported_format31_upload, &error),
             "format-31 texture upload accepted missing guest memory");
 
+    const uint32_t copied_format26_descriptor[] = {
+        0x8A024802u, 0x0BE1905Au, 0x0059E4FFu,
+        0x0106AD11u, 0u, 0x00000210u,
+    };
+    shift::xbox::CapturedTextureFetch copied_format26_fetch{};
+    require(shift::xbox::decode_captured_texture_fetch(
+                copied_format26_descriptor, &copied_format26_fetch, &error) &&
+                copied_format26_fetch.guest_address == 0x0BE19000u &&
+                copied_format26_fetch.format == 26u &&
+                copied_format26_fetch.endian_mode == 1u &&
+                copied_format26_fetch.integer_format &&
+                copied_format26_fetch.width == 1280u &&
+                copied_format26_fetch.height == 720u &&
+                copied_format26_fetch.pitch == 1280u &&
+                copied_format26_fetch.byte_length == 0x730000u &&
+                copied_format26_fetch.tiled &&
+                copied_format26_fetch.swizzle == 0x688u &&
+                copied_format26_fetch.mag_filter == 0u &&
+                copied_format26_fetch.min_filter == 0u,
+            "captured 1280x720 format-26 Copy/Convert fetch was rejected or misdecoded");
+    uint32_t non_integer_format26_descriptor[6];
+    std::copy(std::begin(copied_format26_descriptor),
+              std::end(copied_format26_descriptor),
+              std::begin(non_integer_format26_descriptor));
+    non_integer_format26_descriptor[3] &= ~1u;
+    require(!shift::xbox::decode_captured_texture_fetch(
+                non_integer_format26_descriptor, &copied_format26_fetch,
+                &error),
+            "captured format-26 fetch accepted unverified fractional mode");
+
     const uint32_t retail_tiled_format31_descriptor[] = {
         0x80424956u, 0x0CD6409Fu, 0x00000000u,
         0x01281691u, 0x00000003u, 0x00000210u,

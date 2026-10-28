@@ -23,6 +23,8 @@ struct CapturedShaderTextureOptions {
     std::array<TextureSign, 4> signs = {
         TextureSign::Unsigned, TextureSign::Unsigned,
         TextureSign::Unsigned, TextureSign::Unsigned};
+    // Scale UNORM-backed integer texture fetches back to their guest range.
+    uint32_t integer_scale = 0;
 };
 
 struct CapturedShaderTranslationOptions {

@@ -448,6 +448,15 @@ int main() {
                 translated.glsl.find("shift_color0") != std::string::npos,
             "captured sampler swizzle or color export was lost");
 
+    auto integer_texture_options = options;
+    integer_texture_options.textures[0].integer_scale = 65535u;
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel, shader.data(),
+                shader.size(), integer_texture_options, &translated, &error) &&
+                translated.glsl.find("sampled_0 *= 65535.0;") !=
+                    std::string::npos,
+            "captured format-26 integer texture fetch was not scaled from UNORM");
+
     auto gamma_options = options;
     gamma_options.gamma_color_target = true;
     require(shift::xbox::translate_captured_shader_glsl(

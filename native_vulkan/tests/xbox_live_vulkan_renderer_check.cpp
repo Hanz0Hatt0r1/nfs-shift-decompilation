@@ -867,6 +867,103 @@ int main(int argc, char** argv) {
         return 1;
       }
 
+      // Synthetic regression for the captured format-26 copy-to-texture path.
+      // It checks mutable UINT/UNORM image views and ordered cache reuse only;
+      // it is not evidence of retail shader or frame parity.
+      auto format26_copy = operation_copy;
+      format26_copy.state.destination_base = 0x0CC87000u;
+      format26_copy.state.destination_pitch = 1280u;
+      format26_copy.state.destination_height = 720u;
+      format26_copy.state.destination_format = 26u;
+      format26_copy.state.destination_swap_red_blue = false;
+      format26_copy.state.destination_number_format = 2u;
+      format26_copy.state.destination_endian = 1u;
+      format26_copy.state.destination_exp_bias = 11;
+      format26_copy.state.sample_select = 6u;
+      format26_copy.state.color_clear_enable = true;
+      format26_copy.state.depth_clear_enable = true;
+      format26_copy.color_clear = 0u;
+      format26_copy.color_clear_lo = 0u;
+      format26_copy.depth_clear = 0xFFFFFF00u;
+      format26_copy.clear_values_ready = true;
+      format26_copy.source_width = 1280u;
+      format26_copy.source_height = 720u;
+      format26_copy.pixel_shader_spirv = copy_4x_u16x4_spirv;
+      format26_copy.edram_clear_pixel_shader_spirv =
+          edram_clear_fragment_spirv;
+      auto sample_format26_draw = format26_source;
+      sample_format26_draw.vertex_shader_spirv = draw.vertex_shader_spirv;
+      sample_format26_draw.pixel_shader_spirv = draw.pixel_shader_spirv;
+      shift::xbox::CapturedVulkanTexture copied_format26{};
+      copied_format26.fetch_constant_index = 0u;
+      copied_format26.guest_address = 0x0CC87000u;
+      copied_format26.guest_format = 26u;
+      copied_format26.guest_endian = 1u;
+      copied_format26.guest_pitch = 1280u;
+      copied_format26.guest_tiled = true;
+      copied_format26.guest_integer_format = true;
+      copied_format26.width = 1280u;
+      copied_format26.height = 720u;
+      copied_format26.format =
+          shift::xbox::CapturedVulkanTexture::Format::Rgba16Unorm;
+      copied_format26.guest_copy_source = true;
+      copied_format26.pixels = {0u};  // deliberately stale
+      copied_format26.sampling = draw.texture_sampling;
+      sample_format26_draw.textures = {copied_format26, black_detail};
+      shift::xbox::CapturedVulkanOperation format26_draw0 = draw0;
+      format26_draw0.packet_index = 210u;
+      shift::xbox::CapturedVulkanOperation format26_copy0{};
+      format26_copy0.type =
+          shift::xbox::CapturedVulkanOperation::Type::CopyConvert;
+      format26_copy0.packet_index = 211u;
+      format26_copy0.source_width = 1280u;
+      format26_copy0.source_height = 720u;
+      format26_copy0.copy_state = format26_copy.state;
+      format26_copy0.copy = format26_copy;
+      format26_copy0.copy_shaders_ready = true;
+      shift::xbox::CapturedVulkanOperation format26_draw1 = draw1;
+      format26_draw1.packet_index = 212u;
+      shift::xbox::CapturedVulkanOperation format26_copy1 = copy1;
+      format26_copy1.packet_index = 213u;
+      std::vector<uint32_t> format26_readback;
+      shift::xbox::CapturedVulkanTextureCache format26_cache;
+      if (!shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280u, 720u,
+              {format26_source, sample_format26_draw},
+              {format26_draw0, format26_copy0, format26_draw1, format26_copy1},
+              &ordered_submit_error, &format26_readback,
+              enabled_features.geometryShader, &copy, false, {},
+              pipeline_cache, &format26_cache) ||
+          format26_cache.cached_guest_copy_image_count() != 1u ||
+          format26_readback.size() != 1280u * 720u) {
+        std::cerr << "ordered format-26 Copy/Convert texture sampling failed: "
+                  << ordered_submit_error << '\n';
+        return 1;
+      }
+      format26_cache.clear();
+      auto zero_format26 = copied_format26;
+      zero_format26.guest_copy_source = false;
+      zero_format26.pixels.resize(1280u * 720u * 8u, 0u);
+      sample_format26_draw.textures[0] = std::move(zero_format26);
+      std::vector<uint32_t> format26_zero_readback;
+      shift::xbox::CapturedVulkanTextureCache format26_zero_cache;
+      if (!shift::xbox::submit_captured_vulkan_operation_stream(
+              physical_device, device, queue, queue_family, output_image,
+              output_view, false, 1280u, 720u,
+              {format26_source, sample_format26_draw},
+              {format26_draw0, format26_copy0, format26_draw1, format26_copy1},
+              &ordered_submit_error, &format26_zero_readback,
+              enabled_features.geometryShader, &copy, false, {},
+              pipeline_cache, &format26_zero_cache) ||
+          format26_zero_readback.size() != 1280u * 720u ||
+          format26_zero_readback == format26_readback) {
+        std::cerr << "format-26 cached image sampling did not affect the synthetic readback: "
+                  << ordered_submit_error << '\n';
+        return 1;
+      }
+      format26_zero_cache.clear();
+
       // Synthetic regression: independent cached Vulkan images may serve
       // sequential stages only when their complete Xenos tile footprints do
       // not overlap. This is not retail transition parity evidence.

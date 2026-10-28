@@ -95,6 +95,12 @@ uint64_t tiled_texture_32bpp_storage_bytes(uint32_t pitch_pixels,
     return static_cast<uint64_t>(pitch_pixels) * tile_rows * 32u * 4u;
 }
 
+uint64_t tiled_texture_64bpp_storage_bytes(uint32_t pitch_pixels,
+                                           uint32_t height) {
+    const uint64_t tile_rows = (static_cast<uint64_t>(height) + 31u) / 32u;
+    return static_cast<uint64_t>(pitch_pixels) * tile_rows * 32u * 8u;
+}
+
 struct Dxt5AlphaBlock {
     std::array<uint8_t, 8> values{};
     uint64_t indices = 0;
@@ -1048,6 +1054,7 @@ bool decode_captured_texture_fetch(
 
     const bool r8 = format == 2 && endian_mode == 0;
     const bool rgba8 = format == 6 && endian_mode == 2;
+    const bool rgba16 = format == 26 && endian_mode == 1;
     // Format 31 is the captured 16_16_FLOAT view used by format-31
     // Copy/Convert destinations and the tiled base-level retail draw-12 fetch.
     const bool rg16_float = format == 31 && endian_mode == 2;
@@ -1057,6 +1064,7 @@ bool decode_captured_texture_fetch(
     const bool valid_texture_layout = r8
         ? !tiled && pitch >= width
         : rgba8 ? tiled && pitch >= width && pitch % 32u == 0
+                : rgba16 ? tiled && pitch >= width && pitch % 32u == 0
                 : rg16_float ? pitch >= width && (!tiled || pitch % 32u == 0)
                 : compressed && width % 4u == 0 && height % 4u == 0 &&
                       pitch >= width && pitch % 4u == 0 &&
@@ -1069,6 +1077,7 @@ bool decode_captured_texture_fetch(
     if (fetch_type != 2 || !valid_texture_layout || stacked || stack_depth != 0 ||
         dimension != 1 || mip_min != 0 ||
         (rg16_float && mip_max != 0) ||
+        (rgba16 && !((descriptor_words[3] & 1u) != 0)) ||
         (mip_max != 0 && !mip_range_aliases_base)) {
         return fail("unsupported captured texture-fetch descriptor", error);
     }
@@ -1076,6 +1085,7 @@ bool decode_captured_texture_fetch(
     const uint64_t byte_length = r8
         ? static_cast<uint64_t>(pitch) * height
         : rgba8 ? tiled_texture_32bpp_storage_bytes(pitch, height)
+                : rgba16 ? tiled_texture_64bpp_storage_bytes(pitch, height)
                 : rg16_float ? (tiled
                                     ? tiled_texture_32bpp_storage_bytes(pitch,
                                                                         height)

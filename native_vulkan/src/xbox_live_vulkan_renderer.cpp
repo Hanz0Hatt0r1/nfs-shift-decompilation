@@ -157,10 +157,20 @@ GuestCopyImageKey make_guest_copy_image_key(const CapturedCopyState& state) {
 
 struct CachedGuestCopyImage {
   ImageResource image;
+  VkImageView sampled_view = VK_NULL_HANDLE;
   uint64_t estimated_bytes = 0;
   uint64_t last_used_frame = 0;
   bool initialized = false;
 };
+
+void destroy_cached_guest_copy_image(VkDevice device,
+                                     CachedGuestCopyImage& resource) {
+  if (resource.sampled_view) {
+    vkDestroyImageView(device, resource.sampled_view, nullptr);
+  }
+  destroy_image_resource(device, resource.image);
+  resource = {};
+}
 
 struct EdramTargetKey {
   std::array<uint32_t, 10> values{};
@@ -991,7 +1001,7 @@ bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
         if (cache->frame - it->second.last_used_frame >
             kGuestCopyImageCacheLifetimeFrames) {
             cache->guest_copy_image_bytes -= it->second.estimated_bytes;
-            destroy_image_resource(device, it->second.image);
+            destroy_cached_guest_copy_image(device, it->second);
             it = cache->guest_copy_images.erase(it);
         } else {
             ++it;
@@ -1136,7 +1146,7 @@ void clear_texture_cache(TextureCacheState* cache) {
     }
     cache->textures.clear();
     for (auto& [key, image] : cache->guest_copy_images) {
-        destroy_image_resource(cache->device, image.image);
+        destroy_cached_guest_copy_image(cache->device, image);
     }
     cache->guest_copy_images.clear();
     cache->guest_copy_image_bytes = 0;
@@ -1168,9 +1178,11 @@ bool create_render_attachment(
     VkImageAspectFlags aspect,
     VkSampleCountFlagBits samples,
     ImageResource* output,
-    std::string* error) {
+    std::string* error,
+    VkImageCreateFlags flags = 0) {
     VkImageCreateInfo image_info{};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.flags = flags;
     image_info.imageType = VK_IMAGE_TYPE_2D;
     image_info.format = format;
     image_info.extent = {width, height, 1};
@@ -1458,15 +1470,34 @@ bool acquire_guest_copy_image(
                     VK_IMAGE_USAGE_SAMPLED_BIT |
                     VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_1_BIT,
-                &created.image, error)) {
-            destroy_image_resource(device, created.image);
+                &created.image, error,
+                state.destination_format == 26u
+                    ? VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT : 0u)) {
+            destroy_cached_guest_copy_image(device, created);
             return false;
+        }
+        if (state.destination_format == 26u) {
+            VkImageViewCreateInfo view_info{};
+            view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            view_info.image = created.image.image;
+            view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            view_info.format = VK_FORMAT_R16G16B16A16_UNORM;
+            view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            view_info.subresourceRange.levelCount = 1;
+            view_info.subresourceRange.layerCount = 1;
+            const VkResult view_result = vkCreateImageView(
+                device, &view_info, nullptr, &created.sampled_view);
+            if (view_result != VK_SUCCESS) {
+                destroy_cached_guest_copy_image(device, created);
+                return vk_fail("vkCreateImageView(format-26 texture)",
+                               view_result, error);
+            }
         }
         created.estimated_bytes = created.image.allocation_size;
         if (created.estimated_bytes > kGuestCopyImageCacheBudgetBytes ||
             cache->guest_copy_image_bytes >
                 kGuestCopyImageCacheBudgetBytes - created.estimated_bytes) {
-            destroy_image_resource(device, created.image);
+            destroy_cached_guest_copy_image(device, created);
             return fail("guest Copy/Convert image cache exceeded its 32 MiB budget",
                         error);
         }
@@ -1481,20 +1512,32 @@ bool acquire_guest_copy_image(
 
 CachedGuestCopyImage* find_guest_copy_texture(
     TextureCacheState* cache, const CapturedVulkanTexture& texture) {
+  const bool format31 = texture.guest_format == 31u &&
+      texture.guest_endian == 2u && !texture.guest_tiled &&
+      !texture.guest_integer_format && !texture.guest_packed_mips &&
+      texture.guest_pitch == texture.width;
+  const bool format26 = texture.guest_format == 26u &&
+      texture.guest_endian == 1u && texture.guest_tiled &&
+      texture.guest_integer_format && !texture.guest_packed_mips &&
+      texture.width == 1280u && texture.height == 720u &&
+      texture.guest_pitch == 1280u;
   if (!cache || !texture.guest_copy_source || texture.guest_address == 0 ||
-      texture.guest_format != 31u || texture.guest_endian != 2u ||
-      texture.guest_tiled || texture.guest_packed_mips ||
-      texture.guest_pitch != texture.width || texture.width == 0 ||
-      texture.height == 0) {
+      (!format31 && !format26) || texture.width == 0 || texture.height == 0) {
     return nullptr;
   }
   for (auto& [key, image] : cache->guest_copy_images) {
     const auto& values = key.values;
+    const bool format_key_matches = format31
+        ? values[3] == 31u && values[4] == 7u &&
+              static_cast<int32_t>(values[5]) == 0 && values[6] == 2u &&
+              values[7] == 0u
+        : values[3] == 26u && values[4] == 2u &&
+              static_cast<int32_t>(values[5]) == 11 && values[6] == 1u &&
+              values[7] == 6u && image.sampled_view != VK_NULL_HANDLE;
     if (image.initialized && values[0] == texture.guest_address &&
-        values[1] == texture.width && values[2] == texture.height &&
-        values[3] == 31u && values[4] == 7u &&
-        static_cast<int32_t>(values[5]) == 0 && values[6] == 2u &&
-        values[7] == 0u && values[8] == 0u && values[9] == 0u &&
+        values[1] == texture.guest_pitch && values[2] == texture.height &&
+        format_key_matches &&
+        values[8] == 0u && values[9] == 0u &&
         values[10] == 0u && values[11] == 0u && values[12] ==
             static_cast<uint32_t>(CapturedCopyCommand::Convert) &&
         values[13] == 0u) {
@@ -1763,7 +1806,7 @@ bool create_draw_resources(
         find_guest_copy_texture(texture_cache, *captured) != nullptr;
     if (captured && captured->guest_copy_source && !captured_copy_source) {
       std::ostringstream message;
-      message << "format-31 texture cache lookup failed for address 0x"
+      message << "captured Copy/Convert texture cache lookup failed for address 0x"
               << std::hex << captured->guest_address << std::dec << " extent "
               << captured->width << 'x' << captured->height << " pitch "
               << captured->guest_pitch << "; cached copy keys="
@@ -1786,10 +1829,13 @@ bool create_draw_resources(
     const uint32_t bytes_per_pixel = texture.format ==
             CapturedVulkanTexture::Format::R8
         ? 1u
-        : texture.format == CapturedVulkanTexture::Format::Rg16Float ? 4u : 4u;
+        : texture.format == CapturedVulkanTexture::Format::Rgba16Unorm
+              ? 8u
+              : 4u;
     if (texture.format != CapturedVulkanTexture::Format::R8 &&
         texture.format != CapturedVulkanTexture::Format::Rgba8 &&
-        texture.format != CapturedVulkanTexture::Format::Rg16Float) {
+        texture.format != CapturedVulkanTexture::Format::Rg16Float &&
+        texture.format != CapturedVulkanTexture::Format::Rgba16Unorm) {
       return fail("captured Vulkan texture format is unsupported", error);
     }
     if (texture.fetch_constant_index >= 32 || texture.width == 0 ||
@@ -1964,7 +2010,9 @@ bool create_draw_resources(
               ? VK_FORMAT_R8_UNORM
               : input.format == CapturedVulkanTexture::Format::Rg16Float
                     ? VK_FORMAT_R16G16_SFLOAT
-                    : VK_FORMAT_R8G8B8A8_UNORM;
+                    : input.format == CapturedVulkanTexture::Format::Rgba16Unorm
+                          ? VK_FORMAT_R16G16B16A16_UNORM
+                          : VK_FORMAT_R8G8B8A8_UNORM;
       CachedGuestCopyImage *guest_copy_image = input.captured
           ? find_guest_copy_texture(texture_cache, *input.captured)
           : nullptr;
@@ -1975,6 +2023,9 @@ bool create_draw_resources(
       }
       if (guest_copy_image) {
         texture.image = guest_copy_image->image;
+        if (input.captured->guest_format == 26u) {
+          texture.image.view = guest_copy_image->sampled_view;
+        }
         texture.image.borrowed = true;
         texture.cached = true;
         texture.guest_copy_source = true;
@@ -4132,6 +4183,17 @@ bool submit_captured_vulkan_frame(
             if ((destination_properties.optimalTilingFeatures &
                  required_features) != required_features) {
                 return fail("captured intermediate Copy/Convert destination format is not color-attachable and sampleable on this Vulkan device",
+                            error);
+            }
+        }
+        if (state.destination_format == 26u) {
+            VkFormatProperties sampled_properties{};
+            vkGetPhysicalDeviceFormatProperties(
+                physical_device, VK_FORMAT_R16G16B16A16_UNORM,
+                &sampled_properties);
+            if ((sampled_properties.optimalTilingFeatures &
+                 VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) == 0) {
+                return fail("captured format-26 Copy/Convert sampling requires R16G16B16A16_UNORM image-view support",
                             error);
             }
         }

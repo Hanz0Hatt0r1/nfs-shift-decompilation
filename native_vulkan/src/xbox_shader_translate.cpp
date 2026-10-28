@@ -300,6 +300,10 @@ bool append_fetch(std::ostringstream& glsl,
          << sampler << ", r[" << fetch.source_register << "]."
          << component_name(coord_x)
          << component_name(coord_y) << ");\n";
+    if (texture_options.integer_scale != 0) {
+        glsl << "  sampled_" << sampler << " *= "
+             << texture_options.integer_scale << ".0;\n";
+    }
     for (uint32_t lane = 0; lane < 4; ++lane) {
         if (texture_options.signs[lane] == TextureSign::Gamma) {
             glsl << "  sampled_" << sampler << '.' << component_name(lane)

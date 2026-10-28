@@ -1190,6 +1190,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               static_cast<uint32_t>(resolved.sampling.swizzle[i]);
         }
         options.textures[fetch_index].signs = resolved.sampling.signs;
+        if (resolved.fetch.format == 26u && resolved.fetch.integer_format) {
+          options.textures[fetch_index].integer_scale = 65535u;
+        }
         if (resolved_textures.empty()) {
           texture_fetch = resolved.fetch;
           texture_sampling = resolved.sampling;
@@ -1443,6 +1446,41 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
             break;
           }
         }
+        if (fetch.format == 26u && fetch.endian_mode == 1u &&
+            fetch.integer_format && fetch.tiled && !fetch.packed_mips &&
+            fetch.width == 1280u && fetch.height == 720u &&
+            fetch.pitch == 1280u) {
+          for (auto it = prior_operations.rbegin();
+               it != prior_operations.rend(); ++it) {
+            if (it->type !=
+                shift::xbox::CapturedVulkanOperation::Type::CopyConvert) {
+              continue;
+            }
+            const auto& state = it->copy_state;
+            if (state.destination_base != fetch.guest_address) continue;
+            guest_copy_source =
+                it->source_width == 1280u && it->source_height == 720u &&
+                state.destination_pitch == fetch.pitch &&
+                state.destination_height == fetch.height &&
+                state.destination_format == 26u &&
+                state.destination_number_format == 2u &&
+                state.destination_exp_bias == 11 &&
+                state.destination_endian == 1u &&
+                state.sample_select == 6u &&
+                state.color_clear_enable && state.depth_clear_enable &&
+                !state.destination_swap_red_blue && !state.destination_array &&
+                state.destination_slice == 0u && state.source_select == 0u &&
+                !state.source_gamma &&
+                state.command == shift::xbox::CapturedCopyCommand::Convert;
+            break;
+          }
+        }
+        if (fetch.format == 26u && !guest_copy_source) {
+          if (error) {
+            *error = "captured format-26 texture has no preceding exact all-sample Copy/Convert";
+          }
+          return false;
+        }
         guest_bytes = nullptr;
         guest_byte_length = 0;
         if (!guest_copy_source &&
@@ -1517,13 +1555,15 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         texture.guest_pitch = fetch.pitch;
         texture.guest_tiled = fetch.tiled;
         texture.guest_packed_mips = fetch.packed_mips;
+        texture.guest_integer_format = fetch.integer_format;
         texture.guest_copy_source = guest_copy_source;
         texture.sampling = resolved.sampling;
         texture.width = fetch.width;
         texture.height = fetch.height;
         if (guest_copy_source) {
-          texture.format =
-              shift::xbox::CapturedVulkanTexture::Format::Rg16Float;
+          texture.format = fetch.format == 26u
+              ? shift::xbox::CapturedVulkanTexture::Format::Rgba16Unorm
+              : shift::xbox::CapturedVulkanTexture::Format::Rg16Float;
           total_texture_bytes += fetch.byte_length;
           prepared.textures.push_back(std::move(texture));
           continue;
