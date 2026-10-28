@@ -1895,6 +1895,154 @@ bool captured_xenos_edram_raster_tiles(
     return true;
 }
 
+bool captured_xenos_edram_rect_tiles(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    uint32_t x0,
+    uint32_t y0,
+    uint32_t x1,
+    uint32_t y1,
+    std::vector<CapturedEdramRasterTile>* output,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    constexpr uint64_t kMaximumRasterTiles = 1u << 20;
+    if (!output) {
+        return fail("missing captured Xenos EDRAM rectangle-tile output", error);
+    }
+    output->clear();
+    if (!raster.width || !raster.height || !raster.surface_pitch ||
+        (raster.sample_count != 1 && raster.sample_count != 2 &&
+         raster.sample_count != 4)) {
+        return fail("invalid captured Xenos EDRAM rectangle layout", error);
+    }
+
+    const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+    const uint32_t sample_height = raster.sample_count / sample_width;
+    if (raster.width % sample_width || raster.height % sample_height) {
+        return fail("captured Xenos EDRAM rectangle extent is not sample aligned",
+                    error);
+    }
+    const uint32_t logical_width = raster.width / sample_width;
+    const uint32_t logical_height = raster.height / sample_height;
+    if (x0 >= x1 || y0 >= y1 || x1 > logical_width || y1 > logical_height) {
+        return fail("captured Xenos EDRAM rectangle is empty or out of bounds",
+                    error);
+    }
+
+    const uint32_t tile_logical_width = kTileWidthSamples / sample_width;
+    const uint32_t tile_logical_height = kTileHeightSamples / sample_height;
+    const uint64_t first_tile_x = x0 / tile_logical_width;
+    const uint64_t first_tile_y = y0 / tile_logical_height;
+    const uint64_t tile_columns =
+        (static_cast<uint64_t>(x1) + tile_logical_width - 1u) /
+            tile_logical_width - first_tile_x;
+    const uint64_t tile_rows =
+        (static_cast<uint64_t>(y1) + tile_logical_height - 1u) /
+            tile_logical_height - first_tile_y;
+    const uint64_t tile_count = tile_columns * tile_rows;
+    if (tile_count > kMaximumRasterTiles || tile_count > output->max_size()) {
+        return fail("captured Xenos EDRAM rectangle exceeds the tile safety limit",
+                    error);
+    }
+
+    output->reserve(static_cast<size_t>(tile_count));
+    for (uint64_t tile_y = first_tile_y;
+         tile_y < first_tile_y + tile_rows; ++tile_y) {
+        for (uint64_t tile_x = first_tile_x;
+             tile_x < first_tile_x + tile_columns; ++tile_x) {
+            CapturedEdramSampleAddress address{};
+            const uint64_t anchor_x = tile_x * tile_logical_width;
+            const uint64_t anchor_y = tile_y * tile_logical_height;
+            if (anchor_x >= logical_width || anchor_y >= logical_height ||
+                !captured_xenos_edram_sample_address(
+                    raster, depth_target, static_cast<uint32_t>(anchor_x),
+                    static_cast<uint32_t>(anchor_y), 0, &address, error)) {
+                output->clear();
+                if (anchor_x >= logical_width || anchor_y >= logical_height) {
+                    return fail("captured Xenos EDRAM rectangle tile anchor is out of bounds",
+                                error);
+                }
+                return false;
+            }
+            output->push_back({address.tile_index,
+                               static_cast<uint32_t>(tile_x),
+                               static_cast<uint32_t>(tile_y)});
+        }
+    }
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_xenos_edram_rect_alias_tiles(
+    const CapturedRasterState& source,
+    uint32_t source_x0,
+    uint32_t source_y0,
+    uint32_t source_x1,
+    uint32_t source_y1,
+    const CapturedRasterState& destination,
+    uint32_t destination_x0,
+    uint32_t destination_y0,
+    uint32_t destination_x1,
+    uint32_t destination_y1,
+    bool depth_target,
+    std::vector<CapturedEdramTileAlias>* output,
+    std::string* error) {
+    constexpr uint32_t kTileCount = 2048;
+    if (!output) {
+        return fail("missing captured Xenos EDRAM rectangle-alias output", error);
+    }
+    output->clear();
+    std::vector<CapturedEdramRasterTile> source_tiles;
+    std::vector<CapturedEdramRasterTile> destination_tiles;
+    if (!captured_xenos_edram_rect_tiles(
+            source, depth_target, source_x0, source_y0, source_x1, source_y1,
+            &source_tiles, error) ||
+        !captured_xenos_edram_rect_tiles(
+            destination, depth_target, destination_x0, destination_y0,
+            destination_x1, destination_y1, &destination_tiles, error)) {
+        return false;
+    }
+
+    struct TileCoordinate {
+        uint32_t x = 0;
+        uint32_t y = 0;
+        bool present = false;
+    };
+    const auto index_unique_coordinates = [&] (
+        const std::vector<CapturedEdramRasterTile>& tiles,
+        std::array<TileCoordinate, kTileCount>* indexed) {
+        for (const CapturedEdramRasterTile& tile : tiles) {
+            TileCoordinate& coordinate = (*indexed)[tile.physical_tile_index];
+            if (coordinate.present) {
+                return fail("captured Xenos EDRAM rectangle wraps onto one physical tile more than once",
+                            error);
+            }
+            coordinate = {tile.tile_x, tile.tile_y, true};
+        }
+        return true;
+    };
+    std::array<TileCoordinate, kTileCount> source_coordinates{};
+    std::array<TileCoordinate, kTileCount> destination_coordinates{};
+    if (!index_unique_coordinates(source_tiles, &source_coordinates) ||
+        !index_unique_coordinates(destination_tiles,
+                                  &destination_coordinates)) {
+        return false;
+    }
+    for (uint32_t tile = 0; tile < kTileCount; ++tile) {
+        if (!source_coordinates[tile].present ||
+            !destination_coordinates[tile].present) {
+            continue;
+        }
+        output->push_back({tile, source_coordinates[tile].x,
+                           source_coordinates[tile].y,
+                           destination_coordinates[tile].x,
+                           destination_coordinates[tile].y});
+    }
+    if (error) error->clear();
+    return true;
+}
+
 bool captured_xenos_edram_alias_tiles(
     const CapturedRasterState& source,
     const CapturedRasterState& destination,

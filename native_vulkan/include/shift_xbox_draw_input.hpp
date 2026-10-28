@@ -507,12 +507,45 @@ bool captured_xenos_edram_raster_tiles(
     std::vector<CapturedEdramRasterTile>* output,
     std::string* error);
 
+// Enumerates the physical EDRAM tiles touched by a logical-pixel rectangle.
+// Coordinates are half-open and must already be clipped to the logical raster
+// extent (raster width/height divided by the MSAA sample-grid scale). This is
+// useful when a captured scissor covers only part of an extent that otherwise
+// wraps onto the same physical EDRAM tile more than once.
+bool captured_xenos_edram_rect_tiles(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    uint32_t x0,
+    uint32_t y0,
+    uint32_t x1,
+    uint32_t y1,
+    std::vector<CapturedEdramRasterTile>* output,
+    std::string* error);
+
 // Maps the uniquely addressed physical EDRAM tiles shared by two captured
 // layouts. A layout that wraps onto the same tile more than once is rejected:
 // resolving its Vulkan pixels back to physical EDRAM needs draw coverage/order.
 bool captured_xenos_edram_alias_tiles(
     const CapturedRasterState& source,
     const CapturedRasterState& destination,
+    bool depth_target,
+    std::vector<CapturedEdramTileAlias>* output,
+    std::string* error);
+
+// Maps unique physical tiles shared by two logical-pixel rectangles. This
+// reports tile coordinates only; it does not imply that a full tile transfer
+// is valid when either rectangle covers only part of that tile.
+bool captured_xenos_edram_rect_alias_tiles(
+    const CapturedRasterState& source,
+    uint32_t source_x0,
+    uint32_t source_y0,
+    uint32_t source_x1,
+    uint32_t source_y1,
+    const CapturedRasterState& destination,
+    uint32_t destination_x0,
+    uint32_t destination_y0,
+    uint32_t destination_x1,
+    uint32_t destination_y1,
     bool depth_target,
     std::vector<CapturedEdramTileAlias>* output,
     std::string* error);

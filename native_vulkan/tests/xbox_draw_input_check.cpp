@@ -1437,6 +1437,56 @@ int main() {
                 error == "captured Xenos EDRAM alias layout wraps across the 2048-tile store",
             "oversized captured EDRAM view was mapped as a unique image layout");
 
+    // The retail 14-draw capture's first 4x source extent wraps as a whole,
+    // while the captured Copy/Convert scissor covers only 1280x256 logical
+    // pixels. That bounded region has unique physical tile addresses and can
+    // be mapped against the following 320x243 single-sample target.
+    auto retail_transition_small_target = retail_oversized_4x_layout;
+    retail_transition_small_target.width = 320;
+    retail_transition_small_target.height = 243;
+    retail_transition_small_target.surface_pitch = 320;
+    retail_transition_small_target.sample_count = 1;
+    retail_transition_small_target.color_format =
+        shift::xbox::CapturedColorTargetFormat::Rg16Float;
+    retail_transition_small_target.guest_color_format = 6;
+    std::vector<shift::xbox::CapturedEdramRasterTile> transition_scissor_tiles;
+    require(shift::xbox::captured_xenos_edram_rect_tiles(
+                retail_oversized_4x_layout, false, 0, 0, 1280, 256,
+                &transition_scissor_tiles, &error) &&
+                transition_scissor_tiles.size() == 1024 &&
+                transition_scissor_tiles.front().physical_tile_index == 0 &&
+                transition_scissor_tiles.back().physical_tile_index == 1023,
+            "captured transition scissor did not bound the wrapped 4x EDRAM layout");
+    std::vector<shift::xbox::CapturedEdramTileAlias> transition_scissor_aliases;
+    require(shift::xbox::captured_xenos_edram_rect_alias_tiles(
+                retail_oversized_4x_layout, 0, 0, 1280, 256,
+                retail_transition_small_target, 0, 0, 243, 243, false,
+                &transition_scissor_aliases, &error) &&
+                transition_scissor_aliases.size() == 64 &&
+                transition_scissor_aliases.front().tile_index == 0 &&
+                transition_scissor_aliases.front().source_tile_x == 0 &&
+                transition_scissor_aliases.front().source_tile_y == 0 &&
+                transition_scissor_aliases.front().destination_tile_x == 0 &&
+                transition_scissor_aliases.front().destination_tile_y == 0 &&
+                transition_scissor_aliases[4].tile_index == 4 &&
+                transition_scissor_aliases[4].source_tile_x == 4 &&
+                transition_scissor_aliases[4].source_tile_y == 0 &&
+                transition_scissor_aliases[4].destination_tile_x == 0 &&
+                transition_scissor_aliases[4].destination_tile_y == 1,
+            "captured transition scissor did not map shared physical tiles between extents");
+    require(shift::xbox::captured_xenos_edram_rect_alias_tiles(
+                retail_oversized_4x_layout, 0, 0, 1280, 256,
+                retail_transition_small_target, 0, 0, 243, 243, true,
+                &transition_scissor_aliases, &error) &&
+                transition_scissor_aliases.size() == 64 &&
+                transition_scissor_aliases.front().tile_index == 1024,
+            "captured transition depth scissor did not retain the EDRAM depth base");
+    require(!shift::xbox::captured_xenos_edram_rect_tiles(
+                retail_oversized_4x_layout, false, 0, 0, 1281, 256,
+                &transition_scissor_tiles, &error) &&
+                error == "captured Xenos EDRAM rectangle is empty or out of bounds",
+            "out-of-range EDRAM scissor rectangle was accepted");
+
     auto small_edram_a = single_sample_edram_target;
     small_edram_a.width = 80;
     small_edram_a.height = 16;
