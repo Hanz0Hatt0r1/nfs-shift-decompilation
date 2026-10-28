@@ -99,6 +99,8 @@ The next P1 trace version adds a read-only GDB hardware write watch on `0x1B9640
 
 Process 2 has prepared a newer Native diagnostic DSO for that replay: source commit `04479dc0a595442033163fad1550c8bb3f371c64`, SHA-256 `e5f5e955494c82d0dfbf70707c493183fd82fbc7db67d63053ce1f4f3bbfb0a3`, Build ID `03dde9b89959a918813cc3f9f23263c2bfce4443`. The source delta from the 660-second capture's `7aa414ab` build changes only the WAIT_REG_MEM diagnostic sampling guard so logging continues after a value change; it adds no polling and does not alter wait execution. This candidate was independently hash/build-ID checked and was not used by the 660-second capture.
 
+The Xenos comparison artifact is also available and hash-pinned: SDK commit `923a7a03575b43f6c22ee97c376077a7022d17d6`, `librexgpu-xenos.so` SHA-256 `19053b691d7d1f8f17bbe3e90be38ba3acc60439cbe5c1dfcad271e07b47ce43`, Build ID `cfa31cb1ea72cea5f153b76f29e4635536628ff4`. It matches the Xenos DSO used in the earlier paired replay, but was not used in the 660-second Native-only capture.
+
 ## Evidence and reproduction
 
 - [Paired machine-readable record](../evidence/xbox360_linux_native_14841319_paired_physical_counter_20261028.json), including raw hashes, per-backend state, input comparability, queue-write histograms, and the first counter mismatch.

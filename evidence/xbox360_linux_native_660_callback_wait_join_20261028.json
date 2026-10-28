@@ -204,6 +204,16 @@
     "change_from_7aa414ab": "One diagnostic sampling guard now continues logging after a WAIT_REG_MEM value change; it adds no polling and does not change wait execution semantics.",
     "availability_note": "Use only for the next coordinated replay after the separate active nfs_shift process exits or Process 2 confirms a safe capture window."
   },
+  "next_capture_xenos_plugin_candidate": {
+    "used_in_this_capture": false,
+    "used_in_previous_paired_capture": true,
+    "sdk_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6",
+    "dso_path": "/home/pes/work/rexglue-sdk-retail-lwsync-20261027/out/linux-amd64/librexgpu-xenos.so",
+    "sha256": "19053b691d7d1f8f17bbe3e90be38ba3acc60439cbe5c1dfcad271e07b47ce43",
+    "build_id": "cfa31cb1ea72cea5f153b76f29e4635536628ff4",
+    "verification_note": "The artifact hash and Build ID match the earlier paired Xenos capture identity.",
+    "availability_note": "Use as the Xenos comparison only after the separate active nfs_shift process exits or Process 2 confirms a safe capture window."
+  },
   "log_sha256": {
     "events.json": "9bc0ee9eb95c58ddecedcc56d5e59266b3a4b71b3c2bebd33faea5018207e5ab",
     "run_metadata.json": "9bdb35edb57046b3123d8072dd2da89fa8287a990183ab5f9358baf51af13478",
