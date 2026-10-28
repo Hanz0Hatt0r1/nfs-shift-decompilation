@@ -5,6 +5,7 @@ import importlib.util
 import gzip
 import hashlib
 import json
+from collections import Counter
 from pathlib import Path
 import unittest
 
@@ -177,6 +178,39 @@ class InterruptJoinTests(unittest.TestCase):
             self.assertLess(row["batch_rptr"], 8192)
             self.assertLess(row["batch_wptr"], 8192)
             self.assertGreater((row["batch_wptr"] - row["batch_rptr"]) % 8192, 0)
+
+        ring_reuse = audit["ring_reuse_observation"]
+        interrupt_ids = [row["ordinal"] for row in raw_interrupts]
+        locations = Counter(
+            (row["source_ib"], row["source_ib_byte_offset"])
+            for row in raw_interrupts
+        )
+        rptr_values = Counter(row["batch_rptr"] for row in raw_interrupts)
+        wptr_values = Counter(row["batch_wptr"] for row in raw_interrupts)
+        self.assertEqual(interrupt_ids, list(range(1574)))
+        self.assertEqual(
+            ring_reuse["interrupt_id_range"], [interrupt_ids[0], interrupt_ids[-1]]
+        )
+        self.assertEqual(len(set(row["packet_ordinal"] for row in raw_interrupts)), 60)
+        self.assertEqual(len(locations), ring_reuse["distinct_source_ib_locations"])
+        self.assertEqual(
+            sum(count > 1 for count in locations.values()),
+            ring_reuse["source_ib_locations_with_repeats"],
+        )
+        self.assertEqual(
+            sum(count - 1 for count in locations.values()),
+            ring_reuse["extra_source_ib_location_occurrences"],
+        )
+        self.assertEqual(len(rptr_values), ring_reuse["distinct_batch_rptr_values"])
+        self.assertEqual(
+            sum(count - 1 for count in rptr_values.values()),
+            ring_reuse["extra_batch_rptr_occurrences"],
+        )
+        self.assertEqual(len(wptr_values), ring_reuse["distinct_batch_wptr_values"])
+        self.assertEqual(
+            sum(count - 1 for count in wptr_values.values()),
+            ring_reuse["extra_batch_wptr_occurrences"],
+        )
 
         p2_interrupts = [
             {

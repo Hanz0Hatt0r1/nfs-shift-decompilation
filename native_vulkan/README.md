@@ -776,7 +776,10 @@ CPU/dispatched mask `0x04`, and an invoked CPU 2 dispatch through
 `0x823B37B8`/`0xB7365F00`.
 
 This is a same-run ordered correspondence, not proof that callback payloads are
-equivalent or that the guest queue head/tail advanced. Process 1's capture shows
+equivalent or that the guest queue head/tail advanced. The full 1,574-row ring
+trace has unique contiguous interrupt IDs, while 131 source-IB locations and
+many ring pointer values repeat; this does not distinguish intentional command
+reissue from duplicate processing. Process 1's capture shows
 `sub_823B34A0` still polling its software queue predicate at the bounded stop;
 the renderer trace does not establish the cause. The per-row audit and run
 identities are in

@@ -52,6 +52,19 @@
       699,
       1551
     ],
+    "ring_reuse_observation": {
+      "interrupt_id_range": [0, 1573],
+      "unique_contiguous_interrupt_ids": 1574,
+      "distinct_packet_ordinals": 60,
+      "distinct_source_ib_locations": 462,
+      "source_ib_locations_with_repeats": 131,
+      "extra_source_ib_location_occurrences": 1112,
+      "distinct_batch_rptr_values": 1405,
+      "extra_batch_rptr_occurrences": 169,
+      "distinct_batch_wptr_values": 1413,
+      "extra_batch_wptr_occurrences": 161,
+      "interpretation": "Repeated packet source locations and ring pointer values are present. Unique interrupt ordinals establish ordered interrupt records, but this trace alone does not prove whether repeated source commands were intentionally reissued or processed more than once."
+    },
     "signed_timestamp_delta_ms_range": [
       0,
       79
