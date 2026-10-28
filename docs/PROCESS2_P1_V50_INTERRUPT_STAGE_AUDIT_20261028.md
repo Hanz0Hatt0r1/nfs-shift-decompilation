@@ -35,6 +35,28 @@ completion or live source-1 packet in its 25-second window. This moves the
 priority toward ReXGlue startup/global-lock progress before GPU ring submission,
 while leaving lock ownership unresolved for Process 1.
 
+P1's v58 entry/return trace confirms this is sustained contention. The main
+guest thread entered `ObjectTable::RetainHandle` at 7.396 s, and a new XThread
+entered `KernelState::OnThreadExecute` at 7.398 s; neither returned during the
+35-second capture, so both calls were pending for 26.18 s at the stop. Both
+stacks end in `__lll_lock_wait_private -> pthread_mutex_lock` on the same
+global mutex (`RDI == load bias + 0xE39AB8`, futex op 128, expected value 2).
+The sampled mutex owner is still zero, so the evidence establishes long waits
+but does not identify an owner or missing unlock. The first 32 guest PPC
+atomic-lock calls returned within 1–11 ms. This capture has no Bink completion,
+ring WPTR update, or source-1 interrupt; it further places the active blocker
+before the GPU backend receives work.
+
+The SDK source sites match the waiters: `ObjectTable::RetainHandle` acquires
+the shared lock in `src/system/util/object_table.cpp:148`,
+`KernelState::OnThreadExecute` acquires it in
+`src/system/kernel_state.cpp:1055`, and `ObjectTable::LookupObject` directly
+calls `mutex().lock()` / `unlock()` at `src/system/util/object_table.cpp:278`
+and `:298`. P2's `FunctionDispatcher::ExecuteInterrupt` also takes this mutex,
+but only after a live PM4 interrupt reaches the callback path; none did in
+v58. Process 1 is instrumenting lock-word writes and ownership next. P2 is
+leaving this pre-WPTR ReXGlue path untouched.
+
 Before this change, the plugin logged `ring trace PM4_INTERRUPT` only after
 `ExecuteInterrupt` returned. A blocked synchronous callback could therefore
 leave no packet-completion row. The Native plugin now emits bounded

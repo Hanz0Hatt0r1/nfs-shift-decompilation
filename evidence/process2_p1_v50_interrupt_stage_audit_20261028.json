@@ -70,9 +70,45 @@
     "first_32_guest_atomic_lock_calls": "returned in 0.001-0.003 seconds, guest lock word 0->1",
     "conclusion": "This confirms multiple waiters were observed on the shared mutex, but the sample does not prove a persistent owner or deadlock."
   },
+  "followup_v58": {
+    "source_capture": "/dev/shm/nfs-shift-p1-v58-native-host-critical-96169-20261028-r1",
+    "native_source1_interrupts_in_35s_window": 0,
+    "native_ring_wptr_updates_in_window": 0,
+    "native_bink_complete": false,
+    "pending_host_calls": [
+      {
+        "entry_elapsed_seconds": 7.396,
+        "call": "main guest thread: ObReferenceObjectByHandle -> ObjectTable::RetainHandle",
+        "duration_at_stop_seconds": 26.18,
+        "returned_by_stop": false
+      },
+      {
+        "entry_elapsed_seconds": 7.398,
+        "call": "new XThread: KernelState::OnThreadExecute",
+        "duration_at_stop_seconds": 26.18,
+        "returned_by_stop": false
+      }
+    ],
+    "mutex_address": "runtime load bias + 0xE39AB8",
+    "waiter_registers": {
+      "rdi_matches_mutex_address": true,
+      "futex_operation": 128,
+      "futex_expected_value": 2,
+      "rax": -512
+    },
+    "sampled_mutex_state": {
+      "lock": 0,
+      "owner": 0,
+      "kind": 1
+    },
+    "first_32_guest_atomic_lock_calls": "returned in 0.001-0.011 seconds",
+    "events_sha256": "b04c527292fd24b089f89ef13ebcbed6f25461265f834aca0c33e6df99f8976f",
+    "gdb_sha256": "2b8277c7b600f6a9b25aa56e459b393da67471e7fd9a7025048068ae17c1cc30",
+    "conclusion": "Long pending calls on the shared mutex are established, but the owner and missing unlock remain unknown; the Native GPU ring still had no WPTR update."
+  },
   "conclusion": "The v50 finalized live window does not reach guest ring submission/MMIO. Its three decoded and invoked source-1 interrupts occur after the deadline during shutdown-tail activity, so this pair cannot establish a live interrupt decode or dispatch failure.",
   "limitations": [
-    "The v52 and v55 mutex samples have no owner and do not prove a lock holder or deadlock; v55 does establish three simultaneous waiters at its stop snapshot.",
+    "The v52, v55, and v58 mutex snapshots have no owner and do not establish the holder or a missing unlock; v58 does establish two host calls pending for 26.18 seconds at its stop snapshot.",
     "The v50 capture does not identify why the guest main thread stalls before the first ring WPTR update.",
     "The old post-return PM4 trace cannot expose a source-1 callback that blocks before returning."
   ],
