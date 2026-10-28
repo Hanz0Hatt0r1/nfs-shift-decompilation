@@ -90,27 +90,50 @@
     ],
     "interpretation_limit": "The false predicate is directly observed through poll 7000 (7.868 s). The trace has no per-execution token linking these samples to a later packet in the same source IB, so persistence beyond that interval and the guest-memory writer remain unknown."
   },
-  "later_packet_observation": {
-    "timestamp_local": "2026-10-28 16:26:15.678",
-    "source_ib": "0x0969e640",
-    "packet_ordinal": 290,
-    "source_byte_offset": 12508,
-    "batch_rptr": 32,
-    "batch_wptr": 35,
-    "event_id": 2741,
-    "source_bytes_match": true,
-    "guest_address": "0x17af4000",
-    "guest_value_before": 2735,
-    "guest_value_after": 2737,
-    "packet_value": 2737,
-    "capture_teardown_seconds_after": 0.473,
-    "context": "Shutdown-tail activity immediately before process teardown; it is not ordinary gameplay progress.",
-    "interpretation_limit": "This later EVENT_WRITE_SHD record shares source-IB and batch coordinates with the WAIT_REG_MEM samples but is not execution-instance joined to them. It does not prove that the waited address changed or that the same wait instance returned."
-  },
+  "shutdown_tail_packet_observations": [
+    {
+      "timestamp_local": "2026-10-28 16:26:15.678",
+      "source_ib": "0x0969e640",
+      "packet_ordinal": 290,
+      "source_byte_offset": 12508,
+      "batch_rptr": 32,
+      "batch_wptr": 35,
+      "event_id": 2741,
+      "source_bytes_match": true,
+      "guest_address": "0x17af4000",
+      "guest_value_before": 2735,
+      "guest_value_after": 2737,
+      "packet_value": 2737,
+      "capture_teardown_seconds_before": 0.473,
+      "same_root_batch_as_wait": true
+    },
+    {
+      "timestamp_local": "2026-10-28 16:26:15.678",
+      "source_ib": "0x096a1740",
+      "packet_ordinal": 66,
+      "source_byte_offset": 344,
+      "batch_rptr": 35,
+      "batch_wptr": 41,
+      "event_id": 2743,
+      "source_bytes_match": true,
+      "guest_address": "0x17af4000",
+      "guest_value_before": 2737,
+      "guest_value_after": 2739,
+      "packet_value": 2739,
+      "capture_teardown_seconds_before": 0.473,
+      "same_root_batch_as_wait": false
+    }
+  ],
   "process2_source_review_report": {
-    "status": "reported; exact source commit and location pending",
+    "status": "source reviewed at a pinned Process 2 revision",
     "wait_loop_behavior": "The Native WAIT_REG_MEM loop has no timeout and does not modify the polled value; it polls until the decoded predicate succeeds or the GPU worker is shutting down.",
-    "provenance_limit": "This is a Process 2 source-review report, separate from the frozen-run packet samples above."
+    "source_commit": "7aa414ab9e246765220ae802d8c2b25f7f344e04",
+    "source_path": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+    "source_lines": "2824-2983",
+    "source_review_scope": "Commit 7aa414ab adds shutdown-aware trace diagnostics; the WAIT_REG_MEM predicate and EVENT_WRITE_SHD behavior are unchanged.",
+    "diagnostic_plugin_sha256": "d8ee49c10c4650d2bce5e9f5c124b62d0ea25c8b8bc126f1360967a2e6db230c",
+    "diagnostic_plugin_build_id": "195c9e7de23289d6039cd26ef4d336af6a733291",
+    "provenance_limit": "This is a Process 2 source-review report, separate from the frozen-run packet samples above. The two shutdown-tail EVENT_WRITE_SHD records write the software queue head at 0x17AF4000, not the WAIT_REG_MEM target at 0x1B964004; no natural wait release is established."
   },
   "capture_file_sha256": {
     "capture_metadata.json": "ce99599c4edb26403802057c2d796a32b3e4b3e816ae8bbe4b99f6d8c54c5cba",
@@ -119,5 +142,5 @@
     "nfs_shift_001.1.log": "3527c73c2a0cc5af52d33e20d61859f317f84f2bcf8fc3e8acda22fc1f6ec391",
     "nfs_shift_001.log": "23b890c74063c5be5cb4c0a54984258b23fe21b8f84ba8e2fccc18c51311c1e0"
   },
-  "conclusion": "A specific Native WAIT_REG_MEM instance reported a false condition through poll 7000 (7.868 s) while the guest queue remained at head 2735/tail 2741 and the scene gate did not run. Process 2 reports the loop waits without timeout or changing the value, and exits on predicate success or worker shutdown; the exact source revision/location is pending. The later EVENT_WRITE_SHD records are shutdown-tail activity and do not establish a natural guest-memory release. This is a concrete Native diagnostic target, not yet a paired backend comparison or a proven runtime defect."
+  "conclusion": "A specific Native WAIT_REG_MEM instance reported a false condition through poll 7000 (7.868 s) while the guest queue remained at head 2735/tail 2741 and the scene gate did not run. Process 2 source review at commit 7aa414ab9e246765220ae802d8c2b25f7f344e04 confirms the loop does not change the polled word and exits on predicate success or worker shutdown. Two shutdown-tail EVENT_WRITE_SHD records advanced the distinct software queue head 0x17AF4000 from 2735 to 2739; they do not establish a natural wait release or a write to 0x1B964004. This is a concrete Native diagnostic target, not yet a paired backend comparison or a proven runtime defect."
 }

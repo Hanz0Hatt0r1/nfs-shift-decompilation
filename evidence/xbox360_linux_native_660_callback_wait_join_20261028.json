@@ -1,0 +1,222 @@
+{
+  "schema": "shift.xbox360.linux.native-callback-wait-join.v1",
+  "capture_id": "native-wait-660-7aa414ab-20261028-live-snapshot",
+  "capture_status": "completed; WAIT_REG_MEM returned naturally before the bounded runner deadline",
+  "capture_root": "/dev/shm/nfs-shift-p2-native-wait-660-7aa414ab-20261028",
+  "authority": "live controlled replay snapshot",
+  "scope": "One Native Vulkan retail run. It is not a paired Xenos comparison.",
+  "identity": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "sdk_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6",
+    "game_data_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+    "native_plugin_sha256": "d8ee49c10c4650d2bce5e9f5c124b62d0ea25c8b8bc126f1360967a2e6db230c",
+    "native_plugin_build_id": "195c9e7de23289d6039cd26ef4d336af6a733291",
+    "native_plugin_source_commit": "7aa414ab9e246765220ae802d8c2b25f7f344e04",
+    "raw_run_metadata_source_commit_field": "7aa414ab31e1d8035f074ca8c5226e86c48f3a55",
+    "source_review_commit": "7aa414ab9e246765220ae802d8c2b25f7f344e04",
+    "source_commit_identity_note": "Process 2 confirmed that raw run_metadata.json contains a typo in SHIFT_QUEUE_TRACE_P2_SOURCE_COMMIT. The DSO SHA-256 and Build ID were independently checked; its actual clean source commit is 7aa414ab9e246765220ae802d8c2b25f7f344e04. The raw metadata file is preserved with the typo noted here.",
+    "p1_trace_script_sha256": "d1aa0f26294e4a234f5b8db2c8dbc833912dcd4cfdc9c555390124a2b2bad43a",
+    "p1_runner_sha256_reported_by_run_metadata": "7e8961b7a9775e371b2a3531a97c2ad02b00ee0adab49765ebd250670586bbc7",
+    "p1_runner_sha256_of_current_v45_source": "3c169912dc2b39c1d6bb7588f660d74feaf67f72a25f444824c3e4b48bef91bb",
+    "p1_runner_identity_note": "The raw run metadata names the v45 runner but its reported hash does not match the current v45 source file. The trace GDB script hash matches the current file. The historical runner bytes were unavailable during this review; the mismatch is preserved rather than attributing the run to the current runner."
+  },
+  "run": {
+    "duration_seconds": 660.623,
+    "gdb_exit": 0,
+    "runner_deadline_seconds": 660.0,
+    "wait_completed_before_deadline": true,
+    "deadline_after_wait_completion_ms": 252,
+    "final_scene_state": 1,
+    "final_scene_update_count": 156,
+    "dequeue_event_count": 0,
+    "completion_event_count": 0,
+    "scene_transition_event_count": 0,
+    "final_guest_queue_head": 2293,
+    "guest_main_thread_backtrace": "pthread_mutex_lock -> sub_821A2238 -> sub_821A5410 -> sub_822C2148 -> sub_823883F8 -> sub_82CE2DC8 -> sub_82D0B848",
+    "gpu_worker_backtrace": "ShiftNativeGraphicsSystem::RingWorkerLoop at nanosleep"
+  },
+  "bink": {
+    "progress": "281/281",
+    "p1_elapsed_seconds": 53.109,
+    "timestamp_local": "2026-10-28 16:40:08.749"
+  },
+  "p1_guest_queue": {
+    "wait_enter_elapsed_seconds": 53.527,
+    "wait_return_elapsed_seconds": 53.537,
+    "wait_duration_seconds": 0.009,
+    "wait_return_timestamp_local": "2026-10-28 16:40:09.177",
+    "head": 2283,
+    "tail": 2289,
+    "wait_target": 2287,
+    "predicate_byte_at_entry": "0x04",
+    "predicate_byte_at_return": "0x14",
+    "manager_plus_11012": 0,
+    "completion_bit_0x02_set": false,
+    "dequeue_or_completion_after_return_observed": false
+  },
+  "matched_source1_dispatch": {
+    "p1_gpu_dispatch_id_decimal": 3689,
+    "p1_gpu_dispatch_id_hex": "0x0E69",
+    "p1_callback_timestamp_local": "2026-10-28 16:40:09.253",
+    "p1_callback_elapsed_seconds": 53.612,
+    "p1_guest_thread": "SHIFT Native GP",
+    "p1_dispatcher": "0x823B37B8",
+    "p1_registered_guest_callback": "0x823A4758",
+    "p1_callback_data": "0x00000208",
+    "p1_callback_mask": "0x04",
+    "p1_manager_counter_before": 0,
+    "p1_manager_flag_bit_set_before": false,
+    "p1_queue_head": 2283,
+    "p1_queue_tail": 2289,
+    "p1_wait_target": 2287,
+    "p1_predicate_byte": "0x04",
+    "p2_interrupt_event_id": 633,
+    "p2_dispatch_id": "0x0000000000000E69",
+    "p2_interrupt_source": 1,
+    "p2_generation": 1,
+    "p2_batch_rptr": 6868,
+    "p2_batch_wptr": 6871,
+    "p2_ring_guest": "0x09752580",
+    "p2_packet_ordinal": 246,
+    "p2_source_ib_guest": "0x09717CC0",
+    "p2_source_ib_offset": 11924,
+    "p2_cpu_mask": "0x04",
+    "p2_dispatched_cpu_mask": "0x04",
+    "p2_outer_callback": "0x823B37B8",
+    "p2_callback_data": "0xB7365F00",
+    "p2_interrupt_timestamp_local": "2026-10-28 16:40:09.255",
+    "timestamp_delta_p1_before_p2_ms": 2,
+    "matched": true
+  },
+  "subsequent_wait_reg_mem": {
+    "timestamp_local": "2026-10-28 16:40:09.255",
+    "same_root_batch": true,
+    "same_source_ib": true,
+    "source_ib_guest": "0x09717CC0",
+    "ring_guest": "0x09752580",
+    "batch_rptr": 6868,
+    "batch_wptr": 6871,
+    "packet_ordinal": 250,
+    "source_byte_offset": 11972,
+    "guest_address": "0x1B964004",
+    "poll_address": "0x1B964006",
+    "reference": "0x00000000",
+    "mask": "0xFFFFFFFF",
+    "endian": 2,
+    "compare": "Equal",
+    "poll_interval": "0x00000100",
+    "raw_value": "0x01000000",
+    "decoded_value": "0x00000001",
+    "predicate": false,
+    "poll_7000_elapsed_ms": 7878,
+    "poll_7000_timestamp_local": "2026-10-28 16:40:17.133",
+    "natural_completion": {
+      "timestamp_local": "2026-10-28 16:50:13.455",
+      "poll_count": 544160,
+      "elapsed_ms": 604199,
+      "final_raw_value": "0x00000000",
+      "final_decoded_value": "0x00000000",
+      "condition": true,
+      "completion_log_source": "nfs_shift_001.1.log"
+    },
+    "memory_sampler_transition": [
+      {
+        "timestamp_utc": "2026-10-28T13:50:13.210Z",
+        "decoded_value": "0x00000001"
+      },
+      {
+        "timestamp_utc": "2026-10-28T13:50:13.465Z",
+        "decoded_value": "0x00000000"
+      }
+    ],
+    "interpretation_limit": "The same-run packet order and dispatch-ID join are exact. The sampler bounds the polled-word transition to a 255 ms interval but does not identify its writer or prove the source-1 interrupt caused it. The predicate completed naturally, not through the shutdown-interruption path."
+  },
+  "after_wait_packet": {
+    "event_id": 2297,
+    "timestamp_local": "2026-10-28 16:50:13.465",
+    "kind": "EVENT_WRITE_SHD",
+    "guest_address": "0x17AF4000",
+    "guest_value_before": 2291,
+    "guest_value_after": 2293,
+    "source_ib_guest": "0x097248A0",
+    "source_ib_offset": 344,
+    "batch_rptr": 6883,
+    "batch_wptr": 6895,
+    "source_bytes_match": true,
+    "temporal_relation": "10 ms after WAIT_REG_MEM natural completion; it updates the distinct software queue-head word."
+  },
+  "native_queue_head_audit": {
+    "event_write_count": 1146,
+    "all_guest_head_deltas": "+2",
+    "source_bytes_match": true,
+    "regression_observed": false,
+    "head_3381_frontier_reached": false
+  },
+  "p2_memory_write_candidate_audit": {
+    "raw_capture_archive_sha256": "9d05702f3a76f6cd271813b0b2beeea15db0c311d468799e096100eb1c155d1d",
+    "memory_write_candidate_record_count": 48,
+    "candidate_record_lines_containing_wait_word_address": 0,
+    "scratch_reg1_writeback_target_record_count": 3,
+    "scratch_reg1_writeback_records": [
+      {
+        "timestamp_local": "2026-10-28 16:39:21.510",
+        "guest_address": "0x1B964004",
+        "guest_value_before": "0x00000000",
+        "guest_value_after": "0x00000001"
+      },
+      {
+        "timestamp_local": "2026-10-28 16:39:21.519",
+        "guest_address": "0x1B964004",
+        "guest_value_before": "0x00000000",
+        "guest_value_after": "0x00000001"
+      },
+      {
+        "timestamp_local": "2026-10-28 16:39:21.558",
+        "guest_address": "0x1B964004",
+        "guest_value_before": "0x00000000",
+        "guest_value_after": "0x00000001"
+      }
+    ],
+    "interpretation_limit": "The 48 memory-write candidate rows describe packet expansions, not confirmed executed CPU or device writes. The three SCRATCH_REG1 writebacks target 0x1B964004 but precede the long wait and each report 0->1. Neither trace identifies the late 1->0 writer or excludes unlogged CPU, DMA, or device writes."
+  },
+  "coincident_source0_vblank_burst": {
+    "p2_interrupt_record_count": 18,
+    "p2_interrupt_event_ids": [3069, 3086],
+    "p2_dispatch_ids": ["0x0E78", "0x0E89"],
+    "source": 0,
+    "origin": "vblank",
+    "first_timestamp_local": "2026-10-28 16:50:13.455",
+    "last_timestamp_local": "2026-10-28 16:50:13.456",
+    "callback_wrapper": "0x823B37B8",
+    "callback_data": "0xB7365F00",
+    "cpu_mask": "0x04",
+    "relation_to_wait": "The first source-0 record shares the 1 ms timestamp of natural WAIT_REG_MEM completion; subsequent records follow in the next logged millisecond.",
+    "interpretation_limit": "This is temporal coincidence only. The 660-second P1 trace sampled source 1 callbacks, not source 0, so there is no same-run P1 source-0 guest callback join and no evidence that VBlank caused the 1->0 word transition."
+  },
+  "next_capture_native_plugin_candidate": {
+    "used_in_this_capture": false,
+    "source_commit": "04479dc0a595442033163fad1550c8bb3f371c64",
+    "dso_path": "/home/pes/work/process2-wait-regmem-value-change-04479dc/linux-x86_64/librexgpu-shift-native.so",
+    "sha256": "e5f5e955494c82d0dfbf70707c493183fd82fbc7db67d63053ce1f4f3bbfb0a3",
+    "build_id": "03dde9b89959a918813cc3f9f23263c2bfce4443",
+    "change_from_7aa414ab": "One diagnostic sampling guard now continues logging after a WAIT_REG_MEM value change; it adds no polling and does not change wait execution semantics.",
+    "availability_note": "Use only for the next coordinated replay after the separate active nfs_shift process exits or Process 2 confirms a safe capture window."
+  },
+  "log_sha256": {
+    "events.json": "9bc0ee9eb95c58ddecedcc56d5e59266b3a4b71b3c2bebd33faea5018207e5ab",
+    "run_metadata.json": "9bdb35edb57046b3123d8072dd2da89fa8287a990183ab5f9358baf51af13478",
+    "gdb.log": "d9c1d722ca56ef717ab4cd6cf30d1565e8c5d23d63a037f3c95e255ddcd86bd6",
+    "runner.log": "71fbc849441f99542bb2e3235612bb5b473ade1439ce49ad31408430d2cf29f8",
+    "wait-memory-samples.jsonl": "9b20bcd1e6df43326f9a5c8a42b4efd8a9fdece741639fc624259ae626599138",
+    "nfs_shift_001.1.log": "52e648fb4ab76a2fd006fd6f60424db68087b38da0830b37cc52fa4e4b195b26",
+    "nfs_shift_001.2.log": "3517c65c2f2b64839574fa975407d0a56505b3da6373bfbeea660adf75334f1d",
+    "nfs_shift_001.log": "270c14025091a52d1367da8cdb99031412cb72fa85d71f301080403d5daefd43"
+  },
+  "conclusion": "The Native guest source-1 callback dispatch ID 0xE69 matches P2 PM4_INTERRUPT #633 (source 1, batch [6868,6871), packet 246) exactly. P1 observed its retail queue wait return before the callback while the completion bit remained clear; the callback followed without a dequeue or completion. P2 then entered WAIT_REG_MEM packet 250 from the same source IB and batch; its expected value was 0 and observed value was 1. That exact wait later completed naturally after 604.199 seconds when the decoded word became 0; sampler readings bound the transition to 255 ms but do not identify its writer. The ring advanced to packet/event 2297 about 10 ms later. This establishes a long finite wait and exact event ordering, but not the target-word writer or a backend comparison.",
+  "pending_after_capture": [
+    "Arm P1's fixed-address write watch for 0x1B964004 in the next coordinated replay.",
+    "Capture the same guest wait state under Xenos before attributing the Native behavior to the renderer."
+  ]
+}
