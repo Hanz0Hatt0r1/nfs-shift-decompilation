@@ -560,13 +560,34 @@ checks that a changed pitch is rejected. Native Vulkan CTest passed 4/4 with
 Both transfer shaders pass `spirv-val --target-env vulkan1.1`. The Android
 ARM64 renderer and check targets compile. ADB reports no attached device, so
 there was no phone run. This is executor evidence with synthetic test shaders,
-not retail pixel parity. It does not execute the full captured 14-draw
-transition: its unresolved predicated shader branch, intermediate format-31
-copies, later target changes, and full game frame still need work. The capture
-and interrupt audit are recorded in
+not retail pixel parity. A later bounded retail replay did submit a matching
+14-draw/Copy38 operation stream, but without image readback; intermediate
+pixel correctness, other transition batches, and a full game frame remain
+unverified. The capture and interrupt audit are recorded in
 [`process2_ordered_edram_packet27_alias_transfer_20261028.json`](../evidence/process2_ordered_edram_packet27_alias_transfer_20261028.json)
 and
 [`process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json`](../evidence/process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json).
+
+### Captured 14-draw sequence with Copy/Convert packet 38 submitted (2026-10-28)
+
+A bounded Linux Native replay loaded the retail XEX and the resolve-capable P2
+`shift-native` plugin with GPU emulation disabled. Its ordered-operation log
+contains the same signature as P1's paired capture: Draw packets 0 through 13,
+then Copy/Convert packet 38 to frontbuffer `0x0975E000`. The P2 presenter log
+then reports 14 indexed draws submitted. Draw ordinal 2 was selected from
+presenter frame 622; its original VS/PS hashes match the tracked retail shader
+fixtures and pass the existing translation and Vulkan 1.1 SPIR-V checks.
+
+The P1 and P2 operation signatures and capture identities match, but P1 did not
+record a selected shader frame/ordinal for that exact occurrence. The shader
+bytes are therefore mapped to the P2 replay's ordinal 2, not asserted as a
+byte-for-byte join to the P1 instance. This P2 run did not request a readback,
+so it proves ordered operation submission only, not intermediate pixel
+correctness or retail visual parity. The bounded GDB run also ended with
+partial event-log recovery and exit code 1 after an empty-command error at
+trace script line 1167. No Android device was attached. Exact hashes, packet
+order, submit evidence, and limits are in
+[`process2_ordered_14draw_copy38_replay_20261028.json`](../evidence/process2_ordered_14draw_copy38_replay_20261028.json).
 
 ### Captured format-26 Copy/Convert texture fetch (2026-10-28)
 

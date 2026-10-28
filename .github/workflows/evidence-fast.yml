@@ -13,6 +13,7 @@ on:
       - 'tests/test_shift_sqlite_query_cli.py'
       - 'native_vulkan/tools/audit_pm4_interrupt_join.py'
       - 'native_vulkan/tests/test_audit_pm4_interrupt_join.py'
+      - 'native_vulkan/tests/test_audit_ordered_14draw_replay.py'
       - '.github/workflows/evidence-fast.yml'
   workflow_dispatch:
 
@@ -48,6 +49,8 @@ jobs:
         run: python -m pytest -q tests/test_development_acceleration_tools.py tests/test_shift_sqlite_query_cli.py tests/test_blocker_graph_shape.py
       - name: Run Process 2 PM4 interrupt join regression
         run: python -m unittest native_vulkan/tests/test_audit_pm4_interrupt_join.py
+      - name: Run Process 2 ordered 14-draw replay evidence regression
+        run: python -m unittest native_vulkan/tests/test_audit_ordered_14draw_replay.py
       - name: Run changed Process 1 tests when present
         shell: bash
         run: |
