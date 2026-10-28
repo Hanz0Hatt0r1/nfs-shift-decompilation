@@ -83,7 +83,7 @@
       "raw_dwords": ["0xC0005400", "0x00000004"],
       "cpu_mask": "0x04"
     },
-    "packet_comparison": "The captured source=1 packet header and CPU mask match. Dispatch IDs are backend-local. Buffer base, packet ordinal, and byte offset differ, but this alone does not establish semantic divergence.",
+    "packet_comparison": "The backend plugin context/logs report the same source=1 header and CPU mask. Dispatch IDs are backend-local. Buffer base, packet ordinal, and byte offset differ, but this alone does not establish semantic divergence. Independent guest-physical backing bytes still require correct physical-membase translation.",
     "native_adjacent_packets": [
       {"ordinal": 239, "offset": "0x2E18", "opcode": "WAIT_REG_MEM", "guest": "0x1B964004", "reference": "0x00000001", "condition_at_sample": true},
       {"ordinal": 243, "offset": "0x2E4C", "opcode": "WAIT_REG_MEM", "guest": "0x1B964000", "reference": "0x00000004", "condition_at_sample": true},
@@ -94,7 +94,8 @@
       {"ordinal": 250, "offset": "0x2EC4", "opcode": "WAIT_REG_MEM", "guest": "0x1B964004", "reference": "0x00000000", "condition_at_first_sample": false, "eventually_completed": true}
     ],
     "xenos_adjacent_packets": "not captured by the v87 diagnostics-only run",
-    "disposition": "The interrupt packet itself matches. Native neighboring waits show ready callback context before dispatch and a later guest-memory condition that eventually completed. There is no joined worker completion for this dispatch, and the Xenos adjacent raw packet window is unavailable; no causal claim follows."
+    "disposition": "The plugin-reported interrupt context matches. Native neighboring waits show ready callback context before dispatch and a later guest-memory condition that eventually completed. There is no joined worker completion for this dispatch, and Xenos adjacent raw packet bytes are unavailable. The later v95/v96 direct-memory sampler used an invalid physical-pointer translation, so its raw IB bytes must not be used; no causal claim follows.",
+    "raw_guest_physical_memory_status": "not independently validated; the P1 sampler bug is corrected in evidence/process2_v95_payload_interrupt_window_review_20261029.json"
   },
   "minimal_rerun_needed": [
     "At sub_823B2D30 entry/exit in both backends, snapshot exact bytes for manager+11832, manager+10942, manager+14904..+14911, manager+13232, and manager+10940, plus outputs tag and payload guest address.",
