@@ -1,0 +1,643 @@
+{
+  "backends": {
+    "shift_native": {
+      "bink": {
+        "elapsed_seconds": 60.265,
+        "movie": 3866710080,
+        "progress": 281,
+        "target": 281
+      },
+      "counts": {
+        "bink_complete_events": 1,
+        "completion_events": 234,
+        "controller_return_events": 1,
+        "controller_update_events": 2,
+        "counter_write_events": 119,
+        "dequeue_events": 234,
+        "enqueue_events": 354,
+        "event_call_events": 910,
+        "host_input_events": 1,
+        "input_gate_events": 0,
+        "ke_wait_return_events": 322,
+        "producer_call_events": 747,
+        "producer_events": 3,
+        "queue_field_write_events": 830,
+        "retail_queue_wait_events": 265,
+        "retail_queue_wait_return_events": 195,
+        "scene_function_events": 126,
+        "scene_function_return_events": 125,
+        "scene_state_events": 2,
+        "source1_callback_events": 639,
+        "submission_route_events": 747,
+        "worker72_write_events": 234,
+        "xam_input_events": 8,
+        "xam_input_return_events": 8
+      },
+      "final_scene_state": {
+        "child_words_264": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "list_count_36": 1,
+        "object": 2199806340,
+        "state_348": 0,
+        "update_count_356": 0
+      },
+      "manager_counter": {
+        "delta_histogram": {
+          "-1": 116,
+          "1": 3
+        },
+        "final_signed": -113,
+        "writes": 119
+      },
+      "scene_gate": false,
+      "scene_states": [
+        {
+          "child_words_264": [
+            3147612464,
+            3146350544,
+            3146350592,
+            1
+          ],
+          "elapsed_seconds": 60.643,
+          "state_348": 1,
+          "trace_sequence": 30,
+          "update_count_356": 294
+        },
+        {
+          "child_words_264": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "elapsed_seconds": 60.725,
+          "state_348": 0,
+          "trace_sequence": 71,
+          "update_count_356": 0
+        }
+      ],
+      "software_head": {
+        "alias_histogram": {
+          "physical": 830
+        },
+        "delta_histogram": {
+          "-18": 1,
+          "-6": 114,
+          "-8": 1,
+          "10": 1,
+          "2": 713
+        },
+        "thread": "SHIFT Native GP",
+        "writer": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 26867 in section .text of /home/pes/work/nfs-shift-p1-p2-14841319-paired-physical-counter-20261028/runs/shift-native-r1/bin/librexgpu-shift-native.so",
+        "writes": 830
+      },
+      "stop_queue": {
+        "head": 3381,
+        "manager_11008": 1,
+        "manager_11012": 4294967183,
+        "predicate_byte": 20,
+        "tail": 3401
+      }
+    },
+    "xenos": {
+      "bink": {
+        "elapsed_seconds": 63.025,
+        "movie": 3866710080,
+        "progress": 281,
+        "target": 281
+      },
+      "counts": {
+        "bink_complete_events": 1,
+        "completion_events": 52,
+        "controller_return_events": 6,
+        "controller_update_events": 14,
+        "counter_write_events": 53,
+        "dequeue_events": 53,
+        "enqueue_events": 53,
+        "event_call_events": 608,
+        "host_input_events": 7,
+        "input_gate_events": 1,
+        "ke_wait_return_events": 502,
+        "producer_call_events": 985,
+        "producer_events": 27,
+        "queue_field_write_events": 477,
+        "retail_queue_wait_events": 284,
+        "retail_queue_wait_return_events": 225,
+        "scene_function_events": 207,
+        "scene_function_return_events": 206,
+        "scene_state_events": 6,
+        "source1_callback_events": 237,
+        "submission_route_events": 985,
+        "worker72_write_events": 53,
+        "xam_input_events": 92,
+        "xam_input_return_events": 92
+      },
+      "final_scene_state": {
+        "child_words_264": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "list_count_36": 1,
+        "object": 2199806340,
+        "state_348": 0,
+        "update_count_356": 0
+      },
+      "manager_counter": {
+        "delta_histogram": {
+          "-1": 26,
+          "1": 27
+        },
+        "final_signed": 1,
+        "writes": 53
+      },
+      "scene_gate": true,
+      "scene_states": [
+        {
+          "child_words_264": [
+            3147612464,
+            3146370672,
+            3146370720,
+            1
+          ],
+          "elapsed_seconds": 64.025,
+          "state_348": 1,
+          "trace_sequence": 34,
+          "update_count_356": 281
+        },
+        {
+          "child_words_264": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "elapsed_seconds": 64.14,
+          "state_348": 0,
+          "trace_sequence": 76,
+          "update_count_356": 0
+        },
+        {
+          "child_words_264": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "elapsed_seconds": 83.254,
+          "state_348": 1,
+          "trace_sequence": 3463,
+          "update_count_356": 0
+        },
+        {
+          "child_words_264": [
+            3147612464,
+            3082874832,
+            3082874880,
+            1
+          ],
+          "elapsed_seconds": 85.546,
+          "state_348": 1,
+          "trace_sequence": 3589,
+          "update_count_356": 1
+        },
+        {
+          "child_words_264": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "elapsed_seconds": 86.603,
+          "state_348": 1,
+          "trace_sequence": 3668,
+          "update_count_356": 0
+        },
+        {
+          "child_words_264": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "elapsed_seconds": 87.563,
+          "state_348": 0,
+          "trace_sequence": 3738,
+          "update_count_356": 0
+        }
+      ],
+      "software_head": {
+        "alias_histogram": {
+          "physical": 477
+        },
+        "delta_histogram": {
+          "2": 477
+        },
+        "thread": "GPU Commands (F",
+        "writer": "rex::graphics::CommandProcessor::ExecutePacketType3_EVENT_WRITE_SHD(rex::memory::RingBuffer*, unsigned int, unsigned int) + 199 in section .ltext of /home/pes/work/nfs-shift-p1-p2-14841319-paired-physical-counter-20261028/runs/xenos-r1/bin/librexgpu-xenos.so",
+        "writes": 477
+      },
+      "stop_queue": {
+        "head": 4759,
+        "manager_11008": 1,
+        "manager_11012": 1,
+        "predicate_byte": 4,
+        "tail": 4769
+      }
+    }
+  },
+  "capture_mode": "paired",
+  "capture_root": "/home/pes/work/nfs-shift-p1-p2-14841319-paired-physical-counter-20261028",
+  "capture_runner_sha256": "289c91e174e553a49385201a7325b685f709271aa6e217d1107cbfff091d8cef",
+  "duration_seconds_per_backend": 135.0,
+  "first_game_state_divergence": {
+    "kind": "delete",
+    "native_events": [],
+    "previous_common_anchor": {
+      "shift_native_end": 2,
+      "xenos_end": 2
+    },
+    "xenos_events": [
+      {
+        "child_words_264": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "elapsed_seconds": 83.254,
+        "kind": "scene_state",
+        "list_count_36": 1,
+        "object": 2199806340,
+        "state_348": 1,
+        "trace_sequence": 3463,
+        "update_count_356": 0,
+        "wall_clock_epoch_ms": 1793186362357
+      },
+      {
+        "child_words_264": [
+          3147612464,
+          3082874832,
+          3082874880,
+          1
+        ],
+        "elapsed_seconds": 85.546,
+        "kind": "scene_state",
+        "list_count_36": 1,
+        "object": 2199806340,
+        "state_348": 1,
+        "trace_sequence": 3589,
+        "update_count_356": 1,
+        "wall_clock_epoch_ms": 1793186364649
+      },
+      {
+        "child_words_264": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "elapsed_seconds": 86.603,
+        "kind": "scene_state",
+        "list_count_36": 1,
+        "object": 2199806340,
+        "state_348": 1,
+        "trace_sequence": 3668,
+        "update_count_356": 0,
+        "wall_clock_epoch_ms": 1793186365706
+      },
+      {
+        "child_words_264": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "elapsed_seconds": 87.563,
+        "kind": "scene_state",
+        "list_count_36": 1,
+        "object": 2199806340,
+        "state_348": 0,
+        "trace_sequence": 3738,
+        "update_count_356": 0,
+        "wall_clock_epoch_ms": 1793186366666
+      }
+    ]
+  },
+  "first_manager_counter_mismatch": {
+    "guest_field": "manager+11012",
+    "kind": "manager_counter_operation_mismatch",
+    "native": {
+      "after": 0,
+      "before": 1,
+      "delta": -1,
+      "elapsed_seconds": 81.45,
+      "guest_address": 3073804804,
+      "guest_caller": "#0  0x0000555557c2f868 in sub_823B85D0 ()",
+      "nearby_gpu_ring_interrupts": [
+        {
+          "batch_rptr": 2075,
+          "batch_wptr": 2090,
+          "callbacks": [
+            {
+              "callback": 2184918968,
+              "cpu": 2,
+              "data": 3073793792,
+              "status": "invoked"
+            }
+          ],
+          "cpu_mask": 4,
+          "delta_ms_from_counter_write": -2,
+          "dispatched_cpu_mask": 4,
+          "generation": 1,
+          "ordinal": 908,
+          "packet_ordinal": 663,
+          "ring_guest": 158672256,
+          "source": 1,
+          "source_ib": 157783552,
+          "source_ib_byte_offset": 19632
+        },
+        {
+          "batch_rptr": 2059,
+          "batch_wptr": 2075,
+          "callbacks": [
+            {
+              "callback": 2184918968,
+              "cpu": 2,
+              "data": 3073793792,
+              "status": "invoked"
+            }
+          ],
+          "cpu_mask": 4,
+          "delta_ms_from_counter_write": -64,
+          "dispatched_cpu_mask": 4,
+          "generation": 1,
+          "ordinal": 907,
+          "packet_ordinal": 366,
+          "ring_guest": 158672256,
+          "source": 1,
+          "source_ib": 157780864,
+          "source_ib_byte_offset": 2628
+        }
+      ],
+      "nearby_source1_guest_callback_entries": [
+        {
+          "arguments_r3_to_r10": [
+            1,
+            3073793792,
+            0,
+            150,
+            2199599140,
+            592,
+            2,
+            1
+          ],
+          "callback_bit_index": 2,
+          "callback_bit_mask": 4,
+          "callback_data": 520,
+          "callback_function": 2184857432,
+          "delta_ms_from_counter_write": -8,
+          "entry_ordinal": 183,
+          "guest_lr": 3166485692,
+          "manager_counter_before": 1,
+          "manager_flag_bit_set_before": false,
+          "manager_flags_before": 0,
+          "manager_words_10904_to_1091c": [
+            0,
+            3401,
+            0,
+            8206,
+            263168,
+            67584,
+            3399
+          ],
+          "thread": 11,
+          "thread_name": "SHIFT Native GP",
+          "trace_sequence": 3482
+        }
+      ],
+      "related_operation": {
+        "expected_delta": -1,
+        "join_scope": "completion is linked to its dequeued record by parent_dequeue_id; callback records match the same guest pointer within a local trace window; this does not join the callback to a particular PM4 interrupt",
+        "kind": "completion",
+        "nearby_source1_callbacks_matching_parent_record": [],
+        "parent_dequeue": {
+          "consumer_after": 6,
+          "consumer_before": 5,
+          "id": 760,
+          "phase": "return",
+          "producer_after": 12,
+          "producer_before": 9,
+          "queue": 3073805280,
+          "slot_value": 3379156096
+        },
+        "parent_dequeue_id": 760,
+        "parent_record": 3379156096,
+        "phase": "return",
+        "ring_consumer": 6,
+        "ring_producer": 12,
+        "ring_queue": 3073805280,
+        "signed_delta": -1,
+        "token": 3221225472,
+        "worker": 3073804740,
+        "worker76": 3379054720
+      },
+      "trace_sequence": 3483,
+      "write_index": 6
+    },
+    "write_ordinal": 6,
+    "xenos": {
+      "after": 2,
+      "before": 1,
+      "delta": 1,
+      "elapsed_seconds": 81.695,
+      "guest_address": 3073804804,
+      "guest_caller": "#0  0x000055555763413a in sub_823B31A0 ()",
+      "nearby_gpu_ring_interrupts": [],
+      "nearby_source1_guest_callback_entries": [
+        {
+          "arguments_r3_to_r10": [
+            1,
+            3073793792,
+            0,
+            110,
+            2199599140,
+            432,
+            2,
+            1
+          ],
+          "callback_bit_index": 2,
+          "callback_bit_mask": 4,
+          "callback_data": 520,
+          "callback_function": 2184857432,
+          "delta_ms_from_counter_write": 91,
+          "entry_ordinal": 167,
+          "guest_lr": 3166485692,
+          "manager_counter_before": 2,
+          "manager_flag_bit_set_before": false,
+          "manager_flags_before": 0,
+          "manager_words_10904_to_1091c": [
+            0,
+            4537,
+            0,
+            8206,
+            263168,
+            67584,
+            4531
+          ],
+          "thread": 11,
+          "thread_name": "GPU Commands (F",
+          "trace_sequence": 3358
+        }
+      ],
+      "related_operation": {
+        "caller_lr": 2184941744,
+        "delta": 1,
+        "kind": "producer",
+        "producer_call": 729,
+        "record": 2842814008,
+        "record_words": [
+          3200175308,
+          1046245830,
+          1069226201,
+          4294967295
+        ],
+        "tag": 35
+      },
+      "trace_sequence": 3351,
+      "write_index": 6
+    }
+  },
+  "gdb_exit": {
+    "shift_native": 0,
+    "xenos": 0
+  },
+  "identities": {
+    "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "native_plugin": {
+      "build_id": "ebbb619ab5a5142d3392b62867b88848744492c0",
+      "path": "/home/pes/work/p1-p2-14841319-plugin-snapshot-20261028/librexgpu-shift-native.so",
+      "sha256": "f794272592ea955c66f00a11c784a56bc77baa6f2205c83fdad8269fdac5443f",
+      "snapshot": "/home/pes/work/nfs-shift-p1-p2-14841319-paired-physical-counter-20261028/artifacts/librexgpu-shift-native.so",
+      "source_commit": "14841319",
+      "source_diff_sha256": null,
+      "source_dirty": false,
+      "source_status_sha256": null
+    },
+    "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "xenos_plugin": {
+      "build_id": "cfa31cb1ea72cea5f153b76f29e4635536628ff4",
+      "path": "/home/pes/work/rexglue-sdk-retail-lwsync-20261027/out/linux-amd64/librexgpu-xenos.so",
+      "sha256": "19053b691d7d1f8f17bbe3e90be38ba3acc60439cbe5c1dfcad271e07b47ce43",
+      "snapshot": "/home/pes/work/nfs-shift-p1-p2-14841319-paired-physical-counter-20261028/artifacts/librexgpu-xenos.so"
+    },
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "input": {
+    "declared_profiles_match": false,
+    "delivered_profiles": {
+      "shift_native": [],
+      "xenos": [
+        [
+          "Start",
+          "0x0010"
+        ],
+        [
+          "A",
+          "0x1000"
+        ],
+        [
+          "Start",
+          "0x0010"
+        ]
+      ]
+    },
+    "gates_match": false,
+    "observed_xam_mask_histograms": {
+      "shift_native": {
+        "0": 8
+      },
+      "xenos": {
+        "0": 64,
+        "16": 20,
+        "4096": 8
+      }
+    },
+    "retail_controller_edges": {
+      "shift_native": [
+        {
+          "current": 0,
+          "edge": 0,
+          "elapsed_seconds": 60.859,
+          "method": "sub_82308E60"
+        }
+      ],
+      "xenos": [
+        {
+          "current": 0,
+          "edge": 0,
+          "elapsed_seconds": 64.128,
+          "method": "sub_82308E60"
+        },
+        {
+          "current": 0,
+          "edge": 0,
+          "elapsed_seconds": 88.541,
+          "method": "sub_82308E60"
+        },
+        {
+          "current": 4096,
+          "edge": 4096,
+          "elapsed_seconds": 93.023,
+          "method": "sub_82308E60"
+        },
+        {
+          "current": 16,
+          "edge": 16,
+          "elapsed_seconds": 97.624,
+          "method": "sub_82308E60"
+        },
+        {
+          "current": 0,
+          "edge": 0,
+          "elapsed_seconds": 104.786,
+          "method": "sub_82308E60"
+        },
+        {
+          "current": 0,
+          "edge": 0,
+          "elapsed_seconds": 111.933,
+          "method": "sub_82308E60"
+        }
+      ]
+    },
+    "same_three_pulse_profile_delivered": false
+  },
+  "interpretation": "Both backends completed Bink with exit-0 traces on the same XEX, host, runtime, resources and plugin pair. Xenos reached the scene gate and received Start/A/Start; Native did not reach the gate, so post-gate inputs are not comparable. The first manager+11012 operation mismatch followed five common writes: Native completion sub_823B85D0 decremented 1 to 0 for token 0xC0000000; 245 ms later Xenos producer sub_823B31A0 incremented 1 to 2 for a tag-35 record. The Native physical-alias queue head writer repeatedly moved by -6 while Xenos writes were all +2 in this capture. These are candidate differences for P2 audit, not proof that Xenos is correct or that a particular interrupt caused the Native state.",
+  "p2_join_inputs": {
+    "guest_callbacks": 639,
+    "malformed_ring_records": 0,
+    "path": "evidence/xbox360_linux_native_14841319_paired_source1_join_inputs_20261028.jsonl.gz",
+    "rows": 2031,
+    "sha256": "f9a20afc9adba5013a0200c75f76953e293a0c4b5a6fb5101ce6dea977c8d956",
+    "source1_pm4_interrupts": 1392
+  },
+  "raw_artifact_hashes": {
+    "comparison-r1.json": "0df39a7c3845f63b4a22710699a05bd02d416db5f90c93e11db64bf2c2301e2a",
+    "pair_metadata.json": "50524ec9b3c21d38a0218973fc88db429f6c795a7f4a171669744af78ea6fd0b",
+    "shift-native_events.json": "2159fecea651e45569a0870f66ffed0eaf9486b2c5a27441f733f0d400f78c57",
+    "shift-native_gdb.log": "3f3289f38d5923297d272227522d7236c073af76a0bbb395298d5d152d27d3bb",
+    "shift-native_nfs_shift_001.1.log": "c8e3ac00e16e0c1c9b819f99b220f8ab278c2980bedbf3645acc4d86e0e032ff",
+    "shift-native_nfs_shift_001.log": "24841e9a7c407df94c94f30f212a9cea515761ca6838eb35c5a516a47a93f8e2",
+    "xenos_events.json": "f9d479185cd9e04bf5c0f98bfca1d53647c3573839204c6bae79559863a7424f",
+    "xenos_gdb.log": "a056efbd0418756a6d9cadee591fad35cb1a14b8bb033cf6de239efa21338ff0"
+  },
+  "schema": "shift.xbox360.linux.process1.paired-14841319-physical-counter.v1",
+  "trace_script_sha256": "636bcecf690da7c4cdcb45428f8c8c4b2dbd01b6f2c1aa32a6c2baed6c96dea3"
+}
