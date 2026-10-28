@@ -2282,6 +2282,32 @@ bool decode_captured_copy_state(
     return true;
 }
 
+bool captured_format26_copy_matches_texture_fetch(
+    const CapturedTextureFetch& texture,
+    const CapturedCopyState& copy,
+    const CapturedRasterState& source_raster) {
+    return texture.format == 26u && texture.endian_mode == 1u &&
+           texture.integer_format && texture.tiled && !texture.packed_mips &&
+           texture.width == 1280u && texture.height == 720u &&
+           texture.pitch == 1280u && texture.guest_address == copy.destination_base &&
+           source_raster.width == 2560u && source_raster.height == 1440u &&
+           source_raster.surface_pitch == 1280u &&
+           source_raster.sample_count == 4u &&
+           source_raster.color_base_tiles == 0u &&
+           source_raster.guest_color_format == 12u &&
+           source_raster.depth_base_tiles == 1024u &&
+           copy.destination_pitch == texture.pitch &&
+           copy.destination_height == texture.height &&
+           copy.destination_format == 26u &&
+           copy.destination_number_format == 2u &&
+           copy.destination_exp_bias == 11 &&
+           copy.destination_endian == 1u && copy.sample_select == 6u &&
+           copy.color_clear_enable && copy.depth_clear_enable &&
+           !copy.destination_swap_red_blue && !copy.destination_array &&
+           copy.destination_slice == 0u && copy.source_select == 0u &&
+           !copy.source_gamma && copy.command == CapturedCopyCommand::Convert;
+}
+
 bool captured_draw_has_no_framebuffer_effects(
     const CapturedRasterState& raster) noexcept {
     return !raster.scissor_has_area ||

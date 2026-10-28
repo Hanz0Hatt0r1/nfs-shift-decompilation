@@ -750,6 +750,42 @@ int main() {
                 copied_format26_fetch.mag_filter == 0u &&
                 copied_format26_fetch.min_filter == 0u,
             "captured 1280x720 format-26 Copy/Convert fetch was rejected or misdecoded");
+    shift::xbox::CapturedCopyState retail_format26_copy{};
+    retail_format26_copy.sample_select = 6;
+    retail_format26_copy.destination_base = 0x0BE19000u;
+    retail_format26_copy.destination_pitch = 1280;
+    retail_format26_copy.destination_height = 720;
+    retail_format26_copy.destination_format = 26;
+    retail_format26_copy.destination_endian = 1;
+    retail_format26_copy.destination_number_format = 2;
+    retail_format26_copy.destination_exp_bias = 11;
+    retail_format26_copy.color_clear_enable = true;
+    retail_format26_copy.depth_clear_enable = true;
+    shift::xbox::CapturedRasterState retail_format26_source{};
+    retail_format26_source.width = 2560;
+    retail_format26_source.height = 1440;
+    retail_format26_source.surface_pitch = 1280;
+    retail_format26_source.sample_count = 4;
+    retail_format26_source.color_base_tiles = 0;
+    retail_format26_source.guest_color_format = 12;
+    retail_format26_source.depth_base_tiles = 1024;
+    require(shift::xbox::captured_format26_copy_matches_texture_fetch(
+                copied_format26_fetch, retail_format26_copy,
+                retail_format26_source),
+            "retail format-26 fetch did not match the captured 4x all-sample source layout");
+    auto logical_format26_source = retail_format26_source;
+    logical_format26_source.width = 1280;
+    logical_format26_source.height = 720;
+    require(!shift::xbox::captured_format26_copy_matches_texture_fetch(
+                copied_format26_fetch, retail_format26_copy,
+                logical_format26_source),
+            "format-26 all-sample matching accepted a logical-size source raster");
+    auto single_sample_format26_source = retail_format26_source;
+    single_sample_format26_source.sample_count = 1;
+    require(!shift::xbox::captured_format26_copy_matches_texture_fetch(
+                copied_format26_fetch, retail_format26_copy,
+                single_sample_format26_source),
+            "format-26 all-sample matching accepted a single-sample source");
     uint32_t non_integer_format26_descriptor[6];
     std::copy(std::begin(copied_format26_descriptor),
               std::end(copied_format26_descriptor),

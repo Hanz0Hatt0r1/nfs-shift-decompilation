@@ -1446,10 +1446,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
             break;
           }
         }
-        if (fetch.format == 26u && fetch.endian_mode == 1u &&
-            fetch.integer_format && fetch.tiled && !fetch.packed_mips &&
-            fetch.width == 1280u && fetch.height == 720u &&
-            fetch.pitch == 1280u) {
+        if (fetch.format == 26u) {
           for (auto it = prior_operations.rbegin();
                it != prior_operations.rend(); ++it) {
             if (it->type !=
@@ -1458,20 +1455,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
             }
             const auto& state = it->copy_state;
             if (state.destination_base != fetch.guest_address) continue;
-            guest_copy_source =
-                it->source_width == 1280u && it->source_height == 720u &&
-                state.destination_pitch == fetch.pitch &&
-                state.destination_height == fetch.height &&
-                state.destination_format == 26u &&
-                state.destination_number_format == 2u &&
-                state.destination_exp_bias == 11 &&
-                state.destination_endian == 1u &&
-                state.sample_select == 6u &&
-                state.color_clear_enable && state.depth_clear_enable &&
-                !state.destination_swap_red_blue && !state.destination_array &&
-                state.destination_slice == 0u && state.source_select == 0u &&
-                !state.source_gamma &&
-                state.command == shift::xbox::CapturedCopyCommand::Convert;
+            guest_copy_source = it->source_raster_ready &&
+                shift::xbox::captured_format26_copy_matches_texture_fetch(
+                    fetch, state, it->source_raster);
             break;
           }
         }

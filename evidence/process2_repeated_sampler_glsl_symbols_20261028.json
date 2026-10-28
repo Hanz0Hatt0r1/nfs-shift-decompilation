@@ -5,15 +5,18 @@
   "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
   "implementation_commit": "99ebea14352e6bc27097cbc77ec76dba06f39792",
   "capture": {
-    "root": "/home/pes/work/nfs-shift-p1-p2-partial-registers-exact-20261028",
+    "root": "/home/pes/work/nfs-shift-p1-native-sampler-fix-20261028",
     "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
     "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
-    "native_plugin_sha256": "8bc7a1759889d7feb71b68324a0ac021df3043916f70033654aa4d1ea126a627",
-    "native_plugin_build_id": "754657ae04088fd163ea4e7d7c9796cdb810ec38",
-    "native_plugin_source_commit": "d764c3799030bea6369b8f0dd6d3a49c40c668d1",
+    "native_plugin_sha256": "5448535186919fed6eac7ba68185ba7dc1712a4dfd20e9e7fab1b46c6aa48907",
+    "native_plugin_build_id": "d9bf24aabafcc2cedaaf6c30d03167eae17f43f0",
+    "native_plugin_source_commit": "99ebea14352e6bc27097cbc77ec76dba06f39792",
     "pair": {
       "duration_seconds_each": 135,
-      "order": ["Xenos", "Native"],
+      "order": [
+        "Xenos",
+        "Native"
+      ],
       "both_reached_bink_progress": "281/281",
       "native_submitted_frame": 322,
       "native_source1_interrupts": 1974,
@@ -24,9 +27,9 @@
     },
     "ordered_refresh": {
       "log": "runs/shift-native-r1/bin/logs/nfs_shift_001.1.log",
-      "log_sha256": "830081745620e3e581749dd8d878adf0dd8a887357d3effe764965a6cd95cc3c",
-      "draw_list_line": 1816,
-      "draw_list_line_sha256": "e6cfa4501214fb104001272f2049d46f1d50351975183a0c8388d35178c278c6",
+      "log_sha256": "c03e5e576d830571452015f9cf80b9943c7c1fed65486d9cd352fdc98c1b6966",
+      "draw_list_line": 2025,
+      "draw_list_line_sha256": "216e18186ac48140594d82a75af7ccedc92ad3c7752a6495a80240937ecae7c9",
       "operation_shape": "14 Draw operations with packets 0..13, then Copy packet 38",
       "draw10_register_state": {
         "valid_mask": "0x1ffff",
@@ -42,11 +45,37 @@
       }
     },
     "failure": {
-      "log_line": 7643,
-      "line_sha256": "43d97bcbb934409585c98321e8c32e56fcf1e1a187b02631eebf6c3171cc2c8f",
-      "diagnostic": "unresolved captured draw #10 topology=2 autoindex=true count=24 raster=true inputs=true translated=true: glslang parse failed: ERROR: 0:61: 'sampled_0' : redefinition",
+      "log_line": 7737,
+      "line_sha256": "73893aabdfaa4a1cc7d16a2ddb60169bf37804466c85bb0eed3e1111063511eb",
+      "diagnostic": "unresolved captured draw #10 topology=2 autoindex=true count=24 raster=true inputs=true translated=true: captured format-26 texture has no preceding exact all-sample Copy/Convert",
       "pixel_shader_bytes_retained": false,
-      "evidence_limit": "The native log proves a repeated generated local symbol, but the exact draw-10 pixel-shader bytes, fetch offsets, and fetch-constant indices were not retained."
+      "evidence_limit": "The captured Native run clears the duplicate GLSL-local failure but does not retain exact draw-10 pixel-shader bytes and does not create/submit the draw pipeline."
+    },
+    "native_only_replay": {
+      "duration_seconds": 137.661,
+      "mode": "Native only; no Xenos comparison replay",
+      "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+      "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+      "gdb_exit": 0,
+      "bink_progress": "281/281",
+      "log": "runs/shift-native-r1/bin/logs/nfs_shift_001.1.log",
+      "log_sha256": "c03e5e576d830571452015f9cf80b9943c7c1fed65486d9cd352fdc98c1b6966",
+      "operation_snapshot": {
+        "line": 2025,
+        "line_sha256": "216e18186ac48140594d82a75af7ccedc92ad3c7752a6495a80240937ecae7c9",
+        "shape": "14 Draw operations with packets 0..13 followed by Copy packet 38; capture is a command snapshot, not proof of successful draw submission"
+      },
+      "draw10": {
+        "line": 7737,
+        "line_sha256": "73893aabdfaa4a1cc7d16a2ddb60169bf37804466c85bb0eed3e1111063511eb",
+        "result": "raster=true inputs=true translated=true; now rejected because the preceding format-26 Copy/Convert source did not match the plugin logical-size source check",
+        "prior_glsl_duplicate_local_error": "not present on this draw in the replay; draw advanced through shader translation"
+      },
+      "source1_interrupts_in_this_log": 782,
+      "source1_cpu_mask": "0x04",
+      "source1_callback": "0x823B37B8",
+      "raw_shader_dump": "Exact draw-10 pixel-shader bytes were not retained; the run-time dump selector still did not select this packet."
     }
   },
   "implementation": {
@@ -55,7 +84,7 @@
       "native_vulkan/tests/xbox_shader_translate_check.cpp"
     ],
     "behavior": "Count executed texture fetches by fetch constant. Keep existing GLSL local names for a single use; when a fetch constant is sampled multiple times, suffix each sampled/fetched temporary with its fetch ordinal. The sampler uniform binding and fetch semantics are unchanged.",
-    "runtime_status": "Build-only shader translator change; it has not yet been replayed against the 14-draw retail capture."
+    "runtime_status": "A bounded Native-only replay with the shader-fix DSO passed draw 10 through translation; it then exposed a distinct format-26 Copy/Convert source-layout mismatch. The format-26 source-layout correction is being validated in a follow-up DSO."
   },
   "regression": {
     "basis": "A bounded reproduction extends the repository's captured retail pixel-shader slice with a second executed texture fetch at instruction 6 using the same fetch constant as instruction 4.",
@@ -95,8 +124,8 @@
     "diff_check": "git diff --check passed"
   },
   "remaining_blockers": [
-    "Replay the new plugin against the retained retail 14-draw sequence to check whether draw 10 advances past GLSL parsing.",
-    "The original draw-10 pixel-shader bytes were not preserved; the unit regression exercises the proven duplicate-local failure pattern rather than that exact shader.",
+    "Replay the follow-up DSO with the exact 2560x1440, 4x source-raster contract to verify draw 10 clears the format-26 resource gate.",
+    "The original draw-10 pixel-shader bytes were not preserved; the unit regression reproduces the duplicate-local failure pattern rather than those exact bytes.",
     "Draws 12, 22, and 24 still have separately reported unsupported shader control-flow or texture-sign cases.",
     "The ordered 14-draw EDRAM/Copy/Convert transition still lacks shared physical EDRAM persistence, generic copy/conversion, and intermediate-image parity."
   ]

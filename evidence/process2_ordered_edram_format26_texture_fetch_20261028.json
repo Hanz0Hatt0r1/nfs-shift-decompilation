@@ -3,7 +3,7 @@
   "date": "2026-10-28",
   "branch": "work/process2-xbox-live-ring-20261023",
   "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
-  "implementation_commit": "a06398f88fb5c7d376d06273c63ae0312d90a381",
+  "implementation_commit": "e525a870",
   "capture_specification": {
     "capture_directory": "/tmp/nfs-shift-p1-gpu-backend-resolvepr2-frame322-20261028",
     "log": "/tmp/nfs-shift-p1-gpu-backend-resolvepr2-frame322-20261028/runs/shift-native-r1/bin/logs/nfs_shift_001.log",
@@ -20,7 +20,10 @@
       "endian": 1,
       "integer_format": true,
       "tiled": true,
-      "extent": [1280, 720],
+      "extent": [
+        1280,
+        720
+      ],
       "pitch_pixels": 1280,
       "tiled_storage_bytes": "0x730000",
       "swizzle": "0x688",
@@ -30,7 +33,10 @@
     "copy_contract": {
       "copy_control": "0x00100360",
       "destination_base": "0x0BE19000",
-      "destination_extent": [1280, 720],
+      "destination_extent": [
+        1280,
+        720
+      ],
       "destination_format": 26,
       "destination_number_format": 2,
       "destination_endian": 1,
@@ -45,32 +51,52 @@
     "capture_identity": {
       "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
       "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd"
+    },
+    "followup_native_capture": {
+      "capture_directory": "/home/pes/work/nfs-shift-p1-native-sampler-fix-20261028",
+      "log": "runs/shift-native-r1/bin/logs/nfs_shift_001.1.log",
+      "log_sha256": "c03e5e576d830571452015f9cf80b9943c7c1fed65486d9cd352fdc98c1b6966",
+      "ordered_operations_line": 7920,
+      "ordered_operations_line_sha256": "1edfd5344970f506f0913686e546d99d0a65ce39aaeea19e85ccbedc5f07d0c6",
+      "format26_copy_evidence": "Copy packets 0..9 target 0x0BE19000 at logical extent 1280x720. Their source raster is 2560x1440 at 4x, surface pitch 1280, color base 0, depth base 0x400, guest format 12; destination format 26/number 2, endian 1, exp-bias 11, sample-select 6, clear color/depth, source-select 0, Convert.",
+      "draw10_result_with_prior_plugin": {
+        "line": 7737,
+        "line_sha256": "73893aabdfaa4a1cc7d16a2ddb60169bf37804466c85bb0eed3e1111063511eb",
+        "diagnostic": "raster=true inputs=true translated=true; captured format-26 texture has no preceding exact all-sample Copy/Convert"
+      },
+      "source1_interrupts_in_log": 782,
+      "source1_cpu_mask": "0x04",
+      "source1_callback": "0x823B37B8"
     }
   },
   "implementation": {
-    "ordered_match": "Treats a format-26 texture as a cached Copy/Convert source only if a preceding operation in the same ordered batch has the exact captured address, 1280x720 extent and pitch, format/number/endian/exp-bias, all-sample selection, clear flags, source selection, and Convert command.",
+    "ordered_match": "A format-26 fetch matches only a preceding Copy/Convert to the exact guest address when the texture descriptor is 1280x720/pitch1280 and its source raster is the captured physical 2560x1440 4x target (surface pitch1280, color base0, guest format12, depth base0x400), together with the exact destination format/number/endian/exp-bias, all-sample selector, clear flags, source selection, and Convert command. The former source-dimension check incorrectly required 1280x720 and rejected the captured 4x raster.",
     "vulkan_format": "Creates a mutable VK_FORMAT_R16G16B16A16_UINT color attachment and samples it through a compatible VK_FORMAT_R16G16B16A16_UNORM view.",
     "integer_fetch": "For the captured integer-format descriptor, translated shader sampling scales UNORM components by 65535 before applying the captured swizzle.",
-    "fail_closed": "Unmatched format-26 descriptors reject. Raw uncached 64bpp tiled format-26 uploads remain unsupported."
+    "fail_closed": "Unmatched format-26 descriptors reject. Raw uncached 64bpp tiled format-26 uploads remain unsupported.",
+    "regression": "A pure captured_format26_copy_matches_texture_fetch predicate accepts the real 2560x1440/4x source and 1280x720 destination contract, and rejects a logical-size source or a single-sample source."
   },
   "verification": {
     "native_linux": {
       "build": "cmake --build /home/pes/work/.build-process2-p2161-native-vulkan-20261028 -j6",
       "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-native-vulkan-20261028 --output-on-failure",
-      "result": "passed 4/4",
-      "format26_regression": "Synthetic ordered draw/copy/draw/copy execution reads from the cached format-26 image; its readback differs from the otherwise identical zero-filled texture baseline."
+      "result": "passed 4/4 with VK_LAYER_KHRONOS_validation after source-layout fix",
+      "format26_regression": "Matcher accepts exact captured source and destination layout; rejects the former logical-size-source assumption and non-4x source."
     },
     "linux_rexglue": {
-      "build": "cmake --build /home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028 --target rexgpu-shift-native -j6",
-      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028 --output-on-failure",
-      "ctest_result": "passed 7/7",
-      "plugin_sha256": "6f2a88990a590ca9cdffe680c27bbfb724c2ac589eaa8d535dd55726566f03b6",
-      "build_id": "ec5936367d1abbdac00ed2b24848c505169e7b6f"
+      "build": "cmake --build /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --parallel 2",
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
+      "ctest_result": "passed 6/6",
+      "plugin_sha256": "f65edaa4b95627871d334cbaa5ccb4e545c0784552f16e776e5ece02aff261eb",
+      "build_id": "71abe9ca09b7e14ea6b0da1867a7676e17180484",
+      "vulkan_minimum": "1.1"
     },
     "android_arm64": {
-      "build": "cmake --build /home/pes/work/.build-process2-p2161-android-renderer-20261027 --target shift_xbox_live_vulkan_renderer xbox_live_vulkan_renderer_check -j6",
-      "result": "renderer library and offscreen checker compiled",
-      "device_runtime": "not run; adb devices -l returned no attached devices"
+      "build": "cmake --build /home/pes/work/.build-process2-p2161-vulkan-plugin-android-matched-20261028 --parallel 2",
+      "result": "Android API26 ARM64 plugin target compiled and linked after source-layout fix",
+      "plugin_sha256": "dff5540b3a4dfb4b98a0c7e566dfa0844b851226252628475a6fde5334c888c5",
+      "build_id": "09f8f83114aa09ca017d5102649e1163846bd648",
+      "device_runtime": "not run; no attached ADB device"
     },
     "diff_check": "git diff --check passed"
   },
@@ -79,10 +105,16 @@
     "scope": "Existing P2 source-1 packet/callback correlation evidence; this format-26 change does not alter PM4 interrupt dispatch and adds no new interrupt capture."
   },
   "limitations": [
-    "The renderer regression is synthetic and is not retail framebuffer parity or visual confirmation of the captured texture contents.",
-    "The newer plugin has not been run against the 14-draw retail transition, so acceptance of this exact descriptor in a live retail frame remains unverified.",
+    "The renderer regression is synthetic and is not retail framebuffer parity or visual confirmation of captured texture contents.",
+    "The post-fix plugin has not yet been replayed against the 14-draw retail transition; the exact captured format-26 descriptor acceptance remains pending that run.",
     "Only the captured 1280x720 format-26 Copy/Convert texture contract is supported; other extents and unmatched copy states fail closed.",
-    "The complete 14-draw transition remains incomplete, including format-31 intermediate copies and unsupported shader control flow; no full original game frame is established.",
+    "The complete ordered transition remains incomplete, including other format-31 intermediate copies and unsupported shader control flow; no full original game frame is established.",
     "No Android Mali runtime validation was possible because ADB had no connected device."
-  ]
+  ],
+  "replay_after_fix": {
+    "status": "requested from Process 1",
+    "plugin_sha256": "f65edaa4b95627871d334cbaa5ccb4e545c0784552f16e776e5ece02aff261eb",
+    "build_id": "71abe9ca09b7e14ea6b0da1867a7676e17180484",
+    "requested_scope": "One 135-second Native-only replay with the same XEX/runtime/resources. Verify draw #10 advances past the format-26 gate and report any next shader/resource blocker or draw submission. No Xenos comparison replay."
+  }
 }

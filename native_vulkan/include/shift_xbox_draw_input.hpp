@@ -819,6 +819,14 @@ bool decode_captured_copy_state(
     CapturedCopyState* output,
     std::string* error);
 
+// Matches the captured 1280x720 format-26 texture to its all-sample copy from
+// the corresponding 4x Xenos raster: the source extent is 2560x1440, while its
+// logical size and surface pitch remain 1280x720.
+bool captured_format26_copy_matches_texture_fetch(
+    const CapturedTextureFetch& texture,
+    const CapturedCopyState& copy,
+    const CapturedRasterState& source_raster);
+
 // Resolves the stage-relative 256-register VS/PS float windows and the packed
 // bool values used by the captured PS branch. The float bank is 512 float4
 // registers; the bool bank is eight packed dwords.
