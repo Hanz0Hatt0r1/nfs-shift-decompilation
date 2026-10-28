@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 from pathlib import Path
+import tempfile
 
 
 SCRIPT = Path(__file__).with_name("join_linux_source1_gpu_dispatches_20261028.py")
@@ -24,10 +26,36 @@ shift-native: ring trace PM4_INTERRUPT #20 source=1 dispatch_id=0000000000005A18
     assert interrupts[0x5A17][0]["packet_source_offset"] == 1464
     assert interrupts[0x5A18][0]["packet_ordinal"] == 121
 
+    with tempfile.TemporaryDirectory() as temporary_directory:
+        run_dir = Path(temporary_directory)
+        log_path = run_dir / "bin" / "logs" / "native.log"
+        log_path.parent.mkdir(parents=True)
+        log_path.write_bytes(pm4_log.encode())
+        log_sha256 = hashlib.sha256(log_path.read_bytes()).hexdigest()
+        JOIN.validate_interrupt_log_identity({
+            "p2_ring_trace_logs": [{
+                "path": "bin/logs/native.log", "sha256": log_sha256,
+            }],
+        }, run_dir, log_path, log_sha256)
+        try:
+            JOIN.validate_interrupt_log_identity({
+                "p2_ring_trace_logs": [{
+                    "path": "bin/logs/native.log", "sha256": "0" * 64,
+                }],
+            }, run_dir, log_path, log_sha256)
+        except ValueError as exc:
+            assert "hash does not match" in str(exc)
+        else:
+            raise AssertionError("same-run GPU log hash mismatch was accepted")
+
     events = {
         "schema": "shift.xbox360.linux-gpu-backend-events.v1",
         "gpu_backend": "shift-native",
         "gpu_dispatch_id_trace": {"getter_available": True},
+        "mapped_hashes": {
+            "/capture/librexruntime.so": "c" * 64,
+            "/capture/librexgpu-shift-native.so": "b" * 64,
+        },
         "events": {
             "source1_callback_events": [
                 {"gpu_dispatch_id": 0x5A17, "trace_sequence": 40,
@@ -62,6 +90,7 @@ shift-native: ring trace PM4_INTERRUPT #20 source=1 dispatch_id=0000000000005A18
     report = JOIN.join_dispatches(events, pm4_log, {
         "gpu_backend": "shift-native",
         "xex_sha256": "a" * 64,
+        "runtime_sha256": "c" * 64,
         "plugin_sha256": "b" * 64,
     })
     assert report["summary"]["matched_dispatch_ids"] == 1
@@ -107,11 +136,15 @@ shift-native: ring trace PM4_INTERRUPT #20 source=1 dispatch_id=0000000000005A18
 
     mismatched_plugin_events = {
         **events,
-        "mapped_hashes": {"/capture/librexgpu-shift-native.so": "c" * 64},
+        "mapped_hashes": {
+            **events["mapped_hashes"],
+            "/capture/librexgpu-shift-native.so": "c" * 64,
+        },
     }
     try:
         JOIN.join_dispatches(mismatched_plugin_events, pm4_log, {
-            "gpu_backend": "shift-native", "plugin_sha256": "b" * 64,
+            "gpu_backend": "shift-native", "runtime_sha256": "c" * 64,
+            "plugin_sha256": "b" * 64,
         })
     except ValueError as exc:
         assert "plugin hash" in str(exc)

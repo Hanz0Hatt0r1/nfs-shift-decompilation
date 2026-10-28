@@ -55,6 +55,23 @@ def format_dispatch_id(dispatch_id: int) -> str:
     return f"0x{dispatch_id:016X}"
 
 
+def validate_interrupt_log_identity(
+    metadata: dict[str, Any], run_dir: Path, log_path: Path, log_sha256: str,
+) -> None:
+    try:
+        relative_path = log_path.resolve().relative_to(run_dir.resolve()).as_posix()
+    except ValueError as exc:
+        raise ValueError("interrupt log is outside the run directory") from exc
+    expected = next((
+        row for row in (metadata.get("p2_ring_trace_logs") or [])
+        if isinstance(row, dict) and row.get("path") == relative_path
+    ), None)
+    if expected is None:
+        raise ValueError("interrupt log is not listed in run metadata")
+    if expected.get("sha256") != log_sha256:
+        raise ValueError("interrupt log hash does not match run metadata")
+
+
 def parse_interrupt_rows(log_text: str) -> dict[int, list[dict[str, Any]]]:
     rows: dict[int, list[dict[str, Any]]] = {}
     for line in log_text.splitlines():
@@ -104,13 +121,22 @@ def join_dispatches(
     if metadata:
         if metadata.get("gpu_backend") != events.get("gpu_backend"):
             raise ValueError("run metadata backend does not match events.json")
-        plugin_hash = metadata.get("plugin_sha256")
-        mapped_plugin_hashes = [
-            value for path, value in events.get("mapped_hashes", {}).items()
-            if path.endswith("/librexgpu-shift-native.so")
-        ]
-        if plugin_hash and mapped_plugin_hashes and plugin_hash not in mapped_plugin_hashes:
-            raise ValueError("run metadata plugin hash does not match mapped plugin hash")
+        mapped_hashes = events.get("mapped_hashes", {})
+        for suffix, metadata_key, label in (
+            ("/librexruntime.so", "runtime_sha256", "runtime"),
+            ("/librexgpu-shift-native.so", "plugin_sha256", "plugin"),
+        ):
+            expected_hash = metadata.get(metadata_key)
+            if not expected_hash:
+                continue
+            actual_hashes = [
+                value for path, value in mapped_hashes.items()
+                if path.endswith(suffix)
+            ]
+            if not actual_hashes:
+                raise ValueError(f"events.json has no mapped {label} hash")
+            if expected_hash not in actual_hashes:
+                raise ValueError(f"run metadata {label} hash does not match mapped hash")
 
     source1_callbacks: dict[int, list[dict[str, Any]]] = {}
     guest_events: dict[int, list[dict[str, Any]]] = {}
@@ -220,11 +246,19 @@ def main() -> int:
         )
         if metadata and metadata.get("schema") != "shift.xbox360.linux-gpu-backend-run.v1":
             raise ValueError("unsupported run metadata schema")
+        if not metadata:
+            raise ValueError("run_metadata.json is required to verify the same-run GPU log")
+        if metadata.get("plugin_sha256") != metadata.get("staged_plugin_sha256"):
+            raise ValueError("staged plugin hash does not match run metadata")
         log_bytes = args.interrupt_log.read_bytes()
         log_text = log_bytes.decode("utf-8", errors="replace")
+        log_sha256 = hashlib.sha256(log_bytes).hexdigest()
+        validate_interrupt_log_identity(
+            metadata, args.events.parent, args.interrupt_log, log_sha256,
+        )
         report = join_dispatches(
             events, log_text, metadata,
-            interrupt_log_sha256=hashlib.sha256(log_bytes).hexdigest(),
+            interrupt_log_sha256=log_sha256,
         )
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         print(f"source1 GPU dispatch join failed: {exc}", file=sys.stderr)
