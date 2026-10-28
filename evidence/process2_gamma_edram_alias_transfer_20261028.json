@@ -82,6 +82,8 @@
       "physical_device": "NVIDIA GeForce GTX 950",
       "covered_regressions": [
         "captured-shaped gamma 4x-to-1x alias transfer",
+        "four 4x sample lanes seeded with distinct colors; every 1280x720 alias result matches a direct 1x lane-pattern baseline byte-for-byte",
+        "all four sample-lane colors remain distinguishable in the packed 10-bit red channel",
         "captured 1x ALWAYS/no-write/no-stencil color draw matches its depth-disabled baseline without requiring a depth resolve",
         "all 14 frame-622 target/depth layouts plus Copy38 submitted with provider-confirmed depth/stencil SAMPLE_ZERO resolve",
         "fail-closed behavior when the exact alias-transfer shaders are absent",
@@ -91,7 +93,9 @@
     "shader_validation": {
       "validator": "spirv-val --target-env vulkan1.1",
       "alias_vertex_shader": "passed",
-      "alias_fragment_shader": "passed"
+      "alias_fragment_shader": "passed",
+      "lane_seed_fixture": "passed",
+      "lane_baseline_fixture": "passed"
     },
     "linux_rexglue_plugin": {
       "sdk_commit": "b3648b0",
@@ -117,6 +121,8 @@
   "result": {
     "exact_capture_layout_recognized": true,
     "synthetic_vulkan_alias_transfer_submitted": true,
+    "synthetic_four_lane_alias_matches_direct_1x_baseline": true,
+    "synthetic_four_lane_colors_distinct_after_transfer": true,
     "synthetic_14_draw_copy38_layout_sequence_submitted_after_change": true,
     "synthetic_14_draw_copy38_readback_nonblack": true,
     "ordered_retail_14_draw_frame_replayed_after_change": false,
@@ -127,6 +133,7 @@
   "limitations": [
     "The available frame-622 presenter and pre-Copy readbacks were produced by the plugin build named in the capture record, before this change; they are not evidence of this transfer's output.",
     "The regression uses synthetic shader/geometry smoke inputs with the captured raster layout. It verifies Vulkan submission, address selection, and fail-closed behavior, not the retail image.",
+    "The four-lane oracle seeds multisample values and compares the alias result to a direct single-sample shader; both use synthetic shaders and do not establish retail shader or pixel parity.",
     "The full 14-draw regression uses smoke point geometry/shaders and checks only that the readback is non-black. It is not a replay of captured retail vertex/index/resource payloads and does not establish retail pixel parity.",
     "This is a bounded color transfer, not a shared physical EDRAM store. Prior-frame target persistence and general Copy/Convert or format-31 chains remain separate work.",
     "The isolated color regression removes the no-op 1x ALWAYS depth test but keeps later guest depth/stencil uses conservative. The complete frame includes a later 4x stencil-only operation and may require provider-confirmed depth/stencil resolve; parity with Xenos EDRAM depth/stencil sample addressing is unverified.",

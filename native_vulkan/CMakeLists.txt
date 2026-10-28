@@ -195,6 +195,24 @@ if(GLSLANG_VALIDATOR)
     VERBATIM
   )
   add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/edram_alias_lane_seed.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/edram_alias_lane_seed.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/edram_alias_lane_seed.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/edram_alias_lane_seed.frag
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/edram_alias_lane_baseline.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/edram_alias_lane_baseline.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/edram_alias_lane_baseline.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/edram_alias_lane_baseline.frag
+    VERBATIM
+  )
+  add_custom_command(
     OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_black.frag.spv
     COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
     COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
@@ -289,6 +307,8 @@ if(GLSLANG_VALIDATOR)
       ${SHIFT_VULKAN_SHADER_DIR}/edram_clear.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_edram_alias_4x_to_1x.vert.spv
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_edram_alias_4x_to_1x.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/edram_alias_lane_seed.frag.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/edram_alias_lane_baseline.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_black.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_encoded.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/gamma_target_linear.frag.spv
@@ -331,6 +351,8 @@ if(GLSLANG_VALIDATOR)
             ${SHIFT_VULKAN_SHADER_DIR}/edram_clear.frag.spv
             ${SHIFT_VULKAN_SHADER_DIR}/xenos_edram_alias_4x_to_1x.vert.spv
             ${SHIFT_VULKAN_SHADER_DIR}/xenos_edram_alias_4x_to_1x.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/edram_alias_lane_seed.frag.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/edram_alias_lane_baseline.frag.spv
   )
   set_tests_properties(xbox_live_vulkan_renderer_check PROPERTIES SKIP_RETURN_CODE 77)
 

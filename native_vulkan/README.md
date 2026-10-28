@@ -631,6 +631,17 @@ provider-confirmed `SAMPLE_ZERO` resolve path. The test substitutes smoke point
 shaders and geometry for the retail draw payloads and checks a non-black
 readback; it verifies executor acceptance and ordering, not retail pixels.
 
+A separate alias oracle seeds each of the four 4x sample lanes with a distinct
+color, runs the captured 4x-to-1x alias transfer, and compares every packed
+1280x720 output pixel with a direct 1x shader using the transfer's expected
+lane pattern. The outputs match byte-for-byte, and all four red-channel codes
+remain distinct. This validates sample-lane selection through the Vulkan
+transfer with synthetic shaders; it does not establish retail pixel parity.
+Both oracle shaders pass `spirv-val --target-env vulkan1.1`, and native CTest
+passes 4/4 with `VK_LAYER_KHRONOS_validation`. The result and exact scope are
+recorded in
+[`process2_gamma_edram_alias_transfer_20261028.json`](../evidence/process2_gamma_edram_alias_transfer_20261028.json).
+
 The 1280x720 pre-Copy source is single-sample `R16G16B16A16_UNORM`; the
 presenter image is `A2B10G10R10_UNORM_PACK32`. After the Copy's 16-bit to
 8-bit to 10-bit UNORM quantization, 920,250 of 921,600 pixels match exactly

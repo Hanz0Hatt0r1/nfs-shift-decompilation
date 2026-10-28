@@ -173,12 +173,16 @@ bool read_bytes(const char* path, std::vector<uint8_t>* output) {
 }  // namespace
 
 int main(int argc, char** argv) {
+    const bool has_edram_alias_shaders = argc == 30 || argc == 32;
+    const bool has_alias_lane_shaders = argc == 32;
     const bool has_copy_destination_shaders =
-        argc == 18 || argc == 19 || argc == 27 || argc == 28 || argc == 30;
+        argc == 18 || argc == 19 || argc == 27 || argc == 28 ||
+        has_edram_alias_shaders;
     const bool has_edram_clear_shader =
-        argc == 19 || argc == 24 || argc == 28 || argc == 30;
+        argc == 19 || argc == 24 || argc == 28 || has_edram_alias_shaders;
     if (argc != 14 && argc != 18 && argc != 23 && argc != 24 &&
-        argc != 19 && argc != 27 && argc != 28 && argc != 30) {
+        argc != 19 && argc != 27 && argc != 28 &&
+        !has_edram_alias_shaders) {
         std::cerr << "usage: xbox_live_vulkan_renderer_check vertex.spv fragment.spv "
                      "geometry.spv copy-vertex.spv copy-fragment.spv "
                      "copy-single-fragment.spv window-vertex.spv window-fragment.spv "
@@ -398,7 +402,7 @@ int main(int argc, char** argv) {
     std::vector<uint32_t> disclaimer_vertex_spirv;
     std::vector<uint32_t> disclaimer_encoded_fragment_spirv;
     std::vector<uint32_t> disclaimer_linear_fragment_spirv;
-    if ((argc == 24 || argc == 28 || argc == 30) &&
+    if ((argc == 24 || argc == 28 || has_edram_alias_shaders) &&
         (!read_spirv(argv[14], &disclaimer_vertex_spirv) ||
          !read_spirv(argv[15], &disclaimer_encoded_fragment_spirv) ||
          !read_spirv(argv[16], &disclaimer_linear_fragment_spirv))) {
@@ -412,7 +416,7 @@ int main(int argc, char** argv) {
     std::vector<uint32_t> edram_clear_fragment_spirv;
     if (has_copy_destination_shaders) {
         const int first_copy_destination_shader =
-            (argc == 27 || argc == 28 || argc == 30) ? 23 : 14;
+            (argc == 27 || argc == 28 || has_edram_alias_shaders) ? 23 : 14;
         if (!read_spirv(argv[first_copy_destination_shader],
                         &copy_4x_u16x4_spirv) ||
             !read_spirv(argv[first_copy_destination_shader + 1],
@@ -422,7 +426,7 @@ int main(int argc, char** argv) {
             !read_spirv(argv[first_copy_destination_shader + 3],
                         &copy_constant_fragment_spirv) ||
             (has_edram_clear_shader &&
-             !read_spirv(argv[argc == 30 ? 27 : argc - 1],
+             !read_spirv(argv[has_edram_alias_shaders ? 27 : argc - 1],
                          &edram_clear_fragment_spirv))) {
             std::cerr << "could not read Vulkan 1.1 intermediate Copy/Convert shaders\n";
             return 1;
@@ -430,10 +434,18 @@ int main(int argc, char** argv) {
     }
     std::vector<uint32_t> edram_alias_transfer_vertex_spirv;
     std::vector<uint32_t> edram_alias_transfer_fragment_spirv;
-    if (argc == 30 &&
+    if (has_edram_alias_shaders &&
         (!read_spirv(argv[28], &edram_alias_transfer_vertex_spirv) ||
          !read_spirv(argv[29], &edram_alias_transfer_fragment_spirv))) {
         std::cerr << "could not read Vulkan 1.1 EDRAM alias transfer shaders\n";
+        return 1;
+    }
+    std::vector<uint32_t> edram_alias_lane_seed_fragment_spirv;
+    std::vector<uint32_t> edram_alias_lane_baseline_fragment_spirv;
+    if (has_alias_lane_shaders &&
+        (!read_spirv(argv[30], &edram_alias_lane_seed_fragment_spirv) ||
+         !read_spirv(argv[31], &edram_alias_lane_baseline_fragment_spirv))) {
+        std::cerr << "could not read EDRAM alias lane oracle shaders\n";
         return 1;
     }
     copy.edram_alias_transfer_vertex_shader_spirv =
@@ -2873,6 +2885,119 @@ int main(int argc, char** argv) {
                      "mixed-sample color output or requested a depth resolve: "
                   << no_depth_test_baseline_error << '\n';
         return 1;
+    }
+    if (has_alias_lane_shaders) {
+        auto make_alias_lane_draw = [&](uint32_t sample_count,
+                                        uint32_t surface_pitch,
+                                        uint32_t color_write_mask,
+                                        const std::vector<uint32_t>& pixel_shader) {
+            auto lane_draw = draw;
+            lane_draw.vertex_shader_spirv =
+                edram_alias_transfer_vertex_spirv;
+            lane_draw.geometry_shader_spirv.clear();
+            lane_draw.pixel_shader_spirv = pixel_shader;
+            lane_draw.pixel_shader_spirv_linear_target = pixel_shader;
+            lane_draw.topology = shift::xbox::PrimitiveTopology::TriangleList;
+            lane_draw.index_count = 3;
+            lane_draw.auto_index = true;
+            lane_draw.vertex_stride_bytes = 0;
+            lane_draw.vertices.clear();
+            lane_draw.indices.clear();
+            lane_draw.vertex_input_attributes.clear();
+            lane_draw.raster.color_base_tiles = 0;
+            lane_draw.raster.depth_base_tiles = 720;
+            lane_draw.raster.surface_pitch = surface_pitch;
+            lane_draw.raster.sample_count = sample_count;
+            lane_draw.raster.guest_color_format = 1;
+            lane_draw.raster.color_format =
+                shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
+            lane_draw.raster.color_write_mask = color_write_mask;
+            lane_draw.raster.depth_test_enabled = false;
+            lane_draw.raster.depth_write_enabled = false;
+            lane_draw.raster.stencil_test_enabled = false;
+            lane_draw.raster.depth_control = 0;
+            lane_draw.raster.stencil_refmask = 0;
+            lane_draw.raster.viewport_y_flipped = true;
+            lane_draw.raster.scissor_x0 = 0;
+            lane_draw.raster.scissor_y0 = 0;
+            lane_draw.raster.scissor_x1 = 1280;
+            lane_draw.raster.scissor_y1 = 720;
+            lane_draw.raster.scissor_has_area = true;
+            lane_draw.raster.blend_control_0 = 0x00010001u;
+            return lane_draw;
+        };
+        std::vector<shift::xbox::CapturedVulkanDraw> lane_alias_draws;
+        lane_alias_draws.reserve(5);
+        for (uint32_t lane = 0; lane < 4; ++lane) {
+            auto seed = make_alias_lane_draw(
+                4, 640, 0xFu, edram_alias_lane_seed_fragment_spirv);
+            const float lane_constant = static_cast<float>(lane);
+            std::memcpy(seed.constants.pixel_float_constants[0].data(),
+                        &lane_constant, sizeof(lane_constant));
+            lane_alias_draws.push_back(std::move(seed));
+        }
+        auto preserve_alias_color = make_alias_lane_draw(
+            1, 1280, 0, edram_alias_lane_seed_fragment_spirv);
+        lane_alias_draws.push_back(std::move(preserve_alias_color));
+
+        std::string lane_alias_error;
+        std::vector<uint32_t> lane_alias_output;
+        if (!shift::xbox::submit_captured_vulkan_frame(
+                physical_device, device, queue, queue_family, output_image,
+                output_view, false, 1280, 720, lane_alias_draws,
+                &lane_alias_error, &lane_alias_output,
+                enabled_features.geometryShader, &copy) ||
+            lane_alias_output.size() != 1280u * 720u) {
+            std::cerr << "per-sample EDRAM alias source fixture failed: "
+                      << lane_alias_error << '\n';
+            return 1;
+        }
+
+        auto lane_baseline_draw = make_alias_lane_draw(
+            1, 1280, 0xFu, edram_alias_lane_baseline_fragment_spirv);
+        std::string lane_baseline_error;
+        std::vector<uint32_t> lane_baseline_output;
+        if (!shift::xbox::submit_captured_vulkan_frame(
+                physical_device, device, queue, queue_family, output_image,
+                output_view, false, 1280, 720, {lane_baseline_draw},
+                &lane_baseline_error, &lane_baseline_output,
+                enabled_features.geometryShader, &copy) ||
+            lane_baseline_output.size() != 1280u * 720u) {
+            std::cerr << "direct EDRAM alias lane baseline failed: "
+                      << lane_baseline_error << '\n';
+            return 1;
+        }
+        if (lane_alias_output != lane_baseline_output) {
+            size_t mismatch = 0;
+            while (mismatch < std::min(lane_alias_output.size(),
+                                       lane_baseline_output.size()) &&
+                   lane_alias_output[mismatch] == lane_baseline_output[mismatch]) {
+                ++mismatch;
+            }
+            std::cerr << "4x-to-1x EDRAM alias sample selection differed from "
+                         "the direct lane-pattern baseline at pixel "
+                      << mismatch << " (alias=0x" << std::hex
+                      << (mismatch < lane_alias_output.size()
+                              ? lane_alias_output[mismatch] : 0)
+                      << ", baseline=0x"
+                      << (mismatch < lane_baseline_output.size()
+                              ? lane_baseline_output[mismatch] : 0)
+                      << std::dec << ")\n";
+            return 1;
+        }
+        std::vector<uint32_t> distinct_red_codes;
+        for (const uint32_t pixel : lane_baseline_output) {
+            const uint32_t red = pixel & 0x3FFu;
+            if (std::find(distinct_red_codes.begin(), distinct_red_codes.end(),
+                          red) == distinct_red_codes.end()) {
+                distinct_red_codes.push_back(red);
+            }
+        }
+        if (distinct_red_codes.size() != 4) {
+            std::cerr << "EDRAM alias lane oracle did not retain all four sample "
+                         "colors (found " << distinct_red_codes.size() << ")\n";
+            return 1;
+        }
     }
     auto missing_alias_shaders = copy;
     missing_alias_shaders.edram_alias_transfer_vertex_shader_spirv.clear();
