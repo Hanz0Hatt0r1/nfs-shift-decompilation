@@ -1584,6 +1584,33 @@ int main(int argc, char** argv) {
                 << retail_transition_error << '\n';
       return 1;
     }
+    std::vector<shift::xbox::CapturedVulkanOperation>
+        retail_transition_operations;
+    for (uint32_t draw_index = 0;
+         draw_index < retail_transition_draws.size(); ++draw_index) {
+      shift::xbox::CapturedVulkanOperation operation{};
+      operation.type = shift::xbox::CapturedVulkanOperation::Type::Draw;
+      operation.packet_index = draw_index;
+      operation.draw_index = draw_index;
+      retail_transition_operations.push_back(operation);
+    }
+    std::string retail_ordered_alias_error;
+    const std::string expected_retail_alias_map =
+        "alias tile map={color=unavailable: captured Xenos EDRAM alias layout "
+        "wraps across the 2048-tile store,depth=unavailable: captured Xenos "
+        "EDRAM alias layout wraps across the 2048-tile store}";
+    if (shift::xbox::submit_captured_vulkan_operation_stream(
+            physical_device, device, queue, queue_family, output_image,
+            output_view, false, 1280, 720, retail_transition_draws,
+            retail_transition_operations, &retail_ordered_alias_error, nullptr,
+            enabled_features.geometryShader, nullptr, false, {}, pipeline_cache,
+            nullptr) ||
+        retail_ordered_alias_error.find(expected_retail_alias_map) ==
+            std::string::npos) {
+      std::cerr << "ordered retail layout rejection omitted the exact alias-map limit: "
+                << retail_ordered_alias_error << '\n';
+      return 1;
+    }
     for (size_t draw_index = 0; draw_index < retail_layout_by_draw.size();
          ++draw_index) {
       const auto& layout =

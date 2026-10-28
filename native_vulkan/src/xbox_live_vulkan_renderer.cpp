@@ -5399,6 +5399,27 @@ bool submit_captured_vulkan_operation_stream(
                     << ",depth_only=" << raster.depth_only << '}';
         return description.str();
     };
+    const auto describe_alias_tiles = [](
+        const CapturedRasterState& source,
+        const CapturedRasterState& destination) {
+        std::vector<CapturedEdramTileAlias> color_tiles;
+        std::vector<CapturedEdramTileAlias> depth_tiles;
+        std::string color_error;
+        std::string depth_error;
+        const bool color_mapped = captured_xenos_edram_alias_tiles(
+            source, destination, false, &color_tiles, &color_error);
+        const bool depth_mapped = captured_xenos_edram_alias_tiles(
+            source, destination, true, &depth_tiles, &depth_error);
+        std::ostringstream description;
+        description << "alias tile map={color=";
+        if (color_mapped) description << color_tiles.size();
+        else description << "unavailable: " << color_error;
+        description << ",depth=";
+        if (depth_mapped) description << depth_tiles.size();
+        else description << "unavailable: " << depth_error;
+        description << '}';
+        return description.str();
+    };
 
     size_t preflight_draw_count = 0;
     uint32_t preflight_first_draw = std::numeric_limits<uint32_t>::max();
@@ -5438,6 +5459,8 @@ bool submit_captured_vulkan_operation_stream(
                                    draws[preflight_layout_draw].raster)
                             << ", next layout=" << describe_target_layout(draw_raster)
                             << ", overlapping tile=" << overlap_tile;
+                    message << ", " << describe_alias_tiles(
+                        draws[preflight_layout_draw].raster, draw_raster);
                     return fail(message.str(), error);
                 }
             }
@@ -5478,6 +5501,8 @@ bool submit_captured_vulkan_operation_stream(
                                 << " changes Xenos EDRAM target layout across a Copy/Convert boundary; "
                                    "tile " << overlap_tile
                                 << " aliases a cached layout and requires shared physical EDRAM backing";
+                        message << "; " << describe_alias_tiles(previous,
+                                                                 draw_raster);
                         return fail(message.str(), error);
                     }
                 }
@@ -5677,6 +5702,8 @@ bool submit_captured_vulkan_operation_stream(
                             << " changes target layout before a Copy/Convert boundary; "
                                "ordered Xenos EDRAM alias transfer is unavailable; overlapping tile="
                             << overlap_tile;
+                    message << ", " << describe_alias_tiles(
+                        stage_draws[stage_layout_draw].raster, draw.raster);
                     return fail(message.str(), error);
                 }
                 if (!submit_stage(nullptr, false, false,

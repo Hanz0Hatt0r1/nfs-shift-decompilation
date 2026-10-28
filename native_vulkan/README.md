@@ -484,6 +484,10 @@ transfer across aliases are still unimplemented. Native CTest passed 4/4 and
 Linux plugin CTest passed 6/6 under `VK_LAYER_KHRONOS_validation`; Android
 ARM64 renderer and checker targets compiled, but no device was connected. See
 [`process2_edram_alias_tile_map_20261028.json`](../evidence/process2_edram_alias_tile_map_20261028.json).
+When an ordered stream hits an alias, its rejection now reports the shared
+color/depth tile counts or the exact reason that a unique tile mapping could
+not be built. The retail draw-0/draw-1 regression checks that this diagnostic
+is produced during preflight, before any draw reaches Vulkan.
 
 ## Conservative EDRAM layout switching (2026-10-27)
 

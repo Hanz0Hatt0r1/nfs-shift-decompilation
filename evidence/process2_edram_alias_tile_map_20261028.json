@@ -4,7 +4,7 @@
   "branch": "work/process2-xbox-live-ring-20261023",
   "implementation": {
     "api": "captured_xenos_edram_alias_tiles",
-    "behavior": "Enumerates shared physical EDRAM tile IDs and source/destination tile coordinates for a pair of captured layouts. It supports differing sample counts through the existing sample-address and reverse-coordinate helpers.",
+    "behavior": "Enumerates shared physical EDRAM tile IDs and source/destination tile coordinates for a pair of captured layouts. It supports differing sample counts through the existing sample-address and reverse-coordinate helpers. Ordered-renderer fail-closed diagnostics report same-plane alias counts or the map's ambiguity reason.",
     "safety": "Rejects a full layout extent that wraps one physical tile more than once. Such an image-to-backing mapping needs exact draw coverage and operation order. It does not infer color/depth format conversion or transfer Vulkan image data.",
     "format_scope": "The existing 32bpp EDRAM address model; true 64bpp color addressing remains unsupported."
   },
@@ -50,14 +50,16 @@
     "linux_rexglue_plugin": {
       "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
       "result": "passed 6/6",
-      "plugin_sha256": "22ad3949e35c2d9db11540fc6563e895a8bc2d03f6d1166eb1979222ffb87dac",
-      "build_id": "baeac82aa4c84011ad3c536bbbde2e3add78d0b1"
+      "plugin_sha256": "0418b322714c41104294ef1e29fa570793e4549fcc9d5235810ccfb812f1e4e3",
+      "build_id": "7e7e119f5f4c99fa2182c1f48f035fff6ed48c71"
     },
     "android_arm64": {
       "command": "cmake --build /home/pes/work/.build-process2-p2161-android-renderer-20261027 --target shift_xbox_draw_input_check xbox_live_vulkan_renderer_check --parallel 4",
       "result": "both targets compiled",
       "draw_input_library_sha256": "8d76d35c09bb4e1ac8dc45585dc6dcf3569f2939960dea1bc3e20b6a131459a8",
       "draw_input_check_sha256": "dfb9a30cf35f921f7cc2e6102b0c630ccdf7161bf3744b3fdbcc925b22138586",
+      "renderer_library_sha256": "1026521fc777fc4170862008933624bad91d7d5fc31719ac3ecf216d7751e9a0",
+      "renderer_check_sha256": "50c039aa523d40d775fcd47d9133faf7f22edb130b0c08a72052be202428c28c",
       "device_runtime": "not run; adb devices -l returned no connected devices"
     },
     "diff_check": "git diff --check passed"
