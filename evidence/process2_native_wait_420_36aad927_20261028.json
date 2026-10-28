@@ -1,0 +1,409 @@
+{
+  "capture_root_at_run": "/dev/shm/nfs-shift-p2-native-only-420-36aad927-20261028",
+  "captured_on": "2026-10-28",
+  "conclusion": "This Native-only run reaches only head 2739, below the reported 3381 rollback window. A memory-mode WAIT_REG_MEM command read 0x1 at 0x1B964004 while requiring equality to zero and remained false through poll 7000. The ring later resumed at the capture-deadline shutdown and emitted head 2737 then 2739; no ordinary guest writer or wait completion record was captured. This localizes a long synchronization stall but does not explain the earlier 3381->3375 write or prove the memory transition that released this wait.",
+  "event_write_shd_audit": {
+    "last_target_write": {
+      "batch": 1783,
+      "batch_rptr": 35,
+      "batch_wptr": 41,
+      "decoded_value": 2739,
+      "destination_host": "0x217af4000",
+      "encoded_address": 397361154,
+      "endian": 2,
+      "event": 2743,
+      "expanded_words": [
+        3221379072,
+        3,
+        397361154,
+        2739
+      ],
+      "generation": 1,
+      "guest_physical": 397361152,
+      "guest_value_after": 2739,
+      "guest_value_before": 2737,
+      "initiator": 3,
+      "monotonic_ns": 51681540459465,
+      "nesting_depth": 1,
+      "packet_ordinal": 66,
+      "packet_value": 2739,
+      "raw_store": 3003777024,
+      "raw_words": [
+        3221379072,
+        3,
+        397361154,
+        2739
+      ],
+      "ring_guest": 158672256,
+      "source_bytes_match": true,
+      "source_ib": 157947712,
+      "source_offset": 344,
+      "swap_counter": 705,
+      "value_mode": "literal"
+    },
+    "regressions": [],
+    "source_byte_mismatches": [],
+    "summary": {
+      "event_sequence_range": [
+        0,
+        2743
+      ],
+      "event_write_records": 2744,
+      "expanded_to_execution_byte_mismatches": 0,
+      "missing_event_sequence_ids": [],
+      "target_previous_after_mismatches": 0,
+      "target_regression_count": 0,
+      "target_transition_delta_counts": {
+        "2": 1369
+      },
+      "target_write_count": 1369
+    },
+    "target_previous_after_mismatches": []
+  },
+  "interrupt_dispatch_join": {
+    "interpretation": "This is a timestamp/order join to a unique continuous PM4 interrupt window. Process 1 records callbacks observed inside the guest wrapper; Process 2 records the outer guest callback and data passed to ExecuteInterrupt. This does not prove callback payload or guest semantic equivalence.",
+    "join_method": "exact gpu_dispatch_id; one P2 interrupt may own multiple nested P1 callbacks",
+    "max_absolute_timestamp_delta_ms": 120,
+    "rows": [
+      {
+        "batch_rptr": 32,
+        "batch_wptr": 35,
+        "cpu_mask": "0x04",
+        "dispatch_cpu": 2,
+        "dispatch_status": "invoked",
+        "dispatched_cpu_mask": "0x04",
+        "gpu_dispatch_id": 14787,
+        "outer_callback_data": "0xb7365f00",
+        "outer_callback_wrapper": "0x823b37b8",
+        "p1_callback_data": "0x00000208",
+        "p1_callback_index": 0,
+        "p1_callback_object": "0xfb963000",
+        "p1_cpu_mask": "0x04",
+        "p1_registered_callback_function": "0x823a4758",
+        "p1_wall_clock_epoch_ms": 1793193793481,
+        "p2_pm4_interrupt_id": 704,
+        "p2_wall_clock_epoch_ms": 1793193793483,
+        "packet_source": "0969E640+11924",
+        "pm4_packet_ordinal": 246,
+        "ring_generation": 1,
+        "ring_guest": "0x09752580",
+        "source": 1,
+        "timestamp_delta_ms_p2_minus_p1": 2
+      }
+    ],
+    "schema": "shift.process2.pm4_interrupt_join_audit.v2",
+    "summary": {
+      "absolute_timestamp_delta_ms": {
+        "max": 2,
+        "median": 2,
+        "min": 2
+      },
+      "joined_rows": 1,
+      "p1_registered_callback_targets": {
+        "0x823A4758": 1
+      },
+      "p2_events_outside_joined_window": 704,
+      "p2_ids_contiguous": true,
+      "p2_interrupt_id_range": [
+        704,
+        704
+      ],
+      "p2_outer_callback_wrappers": {
+        "0x823B37B8": 1
+      },
+      "p2_source1_events_considered": 705
+    }
+  },
+  "p1_guest_observation": {
+    "counts": {
+      "bink_complete_events": 1,
+      "completion_events": 0,
+      "controller_return_events": 0,
+      "controller_update_events": 2,
+      "counter_write_events": 0,
+      "dequeue_events": 0,
+      "enqueue_events": 0,
+      "event_call_events": 2,
+      "event_write_shd_packet_events": 0,
+      "host_input_events": 0,
+      "input_gate_events": 0,
+      "ke_wait_return_events": 1,
+      "producer_call_events": 4,
+      "producer_events": 0,
+      "queue_field_write_events": 0,
+      "retail_queue_wait_events": 1,
+      "retail_queue_wait_return_events": 1,
+      "scene_function_events": 0,
+      "scene_function_return_events": 0,
+      "scene_state_events": 0,
+      "source1_callback_events": 1,
+      "submission_route_events": 4,
+      "worker72_write_events": 0,
+      "xam_input_events": 0,
+      "xam_input_return_events": 0
+    },
+    "final_guest_main_backtrace": "#0  0x00007ffff6894efe in ?? () from /usr/lib/libc.so.6\n#1  0x00007ffff689ba59 in pthread_mutex_lock () from /usr/lib/libc.so.6\n#2  0x000055555669b442 in sub_821A2238 ()\n#3  0x00005555584e1819 in sub_822F8D38 ()\n#4  0x00005555581d2fd4 in sub_822D7C28 ()\n#5  0x0000555558d4054e in sub_822D6030 ()\n#6  0x00005555587c70b8 in sub_82FC1880 ()\n#7  0x0000555558a66198 in sub_82D30380 ()",
+    "final_scene_state": {
+      "child_words_264": [
+        3147612464,
+        3146370976,
+        3146371024,
+        1
+      ],
+      "list_count_36": 1,
+      "object": 2199806340,
+      "state_348": 1,
+      "update_count_356": 407
+    },
+    "source1_callbacks": [
+      {
+        "arguments_r3_to_r10": [
+          1,
+          3073793792,
+          2199006128,
+          235981,
+          2199006128,
+          2198405120,
+          3073810372,
+          1
+        ],
+        "callback_bit_index": 2,
+        "callback_bit_mask": 4,
+        "callback_data": 520,
+        "callback_function": 2184857432,
+        "callback_mask": 4,
+        "callback_object": 4220923904,
+        "elapsed_seconds": 237.282,
+        "entry_ordinal": 1,
+        "gpu_dispatch_id": 14787,
+        "guest_lr": 3166485692,
+        "kind": "source1_callback",
+        "manager": 3073793792,
+        "manager_counter_before": 0,
+        "manager_flag_bit_set_before": false,
+        "manager_flags_before": 0,
+        "manager_words_10904_to_1091c": [
+          0,
+          2741,
+          0,
+          8206,
+          132608,
+          67584,
+          2739
+        ],
+        "software_queue": {
+          "head": 2735,
+          "head_pointer": 3081715712,
+          "predicate_byte": 4,
+          "tail": 2741
+        },
+        "source": 1,
+        "thread": 11,
+        "thread_name": "SHIFT Native GP",
+        "trace_sequence": 17,
+        "wall_clock_epoch_ms": 1793193793481
+      }
+    ]
+  },
+  "raw_capture_archive": "process2_native_wait_420_36aad927_20261028_raw.tar.gz",
+  "raw_capture_inputs": [
+    {
+      "bytes": 3615,
+      "path_at_capture": "/dev/shm/nfs-shift-p2-native-only-420-36aad927-20261028/capture_metadata.json",
+      "sha256": "ce99599c4edb26403802057c2d796a32b3e4b3e816ae8bbe4b99f6d8c54c5cba"
+    },
+    {
+      "bytes": 385170,
+      "path_at_capture": "/dev/shm/nfs-shift-p2-native-only-420-36aad927-20261028/runs/shift-native-r1/events.json",
+      "sha256": "e7a0ad922a6b84c602c1428f2c1e9e9dce6abb8bbb4bd00536536b17ae619b8b"
+    },
+    {
+      "bytes": 5652,
+      "path_at_capture": "/dev/shm/nfs-shift-p2-native-only-420-36aad927-20261028/runs/shift-native-r1/run_metadata.json",
+      "sha256": "9d201e04b2757962f2a9f5a36a4c3e424b952a50e91a5f4e8f3af29cb37e2c32"
+    },
+    {
+      "bytes": 36061,
+      "path_at_capture": "/dev/shm/nfs-shift-p2-native-only-420-36aad927-20261028/runs/shift-native-r1/gdb.log",
+      "sha256": "53cb89f7352d94d0a2754ba20b161662dea2f1da7b74ca9e2aa2538e83d10f0f"
+    },
+    {
+      "bytes": 36912,
+      "path_at_capture": "/dev/shm/nfs-shift-p2-native-only-420-36aad927-20261028/runs/shift-native-r1/runner.log",
+      "sha256": "1020d5b48353bbbd872b1299d1b2c609029c17566e878ae8203f7a27302ec3b8"
+    },
+    {
+      "bytes": 5242835,
+      "path_at_capture": "/dev/shm/nfs-shift-p2-native-only-420-36aad927-20261028/runs/shift-native-r1/bin/logs/nfs_shift_001.1.log",
+      "sha256": "3527c73c2a0cc5af52d33e20d61859f317f84f2bcf8fc3e8acda22fc1f6ec391"
+    },
+    {
+      "bytes": 5055954,
+      "path_at_capture": "/dev/shm/nfs-shift-p2-native-only-420-36aad927-20261028/runs/shift-native-r1/bin/logs/nfs_shift_001.log",
+      "sha256": "23b890c74063c5be5cb4c0a54984258b23fe21b8f84ba8e2fccc18c51311c1e0"
+    },
+    {
+      "bytes": 1230611,
+      "path_at_capture": "/tmp/p2-native-only-420-event-audit.json",
+      "sha256": "220677d7fd4bc286d1ab8fda1b81f17ea6c1a7d3f1b80708d5d4863836affb88"
+    },
+    {
+      "bytes": 1797,
+      "path_at_capture": "/tmp/p2-native-only-420-interrupt-join.json",
+      "sha256": "fbb1a801670acc86b7a6d63d735e324470dfdf078dc33ef97fc5cf1dc6e2463d"
+    }
+  ],
+  "run_identity": {
+    "bink_complete_event_recorded": true,
+    "duration_seconds": 421.338,
+    "gdb_exit": 0,
+    "input_gate_observed": false,
+    "input_trigger": "bink_complete",
+    "linux_plugin_build_id": "b3a4dcc4f3b45c41779f773c9295f20d7805ebf1",
+    "linux_plugin_sha256": "cf9ffc3775db83c874d69da6dc3e6995976a2ab8243409d8e2ef048c4aa61deb",
+    "p2_source_commit": "36aad9274f6c39be9c60028da085300fcafeccf8",
+    "sdk_provider_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6"
+  },
+  "schema": "shift.process2.native-queue-wait-diagnostic.v1",
+  "wait_reg_mem_observation": {
+    "batch_rptr": 32,
+    "batch_wptr": 35,
+    "compare": "Equal (3)",
+    "completion_record_logged": false,
+    "condition": false,
+    "endian_mode": 2,
+    "first_false_sample_wall_clock": "2026-10-28 16:23:13.483 +0300",
+    "first_false_to_resume_seconds": 182.195,
+    "first_post_wait_event": "EVENT_WRITE_SHD event 2740, then software-head event 2741",
+    "first_post_wait_event_wall_clock": "2026-10-28 16:26:15.678 +0300",
+    "guest_address": "0x1B964004",
+    "interpretation": "The ring later resumed and wrote events 2740-2743, so it left this wait before processing them. That burst occurred at the capture deadline and within 0.473 s of the title termination log. Because the wait completion log was suppressed by the existing first-16-waits cap and no memory transition/writer was captured, this does not prove a guest-side release during ordinary gameplay; treat the burst as shutdown-tail evidence.",
+    "last_false_sample_wall_clock": "2026-10-28 16:23:21.352 +0300",
+    "last_false_to_resume_seconds": 174.326,
+    "last_sample_elapsed_ms": 7868,
+    "last_sample_poll_count": 7000,
+    "mask": "0xFFFFFFFF",
+    "memory_mode": true,
+    "observed_value": "0x00000001",
+    "packet_ordinal": 250,
+    "poll_address": "0x1B964006",
+    "post_wait_progress": "The ring later emitted EVENT_WRITE_SHD head 2737 then 2739 from subsequent batches before title termination. The exact time/value transition that released this wait is not logged.",
+    "post_wait_target_writes": [
+      {
+        "batch": 1782,
+        "batch_rptr": 32,
+        "batch_wptr": 35,
+        "decoded_value": 2737,
+        "destination_host": "0x217af4000",
+        "encoded_address": 397361154,
+        "endian": 2,
+        "event": 2741,
+        "expanded_words": [
+          3221379072,
+          3,
+          397361154,
+          2737
+        ],
+        "generation": 1,
+        "guest_physical": 397361152,
+        "guest_value_after": 2737,
+        "guest_value_before": 2735,
+        "initiator": 3,
+        "monotonic_ns": 51681540333839,
+        "nesting_depth": 1,
+        "packet_ordinal": 290,
+        "packet_value": 2737,
+        "raw_store": 2970222592,
+        "raw_words": [
+          3221379072,
+          3,
+          397361154,
+          2737
+        ],
+        "ring_guest": 158672256,
+        "source_bytes_match": true,
+        "source_ib": 157935168,
+        "source_offset": 12508,
+        "swap_counter": 704,
+        "value_mode": "literal"
+      },
+      {
+        "batch": 1783,
+        "batch_rptr": 35,
+        "batch_wptr": 41,
+        "decoded_value": 2739,
+        "destination_host": "0x217af4000",
+        "encoded_address": 397361154,
+        "endian": 2,
+        "event": 2743,
+        "expanded_words": [
+          3221379072,
+          3,
+          397361154,
+          2739
+        ],
+        "generation": 1,
+        "guest_physical": 397361152,
+        "guest_value_after": 2739,
+        "guest_value_before": 2737,
+        "initiator": 3,
+        "monotonic_ns": 51681540459465,
+        "nesting_depth": 1,
+        "packet_ordinal": 66,
+        "packet_value": 2739,
+        "raw_store": 3003777024,
+        "raw_words": [
+          3221379072,
+          3,
+          397361154,
+          2739
+        ],
+        "ring_guest": 158672256,
+        "source_bytes_match": true,
+        "source_ib": 157947712,
+        "source_offset": 344,
+        "swap_counter": 705,
+        "value_mode": "literal"
+      }
+    ],
+    "raw_pm4_words_captured": false,
+    "reference": "0x00000000",
+    "ring_generation": 1,
+    "ring_guest": "0x09752580",
+    "samples": [
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=3760 batch_wptr=3763 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=00000000 observed=00000000 condition=true elapsed_ms=0 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=4132 batch_wptr=4135 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=01000000 observed=00000001 condition=false elapsed_ms=0 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=4132 batch_wptr=4135 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=4 raw=00000000 observed=00000000 condition=true elapsed_ms=4 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=4504 batch_wptr=4507 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=00000000 observed=00000000 condition=true elapsed_ms=0 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=4876 batch_wptr=4879 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=01000000 observed=00000001 condition=false elapsed_ms=0 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=4876 batch_wptr=4879 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=9 raw=00000000 observed=00000000 condition=true elapsed_ms=10 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=5248 batch_wptr=5251 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=01000000 observed=00000001 condition=false elapsed_ms=0 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=5248 batch_wptr=5251 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=8 raw=00000000 observed=00000000 condition=true elapsed_ms=11 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=5617 batch_wptr=5623 ring_guest=09752580 packet=254 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=01000000 observed=00000001 condition=false elapsed_ms=0 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=5617 batch_wptr=5623 ring_guest=09752580 packet=254 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=4 raw=00000000 observed=00000000 condition=true elapsed_ms=4 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=5992 batch_wptr=5995 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=01000000 observed=00000001 condition=false elapsed_ms=0 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=5992 batch_wptr=5995 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=10 raw=00000000 observed=00000000 condition=true elapsed_ms=14 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=6364 batch_wptr=6367 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=01000000 observed=00000001 condition=false elapsed_ms=0 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=6364 batch_wptr=6367 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=1 raw=00000000 observed=00000000 condition=true elapsed_ms=1 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=6736 batch_wptr=6739 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=01000000 observed=00000001 condition=false elapsed_ms=0 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=6736 batch_wptr=6739 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=6 raw=00000000 observed=00000000 condition=true elapsed_ms=11 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=7108 batch_wptr=7111 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=01000000 observed=00000001 condition=false elapsed_ms=0 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=7108 batch_wptr=7111 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=6 raw=00000000 observed=00000000 condition=true elapsed_ms=7 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=7480 batch_wptr=7483 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=01000000 observed=00000001 condition=false elapsed_ms=0 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=7480 batch_wptr=7483 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=4 raw=00000000 observed=00000000 condition=true elapsed_ms=6 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=7852 batch_wptr=7855 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=01000000 observed=00000001 condition=false elapsed_ms=0 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=7852 batch_wptr=7855 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=11 raw=00000000 observed=00000000 condition=true elapsed_ms=12 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=32 batch_wptr=35 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=0 raw=01000000 observed=00000001 condition=false elapsed_ms=0 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=32 batch_wptr=35 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=1000 raw=01000000 observed=00000001 condition=false elapsed_ms=1087 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=32 batch_wptr=35 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=2000 raw=01000000 observed=00000001 condition=false elapsed_ms=2198 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=32 batch_wptr=35 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=3000 raw=01000000 observed=00000001 condition=false elapsed_ms=3312 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=32 batch_wptr=35 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=4000 raw=01000000 observed=00000001 condition=false elapsed_ms=4428 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=32 batch_wptr=35 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=5000 raw=01000000 observed=00000001 condition=false elapsed_ms=5540 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=32 batch_wptr=35 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=6000 raw=01000000 observed=00000001 condition=false elapsed_ms=6670 reader=guest-physical-memory",
+      "ring trace WAIT_REG_MEM sample generation=1 batch_rptr=32 batch_wptr=35 ring_guest=09752580 packet=250 source=0969E640 depth=1 byte-offset=11972 guest=1B964004 poll-address=1B964006 reference=00000000 mask=FFFFFFFF endian=2 compare=3 poll=7000 raw=01000000 observed=00000001 condition=false elapsed_ms=7868 reader=guest-physical-memory"
+    ],
+    "source_byte_offset": 11972,
+    "source_ib": "0x0969E640",
+    "title_termination_wall_clock": "2026-10-28 16:26:16.151 +0300"
+  }
+}

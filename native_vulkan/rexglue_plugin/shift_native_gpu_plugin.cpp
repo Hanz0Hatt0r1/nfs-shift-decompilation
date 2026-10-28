@@ -2825,14 +2825,24 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               static std::atomic<uint32_t> wait_log_count{0};
               const uint32_t wait_log_index =
                   wait_log_count.fetch_add(1, std::memory_order_relaxed);
-              if (wait_log_index < 16u) {
+              if (wait_log_index < 16u ||
+                  (GuestRingTraceEnabled() && wait.memory)) {
                 if (wait.memory) {
                   REXLOG_INFO(
                       "shift-native: entering captured WAIT_REG_MEM guest={:08X} "
-                      "reference={:08X} mask={:08X} endian={} compare={} "
+                      "poll-address={:08X} reference={:08X} mask={:08X} "
+                      "endian={} compare={} poll-interval={:08X} "
+                      "packet_words=[{:08X},{:08X},{:08X},{:08X},{:08X},{:08X}] "
                       "source={:08X} depth={} byte-offset={}",
-                      wait.guest_address, wait.reference, wait.mask,
-                      wait.endian_mode, static_cast<uint32_t>(wait.compare),
+                      wait.guest_address, wait.poll_address, wait.reference,
+                      wait.mask, wait.endian_mode,
+                      static_cast<uint32_t>(wait.compare), wait.poll_interval,
+                      ReadGuestDword(packet_bytes + 0u),
+                      ReadGuestDword(packet_bytes + 4u),
+                      ReadGuestDword(packet_bytes + 8u),
+                      ReadGuestDword(packet_bytes + 12u),
+                      ReadGuestDword(packet_bytes + 16u),
+                      ReadGuestDword(packet_bytes + 20u),
                       resolved.source_guest_address, resolved.nesting_depth,
                       packet.byte_offset);
                 } else {
@@ -2846,6 +2856,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               uint32_t poll_count = 0;
               uint32_t wait_value_samples = 0;
               uint32_t previous_wait_value = 0;
+              uint32_t final_raw_value = 0;
+              uint32_t final_observed_value = 0;
               bool have_previous_wait_value = false;
               for (;;) {
                 uint32_t observed_value = 0;
@@ -2891,6 +2903,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 const bool wait_condition_met =
                     shift::xbox::captured_wait_reg_mem_condition_met(
                         wait, observed_value);
+                final_raw_value = raw_value;
+                final_observed_value = observed_value;
                 const bool wait_value_changed =
                     !have_previous_wait_value ||
                     observed_value != previous_wait_value;
@@ -2929,20 +2943,43 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 }
                 {
                   std::lock_guard<std::mutex> lock(ring_mutex_);
-                  if (ring_worker_shutdown_) return;
+                  if (ring_worker_shutdown_) {
+                    if (GuestRingTraceEnabled() && wait.memory) {
+                      const auto elapsed = std::chrono::duration_cast<
+                          std::chrono::milliseconds>(
+                          std::chrono::steady_clock::now() - wait_started);
+                      REXLOG_INFO(
+                          "shift-native: ring trace WAIT_REG_MEM interrupted "
+                          "by shutdown source={:08X} depth={} byte-offset={} "
+                          "guest={:08X} poll-address={:08X} poll={} raw={:08X} "
+                          "observed={:08X} elapsed_ms={}",
+                          resolved.source_guest_address, resolved.nesting_depth,
+                          packet.byte_offset, wait.guest_address,
+                          wait.poll_address, poll_count, raw_value,
+                          observed_value, elapsed.count());
+                    }
+                    return;
+                  }
                 }
                 ++poll_count;
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
               }
-              if (wait.memory && wait_log_index < 16u) {
+              if (wait.memory &&
+                  (wait_log_index < 16u || GuestRingTraceEnabled())) {
                 const auto elapsed = std::chrono::duration_cast<
                     std::chrono::milliseconds>(
                     std::chrono::steady_clock::now() - wait_started);
                 REXLOG_INFO(
                     "shift-native: completed captured WAIT_REG_MEM guest={:08X} "
-                    "reference={:08X} polls={} elapsed_ms={}",
-                    wait.guest_address, wait.reference, poll_count,
-                    elapsed.count());
+                    "poll-address={:08X} reference={:08X} mask={:08X} "
+                    "endian={} compare={} polls={} raw={:08X} observed={:08X} "
+                    "source={:08X} depth={} byte-offset={} elapsed_ms={}",
+                    wait.guest_address, wait.poll_address, wait.reference,
+                    wait.mask, wait.endian_mode,
+                    static_cast<uint32_t>(wait.compare), poll_count,
+                    final_raw_value, final_observed_value,
+                    resolved.source_guest_address,
+                    resolved.nesting_depth, packet.byte_offset, elapsed.count());
               }
             } else if (packet.type == shift::xbox::PacketType::Type0 ||
                 packet.type == shift::xbox::PacketType::Type1) {
