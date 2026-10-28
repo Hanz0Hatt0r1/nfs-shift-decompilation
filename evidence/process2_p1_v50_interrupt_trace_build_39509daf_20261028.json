@@ -1,0 +1,38 @@
+{
+  "schema": "process2.p1_interrupt_stage_trace_build.v1",
+  "captured_on": "2026-10-28",
+  "source_commit": "39509daf59f1a067e1a2831d068525e3eb7856ac",
+  "scope": "Diagnostic-only PM4 interrupt entry and callback stage tracing; no scheduler, mutex, wait, packet ordering, or dispatch semantics changed.",
+  "artifacts": {
+    "linux_x86_64": {
+      "path": "/home/pes/work/process2-interrupt-stage-trace-39509daf/linux-x86_64/librexgpu-shift-native.so",
+      "sha256": "7237f08fede61d1d56e4dfa558be7a14c9b4c994ce9b6e77646139563a750976",
+      "build_id": "9ca94bcf0bfb4dff841c57c92b0011f5428451c4",
+      "compiler": "Clang 22.1.8",
+      "target_flags": "-march=x86-64-v2",
+      "rexglue_sdk_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6",
+      "prebuilt_runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+      "result": "built"
+    },
+    "android_arm64": {
+      "path": "/home/pes/work/process2-interrupt-stage-trace-39509daf/android-arm64/librexgpu-shift-natived.so",
+      "sha256": "a875d791769daebcf188c903eb94922f232c63fec46f7c950b61ee9afdaf066e",
+      "build_id": "6c845f8dc19f78fc5477f742a9d77baf06455039",
+      "ndk": "28.2.13676358",
+      "api_level": 29,
+      "result": "compile-only built",
+      "device_run": false,
+      "existing_warning": "ReXGlue fpscr.h AArch64 asm operand-width warning."
+    }
+  },
+  "checks": {
+    "rexgpu_shift_native_live_ring_write_trace_check": "passed (1/1); asserted PM4_INTERRUPT_BEGIN and callback dispatch-begin precede the legacy completion row, retaining source IB, offset, raw words, and CPU mask.",
+    "rexgpu_shift_native_factory_check": "passed (1/1).",
+    "shift_xbox_draw_input_check": "passed (1/1).",
+    "shift_xbox_guest_ring_check": "passed (1/1).",
+    "test_audit_pm4_interrupt_join.py": "passed (9/9); legacy P1 parser/join format remains compatible.",
+    "trace_test_memory_backing": "The live-ring smoke's ReXGlue guest mapping uses a 4.5 GiB shm object. Host /dev/shm was constrained, so the test process used a temporary LD_PRELOAD shim to place only xenia_memory_* backing files on local disk; the plugin binary and tested behavior were unchanged."
+  },
+  "retail_run_with_this_build": false,
+  "limitation": "A P1 retail capture is still needed to observe live PM4 interrupt entry or prove where the startup guest global-mutex wait resolves."
+}
