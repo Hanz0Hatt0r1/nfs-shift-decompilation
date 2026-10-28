@@ -97,6 +97,123 @@ class OrderedRetailReplayEvidenceTests(unittest.TestCase):
         self.assertFalse(READBACK["result"]["full_edram_transition_correctness_established"])
         self.assertFalse(READBACK["result"]["xenos_pixel_parity_established"])
 
+    def test_frame622_source1_interrupt_trace_preserves_ring_dispatch_evidence(self):
+        trace = READBACK["pm4_interrupt_trace"]
+        archive = ROOT / "evidence" / trace["archive"]
+        archive_bytes = archive.read_bytes()
+        self.assertEqual(
+            hashlib.sha256(archive_bytes).hexdigest(), trace["archive_sha256"]
+        )
+        records_bytes = gzip.decompress(archive_bytes)
+        self.assertEqual(
+            hashlib.sha256(records_bytes).hexdigest(), trace["uncompressed_sha256"]
+        )
+        records = [json.loads(line) for line in records_bytes.splitlines()]
+        self.assertEqual(len(records), trace["records"])
+        self.assertEqual(
+            [record["ordinal"] for record in records],
+            list(
+                range(
+                    trace["interrupt_ordinal_range"][0],
+                    trace["interrupt_ordinal_range"][1] + 1,
+                )
+            ),
+        )
+
+        rptr_wraps = 0
+        wptr_wraps = 0
+        for index, record in enumerate(records):
+            with self.subTest(interrupt_ordinal=record["ordinal"]):
+                self.assertEqual(record["source"], trace["source"])
+                self.assertEqual(record["ring_guest"], int(trace["ring_guest"], 16))
+                self.assertEqual(record["generation"], trace["ring_generation"])
+                self.assertEqual(record["cpu_mask"], 0x04)
+                self.assertEqual(record["dispatched_cpu_mask"], 0x04)
+                self.assertEqual(record["callbacks"], [
+                    {
+                        "cpu": trace["dispatch_per_interrupt"]["cpu"],
+                        "callback": int(
+                            trace["dispatch_per_interrupt"]["callback"], 16
+                        ),
+                        "data": int(trace["dispatch_per_interrupt"]["data"], 16),
+                        "status": trace["dispatch_per_interrupt"]["status"],
+                    }
+                ])
+                self.assertLess(record["batch_rptr"], trace["ring_size_dwords"])
+                self.assertLess(record["batch_wptr"], trace["ring_size_dwords"])
+                self.assertGreater(
+                    (record["batch_wptr"] - record["batch_rptr"])
+                    % trace["ring_size_dwords"],
+                    0,
+                )
+                if index:
+                    rptr_wraps += record["batch_rptr"] < records[index - 1]["batch_rptr"]
+                    wptr_wraps += record["batch_wptr"] < records[index - 1]["batch_wptr"]
+
+        self.assertEqual(
+            [min(record["packet_ordinal"] for record in records),
+             max(record["packet_ordinal"] for record in records)],
+            trace["packet_ordinal_range"],
+        )
+        self.assertEqual(
+            [min(record["batch_rptr"] for record in records),
+             max(record["batch_rptr"] for record in records)],
+            trace["batch_rptr_dword_range"],
+        )
+        self.assertEqual(
+            [min(record["batch_wptr"] for record in records),
+             max(record["batch_wptr"] for record in records)],
+            trace["batch_wptr_dword_range"],
+        )
+        self.assertEqual(rptr_wraps, trace["rptr_wraps"])
+        self.assertEqual(wptr_wraps, trace["wptr_wraps"])
+
+        callbacks = trace["recovered_guest_source1_callbacks"]
+        callback_archive = ROOT / "evidence" / callbacks["archive"]
+        callback_archive_bytes = callback_archive.read_bytes()
+        self.assertEqual(
+            hashlib.sha256(callback_archive_bytes).hexdigest(),
+            callbacks["archive_sha256"],
+        )
+        callback_bytes = gzip.decompress(callback_archive_bytes)
+        self.assertEqual(
+            hashlib.sha256(callback_bytes).hexdigest(),
+            callbacks["uncompressed_sha256"],
+        )
+        callback_records = [json.loads(line) for line in callback_bytes.splitlines()]
+        self.assertEqual(len(callback_records), callbacks["records"])
+        self.assertEqual(
+            [record["entry_ordinal"] for record in callback_records],
+            list(
+                range(
+                    callbacks["entry_ordinal_range"][0],
+                    callbacks["entry_ordinal_range"][1] + 1,
+                )
+            ),
+        )
+        self.assertEqual(
+            {
+                f"0x{function:08X}": sum(
+                    record["callback_function"] == function
+                    for record in callback_records
+                )
+                for function in (0x823A4758, 0x823B8C60)
+            },
+            callbacks["callback_function_counts"],
+        )
+        self.assertTrue(
+            all(record["source"] == callbacks["source"] for record in callback_records)
+        )
+        self.assertTrue(
+            all(
+                record["callback_mask"] == 0x04
+                and record["thread_name"] == callbacks["thread"]
+                for record in callback_records
+            )
+        )
+        self.assertFalse(callbacks["joined_one_to_one_with_pm4_interrupts"])
+        self.assertEqual(trace["trace_capture_status"], "partial_log_recovery")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -612,6 +612,20 @@ test the captured red/blue swap. The bounded GDB trace again ended with partial
 event recovery and exit code 1. Full hashes and limits are recorded in
 [`the readback evidence`](../evidence/process2_ordered_14draw_copy38_frame622_readback_20261028.json).
 
+The same run's recovered source-1 PM4 interrupt records are archived as
+[`JSONL.gz`](../evidence/process2_ordered_14draw_copy38_frame622_source1_interrupts.jsonl.gz).
+The archive contains 1,428 sequential interrupt ordinals on ring
+`0x09752580`, generation 1. Each record reports CPU mask `0x04` and one
+invoked CPU 2 dispatch to `0x823B37B8` with data `0xB7365F00`; read/write
+pointers are dword offsets in an 8,192-dword ring and each wraps once. The
+partial GDB event recovery retained 737 nested source-1 guest callback entries
+(303 at `0x823A4758`, 434 at `0x823B8C60`), preserved verbatim in a separate
+[`callback JSONL.gz`](../evidence/process2_ordered_14draw_copy38_frame622_source1_guest_callbacks.jsonl.gz).
+Those callback entries are recorded separately: this capture does not establish
+a one-to-one join with the outer PM4 interrupt records. The trace, pointer
+ranges, dispatch identity, callback sequence and limitation are covered by the
+ordered replay regression.
+
 ### Captured format-26 Copy/Convert texture fetch (2026-10-28)
 
 Draw #10's captured texture descriptor decodes to guest address `0x0BE19000`,

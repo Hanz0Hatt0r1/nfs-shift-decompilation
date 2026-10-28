@@ -22,6 +22,50 @@
     },
     "debug_fragment_color_override": "unset"
   },
+  "pm4_interrupt_trace": {
+    "archive": "process2_ordered_14draw_copy38_frame622_source1_interrupts.jsonl.gz",
+    "archive_sha256": "7593e986759600a2ab1ddb3b047d981986267b0277db511e320d1ac6505f8e38",
+    "uncompressed_sha256": "2138835c36a53dcd7a4c1b05bfe73393fb01c779bb1e3b6f5929c1e8d1ad27aa",
+    "records": 1428,
+    "source": 1,
+    "ring_guest": "0x09752580",
+    "ring_generation": 1,
+    "interrupt_ordinal_range": [0, 1427],
+    "packet_ordinal_range": [6, 966],
+    "batch_rptr_dword_range": [2, 8176],
+    "batch_wptr_dword_range": [5, 8179],
+    "ring_size_dwords": 8192,
+    "rptr_wraps": 1,
+    "wptr_wraps": 1,
+    "source_ib_byte_offset_range": [92, 19632],
+    "cpu_mask": "0x04",
+    "dispatched_cpu_mask": "0x04",
+    "dispatch_per_interrupt": {
+      "cpu": 2,
+      "callback": "0x823B37B8",
+      "data": "0xB7365F00",
+      "status": "invoked"
+    },
+    "interrupt_timestamp_utc": ["2026-10-28T09:42:01.616Z", "2026-10-28T09:43:29.625Z"],
+    "recovered_guest_source1_callbacks": {
+      "archive": "process2_ordered_14draw_copy38_frame622_source1_guest_callbacks.jsonl.gz",
+      "archive_sha256": "59f08ed53570a3a35db1b85a9e684eee79afc64dcc55da11e6e29fbdd0505edc",
+      "uncompressed_sha256": "e4803f41c899fcad50d69570306805f3ba37662fca978d01fe08d6b3f4159469",
+      "records": 737,
+      "entry_ordinal_range": [1, 737],
+      "source": 1,
+      "callback_mask": "0x04",
+      "thread": "SHIFT Native GP",
+      "callback_function_counts": {
+        "0x823A4758": 303,
+        "0x823B8C60": 434
+      },
+      "timestamp_utc": ["2026-10-28T09:42:35.530Z", "2026-10-28T09:43:29.743Z"],
+      "joined_one_to_one_with_pm4_interrupts": false,
+      "note": "Partial GDB event recovery; these nested guest callback entries are not a one-to-one mapping to the 1,428 outer ring interrupts."
+    },
+    "trace_capture_status": "partial_log_recovery"
+  },
   "operation_stream": {
     "renderer_log": "bin/logs/nfs_shift_001.1.log",
     "renderer_log_sha256": "7d60fd72631747b10fcf53210c81454357b5892ea04a27bf6b0a7995ec035d21",
@@ -82,6 +126,8 @@
   },
   "result": {
     "ordered_retail_draw_copy_stream_submitted": true,
+    "source1_pm4_interrupt_trace_captured": true,
+    "source1_guest_callback_one_to_one_join_established": false,
     "retail_presenter_readback_captured": true,
     "pre_copy_source_readback_captured": true,
     "copy_output_matches_source_within_one_10bit_code": true,
