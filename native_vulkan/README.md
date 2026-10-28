@@ -668,6 +668,24 @@ formatter, and did not establish a retail Vulkan frame. The full per-event
 join and capture hashes are in
 [`process2_v46_source1_interrupt_join_20261028.json`](../evidence/process2_v46_source1_interrupt_join_20261028.json).
 
+## Process 1 source-1 interrupt join, resolve PR #2 (2026-10-28)
+
+The resolve-provider replay recorded 1,803 P2 `PM4_INTERRUPT source=1` rows,
+with no malformed ring records. A unique one-to-one timestamp/order audit
+matches 1,063 P1 callback entries to contiguous P2 interrupt IDs 709..1771.
+Every joined row has generation 1, ring `0x09752580`, packet ordinal and ring
+read/write pointers, CPU/dispatched mask `0x04`, dispatch CPU 2, and an invoked
+outer wrapper `0x823B37B8`. Absolute timestamp deltas range from 0 to 93 ms.
+P1 observed registered callback targets `0x823A4758` (375 entries) and
+`0x823B8C60` (688 entries); P2 logs the enclosing wrapper dispatch.
+
+`python3 -m unittest native_vulkan.tests.test_audit_pm4_interrupt_join -v`
+checks the checked-in per-event join for contiguous IDs, masks, dispatch
+status, ring bounds, and timestamp limits. This proves a consistent ordered
+correspondence in the capture, not callback payload equivalence or guest
+semantic equivalence. The full trace, hashes, and limits are in
+[`process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json`](../evidence/process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json).
+
 ## Commands
 
 ```bash
