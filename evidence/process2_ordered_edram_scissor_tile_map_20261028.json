@@ -1,0 +1,86 @@
+{
+  "schema": "shift.process2.ordered_edram_scissor_tile_map.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "implementation_commit": "ee05a1b52dddf1ab53c56742fc6be56fc440240e",
+  "capture": {
+    "evidence": "process2_redmi_transition_copy_chain_20261026.json",
+    "log": "process2_redmi_provider_resolve_disclaimer_live_20261026.log.gz",
+    "log_sha256_uncompressed": "114afc59c3c6360d013d6f7089b8d9473e0ee397f6487ac0a865cb91ade1b118",
+    "copy_draw_log_line": 4748,
+    "copy_draw_registers": {
+      "surface_info": "0x14020500",
+      "color_info": "0x000C0000",
+      "depth_info": "0x00000400",
+      "mode_control": "0x00000006",
+      "window_scissor_tl": "0x00000000",
+      "window_scissor_br": "0x01000500"
+    },
+    "source_layout": {
+      "extent": [2560, 1440],
+      "logical_extent": [1280, 720],
+      "sample_count": 4,
+      "surface_pitch": 1280,
+      "color_base_tiles": 0,
+      "depth_base_tiles": 1024
+    },
+    "next_draw_log_line": 4760,
+    "next_draw_layout": {
+      "extent": [320, 243],
+      "sample_count": 1,
+      "surface_pitch": 320,
+      "color_format": 6,
+      "color_base_tiles": 0,
+      "depth_base_tiles": 1024,
+      "scissor": [0, 0, 243, 243]
+    }
+  },
+  "implementation": {
+    "apis": [
+      "captured_xenos_edram_rect_tiles",
+      "captured_xenos_edram_rect_alias_tiles"
+    ],
+    "behavior": "Enumerates physical tiles touched by explicit half-open logical-pixel rectangles and maps unique shared physical tiles between two such rectangles, including different tile-row coordinates caused by pitch and sample-count changes.",
+    "safety": "Rejects invalid rectangles and any rectangle that maps multiple coordinates to the same physical tile. The API returns tile coordinates only; it does not claim a whole-tile transfer is valid when a rectangle covers only part of a tile.",
+    "runtime_effect": "None. Ordered renderer alias admission remains fail-closed; color, depth, and stencil image transfer is not implemented by this change."
+  },
+  "regression": {
+    "source_rect_logical_pixels": [0, 0, 1280, 256],
+    "source_rect_unique_physical_tiles": 1024,
+    "full_source_layout_virtual_tiles": 2880,
+    "full_source_layout_repeated_physical_tiles": 832,
+    "next_draw_rect_logical_pixels": [0, 0, 243, 243],
+    "shared_physical_tiles": 64,
+    "tile_4_coordinates": {
+      "source": [4, 0],
+      "destination": [0, 1]
+    },
+    "classification": "Address-map regression driven by captured retail register values; not a Vulkan image transfer, retail command execution, or pixel-parity result."
+  },
+  "verification": {
+    "native_linux": {
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "ctest": "passed 4/4"
+    },
+    "linux_rexglue_plugin": {
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "ctest": "passed 6/6",
+      "plugin_sha256": "fe3dfcb0870bf65306fe1305d5b5862017098883d8899d1c41c14ce64883912b",
+      "build_id": "d3b0a87211ccb30be661c6b04ddbd36c36c50f16",
+      "vulkan_minimum": "1.1"
+    },
+    "android_arm64_api26": {
+      "target": "shift_xbox_draw_input_check",
+      "result": "compiled",
+      "binary_sha256": "912b48af7a263af7dcd95083d3b57b787f513b0d300a751e656a5189d3e9d2cc",
+      "device_execution": "not run; adb devices -l returned no connected devices"
+    },
+    "diff_check": "git diff --check passed"
+  },
+  "remaining_blockers": [
+    "The renderer does not consume these scissor tile maps to persist EDRAM across aliased Vulkan targets.",
+    "The exact captured Copy/Convert rectangle geometry has not been proven to cover every pixel in its scissor, so this result cannot authorize a clear or image transfer.",
+    "The newer plugin has not yet been replayed against this 14-draw retail capture; no intermediate image or retail frame parity is established."
+  ]
+}

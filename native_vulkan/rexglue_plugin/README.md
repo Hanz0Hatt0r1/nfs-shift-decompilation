@@ -2167,3 +2167,23 @@ replay did not include the retail 14-draw transition. This improves capture
 evidence only; shared aliased EDRAM storage and retail frame parity remain
 unimplemented. Exact build hashes and test results are in
 [`process2_unresolved_draw_raster_trace_20261028.json`](../../evidence/process2_unresolved_draw_raster_trace_20261028.json).
+
+## Scissor-bounded EDRAM tile mapping (2026-10-28)
+
+The older Redmi transition capture records a 4x source layout whose full
+logical extent covers 2,880 raster tiles and repeats 832 physical EDRAM tiles.
+Its captured Copy/Convert scissor is only 1,280x256 logical pixels. The new
+address helpers enumerate 1,024 unique tiles for that rectangle and map the
+64 tiles shared with the following 320x243, 1x target. The map confirms that
+physical tile 4 is source coordinate (4,0) and destination coordinate (0,1).
+
+This is a CPU address-map regression using captured register values. The
+ordered renderer still rejects aliased target transitions; no Vulkan color,
+depth, or stencil transfer was added. The copy geometry has not been proven to
+cover every pixel in its scissor, so the rectangle map does not authorize a
+clear or transfer. Linux CTest passed 4/4 under
+`VK_LAYER_KHRONOS_validation`, plugin CTest passed 6/6, and the Android
+ARM64/API 26 address-check executable compiled. ADB listed no connected
+device. See
+[`process2_ordered_edram_scissor_tile_map_20261028.json`](../../evidence/process2_ordered_edram_scissor_tile_map_20261028.json)
+for the raw capture references, artifact identities, and limits.
