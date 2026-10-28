@@ -275,6 +275,17 @@
       "linux_build": "passed",
       "targeted_ctest": "2/2 passed",
       "source0_fixture": "not exercised; current fixture emits no source-0 VBlank records",
+      "pr_2161_ci_passed_checks": [
+        "native",
+        "python",
+        "capture-producer",
+        "live-memory-dumper",
+        "Vulkan smoke",
+        "Android ARM64 activity",
+        "evidence-fast",
+        "coordination"
+      ],
+      "pr_2161_ci_skipped_checks": ["retail-startup-regression"],
       "retail_replay": "pending a safe window after the active game process exits or Process 2 confirms it is safe"
     },
     "independent_artifact_check": "Linux and Android SHA-256 and ELF Build IDs were independently verified by P1.",

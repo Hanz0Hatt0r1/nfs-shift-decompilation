@@ -170,6 +170,9 @@ class WaitWordWatchTests(unittest.TestCase):
         self.assertEqual(candidate["source0_trace_fields"], [
             "tick_lag_intervals", "dispatch_gap_ns", "dispatch_elapsed_ns",
         ])
+        self.assertIn("python", candidate["verification"]["pr_2161_ci_passed_checks"])
+        self.assertEqual(candidate["verification"]["pr_2161_ci_skipped_checks"],
+                         ["retail-startup-regression"])
         self.assertIn("synchronous DispatchGuestInterrupt",
                       candidate["interpretation_guide"]["long_dispatch_elapsed_ns"])
         self.assertIn("does not by itself prove OS descheduling",
