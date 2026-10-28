@@ -589,6 +589,29 @@ trace script line 1167. No Android device was attached. Exact hashes, packet
 order, submit evidence, and limits are in
 [`process2_ordered_14draw_copy38_replay_20261028.json`](../evidence/process2_ordered_14draw_copy38_replay_20261028.json).
 
+### Frame 622 readback of the 14-draw Copy38 stream (2026-10-28)
+
+A separate bounded Linux Native capture selected presenter frame 622 while
+the renderer held the same 14 Draw packets 0..13 followed by Copy/Convert
+packet 38. The original retail disclaimer text and horizontal borders appear
+in the Vulkan readback:
+[`decoded frame 622`](../evidence/process2_ordered_14draw_copy38_frame622_20261028.png).
+The complete packed presenter image and its pre-Copy source are available as
+compressed raw captures:
+[`A2B10G10R10 output`](../evidence/process2_ordered_14draw_copy38_frame622_presenter_a2b10g10r10.bin.gz),
+[`RGBA16 pre-Copy source`](../evidence/process2_ordered_14draw_copy38_frame622_precopy_rgba16_unorm.bin.gz).
+
+The 1280x720 pre-Copy source is single-sample `R16G16B16A16_UNORM`; the
+presenter image is `A2B10G10R10_UNORM_PACK32`. After the Copy's 16-bit to
+8-bit to 10-bit UNORM quantization, 920,250 of 921,600 pixels match exactly
+and every other pixel differs by at most one 10-bit code value. This checks
+the captured Copy output against the renderer's own source image for this
+retail frame. It does not compare the pre-Copy EDRAM contents with Xenos output
+or establish general EDRAM/depth preservation; the grayscale frame also cannot
+test the captured red/blue swap. The bounded GDB trace again ended with partial
+event recovery and exit code 1. Full hashes and limits are recorded in
+[`the readback evidence`](../evidence/process2_ordered_14draw_copy38_frame622_readback_20261028.json).
+
 ### Captured format-26 Copy/Convert texture fetch (2026-10-28)
 
 Draw #10's captured texture descriptor decodes to guest address `0x0BE19000`,

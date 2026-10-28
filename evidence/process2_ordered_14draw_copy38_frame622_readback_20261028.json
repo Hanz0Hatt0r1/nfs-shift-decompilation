@@ -1,0 +1,98 @@
+{
+  "schema": "shift.process2.ordered_14draw_copy38_frame_readback.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "capture": {
+    "directory": "/dev/shm/nfs-shift-p2-14draw-readback622-20261028",
+    "backend": "shift-native",
+    "presenter_frame": 622,
+    "duration_seconds": 91.3,
+    "guest_memory_modified_by_probe": false,
+    "event_capture_status": "partial_log_recovery",
+    "gdb_exit": 1,
+    "capture_identity": {
+      "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+      "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+      "plugin_sha256": "d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90",
+      "plugin_build_id": "0fb71ebd09a498fc0515de313289b39ccfc22300",
+      "plugin_source_commit": "ec657d411c25d91a03e7a5991c0dc41f50e1af43",
+      "gpu_emulation": "disabled"
+    },
+    "debug_fragment_color_override": "unset"
+  },
+  "operation_stream": {
+    "renderer_log": "bin/logs/nfs_shift_001.1.log",
+    "renderer_log_sha256": "7d60fd72631747b10fcf53210c81454357b5892ea04a27bf6b0a7995ec035d21",
+    "operation_snapshot_line": 18507,
+    "operation_snapshot_timestamp": "2026-10-28 12:42:37.299",
+    "operation_snapshot_line_sha256": "6fbc9d24c93860b1a1091c371e6404731513db6d02e1b3842eaa5e5501c1150b",
+    "ordered_operation_count": 15,
+    "draw_packets": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+    "copy_packet": 38,
+    "order": "14 indexed Draw packets 0..13 followed by Copy/Convert packet 38",
+    "source": "1280x720, 1x, linear RGBA16 target at guest color base 0 and depth base 0x2D0",
+    "destination": "frontbuffer 0x0975E000, 1280x720, format 6 with captured red/blue swap",
+    "presenter_submit_line": 19260,
+    "presenter_submit_timestamp": "2026-10-28 12:42:38.661",
+    "presenter_submit_line_sha256": "c11cee302770b3fc52398f90ad6e05fea123b66f2006edbab040b79a224b774b"
+  },
+  "readback": {
+    "presenter": {
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "width": 1280,
+      "height": 720,
+      "bytes": 3686400,
+      "raw_sha256": "65f33ed50ad49784cc05f6c36dd79dacccaf8331a53f156215127a30649ebeda",
+      "raw_archive": "process2_ordered_14draw_copy38_frame622_presenter_a2b10g10r10.bin.gz",
+      "raw_archive_sha256": "128569269d99d5ae907ba7b985b69022b17bb59e84392022597f1fc1dfe95812",
+      "log_line": 19261,
+      "log_line_sha256": "0b84857446a088015bbc0f8637fdba7c39dc2f21c55ef63a75d8cc33aab7cf7e",
+      "non_black_pixels_reported": 20167,
+      "fnv1a64": "E5417D2B7F3973C4",
+      "decoded_png": "process2_ordered_14draw_copy38_frame622_20261028.png",
+      "decoded_png_sha256": "7d455782ad87df58c73c2014003104050222b57b4c16eec7196442c905d09c5a"
+    },
+    "pre_copy_source": {
+      "format": "VK_FORMAT_R16G16B16A16_UNORM",
+      "width": 1280,
+      "height": 720,
+      "samples": 1,
+      "average_resolve": false,
+      "bytes": 7372800,
+      "raw_sha256": "81acedd7df62d3c20f760043e5e4c390563a76e62d2443d8372575a4d2e8926d",
+      "raw_archive": "process2_ordered_14draw_copy38_frame622_precopy_rgba16_unorm.bin.gz",
+      "raw_archive_sha256": "0303c48ecdaeff5b9d62e784b3c04bb1e7b3f7586ead9b3209a19c081d50a4ac",
+      "log_line": 19264,
+      "log_line_sha256": "a0472a4c1f960e7de695b00e5f03738de56df71e3c882d61cb772e36644dd373",
+      "non_black_pixels_reported": 19347,
+      "fnv1a64": "DFEC2F8A1FBB208D"
+    }
+  },
+  "source_to_presenter_check": {
+    "mapping": "same pixel coordinates; RGB source channels are rounded UNORM16->UNORM8, then UNORM8->UNORM10 and compared with packed presenter RGB",
+    "exact_pixels": 920250,
+    "pixels": 921600,
+    "max_per_pixel_channel_error_10bit_codes": 1,
+    "p99_per_pixel_channel_error_10bit_codes": 0,
+    "mean_per_pixel_max_channel_error_10bit_codes": 0.00146484375,
+    "red_blue_swap_independently_verified": false,
+    "scope": "same-run pre-Copy source to Vulkan presenter Copy output; not a comparison with Xenos GPU output"
+  },
+  "result": {
+    "ordered_retail_draw_copy_stream_submitted": true,
+    "retail_presenter_readback_captured": true,
+    "pre_copy_source_readback_captured": true,
+    "copy_output_matches_source_within_one_10bit_code": true,
+    "full_edram_transition_correctness_established": false,
+    "xenos_pixel_parity_established": false,
+    "retail_pixel_parity_established": false
+  },
+  "limitations": [
+    "The decoded retail readback is a grayscale legal-disclaimer frame; its red/blue swap cannot be independently tested with chromatic pixels.",
+    "The pixel check verifies this run's pre-Copy source to presenter conversion only. It does not validate the pre-Copy EDRAM contents against Xenos, every EDRAM alias, or other transition sequences.",
+    "The bounded GDB run ended with partial event-log recovery and exit code 1; renderer, submit, and readback records were retained, but the event trace is not a clean end-to-end trace.",
+    "No Android device execution or pixel comparison with a Xenos reference was performed."
+  ]
+}
