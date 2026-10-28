@@ -2188,3 +2188,23 @@ DSO is ELF64 AArch64 and links against `librexruntimed.so` and `libvulkan.so`.
 ADB listed no connected device, so no phone runtime was checked. See
 [`process2_ordered_edram_scissor_tile_map_20261028.json`](../../evidence/process2_ordered_edram_scissor_tile_map_20261028.json)
 for the raw capture references, artifact identities, and limits.
+
+## Repeated texture-fetch GLSL symbols (2026-10-28)
+
+The exact paired Native replay completed Bink progress 281/281, submitted frame
+322, and refreshed the ordered 14-draw list. Draw #10 had complete raster and
+input state but was rejected by glslang because two generated declarations
+used `sampled_0`. The retained run does not include that draw's pixel-shader
+bytes, so the regression extends a captured retail shader slice with a second
+fetch of the same sampler; it does not claim to reproduce the exact draw-10
+program.
+
+The translator now suffixes per-fetch local names only when a sampler is used
+more than once. Existing sampler bindings, fetch ordering, swizzle, and
+single-fetch names stay the same. The duplicate-fetch GLSL compiled and passed
+`spirv-val` for Vulkan 1.1. Native CTest passed 4/4 and plugin CTest passed 6/6
+with Vulkan validation; Linux and Android ARM64/API 26 plugin builds succeeded.
+The new DSO has not yet been replayed against the retail capture, and no Android
+device was connected. Capture hashes, build IDs, test results, and remaining
+shader/EDRAM blockers are in
+[`process2_repeated_sampler_glsl_symbols_20261028.json`](../../evidence/process2_repeated_sampler_glsl_symbols_20261028.json).
