@@ -218,13 +218,26 @@ that this caused the queue divergence.
   `fd615adad5febc2adcf9a46fa0b74a67c9cf28f013bc74ca8715ac9abad9c490`
   (ELF Build ID `14bc1880e1786605356deda62829d4c18a47d125`) at
   `/home/pes/work/rexglue-sdk-rexui-vulkan-20261023/out/linux-amd64/librexgpu-shift-native.so`.
-- These are packet-level and synthetic plugin checks. A new paired retail
-  Native run is still required to confirm the queue sequence after this fix.
-
-The remaining minimal runtime validation is a paired no-input Native launch
-with the new plugin and the frozen XEX/host/runtime/game data. Capture the
-first four source-1 producer joins, skipped-packet state for the two duplicate
-IB occurrences, and the resulting queue values. Expected: the captured
-`C0005401` at child offset `0xA44` is skipped under both parent selectors;
-these two dispatches do not increment the producer queue. Keep the Xenos run
-as a separate diagnostic comparison, not as a correctness oracle.
+- P1's paired no-input retail runs (Native v75 / Xenos v76) both exited GDB
+  successfully and reached Bink `281/281`. They used the same XEX
+  (`8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58`), host,
+  runtime, runner/trace, and game-data root path; only the GPU plugin differed.
+  The game-data root was not hashed at launch, so byte-for-byte resource
+  equality is unverified.
+- Native retail trace logged both duplicate child packets at
+  `0x096B4E00+0xA44` as skipped: packet 181 under select `0xC`, and packet 367
+  under select `0x30`; both used mask `0x80000000`, giving an empty
+  intersection. This confirms the predicate gate in the retail runtime.
+  A separate `PM4_INTERRUPT_BEGIN` at the same guest source and offset belongs
+  to ring batch `2549/2554`, dispatch `0xDDC`; address equality alone does not
+  link it to either skipped duplicate.
+- Both captures ended with an empty service queue, `manager+11012=1`, and
+  drained worker rings. Native drained at `2048/2048`; Xenos at `2116/2116`.
+  The 68-entry difference remains unexplained because the bounded capture has
+  no complete PM4-to-worker-ring crosswalk. This does not establish a game
+  progress difference or prove a visible menu, input response, or race.
+- P1's machine-readable evidence is
+  `/home/pes/work/nfs-shift-xbox360-runtime-p1-20261023/evidence/xbox360_linux_pr2161_predicate_retail_pair_v75_native_v76_xenos_20261029.json`
+  (SHA-256 `b2cc273a97fc6136bfef619dc564e2326ca6ecd2c5a6b4f045be8bf559da3909`);
+  the read-only P1 report is
+  `/home/pes/work/nfs-shift-xbox360-runtime-p1-20261023/docs/XBOX360_PR2161_PREDICATE_RETAIL_VERIFICATION_V75_V76_20261029.md`.
