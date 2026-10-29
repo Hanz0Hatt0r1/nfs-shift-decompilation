@@ -1,0 +1,228 @@
+{
+  "comparison": {
+    "queue_pop_outcome_differences": [],
+    "shift_native_only_sample_keys": [],
+    "xenos_only_sample_keys": []
+  },
+  "result": {
+    "backend_specific_cause_established": false,
+    "both_remained_in_menu_setup_state_2_through_index_49": true,
+    "context_r3_write_outcome_matches": true,
+    "live_context_r3_matches_return_value": true,
+    "queue_pop_outcomes_match": true,
+    "same_input_schedule": true,
+    "same_retail_xex_host_runtime_and_capture": true,
+    "shared_queue_pop_sample_keys": 8
+  },
+  "runs": {
+    "shift-native": {
+      "backend": "shift-native",
+      "duration_seconds": 129.448,
+      "event_log_sha256": "7a2c70ea595304dbf8234457700a6d29467c4081f4f8eb25db6433dcc6344709",
+      "game_data_root": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+      "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+      "input_pulses": [
+        [
+          "Start",
+          5,
+          17
+        ],
+        [
+          "A",
+          21,
+          33
+        ],
+        [
+          "Start",
+          37,
+          49
+        ]
+      ],
+      "plugin_sha256": "fd615adad5febc2adcf9a46fa0b74a67c9cf28f013bc74ca8715ac9abad9c490",
+      "queue_pop_samples": {
+        "('Start', ('0x10', '0x10', '0x0', '0xc0', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x1",
+            "live_context_matches_saved": true,
+            "return_r3": "0x1"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xc0', '0x3'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x1",
+            "live_context_matches_saved": true,
+            "return_r3": "0x1"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xe0', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x1",
+            "live_context_matches_saved": true,
+            "return_r3": "0x1"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xf0', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x0",
+            "live_context_matches_saved": true,
+            "return_r3": "0x0"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xf8', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x0",
+            "live_context_matches_saved": true,
+            "return_r3": "0x0"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xfc', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x1",
+            "live_context_matches_saved": true,
+            "return_r3": "0x1"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xfe', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x1",
+            "live_context_matches_saved": true,
+            "return_r3": "0x1"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xff', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x1",
+            "live_context_matches_saved": true,
+            "return_r3": "0x1"
+          }
+        ]
+      },
+      "r3_watch": {
+        "after": "0x5",
+        "before": "0x1",
+        "guest_lr": "0x822fdf88",
+        "guest_memory_modified_by_probe": false,
+        "host_symbol": "sub_822FDCE0 + 3271"
+      },
+      "run_dir": "/home/pes/work/nfs-shift-p1-menu-dispatch-v107-v298-native-20261029",
+      "runner_sha256": "a79f84a503e3aaca08ec9002ec1ba3a9aabf697a181b482ad5555485167fa95a",
+      "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+      "state2_update_count": 49,
+      "trace_sha256": "1ada8339461a17bf33f6f89b592d6cca35cc10f0e41a1d3c9aa8ac1781aa63e5",
+      "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+    },
+    "xenos": {
+      "backend": "xenos",
+      "duration_seconds": 152.14,
+      "event_log_sha256": "6cc880f28f4e53f6aa1a7b1f7f8400ac34a19e38986da9f07bd905e0443742d3",
+      "game_data_root": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+      "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+      "input_pulses": [
+        [
+          "Start",
+          5,
+          17
+        ],
+        [
+          "A",
+          21,
+          33
+        ],
+        [
+          "Start",
+          37,
+          49
+        ]
+      ],
+      "plugin_sha256": "8b5abe7a0c59a8a41af5aa166df23de46fed191bfc863e183c98d6023c54e4de",
+      "queue_pop_samples": {
+        "('Start', ('0x10', '0x10', '0x0', '0xc0', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x1",
+            "live_context_matches_saved": true,
+            "return_r3": "0x1"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xc0', '0x3'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x1",
+            "live_context_matches_saved": true,
+            "return_r3": "0x1"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xe0', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x1",
+            "live_context_matches_saved": true,
+            "return_r3": "0x1"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xf0', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x0",
+            "live_context_matches_saved": true,
+            "return_r3": "0x0"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xf8', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x0",
+            "live_context_matches_saved": true,
+            "return_r3": "0x0"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xfc', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x1",
+            "live_context_matches_saved": true,
+            "return_r3": "0x1"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xfe', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x1",
+            "live_context_matches_saved": true,
+            "return_r3": "0x1"
+          }
+        ],
+        "('Start', ('0x10', '0x10', '0x0', '0xff', '0x0'), '0x822fdf88', '0xbb9c6570')": [
+          {
+            "host_continuation": "sub_822FDCE0 + 2952",
+            "live_context_gpr3": "0x1",
+            "live_context_matches_saved": true,
+            "return_r3": "0x1"
+          }
+        ]
+      },
+      "r3_watch": {
+        "after": "0x5",
+        "before": "0x1",
+        "guest_lr": "0x822fdf88",
+        "guest_memory_modified_by_probe": false,
+        "host_symbol": "sub_822FDCE0 + 3271"
+      },
+      "run_dir": "/home/pes/work/nfs-shift-p1-menu-dispatch-v107-v301-xenos-20261029",
+      "runner_sha256": "a79f84a503e3aaca08ec9002ec1ba3a9aabf697a181b482ad5555485167fa95a",
+      "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+      "state2_update_count": 49,
+      "trace_sha256": "1ada8339461a17bf33f6f89b592d6cca35cc10f0e41a1d3c9aa8ac1781aa63e5",
+      "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+    }
+  },
+  "schema": "shift.xbox360.linux-menu-worker-gate-pair.v107"
+}
