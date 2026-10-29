@@ -70,6 +70,11 @@ struct PacketSpan {
     uint32_t opcode;
 };
 
+struct CapturedXenosBinState {
+    uint64_t bin_select = 0xFFFFFFFFull;
+    uint64_t bin_mask = 0xFFFFFFFFull;
+};
+
 struct GuestRegisterWrite {
     // PM4 register index (not a byte address) and decoded host-order value.
     uint32_t register_index;
@@ -626,6 +631,16 @@ bool scan_captured_packet_stream(
     const uint8_t* stream_bytes,
     size_t byte_length,
     std::vector<PacketSpan>* output,
+    std::string* error);
+
+// Applies Xenos Type-3 bit-0 predication and the captured BIN_MASK/BIN_SELECT
+// packet forms in stream order. A false result in `execute_packet` means the
+// packet, including any nested IB it represents, must not execute.
+bool evaluate_captured_xenos_type3_packet(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedXenosBinState* state,
+    bool* execute_packet,
     std::string* error);
 
 // Decodes one PM4 type-0 or type-1 packet into raw host-order register writes.

@@ -190,6 +190,159 @@ int main() {
                 "predicated/unpredicated PM4_INTERRUPT payload was decoded differently");
     }
 
+    const auto evaluate_xenos_type3 =
+        [&error](uint32_t header, uint32_t payload0, uint32_t payload1,
+                 size_t payload_dwords,
+                 shift::xbox::CapturedXenosBinState* state,
+                 bool* execute_packet) {
+            std::array<uint8_t, 12> bytes{};
+            write_be32(bytes.data(), header);
+            write_be32(bytes.data() + 4u, payload0);
+            write_be32(bytes.data() + 8u, payload1);
+            return shift::xbox::evaluate_captured_xenos_type3_packet(
+                bytes.data(), (payload_dwords + 1u) * sizeof(uint32_t),
+                state, execute_packet, &error);
+        };
+    shift::xbox::CapturedXenosBinState bin_state{};
+    bool execute_packet = false;
+    require(evaluate_xenos_type3(0xC0006200u, 0xCu, 0u, 1u,
+                                 &bin_state, &execute_packet) &&
+                execute_packet && bin_state.bin_select == 0xCu,
+            "PM4_SET_BIN_SELECT_LO did not update Xenos predicate state");
+    require(evaluate_xenos_type3(0xC0006100u, 0u, 0u, 1u,
+                                 &bin_state, &execute_packet) &&
+                execute_packet && bin_state.bin_mask == 0xFFFFFFFFull,
+            "PM4_SET_BIN_MASK_HI did not preserve the low mask dword");
+    require(evaluate_xenos_type3(0xC0006000u, 0xFFFFFFFFu, 0u, 1u,
+                                 &bin_state, &execute_packet) &&
+                execute_packet && bin_state.bin_mask == 0xFFFFFFFFull,
+            "PM4_SET_BIN_MASK_LO all-ones write was decoded incorrectly");
+    require(evaluate_xenos_type3(0xC0006000u, 0x80000000u, 0u, 1u,
+                                 &bin_state, &execute_packet) &&
+                execute_packet && bin_state.bin_mask == 0x80000000ull,
+            "PM4_SET_BIN_MASK_LO did not update the captured high-bit mask");
+    require(evaluate_xenos_type3(0xC0005401u, 0x4u, 0u, 1u,
+                                 &bin_state, &execute_packet) &&
+                !execute_packet,
+            "captured Native rank-3 predicate unexpectedly passed for BIN_SELECT 0xC");
+    require(evaluate_xenos_type3(0xC0005400u, 0x4u, 0u, 1u,
+                                 &bin_state, &execute_packet) &&
+                execute_packet,
+            "unpredicated PM4_INTERRUPT was skipped when the BIN intersection was empty");
+    require(evaluate_xenos_type3(0xC0006200u, 0x30u, 0u, 1u,
+                                 &bin_state, &execute_packet) &&
+                execute_packet && bin_state.bin_select == 0x30u,
+            "second captured parent BIN_SELECT_LO write was not applied");
+    require(evaluate_xenos_type3(0xC0006000u, 0xFFFFFFFFu, 0u, 1u,
+                                 &bin_state, &execute_packet) &&
+                execute_packet &&
+                evaluate_xenos_type3(0xC0006000u, 0x80000000u, 0u, 1u,
+                                     &bin_state, &execute_packet) &&
+                execute_packet &&
+                evaluate_xenos_type3(0xC0005401u, 0x4u, 0u, 1u,
+                                     &bin_state, &execute_packet) &&
+                !execute_packet,
+            "second captured Native duplicate-IB predicate unexpectedly passed");
+
+    require(evaluate_xenos_type3(0xC0006200u, 0x80000003u, 0u, 1u,
+                                 &bin_state, &execute_packet) &&
+                execute_packet &&
+                evaluate_xenos_type3(0xC0006000u, 0x80000000u, 0u, 1u,
+                                     &bin_state, &execute_packet) &&
+                execute_packet &&
+                evaluate_xenos_type3(0xC0005401u, 0x4u, 0u, 1u,
+                                     &bin_state, &execute_packet) &&
+                execute_packet,
+            "captured Xenos v60 positive BIN predicate case was rejected");
+
+    require(evaluate_xenos_type3(0xC0015000u, 0u, 0x80000000u, 2u,
+                                 &bin_state, &execute_packet) &&
+                execute_packet && bin_state.bin_mask == 0x80000000ull &&
+                evaluate_xenos_type3(0xC0015100u, 0u, 0xCu, 2u,
+                                     &bin_state, &execute_packet) &&
+                execute_packet && bin_state.bin_select == 0xCu,
+            "full-width SET_BIN_MASK/SET_BIN_SELECT packet forms were decoded incorrectly");
+    const uint64_t mask_before_skipped_write = bin_state.bin_mask;
+    require(evaluate_xenos_type3(0xC0006001u, 0xFFFFFFFFu, 0u, 1u,
+                                 &bin_state, &execute_packet) &&
+                !execute_packet &&
+                bin_state.bin_mask == mask_before_skipped_write,
+            "a predicated BIN state packet changed registers when its gate failed");
+
+    constexpr uint32_t kRepeatedIbAddress = 0x00001000u;
+    constexpr std::array<uint32_t, 8> kPredicateChildWords = {
+        0xC0006100u, 0x00000000u, 0xC0006000u, 0xFFFFFFFFu,
+        0xC0006000u, 0x80000000u, 0xC0005401u, 0x00000004u,
+    };
+    constexpr std::array<uint32_t, 10> kRepeatedIbParentWords = {
+        0xC0006200u, 0x0000000Cu,
+        0xC0013F00u, kRepeatedIbAddress,
+        static_cast<uint32_t>(kPredicateChildWords.size()),
+        0xC0006200u, 0x00000030u,
+        0xC0013F00u, kRepeatedIbAddress,
+        static_cast<uint32_t>(kPredicateChildWords.size()),
+    };
+    GuestMemoryFixture repeated_ib_memory{};
+    repeated_ib_memory.guest_address = kRepeatedIbAddress;
+    repeated_ib_memory.bytes.resize(kPredicateChildWords.size() * sizeof(uint32_t));
+    repeated_ib_memory.available_bytes = repeated_ib_memory.bytes.size();
+    for (size_t i = 0; i < kPredicateChildWords.size(); ++i) {
+        write_be32(repeated_ib_memory.bytes.data() + i * sizeof(uint32_t),
+                   kPredicateChildWords[i]);
+    }
+    std::array<uint8_t, 64> repeated_ib_ring{};
+    for (size_t i = 0; i < kRepeatedIbParentWords.size(); ++i) {
+        write_be32(repeated_ib_ring.data() + i * sizeof(uint32_t),
+                   kRepeatedIbParentWords[i]);
+    }
+    shift::xbox::GuestRingBatch repeated_ib_batch{};
+    require(shift::xbox::snapshot_guest_ring_batch(
+                repeated_ib_ring.data(), repeated_ib_ring.size(), 0u,
+                static_cast<uint32_t>(kRepeatedIbParentWords.size()),
+                &repeated_ib_batch, &error),
+            "parent batch with two references to one child did not frame");
+    shift::xbox::ExpandedGuestCommandStream repeated_ib_stream{};
+    require(shift::xbox::expand_guest_indirect_buffers(
+                repeated_ib_batch, read_guest_memory, &repeated_ib_memory,
+                &repeated_ib_stream, &error) &&
+                repeated_ib_stream.indirect_buffer_count == 2u &&
+                repeated_ib_stream.packets.size() == 12u &&
+                repeated_ib_stream.packets[5].source_guest_address ==
+                    kRepeatedIbAddress &&
+                repeated_ib_stream.packets[5].caller_packet_ordinal == 1u &&
+                repeated_ib_stream.packets[11].source_guest_address ==
+                    kRepeatedIbAddress &&
+                repeated_ib_stream.packets[11].caller_packet_ordinal == 7u,
+            "duplicate IB references were not expanded in parent order");
+    shift::xbox::CapturedXenosBinState repeated_ib_bin_state{};
+    std::vector<uint8_t> packet_executes(repeated_ib_stream.packets.size(), 0u);
+    uint32_t executed_predicated_interrupts = 0;
+    for (size_t i = 0; i < repeated_ib_stream.packets.size(); ++i) {
+        const auto& resolved = repeated_ib_stream.packets[i];
+        if (resolved.nesting_depth != 0u &&
+            packet_executes[resolved.caller_packet_ordinal] == 0u) {
+            continue;
+        }
+        bool should_execute = true;
+        if (resolved.packet.type == shift::xbox::PacketType::Type3) {
+            const uint8_t* packet_bytes =
+                resolved.nesting_depth == 0u
+                    ? repeated_ib_batch.bytes.data() + resolved.packet.byte_offset
+                    : repeated_ib_memory.bytes.data() + resolved.packet.byte_offset;
+            require(shift::xbox::evaluate_captured_xenos_type3_packet(
+                        packet_bytes, resolved.packet.byte_length,
+                        &repeated_ib_bin_state, &should_execute, &error),
+                    "repeated-IB predicate packet failed to evaluate");
+            if (resolved.packet.opcode == 0x54u && should_execute) {
+                ++executed_predicated_interrupts;
+            }
+        }
+        packet_executes[i] = should_execute ? 1u : 0u;
+    }
+    require(executed_predicated_interrupts == 0u &&
+                packet_executes[5] == 0u && packet_executes[11] == 0u,
+            "predicated interrupts from either duplicate IB should fail the captured BIN gate");
+
     std::array<uint8_t, 128> callback_ring{};
     for (size_t index = 0; index < kCapturedCallbackWaitAckPrefix.size(); ++index) {
         const uint32_t dword = kCapturedCallbackWaitAckPrefix[index];

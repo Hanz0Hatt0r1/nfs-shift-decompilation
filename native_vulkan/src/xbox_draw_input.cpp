@@ -214,6 +214,86 @@ bool scan_captured_packet_stream(
     return true;
 }
 
+bool evaluate_captured_xenos_type3_packet(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedXenosBinState* state,
+    bool* execute_packet,
+    std::string* error) {
+    if (!packet_bytes || !state || !execute_packet || byte_length < 4u ||
+        (byte_length & 3u) != 0u) {
+        return fail("invalid captured Xenos Type-3 packet input", error);
+    }
+
+    const uint32_t header = read_be32(packet_bytes);
+    if ((header >> 30) != 3u) {
+        return fail("captured Xenos predicate input is not a Type-3 packet", error);
+    }
+    const uint32_t payload_dwords = ((header >> 16) & 0x3FFFu) + 1u;
+    if (byte_length != (static_cast<size_t>(payload_dwords) + 1u) * 4u) {
+        return fail("captured Xenos Type-3 packet size mismatch", error);
+    }
+
+    *execute_packet = (header & 1u) == 0u ||
+                      (state->bin_select & state->bin_mask) != 0u;
+    if (!*execute_packet) {
+        if (error) error->clear();
+        return true;
+    }
+
+    const uint32_t opcode = (header >> 8) & 0xFFu;
+    const uint32_t payload0 = read_be32(packet_bytes + 4u);
+    switch (opcode) {
+        case 0x50u:  // PM4_SET_BIN_MASK: high dword then low dword.
+        case 0x51u: {  // PM4_SET_BIN_SELECT: high dword then low dword.
+            if (payload_dwords != 2u) {
+                return fail("invalid captured 64-bit BIN state packet size", error);
+            }
+            const uint64_t value =
+                (static_cast<uint64_t>(payload0) << 32) |
+                read_be32(packet_bytes + 8u);
+            if (opcode == 0x50u) {
+                state->bin_mask = value;
+            } else {
+                state->bin_select = value;
+            }
+            break;
+        }
+        case 0x60u:  // PM4_SET_BIN_MASK_LO.
+        case 0x61u:  // PM4_SET_BIN_MASK_HI.
+        case 0x62u:  // PM4_SET_BIN_SELECT_LO.
+        case 0x63u: {  // PM4_SET_BIN_SELECT_HI.
+            if (payload_dwords != 1u) {
+                return fail("invalid captured 32-bit BIN state packet size", error);
+            }
+            switch (opcode) {
+                case 0x60u:
+                    state->bin_mask = (state->bin_mask & 0xFFFFFFFF00000000ull) |
+                                       payload0;
+                    break;
+                case 0x61u:
+                    state->bin_mask = (state->bin_mask & 0xFFFFFFFFull) |
+                                       (static_cast<uint64_t>(payload0) << 32);
+                    break;
+                case 0x62u:
+                    state->bin_select =
+                        (state->bin_select & 0xFFFFFFFF00000000ull) | payload0;
+                    break;
+                case 0x63u:
+                    state->bin_select = (state->bin_select & 0xFFFFFFFFull) |
+                                         (static_cast<uint64_t>(payload0) << 32);
+                    break;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    if (error) error->clear();
+    return true;
+}
+
 bool decode_guest_register_writes(
     const uint8_t* packet_bytes,
     size_t byte_length,

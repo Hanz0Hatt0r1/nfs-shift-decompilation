@@ -2355,6 +2355,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   void RingWorkerLoop() {
     shift::xbox::GuestRasterRegisterState raster_register_state;
     shift::xbox::CapturedXboxShaderRegisterState shader_register_state;
+    shift::xbox::CapturedXenosBinState xenos_bin_state;
     std::vector<uint8_t> vertex_shader_program;
     std::vector<uint8_t> pixel_shader_program;
     std::vector<shift::xbox::CapturedVulkanDraw> frame_draws;
@@ -2589,6 +2590,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         uint32_t decoded_swaps = 0;
         uint32_t submitted_frames = 0;
         uint32_t raw_register_writes = 0;
+        uint32_t predicated_packets_skipped = 0;
         std::array<uint32_t, 256> type3_opcode_counts{};
         std::array<uint32_t, 256> draw_source_primitive_counts{};
         std::map<uint32_t, uint32_t> draw_index_count_counts;
@@ -2597,6 +2599,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         uint32_t rectangle_raster_diagnostics = 0;
         if (expanded_ok) {
           size_t expanded_packet_ordinal = 0;
+          std::vector<uint8_t> packet_execution_status(expanded.packets.size(), 0u);
           for (const shift::xbox::ResolvedGuestPacket& resolved : expanded.packets) {
             const size_t packet_ordinal = expanded_packet_ordinal++;
             const shift::xbox::PacketSpan& packet = resolved.packet;
@@ -2618,6 +2621,56 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               }
               packet_bytes = source_bytes + packet.byte_offset;
             }
+
+            bool parent_executes = true;
+            if (resolved.nesting_depth != 0u) {
+              if (resolved.caller_packet_ordinal >= packet_ordinal) {
+                ++unsupported_draws;
+                REXLOG_WARN(
+                    "shift-native: expanded PM4 packet has invalid caller ordinal "
+                    "packet={} caller_packet={} depth={}",
+                    packet_ordinal, resolved.caller_packet_ordinal,
+                    resolved.nesting_depth);
+                continue;
+              }
+              parent_executes = packet_execution_status[
+                  resolved.caller_packet_ordinal] != 0u;
+            }
+            if (!parent_executes) continue;
+
+            if (packet.type == shift::xbox::PacketType::Type3) {
+              bool execute_packet = false;
+              if (!shift::xbox::evaluate_captured_xenos_type3_packet(
+                      packet_bytes, packet.byte_length, &xenos_bin_state,
+                      &execute_packet, &error)) {
+                ++unsupported_draws;
+                REXLOG_WARN(
+                    "shift-native: rejected Xenos Type-3 predicate/state packet "
+                    "{:08X}+{}: {}",
+                    resolved.source_guest_address, packet.byte_offset, error);
+                continue;
+              }
+              if (!execute_packet) {
+                packet_execution_status[packet_ordinal] = 0u;
+                ++predicated_packets_skipped;
+                static std::atomic<uint32_t> predicate_skip_log_count{0};
+                const uint32_t skip_index = predicate_skip_log_count.fetch_add(
+                    1, std::memory_order_relaxed);
+                if (GuestRingTraceEnabled() && skip_index < 64u) {
+                  REXLOG_INFO(
+                      "shift-native: skipped predicated PM4 packet={} "
+                      "source={:08X}+{} caller_packet={} caller_source={:08X}+{} "
+                      "bin_select={:016X} bin_mask={:016X}",
+                      packet_ordinal, resolved.source_guest_address,
+                      packet.byte_offset, resolved.caller_packet_ordinal,
+                      resolved.caller_guest_address,
+                      resolved.caller_packet_byte_offset,
+                      xenos_bin_state.bin_select, xenos_bin_state.bin_mask);
+                }
+                continue;
+              }
+            }
+            packet_execution_status[packet_ordinal] = 1u;
 
             GuestWriteProvenance packet_write_provenance{};
             packet_write_provenance.writer = "expanded_pm4_packet";
@@ -4238,6 +4291,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                        "R8 upload scratch {}/{} hits/misses ({} slots, {} bytes), "
                        "{} intermediate Copy/Convert states decoded, "
                        "{} guest swaps, {} Vulkan frames submitted, "
+                       "{} predicated PM4 packets skipped, "
                        "{} unsupported packet/draw forms, type3 opcodes [{}]",
                        expanded.packets.size(), raw_register_writes,
                        loaded_constant_spans, unresolved_constant_spans,
@@ -4254,7 +4308,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                        r8_scratch_stats.hits, r8_scratch_stats.misses,
                        r8_scratch_stats.entries, r8_scratch_stats.reserved_bytes,
                        recognized_intermediate_copies, decoded_swaps, submitted_frames,
-                       unsupported_draws, type3_opcode_summary.str());
+                       predicated_packets_skipped, unsupported_draws,
+                       type3_opcode_summary.str());
         } else {
           REXLOG_WARN("shift-native: dropped malformed PM4 batch at WPTR {:08X}: {}",
                       write_pointer, error);

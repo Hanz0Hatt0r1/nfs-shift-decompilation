@@ -3,7 +3,8 @@
 Date: 2026-10-29
 Scope: compare the supplied Xenos v58 / Native v55 producer-rank crosswalk
 against the exact ReXGlue Xenos decoder and this branch's Native packet path.
-No runtime dispatch behavior was changed.
+The initial review was evidence-only; the v72 follow-up below adds Native
+Type-3 predicate execution and captured regressions.
 
 ## Findings
 
@@ -61,7 +62,7 @@ all-ones bin state) with no captured `sub_823B8C60` producer between ranks 2
 and 3. Its callback route remains unresolved, so it must not be attributed to
 a Native queue rollback.
 
-### Native frames both forms but does not apply the predicate gate
+### Native packet framing and the missing execution gate
 
 Native's `scan_captured_packet_stream` computes Type-3 packet size from bits
 16–29 and extracts the opcode from bits 8–15; bit 0 affects neither field
@@ -71,14 +72,99 @@ payload dword plus its header: 8 bytes total. `decode_captured_gpu_interrupt`
 requires exactly that size and reads payload `0x4` as CPU mask `0x4` (lines
 891–909).
 
-The execution path has a semantic gap: `RingWorkerLoop` branches on Type-3
+Before the v72 follow-up, the execution path had a semantic gap:
+`RingWorkerLoop` branched on Type-3
 opcode `0x54`, decodes the mask, then dispatches each set bit without checking
 header bit 0 or maintaining `bin_select`/`bin_mask`
 (`native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp`, lines 4087–4135;
 there are no bin-select/mask references in this plugin). Native therefore
-frames and payload-decodes both packet forms correctly, but it does not match
-the Xenos conditional-execution rule when a predicated packet's bin test would
-fail. A Native callback for a predicated packet could be extra in that case.
+framed and payload-decoded both packet forms correctly, but did not match the
+Xenos conditional-execution rule when a predicated packet's bin test failed.
+
+## v72 rank-3/rank-4 cause analysis
+
+P1's updated evidence file
+`evidence/xbox360_linux_native_xenos_first_producer_divergence_v72_20261029.json`
+has SHA-256
+`b6f5413fd0d71f00ea2428bd853441543cab8c46e63c928c76ed2b5c9b9b538c`.
+The Native capture itself has SHA-256
+`676cb87812b0dd697ccf7aa87a90b1942013c7d72f2c598e38c1853a450e89fc`.
+P1 also updated the v72 callback-interval join: producer ranks 3 and 4 occur
+on the same LWP inside source-1 dispatch intervals `0xEB2` and `0xEB4`.
+
+The ring batch at generation 1, `RPTR=5992`, `WPTR=6025` is 33 dwords long
+and explicitly references child IB `0x096D8F80`, 671 dwords, twice: parent
+dword offsets 2 and 7. The Native expander visits each reference in order;
+its active-buffer list is a recursion-cycle check, not a global dedup set, and
+the stack entry is popped after each child. This behavior is correct for two
+sequential PM4_INDIRECT_BUFFER commands. The v72 ring log confirms both
+interrupt occurrences were dispatched from that batch:
+
+| Queue producer rank | Expanded packet ordinal | Child occurrence | Dispatch | Queue value |
+| ---: | ---: | --- | --- | ---: |
+| 3 | 181 | First reference (parent dword 2) | `0xEB2` | 2 → 3 |
+| 4 | 367 | Second reference (parent dword 7) | `0xEB4` | 3 → 4 |
+
+Each target is child dword 657 (`0xA44`, byte offset 2628), header
+`0xC0005401`, payload `0x4`. The child contains 184 framed packets; its target
+is zero-based packet 179. Including the root's leading SET_BIN_SELECT_LO and
+IB packets gives ordinal 181 in the first expansion; the second occurrence
+adds the first child's 184 packets and two more root packets, yielding 367.
+The exact logger lines make the source packet certain, and callback intervals
+link both producer writes to their respective dispatches. Parent occurrence
+assignment is further supported by that expanded order. P1's v69 repeat
+shows the same repeated child pattern at ordinals 181 and 367.
+
+The packet's expected Xenos predicate result is derivable from the captured
+commands even though no live Native BIN register was sampled. SDK semantics
+map parent `0xC0006200` to SET_BIN_SELECT_LO, so the first and second child
+executions inherit low select values `0xC` and `0x30`. Before dword 657, the
+child writes BIN_MASK_HI=0 at dword 547, then BIN_MASK_LO=`0xFFFFFFFF` and
+`0x80000000` at dwords 628 and 630. No BIN_SELECT writes occur in the child
+before the interrupt. Thus the mask at the target is
+`0x0000000080000000`; select-and-mask is zero for both occurrences:
+
+| Child execution | BIN_SELECT low | BIN_MASK | Intersection | `C0005401` action |
+| --- | ---: | ---: | ---: | --- |
+| First | `0x0000000C` | `0x0000000080000000` | `0` | Skip |
+| Second | `0x00000030` | `0x0000000080000000` | `0` | Skip |
+
+The predicate state is command-stream-derived, not a direct hardware sample.
+The missing Native gate explains why both packets nevertheless reached the
+source-1 callback and produced queue values 3 and 4. This is a confirmed Native
+PM4 execution defect for the captured batch. It does not prove that this
+renderer defect alone caused the different Xenos rank-3 stream: the separate
+Xenos run uses a 35-dword IB at `0x096E0B20+92` with unpredicated
+`0xC0005400`, and separate runs are not lockstep comparisons.
+
+The v72 repeat's parent occurrence and callback interval evidence also settle
+the duplicated-IB question: Native should process both explicit references;
+only the two predicated packets inside them should be skipped for this BIN
+state. No ring replay or stale-IB traversal is indicated by this batch.
+
+### Implemented response
+
+The Native PM4 path now maintains the Xenos BIN_SELECT/BIN_MASK state, applies
+Type-3 header bit 0 before packet execution, and updates the state from full
+and low/high BIN setter packets. A predicate-failed indirect-buffer command
+marks its nested packets non-executable while preserving the flattened stream
+and parent order. Trace mode records skipped packet source, caller packet,
+BIN_SELECT, and BIN_MASK. Duplicate unpredicated IB references continue to
+expand and execute in sequence.
+
+One traversal edge case remains: `expand_guest_indirect_buffers()` resolves
+and parses nested IB contents before `RingWorkerLoop` evaluates the flattened
+Type-3 predicate. A predicate-failed IB is therefore prevented from executing,
+but its child address is still read and parsed; an invalid or inaccessible
+child can still make expansion fail. Xenos checks the IB packet predicate
+before dispatching the IB. The captured v72 parent IB packets are unpredicated,
+so this does not affect the current rank-3/rank-4 correction. Defer changing
+the expander until a captured predicated-IB case or a broader need justifies
+moving predicate evaluation into recursive expansion.
+
+The focused regression reproduces the captured selectors (`0xC`, `0x30`),
+mask writes, duplicate IB references, and the two skipped interrupts. It also
+checks an unpredicated interrupt and the positive Xenos v60 predicate state.
 
 ### Packet bounds and source-buffer shape
 
@@ -125,12 +211,20 @@ that this caused the queue divergence.
   all four linked producer entries validated, predicated producer ranks 2 and
   4 passed the Xenos gate, the first four headers and queue indices matched the
   v58/v59 references, and IRQ241 remained the single unlinked event.
+- Built and ran `shift_xbox_guest_ring_check` with `-Wall -Wextra -Werror`,
+  then ran its CTest target: 1/1 passed.
+- Built the Native plugin (`rexgpu-shift-native`) and live-ring smoke target;
+  plugin CTest passed 7/7. The built Linux plugin SHA-256 is
+  `fd615adad5febc2adcf9a46fa0b74a67c9cf28f013bc74ca8715ac9abad9c490`
+  (ELF Build ID `14bc1880e1786605356deda62829d4c18a47d125`) at
+  `/home/pes/work/rexglue-sdk-rexui-vulkan-20261023/out/linux-amd64/librexgpu-shift-native.so`.
+- These are packet-level and synthetic plugin checks. A new paired retail
+  Native run is still required to confirm the queue sequence after this fix.
 
-These checks validate framing and the evidence crosswalk; they do not validate
-Native conditional execution. P1's v60 capture now establishes the Xenos
-predicate inputs for the sampled producer events. To determine whether
-Native's missing predicate gate changes execution, the remaining minimal
-runtime check is a low-intrusion Native capture of `bin_select`/`bin_mask` and
-the guest producer sequence immediately around corresponding predicated
-source-1 interrupts, especially producer rank 3. Do not alter dispatch
-behavior until that Native-side state is available.
+The remaining minimal runtime validation is a paired no-input Native launch
+with the new plugin and the frozen XEX/host/runtime/game data. Capture the
+first four source-1 producer joins, skipped-packet state for the two duplicate
+IB occurrences, and the resulting queue values. Expected: the captured
+`C0005401` at child offset `0xA44` is skipped under both parent selectors;
+these two dispatches do not increment the producer queue. Keep the Xenos run
+as a separate diagnostic comparison, not as a correctness oracle.
