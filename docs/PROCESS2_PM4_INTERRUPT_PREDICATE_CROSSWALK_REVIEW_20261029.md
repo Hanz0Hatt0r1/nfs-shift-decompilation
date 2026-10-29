@@ -24,8 +24,42 @@ payload and skips the packet (`src/graphics/command_processor.cpp`, lines
 Thus `0xC0005401` is a predicated source-1 interrupt; `0xC0005400` is
 unpredicated. P1's v58 trace reaches the Xenos interrupt handler, callback,
 and retail producer for every sampled `0xC0005401, 0x4`, so the Xenos
-predicate gate passed for those events. The captures do not record the actual
-`bin_select_`/`bin_mask_` values.
+predicate gate passed for those events. The v58 captures do not record the
+actual `bin_select_`/`bin_mask_` values.
+
+P1's subsequent low-stop v60 capture supplies those Xenos values for four
+producer-linked source-1 interrupts. Its verified event-log SHA-256 is
+`f4a3361588833a3048617c16c6a348fb2fb983536b1b63048bdf7427649cb581`; the
+trace SHA-256 is
+`3df08f3df84d039230c71f1c253ef80109649c4427e3f817e972e7f0c7aaa372`, and
+metadata SHA-256 is
+`632bf6dc7bfaafc0c53d588d4bbbfd4b0afefd71bb9ec5bcc60039eb1b8b211d`.
+The Xenos host, runtime, XEX, and plugin identities match v58. The capture
+reached Bink 281/281, sent no input, changed no guest memory, used one
+interrupt hardware breakpoint and four producer stops, and captured 243
+interrupt entries. The linked rows are:
+
+The table shows the low 32 bits of the captured 64-bit bin values (zero
+extended in the actual state).
+
+| Producer rank | IRQ rank | Header | Predicate | `bin_select` | `bin_mask` | AND | P/C before producer |
+| ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| 1 | 239 | `C0005400` | off | `FFFFFFFF` | `FFFFFFFF` | `FFFFFFFF` | 0 / 0 |
+| 2 | 240 | `C0005401` | on | `80000003` | `80000000` | `80000000` | 1 / 1 |
+| 3 | 242 | `C0005400` | off | `FFFFFFFF` | `FFFFFFFF` | `FFFFFFFF` | 2 / 2 |
+| 4 | 243 | `C0005401` | on | `80000003` | `80000000` | `80000000` | 3 / 3 |
+
+Every payload is `0x4`, all four producer calls are linked to the same LWP,
+and both sampled predicated packets have a nonzero bin intersection. Their
+Xenos predicate gates therefore passed. The headers and queue indices agree
+with the v58 and v59 producer-rank references. This confirms Xenos-side
+predicate behavior for the sampled producer events; it does not expose Native
+bin state or establish cross-run causality.
+
+The same five-entry window contains IRQ241 (`C0005400`, payload `0x4`,
+all-ones bin state) with no captured `sub_823B8C60` producer between ranks 2
+and 3. Its callback route remains unresolved, so it must not be attributed to
+a Native queue rollback.
 
 ### Native frames both forms but does not apply the predicate gate
 
@@ -87,10 +121,16 @@ that this caused the queue divergence.
 - Ran P1's v58 crosswalk regression: 5 tests passed. An independent bounds
   check confirmed all 16 Xenos packet spans fit their captured IB extents.
   The Native crosswalk contains no numeric source-IB extents.
+- Ran P1's v60 comparator against the local run metadata and v58/v59 evidence:
+  all four linked producer entries validated, predicated producer ranks 2 and
+  4 passed the Xenos gate, the first four headers and queue indices matched the
+  v58/v59 references, and IRQ241 remained the single unlinked event.
 
 These checks validate framing and the evidence crosswalk; they do not validate
-Native conditional execution. The smallest runtime confirmation is a
-low-intrusion pair that records `bin_select_` and `bin_mask_` immediately before
-each source-1 interrupt, especially the producer-rank-3 packets. Do not alter
-dispatch behavior until those predicate inputs and the corresponding guest
-producer sequence are captured.
+Native conditional execution. P1's v60 capture now establishes the Xenos
+predicate inputs for the sampled producer events. To determine whether
+Native's missing predicate gate changes execution, the remaining minimal
+runtime check is a low-intrusion Native capture of `bin_select`/`bin_mask` and
+the guest producer sequence immediately around corresponding predicated
+source-1 interrupts, especially producer rank 3. Do not alter dispatch
+behavior until that Native-side state is available.
