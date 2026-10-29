@@ -1,0 +1,77 @@
+{
+  "schema": "shift.process2.native-register-wait-v108-assessment.v1",
+  "date": "2026-10-29",
+  "issue_id": "P2-NATIVE-REGISTER-WAIT-001",
+  "classification": "unsupported-register-form-confirmed_but_sampled-predicates-already-match_no-causal-impact-shown",
+  "source_evidence": {
+    "native_v102_log": "/home/pes/work/nfs-shift-p1-menu-ready-v102-native-20261029/bin/logs/nfs_shift_001.log",
+    "native_v102_log_sha256": "6575eaa431a501090cc8a1ff166c8a6fd893eb6d907fed3beb4de3181f4fa90a",
+    "xenos_v108_run_metadata": "/home/pes/work/nfs-shift-p1-xenos-register-wait-v108-20261029/run_metadata.json",
+    "xenos_v108_trace": "/home/pes/work/nfs-shift-p1-xenos-register-wait-v108-20261029/gdb.log",
+    "xenos_v108_trace_sha256": "8c2be37aca6fe3888c5f4c95121d19633c9708a99b90b43f9f7c4d185f092ead"
+  },
+  "shared_identity": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "xenos_plugin_sha256": "8b5abe7a0c59a8a41af5aa166df23de46fed191bfc863e183c98d6023c54e4de",
+    "native_plugin_sha256": "f213f4ca9b679660e18e17b68aa1cc6f64667388c8f0375ecd80b245db13f1c9",
+    "native_source_commit": "903639d023f617c4b15df9fcfb63c2c8dcf3c7ee",
+    "native_source_dirty": false,
+    "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6"
+  },
+  "matched_wait_packets": [
+    {
+      "source_ib": "0x095D0A20",
+      "packet_byte_offset": 24,
+      "native_warning_log_line": 285,
+      "xenos_ring_host": "0x2095D0A20",
+      "xenos_guest_ib": "0x095D0A20",
+      "xenos_input_offset_after_header": 28,
+      "raw_payload_u32": ["0x00000003", "0x00001973", "0x00000000", "0x00000001", "0x00000100"],
+      "register_value_at_xenos_entry": "0x00000000",
+      "masked_value": "0x00000000",
+      "predicate_already_matches": true,
+      "native_following_event_write_offsets": [872, 888],
+      "native_following_event_write_values": ["0xA95D0D7C", "0x00000009"]
+    },
+    {
+      "source_ib": "0x095D0DC0",
+      "packet_byte_offset": 40,
+      "native_warning_log_line": 290,
+      "xenos_ring_host": "0x2095D0DC0",
+      "xenos_guest_ib": "0x095D0DC0",
+      "xenos_input_offset_after_header": 44,
+      "raw_payload_u32": ["0x00000003", "0x00001973", "0x00000000", "0x00000001", "0x00000100"],
+      "register_value_at_xenos_entry": "0x00000000",
+      "masked_value": "0x00000000",
+      "predicate_already_matches": true,
+      "native_following_event_write_offsets": [9316, 9332],
+      "native_following_event_write_values": ["0xA95D3218", "0x0000000B"]
+    }
+  ],
+  "semantics": {
+    "control": "0x00000003",
+    "memory": false,
+    "poll_register": "0x1973",
+    "reference": 0,
+    "mask": 1,
+    "comparison": "Equal",
+    "poll_interval": "0x100",
+    "predicate": "(register[0x1973] & 1) == 0",
+    "xenos_behavior": "The predicate is already true at entry in both captured occurrences, so Xenos does not block on either wait.",
+    "native_behavior": "Native logs the form unsupported and continues without reading the register or evaluating the predicate. These two instances therefore show an implementation coverage gap, but not a wait-state difference for the observed Xenos register state."
+  },
+  "decision": {
+    "runtime_change_made": false,
+    "reason": "The paired evidence does not show a false register predicate or an ordering difference caused by skipping these waits. Implementing a generic register wait now would require a faithful Native register-state source for false-predicate cases; the current Native ReadRegister path returns zero for most unmodeled registers, so treating that value as authoritative would be an unsupported assumption.",
+    "remaining_risk": "Other register-form WAIT_REG_MEM commands may have predicates that are false at entry. Native still reports those forms unsupported and does not poll them.",
+    "next_evidence_needed": [
+      "A register-form WAIT_REG_MEM whose predicate is false at Native entry, with Xenos register value captured at the same command.",
+      "The preceding register writes or hardware-side state transition that determines that register value, joined to the same PM4 execution order.",
+      "A bounded paired rerun showing whether Native must wait for a later external/MMIO or GPU-state update before consuming subsequent packets."
+    ]
+  },
+  "gameplay_limit": "Both backends reached Bink 281/281 and original Menu Setup in the documented pair; visible main menu and input consumption remain unconfirmed. This evidence does not explain frontend progression or prove renderer parity.",
+  "tests": "No code changed. Existing decoder/condition tests were reviewed; no test was added for an unsatisfied register wait because no such captured command/value pair is available."
+}
