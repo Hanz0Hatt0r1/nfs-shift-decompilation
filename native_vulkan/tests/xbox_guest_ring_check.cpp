@@ -167,6 +167,29 @@ int main() {
                 &interrupt_cpu_mask, &error),
             "truncated PM4_INTERRUPT packet was accepted");
 
+    for (uint32_t header : {0xC0005400u, 0xC0005401u}) {
+        std::array<uint8_t, 12> interrupt_then_nop{};
+        write_be32(interrupt_then_nop.data(), header);
+        write_be32(interrupt_then_nop.data() + 4u, 0x4u);
+        std::vector<shift::xbox::PacketSpan> packets;
+        require(shift::xbox::scan_captured_packet_stream(
+                    interrupt_then_nop.data(), interrupt_then_nop.size(),
+                    &packets, &error) &&
+                    packets.size() == 2u &&
+                    packets[0].type == shift::xbox::PacketType::Type3 &&
+                    packets[0].opcode == 0x54u &&
+                    packets[0].byte_offset == 0u &&
+                    packets[0].byte_length == 8u &&
+                    packets[1].type == shift::xbox::PacketType::ZeroNop &&
+                    packets[1].byte_offset == 8u,
+                "PM4_INTERRUPT predicate bit changed packet bounds");
+        require(shift::xbox::decode_captured_gpu_interrupt(
+                    interrupt_then_nop.data() + packets[0].byte_offset,
+                    packets[0].byte_length, &interrupt_cpu_mask, &error) &&
+                    interrupt_cpu_mask == 0x4u,
+                "predicated/unpredicated PM4_INTERRUPT payload was decoded differently");
+    }
+
     std::array<uint8_t, 128> callback_ring{};
     for (size_t index = 0; index < kCapturedCallbackWaitAckPrefix.size(); ++index) {
         const uint32_t dword = kCapturedCallbackWaitAckPrefix[index];
