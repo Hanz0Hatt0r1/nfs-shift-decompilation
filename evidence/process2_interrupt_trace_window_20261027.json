@@ -1,0 +1,59 @@
+{
+  "schema": "shift.process2.interrupt_trace_window.v1",
+  "date": "2026-10-27",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "prior_capture": {
+    "evidence": "process2_ordered_edram_interrupt_trace_progress_20261027.json",
+    "recorded_interrupts": 128,
+    "first_record_local": "2026-10-27 15:50:15.639 MSK",
+    "last_record_local": "2026-10-27 15:50:19.844 MSK",
+    "observed_rate_per_second": 30.4,
+    "counter_limit": 128,
+    "coverage_note": "The PM4_INTERRUPT logger stopped at its cap before the post-Bink counter-underflow interval."
+  },
+  "implementation": {
+    "file": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+    "record_limit": 8192,
+    "estimated_capacity_at_observed_rate_seconds": 269,
+    "trace_gate": "SHIFT_NATIVE_VULKAN_TRACE_RING=1",
+    "trace_off_behavior": "The trace counter and formatting are inside the existing disabled-by-default trace branch; PM4 dispatch is unchanged.",
+    "fields": [
+      "source=1",
+      "ring generation",
+      "batch read/write pointers",
+      "ring guest address",
+      "expanded packet ordinal",
+      "packet source guest address and byte offset",
+      "CPU mask and dispatched CPU mask",
+      "each asserted CPU's callback address, callback data, and dispatch status"
+    ],
+    "overflow_behavior": "Record the first 8192 interrupts, then emit one limit warning and stop logging further interrupt records."
+  },
+  "requested_capture_window": {
+    "runtime_seconds": [40, 50],
+    "known_p1_events": {
+      "bink_281_of_281_runtime_seconds": 34.712,
+      "first_counter_decrement_runtime_seconds": 42.613,
+      "callback": "0x823B37B8",
+      "callback_data": "0xB7365F00",
+      "queue": "0xB7368BE0",
+      "event": "0xB7368C00",
+      "shared_counter": "0xB7368A04",
+      "worker_plus_72_address": "0xB7368A0C"
+    },
+    "capture_status": "Instrumentation is ready; a fresh retail run is required to verify the actual interrupt count and capture those guest states."
+  },
+  "regressions": {
+    "trace_on": "The plugin live-ring smoke checks interrupt record identity, ring context, packet source, masks, and callback status with tracing enabled.",
+    "trace_off": "The plugin live-ring smoke explicitly sets SHIFT_NATIVE_VULKAN_TRACE_RING=0 and rejects any PM4_INTERRUPT trace output."
+  },
+  "validation": {
+    "linux_plugin_build_and_ctest": "pending after this commit",
+    "android_plugin_build": "not run; this change only increases opt-in host-side trace capacity",
+    "retail_capture": "not yet run"
+  },
+  "limits": [
+    "The 8192 bound is sized from the earlier observed rate; only a new run can show whether it covers runtime 40–50 seconds.",
+    "This change adds trace capacity only. It does not alter or validate guest interrupt scheduling, callback semantics, or the observed queue/counter behavior."
+  ]
+}

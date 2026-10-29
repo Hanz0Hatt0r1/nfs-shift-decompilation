@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <string>
 #include <utility>
 
 namespace shift::xbox {
@@ -14,10 +15,18 @@ constexpr uint32_t kPacketTypeMask = 0xC0000000u;
 constexpr uint32_t kPacketCountMask = 0x3FFF0000u;
 constexpr uint32_t kPacketOpcodeMask = 0x0000FF00u;
 constexpr uint32_t kDrawIndxOpcode = 0x22u;
+constexpr uint32_t kDrawIndx2Opcode = 0x36u;
+constexpr uint32_t kInterruptOpcode = 0x54u;
+constexpr uint32_t kImLoadOpcode = 0x27u;
+constexpr uint32_t kImLoadImmediateOpcode = 0x2Bu;
+constexpr uint32_t kLoadAluConstantOpcode = 0x2Fu;
+constexpr uint32_t kIndirectBufferOpcode = 0x3Fu;
+constexpr uint32_t kXeSwapOpcode = 0x64u;
+constexpr uint32_t kXeSwapSignature = 0x53574150u;  // Big-endian "SWAP".
 constexpr uint32_t kTriangleList = 4u;
 constexpr uint32_t kIndexCountMask = 0x00FFFFFFu;
 constexpr uint32_t kDmaSwapModeMask = 0xC0000000u;
-constexpr size_t kCapturedPacketBytes = 20;
+constexpr size_t kMinimumDrawPacketBytes = 4;
 
 uint64_t tiled_2d_offset_32bpp(uint32_t x, uint32_t y, uint32_t pitch_pixels) {
     const uint64_t outer_blocks =
@@ -34,6 +43,92 @@ uint64_t tiled_2d_offset_32bpp(uint32_t x, uint32_t y, uint32_t pitch_pixels) {
            (((outer_inner_bytes >> 4) & 1u) << 5) |
            (((outer_inner_bytes >> 5) & 7u) << 8) |
            (outer_inner_bytes >> 8 << 12);
+}
+
+uint64_t tiled_2d_offset_16bpb(uint32_t x, uint32_t y, uint32_t pitch_blocks) {
+    const uint64_t macro =
+        ((static_cast<uint64_t>(x >> 5) +
+          static_cast<uint64_t>(y >> 5) * (pitch_blocks >> 5)) << 11);
+    const uint64_t micro =
+        (static_cast<uint64_t>((x & 7u) + ((y & 0xEu) << 2)) << 4);
+    const uint64_t offset = macro + ((micro & ~uint64_t{0xFu}) << 1) +
+                            (micro & 0xFu) + (static_cast<uint64_t>(y & 1u) << 4);
+    return ((offset & ~uint64_t{0x1FFu}) << 3) +
+           (static_cast<uint64_t>(y & 0x10u) << 7) +
+           ((offset & 0x1C0u) << 2) +
+           (((((y & 8u) >> 2) + (x >> 3)) & 3u) << 6) +
+           (offset & 0x3Fu);
+}
+
+uint64_t tiled_2d_offset_8bpb(uint32_t x, uint32_t y, uint32_t pitch_blocks) {
+    const uint64_t outer_blocks =
+        ((static_cast<uint64_t>(x >> 5) +
+          static_cast<uint64_t>(y >> 5) * (pitch_blocks >> 5)) << 6);
+    const uint64_t inner_blocks = (((y >> 1) & 0x7u) << 3) | (x & 0x7u);
+    const uint64_t outer_inner_bytes = (outer_blocks | inner_blocks) << 3;
+    const uint32_t bank = (y >> 4) & 1u;
+    const uint32_t pipe = ((x >> 3) & 3u) ^ (((y >> 3) & 1u) << 1);
+
+    return (static_cast<uint64_t>(y & 1u) << 4) |
+           (static_cast<uint64_t>(pipe) << 6) |
+           (static_cast<uint64_t>(bank) << 11) |
+           (outer_inner_bytes & 0xFu) |
+           (((outer_inner_bytes >> 4) & 1u) << 5) |
+           (((outer_inner_bytes >> 5) & 7u) << 8) |
+           (outer_inner_bytes >> 8 << 12);
+}
+
+uint64_t compressed_texture_storage_bytes(uint32_t pitch_pixels, uint32_t height,
+                                          uint32_t bytes_per_block, bool tiled) {
+    const uint64_t blocks_wide = pitch_pixels / 4u;
+    const uint64_t blocks_high = (height + 3u) / 4u;
+    if (!tiled) return blocks_wide * blocks_high * bytes_per_block;
+    // Xenos tiled compressed subresources allocate complete 32x32 block tiles.
+    const uint64_t tiles_wide = (blocks_wide + 31u) / 32u;
+    const uint64_t tiles_high = (blocks_high + 31u) / 32u;
+    return tiles_wide * tiles_high * 32u * 32u * bytes_per_block;
+}
+
+uint64_t tiled_texture_32bpp_storage_bytes(uint32_t pitch_pixels,
+                                           uint32_t height) {
+    const uint64_t tile_rows = (static_cast<uint64_t>(height) + 31u) / 32u;
+    return static_cast<uint64_t>(pitch_pixels) * tile_rows * 32u * 4u;
+}
+
+uint64_t tiled_texture_64bpp_storage_bytes(uint32_t pitch_pixels,
+                                           uint32_t height) {
+    const uint64_t tile_rows = (static_cast<uint64_t>(height) + 31u) / 32u;
+    return static_cast<uint64_t>(pitch_pixels) * tile_rows * 32u * 8u;
+}
+
+struct Dxt5AlphaBlock {
+    std::array<uint8_t, 8> values{};
+    uint64_t indices = 0;
+};
+
+Dxt5AlphaBlock decode_dxt5_alpha_block(const uint8_t* block) {
+    Dxt5AlphaBlock decoded{};
+    decoded.values[0] = block[0];
+    decoded.values[1] = block[1];
+    if (decoded.values[0] > decoded.values[1]) {
+        for (uint32_t i = 2; i < 8; ++i) {
+            decoded.values[i] = static_cast<uint8_t>(
+                ((8u - i) * decoded.values[0] +
+                 (i - 1u) * decoded.values[1]) / 7u);
+        }
+    } else {
+        for (uint32_t i = 2; i < 6; ++i) {
+            decoded.values[i] = static_cast<uint8_t>(
+                ((6u - i) * decoded.values[0] +
+                 (i - 1u) * decoded.values[1]) / 5u);
+        }
+        decoded.values[6] = 0;
+        decoded.values[7] = 255;
+    }
+    for (uint32_t i = 0; i < 6; ++i) {
+        decoded.indices |= static_cast<uint64_t>(block[2u + i]) << (i * 8u);
+    }
+    return decoded;
 }
 
 uint32_t read_be32(const uint8_t* bytes) {
@@ -119,6 +214,328 @@ bool scan_captured_packet_stream(
     return true;
 }
 
+bool evaluate_captured_xenos_type3_packet(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedXenosBinState* state,
+    bool* execute_packet,
+    std::string* error) {
+    if (!packet_bytes || !state || !execute_packet || byte_length < 4u ||
+        (byte_length & 3u) != 0u) {
+        return fail("invalid captured Xenos Type-3 packet input", error);
+    }
+
+    const uint32_t header = read_be32(packet_bytes);
+    if ((header >> 30) != 3u) {
+        return fail("captured Xenos predicate input is not a Type-3 packet", error);
+    }
+    const uint32_t payload_dwords = ((header >> 16) & 0x3FFFu) + 1u;
+    if (byte_length != (static_cast<size_t>(payload_dwords) + 1u) * 4u) {
+        return fail("captured Xenos Type-3 packet size mismatch", error);
+    }
+
+    *execute_packet = (header & 1u) == 0u ||
+                      (state->bin_select & state->bin_mask) != 0u;
+    if (!*execute_packet) {
+        if (error) error->clear();
+        return true;
+    }
+
+    const uint32_t opcode = (header >> 8) & 0xFFu;
+    const uint32_t payload0 = read_be32(packet_bytes + 4u);
+    switch (opcode) {
+        case 0x50u:  // PM4_SET_BIN_MASK: high dword then low dword.
+        case 0x51u: {  // PM4_SET_BIN_SELECT: high dword then low dword.
+            if (payload_dwords != 2u) {
+                return fail("invalid captured 64-bit BIN state packet size", error);
+            }
+            const uint64_t value =
+                (static_cast<uint64_t>(payload0) << 32) |
+                read_be32(packet_bytes + 8u);
+            if (opcode == 0x50u) {
+                state->bin_mask = value;
+            } else {
+                state->bin_select = value;
+            }
+            break;
+        }
+        case 0x60u:  // PM4_SET_BIN_MASK_LO.
+        case 0x61u:  // PM4_SET_BIN_MASK_HI.
+        case 0x62u:  // PM4_SET_BIN_SELECT_LO.
+        case 0x63u: {  // PM4_SET_BIN_SELECT_HI.
+            if (payload_dwords != 1u) {
+                return fail("invalid captured 32-bit BIN state packet size", error);
+            }
+            switch (opcode) {
+                case 0x60u:
+                    state->bin_mask = (state->bin_mask & 0xFFFFFFFF00000000ull) |
+                                       payload0;
+                    break;
+                case 0x61u:
+                    state->bin_mask = (state->bin_mask & 0xFFFFFFFFull) |
+                                       (static_cast<uint64_t>(payload0) << 32);
+                    break;
+                case 0x62u:
+                    state->bin_select =
+                        (state->bin_select & 0xFFFFFFFF00000000ull) | payload0;
+                    break;
+                case 0x63u:
+                    state->bin_select = (state->bin_select & 0xFFFFFFFFull) |
+                                         (static_cast<uint64_t>(payload0) << 32);
+                    break;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    if (error) error->clear();
+    return true;
+}
+
+bool decode_guest_register_writes(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    std::vector<GuestRegisterWrite>* output,
+    std::string* error) {
+    if (!packet_bytes || !output || byte_length < 4u || (byte_length & 3u) != 0u) {
+        return fail("invalid PM4 register-write packet input", error);
+    }
+
+    const uint32_t header = read_be32(packet_bytes);
+    const uint32_t packet_type = header >> 30;
+    std::vector<GuestRegisterWrite> writes;
+    if (packet_type == 0u) {
+        const uint32_t value_count = ((header >> 16) & 0x3FFFu) + 1u;
+        if (byte_length != (static_cast<size_t>(value_count) + 1u) * 4u) {
+            return fail("type-0 PM4 packet size mismatch", error);
+        }
+        const uint32_t base_index = header & 0x7FFFu;
+        const bool write_one_register = ((header >> 15) & 1u) != 0u;
+        writes.reserve(value_count);
+        for (uint32_t index = 0; index < value_count; ++index) {
+            writes.push_back(GuestRegisterWrite{
+                write_one_register ? base_index : base_index + index,
+                read_be32(packet_bytes + 4u + static_cast<size_t>(index) * 4u),
+            });
+        }
+    } else if (packet_type == 1u) {
+        if (byte_length != 12u) {
+            return fail("type-1 PM4 packet size mismatch", error);
+        }
+        writes.push_back(GuestRegisterWrite{
+            header & 0x7FFu,
+            read_be32(packet_bytes + 4u),
+        });
+        writes.push_back(GuestRegisterWrite{
+            (header >> 11) & 0x7FFu,
+            read_be32(packet_bytes + 8u),
+        });
+    } else {
+        return fail("PM4 packet does not contain register writes", error);
+    }
+
+    *output = std::move(writes);
+    if (error) error->clear();
+    return true;
+}
+
+bool decode_captured_shader_program_load(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedShaderProgramLoad* output,
+    std::string* error) {
+    if (!packet_bytes || !output || byte_length != 3u * sizeof(uint32_t)) {
+        return fail("invalid captured PM4_IM_LOAD packet", error);
+    }
+    const uint32_t header = read_be32(packet_bytes);
+    if ((header & kPacketTypeMask) != kType3Header ||
+        ((header & kPacketOpcodeMask) >> 8) != kImLoadOpcode ||
+        ((header & kPacketCountMask) >> 16) != 1u) {
+        return fail("unsupported captured PM4_IM_LOAD packet form", error);
+    }
+
+    const uint32_t address_and_stage = read_be32(packet_bytes + 4);
+    const uint32_t start_and_size = read_be32(packet_bytes + 8);
+    const uint32_t stage = address_and_stage & 0x3u;
+    const uint32_t dword_count = start_and_size & 0xFFFFu;
+    if (stage > 1u || (start_and_size >> 16) != 0u || dword_count == 0u) {
+        return fail("unsupported captured shader stage or program span", error);
+    }
+
+    *output = CapturedShaderProgramLoad{
+        stage == 0u ? GuestShaderStage::Vertex : GuestShaderStage::Pixel,
+        address_and_stage & ~0x3u,
+        dword_count,
+        dword_count * static_cast<uint32_t>(sizeof(uint32_t)),
+    };
+    if (error) error->clear();
+    return true;
+}
+
+bool decode_captured_immediate_shader_program_load(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedImmediateShaderProgramLoad* output,
+    std::string* error) {
+    if (!packet_bytes || !output || byte_length < 4u * sizeof(uint32_t) ||
+        (byte_length & 3u) != 0u) {
+        return fail("invalid PM4_IM_LOAD_IMMEDIATE packet", error);
+    }
+
+    const uint32_t header = read_be32(packet_bytes);
+    const uint32_t payload_count = ((header & kPacketCountMask) >> 16) + 1u;
+    if ((header & kPacketTypeMask) != kType3Header ||
+        ((header & kPacketOpcodeMask) >> 8) != kImLoadImmediateOpcode ||
+        payload_count < 3u || byte_length != (payload_count + 1u) * sizeof(uint32_t)) {
+        return fail("unsupported PM4_IM_LOAD_IMMEDIATE packet form", error);
+    }
+
+    const uint32_t stage = read_be32(packet_bytes + 4u);
+    const uint32_t start_and_size = read_be32(packet_bytes + 8u);
+    const uint32_t start = start_and_size >> 16;
+    const uint32_t dword_count = start_and_size & 0xFFFFu;
+    if (stage > 1u || start != 0u || dword_count == 0u ||
+        static_cast<uint64_t>(dword_count) + 2u > payload_count) {
+        return fail("invalid inline shader stage or program span", error);
+    }
+
+    *output = CapturedImmediateShaderProgramLoad{
+        stage == 0u ? GuestShaderStage::Vertex : GuestShaderStage::Pixel,
+        dword_count,
+        dword_count * static_cast<uint32_t>(sizeof(uint32_t)),
+        3u * sizeof(uint32_t),
+    };
+    if (error) error->clear();
+    return true;
+}
+
+bool decode_captured_constant_load(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedConstantLoad* output,
+    std::string* error) {
+    constexpr uint32_t kAllowedOffsetTypeBits = 0x00FF07FFu;
+    constexpr uint32_t kSizeMask = 0x00000FFFu;
+    if (!packet_bytes || !output || byte_length != 4u * sizeof(uint32_t)) {
+        return fail("invalid captured PM4_LOAD_ALU_CONSTANT packet", error);
+    }
+    const uint32_t header = read_be32(packet_bytes);
+    if ((header & kPacketTypeMask) != kType3Header ||
+        ((header & kPacketOpcodeMask) >> 8) != kLoadAluConstantOpcode ||
+        ((header & kPacketCountMask) >> 16) != 2u) {
+        return fail("unsupported captured PM4_LOAD_ALU_CONSTANT form", error);
+    }
+
+    const uint32_t guest_address = read_be32(packet_bytes + 4) & 0x3FFFFFFFu;
+    const uint32_t offset_type = read_be32(packet_bytes + 8);
+    const uint32_t size = read_be32(packet_bytes + 12);
+    const uint32_t bank_type = (offset_type >> 16) & 0xFFu;
+    const uint32_t start_index = offset_type & 0x7FFu;
+    const uint32_t dword_count = size & kSizeMask;
+    if ((offset_type & ~kAllowedOffsetTypeBits) != 0 ||
+        (size & ~kSizeMask) != 0 || (guest_address & 3u) != 0 ||
+        dword_count == 0) {
+        return fail("invalid captured constant-load address or range", error);
+    }
+
+    CapturedConstantBank bank{};
+    uint32_t register_base = 0;
+    uint32_t bank_dword_limit = 0;
+    switch (bank_type) {
+        case 0: bank = CapturedConstantBank::Alu; register_base = 0x4000; bank_dword_limit = 0x800; break;
+        case 1: bank = CapturedConstantBank::Fetch; register_base = 0x4800; bank_dword_limit = 0x100; break;
+        case 2: bank = CapturedConstantBank::Boolean; register_base = 0x4900; bank_dword_limit = 8; break;
+        case 3: bank = CapturedConstantBank::Loop; register_base = 0x4908; bank_dword_limit = 0x20; break;
+        case 4: bank = CapturedConstantBank::Registers; register_base = 0x2000; bank_dword_limit = 0x800; break;
+        default: return fail("unsupported captured constant-load bank", error);
+    }
+    if (static_cast<uint64_t>(start_index) + dword_count > bank_dword_limit) {
+        return fail("captured constant-load range exceeds its bank", error);
+    }
+
+    *output = CapturedConstantLoad{
+        bank,
+        guest_address,
+        start_index,
+        dword_count,
+        register_base + start_index,
+        dword_count * static_cast<uint32_t>(sizeof(uint32_t)),
+    };
+    if (error) error->clear();
+    return true;
+}
+
+bool decode_captured_constant_load_data(
+    const CapturedConstantLoad& load,
+    const uint8_t* source_bytes,
+    size_t byte_length,
+    std::vector<GuestRegisterWrite>* output,
+    std::string* error) {
+    uint32_t register_base = 0;
+    uint32_t bank_limit = 0;
+    switch (load.bank) {
+        case CapturedConstantBank::Alu: register_base = 0x4000; bank_limit = 0x800; break;
+        case CapturedConstantBank::Fetch: register_base = 0x4800; bank_limit = 0x100; break;
+        case CapturedConstantBank::Boolean: register_base = 0x4900; bank_limit = 8; break;
+        case CapturedConstantBank::Loop: register_base = 0x4908; bank_limit = 0x20; break;
+        case CapturedConstantBank::Registers: register_base = 0x2000; bank_limit = 0x800; break;
+        default: return fail("invalid captured constant-load bank", error);
+    }
+    if (!source_bytes || !output || load.dword_count == 0 ||
+        static_cast<uint64_t>(load.start_index) + load.dword_count > bank_limit ||
+        load.destination_register != register_base + load.start_index ||
+        load.byte_length != load.dword_count * sizeof(uint32_t) ||
+        load.byte_length > 0x2000u || byte_length != load.byte_length) {
+        return fail("invalid captured constant-load source span", error);
+    }
+    std::vector<GuestRegisterWrite> writes;
+    writes.reserve(load.dword_count);
+    for (uint32_t i = 0; i < load.dword_count; ++i) {
+        writes.push_back({load.destination_register + i,
+                          read_be32(source_bytes + static_cast<size_t>(i) * 4)});
+    }
+    *output = std::move(writes);
+    if (error) error->clear();
+    return true;
+}
+
+bool decode_captured_indirect_buffer(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedIndirectBuffer* output,
+    std::string* error) {
+    constexpr size_t kPacketBytes = 3u * sizeof(uint32_t);
+    constexpr uint32_t kAddressMask = 0xFFFFFFFFu;
+    constexpr uint32_t kLengthMask = 0x000FFFFFu;
+    if (!packet_bytes || !output || byte_length != kPacketBytes) {
+        return fail("invalid captured PM4_INDIRECT_BUFFER packet size", error);
+    }
+
+    const uint32_t header = read_be32(packet_bytes);
+    const uint32_t payload_count = ((header & kPacketCountMask) >> 16) + 1u;
+    if ((header & kPacketTypeMask) != kType3Header ||
+        ((header & kPacketOpcodeMask) >> 8) != kIndirectBufferOpcode ||
+        payload_count != 2u) {
+        return fail("unsupported captured PM4_INDIRECT_BUFFER form", error);
+    }
+
+    const uint32_t guest_address = read_be32(packet_bytes + 4u) & kAddressMask;
+    const uint32_t length = read_be32(packet_bytes + 8u);
+    if ((guest_address & 3u) != 0u || length == 0u ||
+        (length & ~kLengthMask) != 0u ||
+        static_cast<uint64_t>(guest_address) +
+                static_cast<uint64_t>(length) * sizeof(uint32_t) >
+            (uint64_t{1} << 32)) {
+        return fail("invalid captured PM4_INDIRECT_BUFFER guest span", error);
+    }
+
+    *output = CapturedIndirectBuffer{guest_address, length};
+    if (error) error->clear();
+    return true;
+}
+
 bool decode_captured_shader_control_flow(
     const uint8_t* shader_bytes,
     size_t byte_length,
@@ -127,6 +544,8 @@ bool decode_captured_shader_control_flow(
     constexpr uint32_t kControlFlowNop = 0;
     constexpr uint32_t kControlFlowExec = 1;
     constexpr uint32_t kControlFlowExecEnd = 2;
+    constexpr uint32_t kControlFlowConditionalExec = 3;
+    constexpr uint32_t kControlFlowConditionalExecEnd = 4;
     constexpr uint32_t kControlFlowConditionalJump = 11;
     constexpr uint32_t kControlFlowAllocate = 12;
     constexpr uint32_t kControlFlowTripletBytes = 12;
@@ -155,7 +574,9 @@ bool decode_captured_shader_control_flow(
 
         for (uint32_t slot = 0; slot < 2; ++slot) {
             const uint32_t opcode = (words[slot * 2 + 1] >> 12) & 0xFu;
-            if (opcode == kControlFlowExec || opcode == kControlFlowExecEnd) {
+            if (opcode == kControlFlowExec || opcode == kControlFlowExecEnd ||
+                opcode == kControlFlowConditionalExec ||
+                opcode == kControlFlowConditionalExecEnd) {
                 control_flow_triplet_count = std::min(
                     control_flow_triplet_count, words[slot * 2] & 0xFFFu);
             }
@@ -186,15 +607,23 @@ bool decode_captured_shader_control_flow(
             const uint32_t raw_opcode = (word1 >> 12) & 0xFu;
             if (raw_opcode != kControlFlowNop && raw_opcode != kControlFlowExec &&
                 raw_opcode != kControlFlowExecEnd &&
+                raw_opcode != kControlFlowConditionalExec &&
+                raw_opcode != kControlFlowConditionalExecEnd &&
                 raw_opcode != kControlFlowConditionalJump &&
                 raw_opcode != kControlFlowAllocate) {
-                return fail("unsupported captured shader control-flow opcode", error);
+                const std::string message =
+                    "unsupported captured shader control-flow opcode " +
+                    std::to_string(raw_opcode) + " at instruction " +
+                    std::to_string(triplet * 2 + slot);
+                return fail(message.c_str(), error);
             }
 
             CapturedShaderControlFlow decoded{};
             decoded.instruction_index = triplet * 2 + slot;
             decoded.opcode = static_cast<ShaderControlFlowOpcode>(raw_opcode);
-            if (raw_opcode == kControlFlowExec || raw_opcode == kControlFlowExecEnd) {
+            if (raw_opcode == kControlFlowExec || raw_opcode == kControlFlowExecEnd ||
+                raw_opcode == kControlFlowConditionalExec ||
+                raw_opcode == kControlFlowConditionalExecEnd) {
                 decoded.address = word0 & 0xFFFu;
                 decoded.instruction_count = (word0 >> 12) & 0x7u;
                 decoded.sequence = (word0 >> 16) & 0xFFFu;
@@ -202,6 +631,11 @@ bool decode_captured_shader_control_flow(
                     static_cast<uint64_t>(decoded.address) + decoded.instruction_count >
                         triplet_count) {
                     return fail("captured shader exec range is invalid", error);
+                }
+                if (raw_opcode == kControlFlowConditionalExec ||
+                    raw_opcode == kControlFlowConditionalExecEnd) {
+                    decoded.bool_constant = (word1 >> 2) & 0xFFu;
+                    decoded.condition = ((word1 >> 10) & 1u) != 0;
                 }
             } else if (raw_opcode == kControlFlowConditionalJump) {
                 decoded.address = word0 & 0x1FFFu;
@@ -253,10 +687,9 @@ bool decode_captured_shader_fetch_instruction(
     decoded.predicate_condition = ((word2 >> 31) & 1u) != 0;
 
     if (opcode == 0) {
-        if (((word1 >> 30) & 1u) != 0) {
-            return fail("captured mini vertex fetch is unsupported", error);
-        }
-        decoded.kind = CapturedShaderFetchKind::VertexFull;
+        const bool mini_fetch = ((word1 >> 30) & 1u) != 0;
+        decoded.kind = mini_fetch ? CapturedShaderFetchKind::VertexMini
+                                  : CapturedShaderFetchKind::VertexFull;
         decoded.fetch_constant_index =
             ((word0 >> 20) & 0x1Fu) * 3 + ((word0 >> 25) & 0x3u);
         decoded.source_swizzle = (word0 >> 30) & 0x3u;
@@ -284,6 +717,35 @@ bool decode_captured_shader_fetch_instruction(
     if (error) {
         error->clear();
     }
+    return true;
+}
+
+bool inherit_captured_vertex_fetch_fields(
+    const CapturedShaderFetchInstruction& instruction,
+    const CapturedShaderFetchInstruction* preceding_full_fetch,
+    CapturedShaderFetchInstruction* output,
+    std::string* error) {
+    if (!output) {
+        return fail("invalid captured vertex-fetch inheritance output", error);
+    }
+    if (instruction.kind == CapturedShaderFetchKind::VertexFull) {
+        *output = instruction;
+    } else if (instruction.kind == CapturedShaderFetchKind::VertexMini) {
+        if (!preceding_full_fetch ||
+            preceding_full_fetch->kind != CapturedShaderFetchKind::VertexFull) {
+            return fail("captured mini vertex fetch has no preceding full fetch", error);
+        }
+        CapturedShaderFetchInstruction resolved = instruction;
+        resolved.source_register = preceding_full_fetch->source_register;
+        resolved.source_relative = preceding_full_fetch->source_relative;
+        resolved.source_swizzle = preceding_full_fetch->source_swizzle;
+        resolved.fetch_constant_index = preceding_full_fetch->fetch_constant_index;
+        resolved.vertex_stride = preceding_full_fetch->vertex_stride;
+        *output = resolved;
+    } else {
+        return fail("captured shader fetch is not a vertex fetch", error);
+    }
+    if (error) error->clear();
     return true;
 }
 
@@ -363,7 +825,9 @@ bool schedule_captured_shader_instructions(
     std::vector<CapturedShaderInstructionSchedule> scheduled;
     for (const CapturedShaderControlFlow& clause : control_flow) {
         if (clause.opcode != ShaderControlFlowOpcode::Exec &&
-            clause.opcode != ShaderControlFlowOpcode::ExecEnd) {
+            clause.opcode != ShaderControlFlowOpcode::ExecEnd &&
+            clause.opcode != ShaderControlFlowOpcode::ConditionalExec &&
+            clause.opcode != ShaderControlFlowOpcode::ConditionalExecEnd) {
             continue;
         }
         if (clause.instruction_count == 0 ||
@@ -399,38 +863,87 @@ bool decode_captured_draw_indx(
     size_t byte_length,
     DecodedIndexedDraw* output,
     std::string* error) {
-    if (!packet_bytes || !output || byte_length < kCapturedPacketBytes) {
-        return fail("truncated PM4_DRAW_INDX packet", error);
+    if (!packet_bytes || !output || byte_length < kMinimumDrawPacketBytes) {
+        return fail("truncated draw PM4 packet", error);
     }
 
     const uint32_t header = read_be32(packet_bytes);
+    const uint32_t opcode = (header & kPacketOpcodeMask) >> 8;
+    const bool has_viz_query = opcode == kDrawIndxOpcode;
     if ((header & kPacketTypeMask) != kType3Header ||
-        ((header & kPacketOpcodeMask) >> 8) != kDrawIndxOpcode) {
+        (!has_viz_query && opcode != kDrawIndx2Opcode)) {
         return fail("unsupported guest draw packet", error);
     }
 
-    // The captured packet header encodes four payload dwords.
     const uint32_t payload_count = ((header & kPacketCountMask) >> 16) + 1;
-    if (payload_count != 4 || byte_length != kCapturedPacketBytes) {
-        return fail("unsupported PM4_DRAW_INDX payload length", error);
+    const size_t packet_byte_length = (payload_count + 1u) * sizeof(uint32_t);
+    if (byte_length != packet_byte_length) {
+        return fail("draw PM4 packet length disagrees with its header", error);
     }
 
-    const uint32_t draw_initiator = read_be32(packet_bytes + 8);
-    const uint32_t primitive_type = draw_initiator & 0x3Fu;
+    const size_t initiator_offset = has_viz_query ? 8u : 4u;
+    if (payload_count < (has_viz_query ? 2u : 1u)) {
+        return fail("draw PM4 packet has no complete initiator", error);
+    }
+    const uint32_t draw_initiator = read_be32(packet_bytes + initiator_offset);
     const uint32_t source_select = (draw_initiator >> 6) & 0x3u;
+    const uint32_t primitive_type = draw_initiator & 0x3Fu;
     const uint32_t major_mode = (draw_initiator >> 8) & 0x3u;
     const uint32_t index_size = (draw_initiator >> 11) & 0x1u;
     const uint32_t initiator_index_count = draw_initiator >> 16;
-    const uint32_t index_guest_address = read_be32(packet_bytes + 12);
-    const uint32_t dma_size = read_be32(packet_bytes + 16);
+    if (source_select == 1u) {
+      return fail("unsupported immediate-index draw source", error);
+    }
+    if (source_select == 2u) {
+      const uint32_t expected_payload_count = has_viz_query ? 2u : 1u;
+      if (payload_count != expected_payload_count || major_mode != 0u ||
+          index_size != 0u || initiator_index_count == 0u) {
+        return fail(has_viz_query ? "unsupported AutoIndex DRAW_INDX form"
+                                  : "unsupported AutoIndex DRAW_INDX_2 form",
+                    error);
+      }
+      PrimitiveTopology topology{};
+      if (primitive_type == 1u) {
+        topology = PrimitiveTopology::PointList;
+      } else if (primitive_type == kTriangleList &&
+                 initiator_index_count % 3u == 0u) {
+        topology = PrimitiveTopology::TriangleList;
+      } else if (primitive_type == 6u && initiator_index_count >= 3u) {
+        topology = PrimitiveTopology::TriangleStrip;
+      } else if (primitive_type == 8u && initiator_index_count % 3u == 0u) {
+        topology = PrimitiveTopology::RectangleList;
+      } else {
+        if (error) {
+          *error = "unsupported AutoIndex primitive type " +
+                   std::to_string(primitive_type) + " count " +
+                   std::to_string(initiator_index_count);
+        }
+        return false;
+      }
+      *output = DecodedIndexedDraw{
+          topology, initiator_index_count, 0, 0, 0, 0, true};
+      if (error) error->clear();
+      return true;
+    }
+    if (source_select != 0u) {
+        return fail("unsupported captured draw source", error);
+    }
+
+    const uint32_t expected_payload_count = has_viz_query ? 4u : 3u;
+    if (payload_count != expected_payload_count) {
+      return fail("unsupported indexed draw PM4 payload length", error);
+    }
+
+    const uint32_t index_guest_address = read_be32(packet_bytes + initiator_offset + 4u);
+    const uint32_t dma_size = read_be32(packet_bytes + initiator_offset + 8u);
     const uint32_t dma_index_count = dma_size & kIndexCountMask;
     const uint32_t dma_endian_mode = (dma_size & kDmaSwapModeMask) >> 30;
 
     if (primitive_type != kTriangleList) {
         return fail("unsupported captured primitive type", error);
     }
-    if (source_select != 0 || major_mode != 0) {
-        return fail("unsupported captured draw source or major mode", error);
+    if (major_mode != 0) {
+        return fail("unsupported captured draw major mode", error);
     }
     if (index_size != 0 || dma_endian_mode != 1) {
         return fail("unsupported captured index format or endian mode", error);
@@ -452,6 +965,115 @@ bool decode_captured_draw_indx(
     if (error) {
         error->clear();
     }
+    return true;
+}
+
+bool decode_captured_gpu_interrupt(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    uint32_t* cpu_mask,
+    std::string* error) {
+    if (!packet_bytes || !cpu_mask || byte_length < 8u) {
+        return fail("invalid PM4_INTERRUPT packet input", error);
+    }
+    const uint32_t header = read_be32(packet_bytes);
+    const size_t expected_bytes =
+        (static_cast<size_t>((header >> 16) & 0x3FFFu) + 2u) * sizeof(uint32_t);
+    if ((header >> 30) != 3u ||
+        ((header & kPacketOpcodeMask) >> 8) != kInterruptOpcode ||
+        byte_length != expected_bytes) {
+        return fail("unsupported PM4_INTERRUPT packet form", error);
+    }
+    *cpu_mask = read_be32(packet_bytes + sizeof(uint32_t));
+    if (error) error->clear();
+    return true;
+}
+
+bool decode_captured_wait_reg_mem(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    DecodedWaitRegMem* output,
+    std::string* error) {
+    constexpr size_t kPacketBytes = 6u * sizeof(uint32_t);
+    if (!packet_bytes || !output || byte_length != kPacketBytes) {
+        return fail("invalid WAIT_REG_MEM packet length", error);
+    }
+
+    const uint32_t header = read_be32(packet_bytes);
+    const uint32_t count = ((header >> 16) & 0x3FFFu) + 1u;
+    if ((header >> 30) != 3u || ((header >> 8) & 0xFFu) != 0x3Cu ||
+        count != 5u) {
+        return fail("unsupported WAIT_REG_MEM packet header", error);
+    }
+
+    const uint32_t control = read_be32(packet_bytes + 4u);
+    if ((control & ~0x17u) != 0u) {
+        return fail("unsupported WAIT_REG_MEM control bits", error);
+    }
+    const uint32_t poll_address = read_be32(packet_bytes + 8u);
+    DecodedWaitRegMem decoded{};
+    decoded.control = control;
+    decoded.poll_address = poll_address;
+    decoded.memory = (control & 0x10u) != 0u;
+    decoded.guest_address = decoded.memory ? poll_address & ~uint32_t{3}
+                                           : poll_address;
+    decoded.endian_mode = decoded.memory ? poll_address & 3u : 0u;
+    decoded.reference = read_be32(packet_bytes + 12u);
+    decoded.mask = read_be32(packet_bytes + 16u);
+    decoded.poll_interval = read_be32(packet_bytes + 20u);
+    decoded.compare = static_cast<GuestWaitCompare>(control & 7u);
+    *output = decoded;
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_wait_reg_mem_condition_met(
+    const DecodedWaitRegMem& wait,
+    uint32_t observed_value) noexcept {
+    const uint32_t value = observed_value & wait.mask;
+    const uint32_t reference = wait.reference & wait.mask;
+    switch (wait.compare) {
+        case GuestWaitCompare::Never: return false;
+        case GuestWaitCompare::Less: return value < reference;
+        case GuestWaitCompare::LessEqual: return value <= reference;
+        case GuestWaitCompare::Equal: return value == reference;
+        case GuestWaitCompare::NotEqual: return value != reference;
+        case GuestWaitCompare::GreaterEqual: return value >= reference;
+        case GuestWaitCompare::Greater: return value > reference;
+        case GuestWaitCompare::Always: return true;
+    }
+    return false;
+}
+
+bool decode_guest_swap(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    DecodedGuestSwap* output,
+    std::string* error) {
+    constexpr size_t kPacketBytes = 5u * sizeof(uint32_t);
+    constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
+    if (!packet_bytes || !output || byte_length != kPacketBytes) {
+        return fail("invalid PM4_XE_SWAP packet size", error);
+    }
+    const uint32_t header = read_be32(packet_bytes);
+    const uint32_t payload_count = ((header & kPacketCountMask) >> 16) + 1u;
+    if ((header & kPacketTypeMask) != kType3Header ||
+        ((header & kPacketOpcodeMask) >> 8) != kXeSwapOpcode || payload_count != 4u ||
+        read_be32(packet_bytes + 4u) != kXeSwapSignature) {
+        return fail("unsupported PM4_XE_SWAP signature or packet form", error);
+    }
+
+    const uint32_t address = read_be32(packet_bytes + 8u);
+    const uint32_t width = read_be32(packet_bytes + 12u);
+    const uint32_t height = read_be32(packet_bytes + 16u);
+    if ((address & ~kPhysicalAddressMask) != 0u || (address & 0xFFFu) != 0u ||
+        width == 0u || height == 0u || width > 16384u || height > 16384u ||
+        static_cast<uint64_t>(width) * height > (uint64_t{1} << 27)) {
+        return fail("invalid PM4_XE_SWAP frontbuffer span", error);
+    }
+
+    *output = DecodedGuestSwap{address, width, height};
+    if (error) error->clear();
     return true;
 }
 
@@ -504,19 +1126,58 @@ bool decode_captured_texture_fetch(
     const uint32_t mip_min = (descriptor_words[4] >> 2) & 0xFu;
     const uint32_t mip_max = (descriptor_words[4] >> 6) & 0xFu;
     const uint32_t dimension = (descriptor_words[5] >> 9) & 0x3u;
+    const uint32_t pitch = ((descriptor_words[0] >> 22) & 0x1FFu) << 5;
+    const uint32_t base_address =
+        ((descriptor_words[1] >> 12) & 0xFFFFFu) << 12;
+    const uint32_t mip_address =
+        ((descriptor_words[5] >> 12) & 0xFFFFFu) << 12;
 
-    if (fetch_type != 2 || format != 6 || endian_mode != 2 || !tiled || stacked ||
-        stack_depth != 0 || dimension != 1 || mip_min != 0 || mip_max != 0) {
+    const bool r8 = format == 2 && endian_mode == 0;
+    const bool rgba8 = format == 6 && endian_mode == 2;
+    const bool rgba16 = format == 26 && endian_mode == 1;
+    // Format 31 is the captured 16_16_FLOAT view used by format-31
+    // Copy/Convert destinations and the tiled base-level retail draw-12 fetch.
+    const bool rg16_float = format == 31 && endian_mode == 2;
+    const bool dxt = (format == 19 || format == 20) && endian_mode == 1;
+    const bool dxt5a = format == 59 && endian_mode == 1;
+    const bool compressed = dxt || dxt5a;
+    const bool valid_texture_layout = r8
+        ? !tiled && pitch >= width
+        : rgba8 ? tiled && pitch >= width && pitch % 32u == 0
+                : rgba16 ? tiled && pitch >= width && pitch % 32u == 0
+                : rg16_float ? pitch >= width && (!tiled || pitch % 32u == 0)
+                : compressed && width % 4u == 0 && height % 4u == 0 &&
+                      pitch >= width && pitch % 4u == 0 &&
+                      (!tiled || pitch % 128u == 0);
+    // A mip range with the same nonzero base and mip page has no separate
+    // mip payload. Preserve the one captured base level; distinct mip pages
+    // and packed tails with separate storage need subresource upload support.
+    const bool mip_range_aliases_base = mip_max != 0 && mip_min == 0 &&
+        base_address != 0 && base_address == mip_address;
+    if (fetch_type != 2 || !valid_texture_layout || stacked || stack_depth != 0 ||
+        dimension != 1 || mip_min != 0 ||
+        (rg16_float && mip_max != 0) ||
+        (rgba16 && !((descriptor_words[3] & 1u) != 0)) ||
+        (mip_max != 0 && !mip_range_aliases_base)) {
         return fail("unsupported captured texture-fetch descriptor", error);
     }
 
-    const uint64_t byte_length = static_cast<uint64_t>(width) * height * 4;
+    const uint64_t byte_length = r8
+        ? static_cast<uint64_t>(pitch) * height
+        : rgba8 ? tiled_texture_32bpp_storage_bytes(pitch, height)
+                : rgba16 ? tiled_texture_64bpp_storage_bytes(pitch, height)
+                : rg16_float ? (tiled
+                                    ? tiled_texture_32bpp_storage_bytes(pitch,
+                                                                        height)
+                                    : static_cast<uint64_t>(pitch) * height * 4u)
+                : compressed_texture_storage_bytes(
+                      pitch, height, dxt5a ? 8u : 16u, tiled != 0);
     if (!width || !height || byte_length > std::numeric_limits<uint32_t>::max()) {
         return fail("captured texture dimensions are out of range", error);
     }
 
     *output = CapturedTextureFetch{
-        ((descriptor_words[1] >> 12) & 0xFFFFFu) << 12,
+        base_address,
         format,
         endian_mode,
         (descriptor_words[0] >> 2) & 0x3u,
@@ -528,7 +1189,7 @@ bool decode_captured_texture_fetch(
         (descriptor_words[0] >> 16) & 0x7u,
         width,
         height,
-        ((descriptor_words[0] >> 22) & 0x1FFu) << 5,
+        pitch,
         static_cast<uint32_t>(byte_length),
         dimension,
         (descriptor_words[3] >> 1) & 0xFFFu,
@@ -540,6 +1201,7 @@ bool decode_captured_texture_fetch(
         descriptor_words[5] & 0x3u,
         (descriptor_words[3] >> 31) != 0,
         tiled != 0,
+        (descriptor_words[5] & (1u << 11)) != 0,
     };
     if (error) {
         error->clear();
@@ -620,10 +1282,343 @@ bool decode_captured_texture_sampling(
     return true;
 }
 
+void GuestRasterRegisterState::reset() noexcept {
+    registers_ = {};
+    valid_mask_ = 0;
+    viewport_transform_valid_mask_ = 0;
+}
+
+void GuestRasterRegisterState::apply(const GuestRegisterWrite& write) noexcept {
+    if (write.register_index == 0x210Du) {
+        registers_.stencil_refmask = write.value;
+        registers_.stencil_refmask_valid = true;
+        return;
+    }
+    switch (write.register_index) {
+        case 0x2318u:
+            registers_.copy_control = write.value;
+            registers_.copy_valid_mask |= 1u;
+            return;
+        case 0x2319u:
+            registers_.copy_dest_base = write.value;
+            registers_.copy_valid_mask |= 2u;
+            return;
+        case 0x231Au:
+            registers_.copy_dest_pitch = write.value;
+            registers_.copy_valid_mask |= 4u;
+            return;
+        case 0x231Bu:
+            registers_.copy_dest_info = write.value;
+            registers_.copy_valid_mask |= 8u;
+            return;
+        case 0x231Du:
+            registers_.depth_clear = write.value;
+            registers_.copy_clear_valid_mask |= 1u;
+            return;
+        case 0x231Eu:
+            registers_.color_clear = write.value;
+            registers_.copy_clear_valid_mask |= 2u;
+            return;
+        case 0x231Fu:
+            registers_.color_clear_lo = write.value;
+            registers_.copy_clear_valid_mask |= 4u;
+            return;
+        default:
+            break;
+    }
+    uint32_t bit = 0;
+    uint32_t* destination = nullptr;
+    if (write.register_index == 0x2204u) {
+        registers_.clip_control = write.value;
+        viewport_transform_valid_mask_ |= 1u;
+        registers_.viewport_transform_valid_mask = viewport_transform_valid_mask_;
+        return;
+    }
+    if (write.register_index == 0x2206u) {
+        registers_.viewport_transform_control = write.value;
+        viewport_transform_valid_mask_ |= 2u;
+        registers_.viewport_transform_valid_mask = viewport_transform_valid_mask_;
+        return;
+    }
+    switch (write.register_index) {
+        case 0x2000: bit = 1u << 0; destination = &registers_.surface_info; break;
+        case 0x2001: bit = 1u << 1; destination = &registers_.color_info; break;
+        case 0x2002: bit = 1u << 2; destination = &registers_.depth_info; break;
+        case 0x2208: bit = 1u << 3; destination = &registers_.mode_control; break;
+        case 0x2200: bit = 1u << 4; destination = &registers_.depth_control; break;
+        case 0x2104: bit = 1u << 5; destination = &registers_.color_mask; break;
+        case 0x210F: bit = 1u << 6; destination = &registers_.viewport_x_scale; break;
+        case 0x2110: bit = 1u << 7; destination = &registers_.viewport_x_offset; break;
+        case 0x2111: bit = 1u << 8; destination = &registers_.viewport_y_scale; break;
+        case 0x2112: bit = 1u << 9; destination = &registers_.viewport_y_offset; break;
+        case 0x200E: bit = 1u << 10; destination = &registers_.screen_scissor_tl; break;
+        case 0x200F: bit = 1u << 11; destination = &registers_.screen_scissor_br; break;
+        case 0x2080: bit = 1u << 12; destination = &registers_.window_offset; break;
+        case 0x2081: bit = 1u << 13; destination = &registers_.window_scissor_tl; break;
+        case 0x2082: bit = 1u << 14; destination = &registers_.window_scissor_br; break;
+        case 0x2201: bit = 1u << 15; destination = &registers_.blend_control_0; break;
+        case 0x2205: bit = 1u << 16; destination = &registers_.setup_mode_control; break;
+        default: return;
+    }
+    *destination = write.value;
+    valid_mask_ |= bit;
+}
+
+bool GuestRasterRegisterState::snapshot(
+    CapturedRasterRegisters* output,
+    std::string* error) const {
+    constexpr uint32_t kAllRasterRegistersValid = (1u << 17) - 1u;
+    if (!output || valid_mask_ != kAllRasterRegistersValid) {
+        return fail("incomplete captured raster register state", error);
+    }
+    *output = registers_;
+    if (error) error->clear();
+    return true;
+}
+
+bool GuestRasterRegisterState::snapshot_partial(
+    CapturedRasterRegisters* output,
+    uint32_t* observed_register_mask) const noexcept {
+    if (!output || !observed_register_mask) return false;
+    *output = registers_;
+    *observed_register_mask = valid_mask_;
+    return true;
+}
+
+uint32_t GuestRasterRegisterState::observed_register_mask() const noexcept {
+    return valid_mask_;
+}
+
+void CapturedXboxShaderRegisterState::reset() noexcept {
+    *this = CapturedXboxShaderRegisterState{};
+}
+
+void CapturedXboxShaderRegisterState::apply(const GuestRegisterWrite& write) noexcept {
+    const uint32_t index = write.register_index;
+    if (index >= 0x4000u && index < 0x4800u) {
+        const size_t slot = index - 0x4000u;
+        float_words_[slot] = write.value;
+        float_valid_[slot] = true;
+    } else if (index >= 0x4800u && index < 0x4900u) {
+        const size_t slot = index - 0x4800u;
+        fetch_words_[slot] = write.value;
+        fetch_valid_[slot] = true;
+    } else if (index >= 0x4900u && index < 0x4908u) {
+        const size_t slot = index - 0x4900u;
+        bool_words_[slot] = write.value;
+        bool_valid_[slot] = true;
+    } else if (index >= 0x4908u && index < 0x4928u) {
+        const size_t slot = index - 0x4908u;
+        loop_words_[slot] = write.value;
+        loop_valid_[slot] = true;
+    } else if (index == 0x2307u) {
+        vertex_control_ = write.value;
+        vertex_control_valid_ = true;
+    } else if (index == 0x2308u) {
+        pixel_control_ = write.value;
+        pixel_control_valid_ = true;
+    }
+}
+
+CapturedShaderLoopConstantBank
+CapturedXboxShaderRegisterState::snapshot_loop_constants() const noexcept {
+    return {loop_words_, loop_valid_};
+}
+
+bool CapturedXboxShaderRegisterState::snapshot(
+    CapturedShaderConstants* constants,
+    std::array<uint32_t, 2>* vertex_descriptor,
+    std::array<uint32_t, 6>* texture_descriptor,
+    std::string* error) const {
+    if (!constants || !vertex_descriptor || !texture_descriptor) {
+        return fail("invalid captured shader register snapshot output", error);
+    }
+    if (!snapshot_constants(constants, error) ||
+        !snapshot_vertex_fetch_descriptor(95, vertex_descriptor, error) ||
+        !snapshot_texture_fetch_descriptor(0, texture_descriptor, error)) {
+        return false;
+    }
+    if (error) error->clear();
+    return true;
+}
+
+bool CapturedXboxShaderRegisterState::snapshot_constants(
+    CapturedShaderConstants* constants,
+    std::string* error) const {
+    if (!constants) {
+        return fail("invalid captured shader constants snapshot output", error);
+    }
+    if (!vertex_control_valid_) {
+        return fail("missing vertex shader control register 0x2307", error);
+    }
+    if (!pixel_control_valid_) {
+        return fail("missing pixel shader control register 0x2308", error);
+    }
+    if (vertex_control_ != 0x000FF000u) {
+        return fail("unsupported vertex shader control value", error);
+    }
+    if (pixel_control_ != 0x000FF100u) {
+        return fail("unsupported pixel shader control value", error);
+    }
+    CapturedShaderConstants decoded{};
+    if (!decode_captured_shader_constants(
+            float_words_.data(), float_words_.size(), bool_words_.data(),
+            bool_words_.size(), vertex_control_, pixel_control_, &decoded, error)) {
+        return false;
+    }
+    decoded.pixel_boolean_constants_valid = bool_valid_[4];
+    *constants = decoded;
+    if (error) error->clear();
+    return true;
+}
+
+bool CapturedXboxShaderRegisterState::validate_float_constants(
+    GuestShaderStage stage,
+    const std::vector<uint32_t>& registers,
+    bool relative_indexing,
+    std::string* error) const {
+    constexpr uint32_t kFloatRegistersPerStage = 256;
+    const uint32_t first_register =
+        stage == GuestShaderStage::Pixel ? kFloatRegistersPerStage : 0;
+    const auto is_valid = [this, first_register](uint32_t index) {
+        const size_t first = static_cast<size_t>(first_register + index) * 4;
+        return float_valid_[first] && float_valid_[first + 1] &&
+               float_valid_[first + 2] && float_valid_[first + 3];
+    };
+    if (relative_indexing) {
+        for (uint32_t index = 0; index < kFloatRegistersPerStage; ++index) {
+            if (!is_valid(index)) {
+                if (error) {
+                    *error = stage == GuestShaderStage::Vertex
+                                 ? "captured vertex shader uses relative float constants "
+                                   "with an incomplete constant window"
+                                 : "captured pixel shader uses relative float constants "
+                                   "with an incomplete constant window";
+                }
+                return false;
+            }
+        }
+    }
+    for (uint32_t index : registers) {
+        if (index >= kFloatRegistersPerStage || !is_valid(index)) {
+            if (error) {
+                *error = stage == GuestShaderStage::Vertex
+                             ? "captured vertex float constant " +
+                                   std::to_string(index) + " is incomplete"
+                             : "captured pixel float constant " +
+                                   std::to_string(index) + " is incomplete";
+            }
+            return false;
+        }
+    }
+    if (error) error->clear();
+    return true;
+}
+
+bool CapturedXboxShaderRegisterState::snapshot_vertex_fetch_descriptor(
+    uint32_t index,
+    std::array<uint32_t, 2>* descriptor,
+    std::string* error) const {
+    constexpr uint32_t kMaxVertexFetchConstants = 96;
+    const size_t first = static_cast<size_t>(index) * 2;
+    if (!descriptor || index >= kMaxVertexFetchConstants ||
+        first + 2 > fetch_words_.size()) {
+        return fail("captured vertex fetch descriptor index is out of range", error);
+    }
+    if (!fetch_valid_[first] || !fetch_valid_[first + 1]) {
+        return fail("captured vertex fetch descriptor is incomplete", error);
+    }
+    *descriptor = {fetch_words_[first], fetch_words_[first + 1]};
+    if (error) error->clear();
+    return true;
+}
+
+bool CapturedXboxShaderRegisterState::snapshot_texture_fetch_descriptor(
+    uint32_t index,
+    std::array<uint32_t, 6>* descriptor,
+    std::string* error) const {
+    constexpr uint32_t kMaxTextureFetchConstants = 32;
+    const size_t first = static_cast<size_t>(index) * 6;
+    if (!descriptor || index >= kMaxTextureFetchConstants ||
+        first + 6 > fetch_words_.size()) {
+        return fail("captured texture fetch descriptor index is out of range", error);
+    }
+    for (size_t word = 0; word < 6; ++word) {
+        if (!fetch_valid_[first + word]) {
+            return fail("captured texture fetch descriptor is incomplete", error);
+        }
+    }
+    std::copy_n(fetch_words_.begin() + first, 6, descriptor->begin());
+    if (error) error->clear();
+    return true;
+}
+
+bool infer_captured_raster_extent(
+    const CapturedRasterRegisters& registers,
+    uint32_t guest_output_width,
+    uint32_t guest_output_height,
+    uint32_t* width,
+    uint32_t* height,
+    std::string* error) {
+    if (!width || !height || !guest_output_width || !guest_output_height) {
+        return fail("captured raster extent requires a guest output size", error);
+    }
+
+    const uint32_t surface_pitch = registers.surface_info & 0x3FFFu;
+    const uint32_t msaa_mode = (registers.surface_info >> 16) & 0x3u;
+    if (!surface_pitch || msaa_mode > 2u) {
+        return fail("unsupported captured surface pitch or MSAA mode", error);
+    }
+
+    const uint64_t target_width = static_cast<uint64_t>(surface_pitch) *
+        (msaa_mode == 2u ? 2u : 1u);
+    const uint64_t scaled_height =
+        (static_cast<uint64_t>(guest_output_height) * target_width +
+         guest_output_width / 2u) /
+        guest_output_width;
+    if (!target_width || target_width > UINT32_MAX || !scaled_height ||
+        scaled_height > UINT32_MAX) {
+        return fail("captured raster extent exceeds supported bounds", error);
+    }
+
+    uint32_t target_height = static_cast<uint32_t>(scaled_height);
+    const float viewport_x_scale = register_float(registers.viewport_x_scale);
+    const float viewport_x_offset = register_float(registers.viewport_x_offset);
+    const float viewport_y_scale = register_float(registers.viewport_y_scale);
+    const float viewport_y_offset = register_float(registers.viewport_y_offset);
+    const bool full_origin_single_sample_viewport =
+        msaa_mode == 0u && surface_pitch != guest_output_width &&
+        viewport_x_scale > 0.0f && viewport_y_scale < 0.0f &&
+        viewport_x_offset == viewport_x_scale &&
+        viewport_y_offset == -viewport_y_scale &&
+        registers.screen_scissor_tl == 0 &&
+        registers.window_scissor_tl == 0 && registers.window_offset == 0;
+    if (full_origin_single_sample_viewport) {
+        uint32_t viewport_height = 0;
+        if (!viewport_dimension(-viewport_y_scale, &viewport_height)) {
+            return fail("unsupported captured offscreen viewport height", error);
+        }
+        const uint32_t screen_scissor_y1 =
+            (registers.screen_scissor_br >> 16) & 0x7FFFu;
+        const uint32_t window_scissor_y1 =
+            (registers.window_scissor_br >> 16) & 0x3FFFu;
+        const uint32_t scissor_y1 =
+            std::min(screen_scissor_y1, window_scissor_y1);
+        target_height = std::max(viewport_height, scissor_y1);
+    }
+
+    *width = static_cast<uint32_t>(target_width);
+    *height = target_height;
+    if (error) error->clear();
+    return true;
+}
+
 bool decode_captured_raster_state(
     const CapturedRasterRegisters& registers,
     CapturedRasterState* output,
-    std::string* error) {
+    std::string* error,
+    uint32_t target_width,
+    uint32_t target_height) {
     if (!output) {
         return fail("invalid captured raster-state output", error);
     }
@@ -632,22 +1627,74 @@ bool decode_captured_raster_state(
     const uint32_t msaa_samples = (registers.surface_info >> 16) & 0x3u;
     const uint32_t color_format = (registers.color_info >> 16) & 0xFu;
     const uint32_t depth_format = (registers.depth_info >> 16) & 0x1u;
-    if (registers.mode_control != 4 || msaa_samples != 0 ||
-        color_format != 1 || depth_format != 0 ||
+    const bool depth_only = registers.mode_control == 5u;
+    const bool supported_color_format = color_format <= 3u ||
+        color_format == 6u || color_format == 12u;
+    if ((registers.mode_control != 4u && !depth_only) || msaa_samples > 2 ||
+        !supported_color_format || depth_format != 0 ||
         (registers.color_info & ~0x000F0FFFu) != 0 ||
         (registers.depth_info & ~0x00010FFFu) != 0 ||
-        (registers.color_mask & ~0xFu) != 0 || registers.window_offset != 0) {
+        (registers.color_mask & ~0xFFFFu) != 0 || registers.window_offset != 0 ||
+        (registers.blend_control_0 != 0x07010706u &&
+         registers.blend_control_0 != 0x07060706u &&
+         registers.blend_control_0 != 0x00010001u)) {
         return fail("unsupported captured target or raster state", error);
+    }
+
+    const bool cull_front = (registers.setup_mode_control & 1u) != 0;
+    const bool cull_back = (registers.setup_mode_control & 2u) != 0;
+    if (cull_front && cull_back) {
+        return fail("unsupported captured front-and-back culling", error);
+    }
+
+    CapturedColorTargetFormat captured_color_format;
+    switch (color_format) {
+        case 0: captured_color_format = CapturedColorTargetFormat::Rgba8Linear; break;
+        case 1: captured_color_format = CapturedColorTargetFormat::Rgba8Gamma; break;
+        case 2: captured_color_format = CapturedColorTargetFormat::Rgb10A2Unorm; break;
+        case 3:
+        case 12:
+            captured_color_format = CapturedColorTargetFormat::Rgb10A2Float;
+            break;
+        case 6: captured_color_format = CapturedColorTargetFormat::Rg16Float; break;
+        default: return fail("unsupported captured target or raster state", error);
     }
 
     const float x_scale = register_float(registers.viewport_x_scale);
     const float x_offset = register_float(registers.viewport_x_offset);
     const float y_scale = register_float(registers.viewport_y_scale);
     const float y_offset = register_float(registers.viewport_y_offset);
-    uint32_t width = 0;
-    uint32_t height = 0;
-    if (!viewport_dimension(x_scale, &width) || !viewport_dimension(-y_scale, &height) ||
-        x_offset != x_scale || y_offset != -y_scale || surface_pitch != width) {
+    uint32_t viewport_width = 0;
+    uint32_t viewport_height = 0;
+    if (!std::isfinite(x_offset) || !std::isfinite(y_offset) ||
+        !viewport_dimension(x_scale, &viewport_width) ||
+        !viewport_dimension(-y_scale, &viewport_height)) {
+        return fail("unsupported captured viewport or surface pitch", error);
+    }
+    const bool target_extent_provided = target_width != 0 || target_height != 0;
+    if (target_extent_provided && (!target_width || !target_height)) {
+        return fail("incomplete captured render-target extent", error);
+    }
+    if (!target_extent_provided &&
+        (x_offset != x_scale || y_offset != -y_scale)) {
+        return fail("partial captured viewport requires a known target extent", error);
+    }
+    if (target_extent_provided &&
+        ((msaa_samples == 0 && target_width != surface_pitch) ||
+         (msaa_samples == 2 &&
+          (surface_pitch > std::numeric_limits<uint32_t>::max() / 2u ||
+           target_width != surface_pitch * 2u)))) {
+        return fail("unsupported captured viewport or surface pitch", error);
+    }
+    const uint32_t width = target_extent_provided ? target_width : viewport_width;
+    const uint32_t height = target_extent_provided ? target_height : viewport_height;
+    const float viewport_x = x_offset - x_scale;
+    const float viewport_y = y_offset - y_scale;
+    const float viewport_width_pixels = x_scale * 2.0f;
+    const float viewport_height_pixels = y_scale * 2.0f;
+    if (!std::isfinite(viewport_x) || !std::isfinite(viewport_y) ||
+        !std::isfinite(viewport_width_pixels) ||
+        !std::isfinite(viewport_height_pixels)) {
         return fail("unsupported captured viewport or surface pitch", error);
     }
 
@@ -680,12 +1727,14 @@ bool decode_captured_raster_state(
     *output = CapturedRasterState{
         width,
         height,
-        1,
+        surface_pitch,
+        msaa_samples == 0 ? 1u : msaa_samples == 1 ? 2u : 4u,
         registers.color_info & 0xFFFu,
-        CapturedColorTargetFormat::Rgba8Gamma,
+        captured_color_format,
+        depth_only,
         registers.depth_info & 0xFFFu,
         CapturedDepthTargetFormat::D24S8,
-        registers.color_mask & 0xFu,
+        depth_only ? 0u : registers.color_mask & 0xFu,
         y_scale < 0.0f,
         ((registers.depth_control >> 1) & 1u) != 0,
         ((registers.depth_control >> 2) & 1u) != 0,
@@ -695,11 +1744,655 @@ bool decode_captured_raster_state(
         x1,
         y1,
         x1 > x0 && y1 > y0,
+        registers.blend_control_0,
+        registers.depth_control,
+        registers.stencil_refmask,
+        cull_front ? CapturedRasterState::CullMode::Front
+                   : cull_back ? CapturedRasterState::CullMode::Back
+                               : CapturedRasterState::CullMode::None,
+        (registers.setup_mode_control & 4u) == 0,
+        registers.setup_mode_control,
     };
+    output->guest_color_format = color_format;
+    output->viewport_x = viewport_x;
+    output->viewport_y = viewport_y;
+    output->viewport_width = viewport_width_pixels;
+    output->viewport_height = viewport_height_pixels;
+    output->clip_control_valid =
+        (registers.viewport_transform_valid_mask & 1u) != 0;
+    output->viewport_transform_control_valid =
+        (registers.viewport_transform_valid_mask & 2u) != 0;
+    output->clip_disabled = output->clip_control_valid &&
+        ((registers.clip_control >> 16) & 1u) != 0;
+    output->viewport_transform_control = registers.viewport_transform_control;
+    output->clip_disabled_window_coordinates = output->clip_disabled;
     if (error) {
         error->clear();
     }
     return true;
+}
+
+bool captured_xenos_edram_sample_address(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    uint32_t x,
+    uint32_t y,
+    uint32_t sample_index,
+    CapturedEdramSampleAddress* output,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    constexpr uint32_t kTileSamples = kTileWidthSamples * kTileHeightSamples;
+    constexpr uint32_t kTileCount = 2048;
+    constexpr uint64_t kEdramBytes =
+        static_cast<uint64_t>(kTileCount) * kTileSamples * sizeof(uint32_t);
+    if (!output || !raster.width || !raster.height || !raster.surface_pitch ||
+        (raster.sample_count != 1 && raster.sample_count != 2 &&
+         raster.sample_count != 4)) {
+        return fail("invalid captured Xenos EDRAM target layout", error);
+    }
+    // Xenos render-target format 12 uses a 64-bit Vulkan representation in
+    // this renderer but remains a 32bpp EDRAM format. The true 64bpp Xenos
+    // render-target codes are 5, 7, and 15; the current draw decoder does not
+    // admit them, so keep this helper fail-closed if a caller supplies one.
+    const bool color_64bpp = !depth_target &&
+        (raster.guest_color_format == 5u ||
+         raster.guest_color_format == 7u ||
+         raster.guest_color_format == 15u);
+    if (color_64bpp) {
+        return fail("captured 64bpp Xenos EDRAM color addressing is unsupported",
+                    error);
+    }
+    constexpr uint32_t bytes_per_sample = 4;
+
+    const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+    const uint32_t sample_height = raster.sample_count / sample_width;
+    if (raster.width % sample_width || raster.height % sample_height) {
+        return fail("captured Xenos EDRAM extent is not sample aligned", error);
+    }
+    const uint32_t logical_width = raster.width / sample_width;
+    const uint32_t logical_height = raster.height / sample_height;
+    if (raster.surface_pitch < logical_width || x >= logical_width ||
+        y >= logical_height || sample_index >= raster.sample_count) {
+        return fail("captured Xenos EDRAM pixel or sample is out of bounds",
+                    error);
+    }
+
+    const uint64_t pitch_samples =
+        static_cast<uint64_t>(raster.surface_pitch) * sample_width;
+    const uint64_t pitch_tiles =
+        (pitch_samples + kTileWidthSamples - 1u) / kTileWidthSamples;
+    const uint64_t sample_x =
+        static_cast<uint64_t>(x) * sample_width + sample_index % sample_width;
+    const uint64_t sample_y =
+        static_cast<uint64_t>(y) * sample_height + sample_index / sample_width;
+    const uint64_t tile_x = sample_x / kTileWidthSamples;
+    const uint64_t tile_y = sample_y / kTileHeightSamples;
+    const uint32_t tile_index = static_cast<uint32_t>(
+        (static_cast<uint64_t>(depth_target ? raster.depth_base_tiles
+                                            : raster.color_base_tiles) +
+         tile_y * pitch_tiles + tile_x) &
+        (kTileCount - 1u));
+    uint32_t tile_sample_x =
+        static_cast<uint32_t>(sample_x % kTileWidthSamples);
+    if (depth_target) {
+        tile_sample_x = (tile_sample_x + kTileWidthSamples / 2u) %
+            kTileWidthSamples;
+    }
+    const uint32_t sample_in_tile =
+        static_cast<uint32_t>(sample_y % kTileHeightSamples) *
+            kTileWidthSamples +
+        tile_sample_x;
+    const uint64_t byte_offset =
+        (static_cast<uint64_t>(tile_index) * kTileSamples + sample_in_tile) *
+        bytes_per_sample;
+    if (byte_offset + bytes_per_sample > kEdramBytes) {
+        return fail("captured Xenos EDRAM address exceeds backing store", error);
+    }
+    *output = {tile_index, sample_in_tile,
+               static_cast<uint32_t>(byte_offset), bytes_per_sample};
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_xenos_edram_sample_coordinates(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    uint32_t tile_x,
+    uint32_t tile_y,
+    uint32_t sample_index_in_tile,
+    CapturedEdramSampleCoordinates* output,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    constexpr uint32_t kSamplesPerTile = kTileWidthSamples * kTileHeightSamples;
+    if (!output || !raster.width || !raster.height || !raster.surface_pitch ||
+        (raster.sample_count != 1 && raster.sample_count != 2 &&
+         raster.sample_count != 4) || sample_index_in_tile >= kSamplesPerTile) {
+        return fail("invalid captured Xenos EDRAM reverse-address request", error);
+    }
+    const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+    const uint32_t sample_height = raster.sample_count / sample_width;
+    if (raster.width % sample_width || raster.height % sample_height) {
+        return fail("captured Xenos EDRAM extent is not sample aligned", error);
+    }
+    const uint32_t logical_width = raster.width / sample_width;
+    const uint32_t logical_height = raster.height / sample_height;
+    const uint32_t tile_logical_width = kTileWidthSamples / sample_width;
+    const uint32_t tile_logical_height = kTileHeightSamples / sample_height;
+    const uint64_t tile_columns =
+        (static_cast<uint64_t>(logical_width) + tile_logical_width - 1u) /
+        tile_logical_width;
+    const uint64_t tile_rows =
+        (static_cast<uint64_t>(logical_height) + tile_logical_height - 1u) /
+        tile_logical_height;
+    if (tile_x >= tile_columns || tile_y >= tile_rows) {
+        return fail("captured Xenos EDRAM tile coordinate is out of bounds", error);
+    }
+
+    const uint32_t tile_sample_x = sample_index_in_tile % kTileWidthSamples;
+    const uint32_t tile_sample_y = sample_index_in_tile / kTileWidthSamples;
+    const uint32_t sample_x = depth_target
+        ? (tile_sample_x + kTileWidthSamples / 2u) % kTileWidthSamples
+        : tile_sample_x;
+    const uint64_t pixel_x = static_cast<uint64_t>(tile_x) * tile_logical_width +
+                             sample_x / sample_width;
+    const uint64_t pixel_y = static_cast<uint64_t>(tile_y) * tile_logical_height +
+                             tile_sample_y / sample_height;
+    if (pixel_x >= logical_width || pixel_y >= logical_height) {
+        return fail("captured Xenos EDRAM sample lies outside the partial edge tile",
+                    error);
+    }
+    const uint32_t sample_x_in_pixel = sample_x % sample_width;
+    const uint32_t sample_y_in_pixel = tile_sample_y % sample_height;
+    *output = {static_cast<uint32_t>(pixel_x), static_cast<uint32_t>(pixel_y),
+               sample_y_in_pixel * sample_width + sample_x_in_pixel};
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_xenos_edram_raster_tiles(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    std::vector<CapturedEdramRasterTile>* output,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    constexpr uint64_t kMaximumRasterTiles = 1u << 20;
+    if (!output) {
+        return fail("missing captured Xenos EDRAM raster-tile output", error);
+    }
+    output->clear();
+    if (!raster.width || !raster.height || !raster.surface_pitch ||
+        (raster.sample_count != 1 && raster.sample_count != 2 &&
+         raster.sample_count != 4)) {
+        return fail("invalid captured Xenos EDRAM alias layout", error);
+    }
+    const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+    const uint32_t sample_height = raster.sample_count / sample_width;
+    if (raster.width % sample_width || raster.height % sample_height) {
+        return fail("captured Xenos EDRAM alias extent is not sample aligned",
+                    error);
+    }
+    const uint32_t logical_width = raster.width / sample_width;
+    const uint32_t logical_height = raster.height / sample_height;
+    if (raster.surface_pitch < logical_width) {
+        return fail("captured Xenos EDRAM alias pitch is smaller than its extent",
+                    error);
+    }
+    const uint32_t tile_logical_width = kTileWidthSamples / sample_width;
+    const uint32_t tile_logical_height = kTileHeightSamples / sample_height;
+    const uint64_t columns =
+        (static_cast<uint64_t>(logical_width) + tile_logical_width - 1u) /
+        tile_logical_width;
+    const uint64_t rows =
+        (static_cast<uint64_t>(logical_height) + tile_logical_height - 1u) /
+        tile_logical_height;
+    const uint64_t tile_count = columns * rows;
+    if (tile_count > kMaximumRasterTiles ||
+        tile_count > output->max_size()) {
+        return fail("captured Xenos EDRAM raster tile grid exceeds the safety limit",
+                    error);
+    }
+    output->reserve(static_cast<size_t>(tile_count));
+    for (uint64_t tile_y = 0; tile_y < rows; ++tile_y) {
+        for (uint64_t tile_x = 0; tile_x < columns; ++tile_x) {
+            CapturedEdramSampleAddress address{};
+            if (!captured_xenos_edram_sample_address(
+                    raster, depth_target,
+                    static_cast<uint32_t>(tile_x * tile_logical_width),
+                    static_cast<uint32_t>(tile_y * tile_logical_height), 0,
+                    &address, error)) {
+                output->clear();
+                return false;
+            }
+            output->push_back({address.tile_index,
+                               static_cast<uint32_t>(tile_x),
+                               static_cast<uint32_t>(tile_y)});
+        }
+    }
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_xenos_edram_rect_tiles(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    uint32_t x0,
+    uint32_t y0,
+    uint32_t x1,
+    uint32_t y1,
+    std::vector<CapturedEdramRasterTile>* output,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    constexpr uint64_t kMaximumRasterTiles = 1u << 20;
+    if (!output) {
+        return fail("missing captured Xenos EDRAM rectangle-tile output", error);
+    }
+    output->clear();
+    if (!raster.width || !raster.height || !raster.surface_pitch ||
+        (raster.sample_count != 1 && raster.sample_count != 2 &&
+         raster.sample_count != 4)) {
+        return fail("invalid captured Xenos EDRAM rectangle layout", error);
+    }
+
+    const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+    const uint32_t sample_height = raster.sample_count / sample_width;
+    if (raster.width % sample_width || raster.height % sample_height) {
+        return fail("captured Xenos EDRAM rectangle extent is not sample aligned",
+                    error);
+    }
+    const uint32_t logical_width = raster.width / sample_width;
+    const uint32_t logical_height = raster.height / sample_height;
+    if (x0 >= x1 || y0 >= y1 || x1 > logical_width || y1 > logical_height) {
+        return fail("captured Xenos EDRAM rectangle is empty or out of bounds",
+                    error);
+    }
+
+    const uint32_t tile_logical_width = kTileWidthSamples / sample_width;
+    const uint32_t tile_logical_height = kTileHeightSamples / sample_height;
+    const uint64_t first_tile_x = x0 / tile_logical_width;
+    const uint64_t first_tile_y = y0 / tile_logical_height;
+    const uint64_t tile_columns =
+        (static_cast<uint64_t>(x1) + tile_logical_width - 1u) /
+            tile_logical_width - first_tile_x;
+    const uint64_t tile_rows =
+        (static_cast<uint64_t>(y1) + tile_logical_height - 1u) /
+            tile_logical_height - first_tile_y;
+    const uint64_t tile_count = tile_columns * tile_rows;
+    if (tile_count > kMaximumRasterTiles || tile_count > output->max_size()) {
+        return fail("captured Xenos EDRAM rectangle exceeds the tile safety limit",
+                    error);
+    }
+
+    output->reserve(static_cast<size_t>(tile_count));
+    for (uint64_t tile_y = first_tile_y;
+         tile_y < first_tile_y + tile_rows; ++tile_y) {
+        for (uint64_t tile_x = first_tile_x;
+             tile_x < first_tile_x + tile_columns; ++tile_x) {
+            CapturedEdramSampleAddress address{};
+            const uint64_t anchor_x = tile_x * tile_logical_width;
+            const uint64_t anchor_y = tile_y * tile_logical_height;
+            if (anchor_x >= logical_width || anchor_y >= logical_height ||
+                !captured_xenos_edram_sample_address(
+                    raster, depth_target, static_cast<uint32_t>(anchor_x),
+                    static_cast<uint32_t>(anchor_y), 0, &address, error)) {
+                output->clear();
+                if (anchor_x >= logical_width || anchor_y >= logical_height) {
+                    return fail("captured Xenos EDRAM rectangle tile anchor is out of bounds",
+                                error);
+                }
+                return false;
+            }
+            output->push_back({address.tile_index,
+                               static_cast<uint32_t>(tile_x),
+                               static_cast<uint32_t>(tile_y)});
+        }
+    }
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_xenos_edram_rect_alias_tiles(
+    const CapturedRasterState& source,
+    uint32_t source_x0,
+    uint32_t source_y0,
+    uint32_t source_x1,
+    uint32_t source_y1,
+    const CapturedRasterState& destination,
+    uint32_t destination_x0,
+    uint32_t destination_y0,
+    uint32_t destination_x1,
+    uint32_t destination_y1,
+    bool depth_target,
+    std::vector<CapturedEdramTileAlias>* output,
+    std::string* error) {
+    constexpr uint32_t kTileCount = 2048;
+    if (!output) {
+        return fail("missing captured Xenos EDRAM rectangle-alias output", error);
+    }
+    output->clear();
+    std::vector<CapturedEdramRasterTile> source_tiles;
+    std::vector<CapturedEdramRasterTile> destination_tiles;
+    if (!captured_xenos_edram_rect_tiles(
+            source, depth_target, source_x0, source_y0, source_x1, source_y1,
+            &source_tiles, error) ||
+        !captured_xenos_edram_rect_tiles(
+            destination, depth_target, destination_x0, destination_y0,
+            destination_x1, destination_y1, &destination_tiles, error)) {
+        return false;
+    }
+
+    struct TileCoordinate {
+        uint32_t x = 0;
+        uint32_t y = 0;
+        bool present = false;
+    };
+    const auto index_unique_coordinates = [&] (
+        const std::vector<CapturedEdramRasterTile>& tiles,
+        std::array<TileCoordinate, kTileCount>* indexed) {
+        for (const CapturedEdramRasterTile& tile : tiles) {
+            TileCoordinate& coordinate = (*indexed)[tile.physical_tile_index];
+            if (coordinate.present) {
+                return fail("captured Xenos EDRAM rectangle wraps onto one physical tile more than once",
+                            error);
+            }
+            coordinate = {tile.tile_x, tile.tile_y, true};
+        }
+        return true;
+    };
+    std::array<TileCoordinate, kTileCount> source_coordinates{};
+    std::array<TileCoordinate, kTileCount> destination_coordinates{};
+    if (!index_unique_coordinates(source_tiles, &source_coordinates) ||
+        !index_unique_coordinates(destination_tiles,
+                                  &destination_coordinates)) {
+        return false;
+    }
+    for (uint32_t tile = 0; tile < kTileCount; ++tile) {
+        if (!source_coordinates[tile].present ||
+            !destination_coordinates[tile].present) {
+            continue;
+        }
+        output->push_back({tile, source_coordinates[tile].x,
+                           source_coordinates[tile].y,
+                           destination_coordinates[tile].x,
+                           destination_coordinates[tile].y});
+    }
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_xenos_edram_alias_tiles(
+    const CapturedRasterState& source,
+    const CapturedRasterState& destination,
+    bool depth_target,
+    std::vector<CapturedEdramTileAlias>* output,
+    std::string* error) {
+    constexpr uint32_t kTileCount = 2048;
+    if (!output) {
+        return fail("missing Xenos EDRAM alias-tile output", error);
+    }
+    output->clear();
+    std::vector<CapturedEdramRasterTile> source_coordinates;
+    std::vector<CapturedEdramRasterTile> destination_coordinates;
+    if (!captured_xenos_edram_raster_tiles(source, depth_target,
+                                           &source_coordinates, error) ||
+        !captured_xenos_edram_raster_tiles(destination, depth_target,
+                                           &destination_coordinates, error)) {
+        return false;
+    }
+    if (source_coordinates.size() > kTileCount ||
+        destination_coordinates.size() > kTileCount) {
+        return fail("captured Xenos EDRAM alias layout wraps across the 2048-tile store",
+                    error);
+    }
+
+    struct TileCoordinate {
+        uint32_t x = 0;
+        uint32_t y = 0;
+        bool present = false;
+    };
+    const auto index_unique_coordinates = [&](
+        const std::vector<CapturedEdramRasterTile>& coordinates,
+        std::array<TileCoordinate, kTileCount>* tiles) {
+        for (const CapturedEdramRasterTile& coordinate : coordinates) {
+            TileCoordinate& tile = (*tiles)[coordinate.physical_tile_index];
+            if (tile.present) {
+                return fail("captured Xenos EDRAM alias layout maps multiple raster tiles to one physical tile",
+                            error);
+            }
+            tile = {coordinate.tile_x, coordinate.tile_y, true};
+        }
+        return true;
+    };
+    std::array<TileCoordinate, kTileCount> source_tiles{};
+    std::array<TileCoordinate, kTileCount> destination_tiles{};
+    if (!index_unique_coordinates(source_coordinates, &source_tiles) ||
+        !index_unique_coordinates(destination_coordinates,
+                                  &destination_tiles)) {
+        return false;
+    }
+    for (uint32_t tile = 0; tile < kTileCount; ++tile) {
+        if (!source_tiles[tile].present || !destination_tiles[tile].present) {
+            continue;
+        }
+        output->push_back({tile, source_tiles[tile].x, source_tiles[tile].y,
+                           destination_tiles[tile].x,
+                           destination_tiles[tile].y});
+    }
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_xenos_edram_layouts_are_tile_disjoint(
+    const CapturedRasterState& a,
+    const CapturedRasterState& b,
+    bool* disjoint,
+    uint32_t* overlap_tile,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    constexpr uint32_t kTileCount = 2048;
+    if (!disjoint) {
+        return fail("missing Xenos EDRAM tile-disjoint result", error);
+    }
+    *disjoint = false;
+    if (overlap_tile) *overlap_tile = kTileCount;
+
+    const auto collect_tiles = [&](const CapturedRasterState& raster,
+                                   bool depth_target,
+                                   std::array<bool, kTileCount>* tiles) {
+        const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+        const uint32_t sample_height = raster.sample_count / sample_width;
+        if (!raster.width || !raster.height || !sample_height ||
+            raster.width % sample_width || raster.height % sample_height ||
+            !raster.surface_pitch) {
+            return fail("invalid captured Xenos EDRAM target layout", error);
+        }
+        const uint32_t logical_width = raster.width / sample_width;
+        const uint32_t logical_height = raster.height / sample_height;
+        const uint32_t tile_logical_width = kTileWidthSamples / sample_width;
+        const uint32_t tile_logical_height = kTileHeightSamples / sample_height;
+        const uint64_t columns =
+            (static_cast<uint64_t>(logical_width) + tile_logical_width - 1u) /
+            tile_logical_width;
+        const uint64_t rows =
+            (static_cast<uint64_t>(logical_height) + tile_logical_height - 1u) /
+            tile_logical_height;
+        // EDRAM tile addresses wrap at 2048. Scanning one period per axis is
+        // sufficient and bounds work even for malformed giant captures.
+        const uint64_t scan_columns = std::min<uint64_t>(columns, kTileCount);
+        const uint64_t scan_rows = std::min<uint64_t>(rows, kTileCount);
+        for (uint64_t tile_y = 0; tile_y < scan_rows; ++tile_y) {
+            for (uint64_t tile_x = 0; tile_x < scan_columns; ++tile_x) {
+                const uint32_t x = static_cast<uint32_t>(
+                    tile_x * tile_logical_width);
+                const uint32_t y = static_cast<uint32_t>(
+                    tile_y * tile_logical_height);
+                CapturedEdramSampleAddress address{};
+                if (!captured_xenos_edram_sample_address(
+                        raster, depth_target, x, y, 0, &address, error)) {
+                    return false;
+                }
+                (*tiles)[address.tile_index] = true;
+            }
+        }
+        return true;
+    };
+
+    std::array<bool, kTileCount> a_color{};
+    std::array<bool, kTileCount> a_depth{};
+    std::array<bool, kTileCount> b_color{};
+    std::array<bool, kTileCount> b_depth{};
+    if (!collect_tiles(a, false, &a_color) ||
+        !collect_tiles(a, true, &a_depth) ||
+        !collect_tiles(b, false, &b_color) ||
+        !collect_tiles(b, true, &b_depth)) {
+        return false;
+    }
+    for (uint32_t tile = 0; tile < kTileCount; ++tile) {
+        if ((a_color[tile] && b_color[tile]) ||
+            (a_color[tile] && b_depth[tile]) ||
+            (a_depth[tile] && b_color[tile]) ||
+            (a_depth[tile] && b_depth[tile])) {
+            if (overlap_tile) *overlap_tile = tile;
+            if (error) error->clear();
+            return true;
+        }
+    }
+    *disjoint = true;
+    if (error) error->clear();
+    return true;
+}
+
+bool decode_captured_copy_source_raster_state(
+    const CapturedRasterRegisters& registers,
+    CapturedRasterState* output,
+    std::string* error,
+    uint32_t target_width,
+    uint32_t target_height) {
+    if (registers.mode_control != 6u) {
+        return fail("captured Copy/Convert source is not in Xenos mode 6", error);
+    }
+    CapturedRasterRegisters source_registers = registers;
+    // Mode 6 selects copy behavior. The other fields still describe the source
+    // EDRAM layout, so normalize only the mode selector for raster decoding.
+    source_registers.mode_control = 4u;
+    return decode_captured_raster_state(source_registers, output, error,
+                                        target_width, target_height);
+}
+
+bool decode_captured_copy_state(
+    const CapturedRasterRegisters& registers,
+    CapturedCopyState* output,
+    std::string* error) {
+    constexpr uint32_t kCopyValidMask = 0xFu;
+    constexpr uint32_t kCopyControlFields = 0x00300377u;
+    constexpr uint32_t kCopyDestPitchFields = 0x3FFF3FFFu;
+    constexpr uint32_t kCopyDestInfoFields = 0x01FFFFFFu;
+    if (!output || registers.copy_valid_mask != kCopyValidMask) {
+        return fail("captured Xenos copy register set is incomplete", error);
+    }
+
+    const uint32_t source_select = registers.copy_control & 0x7u;
+    const uint32_t sample_select = (registers.copy_control >> 4) & 0x7u;
+    const uint32_t clear_flags = (registers.copy_control >> 8) & 0x3u;
+    const uint32_t command = (registers.copy_control >> 20) & 0x3u;
+    const uint32_t destination_pitch = registers.copy_dest_pitch & 0x3FFFu;
+    const uint32_t destination_height = (registers.copy_dest_pitch >> 16) & 0x3FFFu;
+    const uint32_t destination_endian = registers.copy_dest_info & 0x7u;
+    const bool destination_array = ((registers.copy_dest_info >> 3) & 1u) != 0;
+    const uint32_t destination_slice = (registers.copy_dest_info >> 4) & 0x7u;
+    const uint32_t destination_format = (registers.copy_dest_info >> 7) & 0x3Fu;
+    const uint32_t destination_number = (registers.copy_dest_info >> 13) & 0x7u;
+    const uint32_t raw_exp_bias = (registers.copy_dest_info >> 16) & 0x3Fu;
+    const int32_t destination_exp_bias = (raw_exp_bias & 0x20u)
+        ? static_cast<int32_t>(raw_exp_bias) - 0x40
+        : static_cast<int32_t>(raw_exp_bias);
+    const bool color_clear_enable = (clear_flags & 1u) != 0;
+    const bool depth_clear_enable = (clear_flags & 2u) != 0;
+    const bool destination_swap_red_blue =
+        ((registers.copy_dest_info >> 24) & 1u) != 0;
+    const bool known_destination =
+        (destination_format == 6u && destination_number == 0u &&
+         destination_endian == 0u && destination_exp_bias == 0 &&
+         sample_select == 0u && !color_clear_enable &&
+         !depth_clear_enable && destination_swap_red_blue) ||
+        (destination_format == 26u && destination_number == 2u &&
+         destination_endian == 1u && destination_exp_bias == 11 &&
+         sample_select == 6u && color_clear_enable &&
+         depth_clear_enable && !destination_swap_red_blue) ||
+        (destination_format == 31u && destination_number == 7u &&
+         destination_endian == 2u && destination_exp_bias == 0 &&
+         sample_select == 0u && color_clear_enable &&
+         !depth_clear_enable && !destination_swap_red_blue);
+    if ((registers.copy_control & ~kCopyControlFields) != 0 ||
+        source_select != 0 ||
+        command != static_cast<uint32_t>(CapturedCopyCommand::Convert) ||
+        registers.copy_dest_base == 0 || (registers.copy_dest_base & 0xFFFu) != 0 ||
+        (registers.copy_dest_pitch & ~kCopyDestPitchFields) != 0 ||
+        destination_pitch == 0 || destination_height == 0 ||
+        (destination_pitch & 7u) != 0 ||
+        (registers.copy_dest_info & ~kCopyDestInfoFields) != 0 ||
+        destination_array || destination_slice != 0 ||
+        destination_endian > 2u || !known_destination ||
+        ((registers.copy_dest_info >> 22) & 0x3u) != 0 ||
+        ((registers.copy_dest_info >> 25) & 0x7Fu) != 0) {
+        return fail("unsupported captured Xenos color Copy/Convert state", error);
+    }
+
+    output->source_select = source_select;
+    output->sample_select = sample_select;
+    output->command = CapturedCopyCommand::Convert;
+    output->destination_base = registers.copy_dest_base;
+    output->destination_pitch = destination_pitch;
+    output->destination_height = destination_height;
+    output->destination_endian = destination_endian;
+    output->destination_array = destination_array;
+    output->destination_slice = destination_slice;
+    output->destination_format = destination_format;
+    output->destination_number_format = destination_number;
+    output->destination_exp_bias = destination_exp_bias;
+    output->destination_swap_red_blue = destination_swap_red_blue;
+    output->color_clear_enable = color_clear_enable;
+    output->depth_clear_enable = depth_clear_enable;
+    output->source_gamma = ((registers.color_info >> 16) & 0xFu) == 1u;
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_format26_copy_matches_texture_fetch(
+    const CapturedTextureFetch& texture,
+    const CapturedCopyState& copy,
+    const CapturedRasterState& source_raster) {
+    return texture.format == 26u && texture.endian_mode == 1u &&
+           texture.integer_format && texture.tiled && !texture.packed_mips &&
+           texture.width == 1280u && texture.height == 720u &&
+           texture.pitch == 1280u && texture.guest_address == copy.destination_base &&
+           source_raster.width == 2560u && source_raster.height == 1440u &&
+           source_raster.surface_pitch == 1280u &&
+           source_raster.sample_count == 4u &&
+           source_raster.color_base_tiles == 0u &&
+           source_raster.guest_color_format == 12u &&
+           source_raster.depth_base_tiles == 1024u &&
+           copy.destination_pitch == texture.pitch &&
+           copy.destination_height == texture.height &&
+           copy.destination_format == 26u &&
+           copy.destination_number_format == 2u &&
+           copy.destination_exp_bias == 11 &&
+           copy.destination_endian == 1u && copy.sample_select == 6u &&
+           copy.color_clear_enable && copy.depth_clear_enable &&
+           !copy.destination_swap_red_blue && !copy.destination_array &&
+           copy.destination_slice == 0u && copy.source_select == 0u &&
+           !copy.source_gamma && copy.command == CapturedCopyCommand::Convert;
+}
+
+bool captured_draw_has_no_framebuffer_effects(
+    const CapturedRasterState& raster) noexcept {
+    return !raster.scissor_has_area ||
+           (raster.color_write_mask == 0 && !raster.depth_test_enabled &&
+            !raster.depth_write_enabled && !raster.stencil_test_enabled);
 }
 
 bool decode_captured_shader_constants(
@@ -745,6 +2438,7 @@ bool decode_captured_shader_constants(
     }
     decoded.pixel_b128 = (bool_bank_words[128 / 32] & (1u << (128 % 32))) != 0;
     decoded.pixel_b129 = (bool_bank_words[129 / 32] & (1u << (129 % 32))) != 0;
+    decoded.pixel_boolean_constants_valid = true;
     *output = decoded;
     if (error) {
         error->clear();
@@ -758,25 +2452,232 @@ bool untile_captured_texture_2d(
     size_t byte_length,
     std::vector<uint8_t>* vulkan_bytes,
     std::string* error) {
-    if (!guest_bytes || !vulkan_bytes || texture.format != 6 ||
-        texture.endian_mode != 2 || texture.dimension != 1 || !texture.tiled ||
-        !texture.width || !texture.height || texture.pitch != texture.width ||
-        (texture.width & 31u) != 0 || (texture.height & 31u) != 0) {
+    const bool r8 = texture.format == 2 && texture.endian_mode == 0;
+    const bool rgba8 = texture.format == 6 && texture.endian_mode == 2;
+    const bool rg16_float = texture.format == 31 && texture.endian_mode == 2;
+    const bool dxt2_3 = texture.format == 19 && texture.endian_mode == 1;
+    const bool dxt4_5 = texture.format == 20 && texture.endian_mode == 1;
+    const bool dxt = dxt2_3 || dxt4_5;
+    const bool dxt5a = texture.format == 59 && texture.endian_mode == 1;
+    const bool compressed = dxt || dxt5a;
+    const uint32_t bytes_per_block = dxt5a ? 8u : 16u;
+    const bool valid_texture_layout = r8
+        ? !texture.tiled && texture.pitch >= texture.width
+        : rgba8 ? texture.tiled && texture.pitch >= texture.width &&
+                      texture.pitch % 32u == 0
+                : rg16_float ? texture.pitch >= texture.width &&
+                      (!texture.tiled || texture.pitch % 32u == 0)
+                : compressed && texture.width % 4u == 0 &&
+                      texture.height % 4u == 0 &&
+                      texture.pitch >= texture.width && texture.pitch % 4u == 0 &&
+                      (!texture.tiled || texture.pitch % 128u == 0);
+    if (!guest_bytes || !vulkan_bytes ||
+        (!r8 && !rgba8 && !rg16_float && !compressed) ||
+        texture.dimension != 1 || !texture.width || !texture.height ||
+        !valid_texture_layout) {
         return fail("unsupported captured texture layout", error);
     }
 
-    const uint64_t expected_bytes =
-        static_cast<uint64_t>(texture.width) * texture.height * 4;
-    if (expected_bytes > std::numeric_limits<uint32_t>::max() ||
-        texture.byte_length != expected_bytes || byte_length != expected_bytes) {
+    const uint32_t blocks_wide = (texture.width + 3u) / 4u;
+    const uint32_t blocks_high = (texture.height + 3u) / 4u;
+    if (texture.packed_mips &&
+        (!texture.tiled || (!compressed && !rgba8))) {
+        return fail("packed captured texture layout is unsupported", error);
+    }
+    uint32_t packed_offset_x_pixels = 0;
+    uint32_t packed_offset_y_pixels = 0;
+    uint32_t packed_offset_x_blocks = 0;
+    uint32_t packed_offset_y_blocks = 0;
+    if (texture.packed_mips) {
+        const auto log2_ceil = [](uint32_t value) {
+            uint32_t result = 0;
+            uint32_t power = 1;
+            while (power < value) {
+                power <<= 1;
+                ++result;
+            }
+            return result;
+        };
+        const uint32_t log2_width = log2_ceil(texture.width);
+        const uint32_t log2_height = log2_ceil(texture.height);
+        // When the mip tail starts at level 0, Xenos places that base image
+        // 16 texels into the tile along its shorter axis.
+        if (std::min(log2_width, log2_height) <= 4u) {
+            if (log2_width > log2_height) {
+                packed_offset_y_pixels = 16u;
+            } else {
+                packed_offset_x_pixels = 16u;
+            }
+        }
+        packed_offset_x_blocks = packed_offset_x_pixels / 4u;
+        packed_offset_y_blocks = packed_offset_y_pixels / 4u;
+    }
+    const uint64_t output_bytes = static_cast<uint64_t>(texture.width) *
+                                  texture.height * 4u;
+    const uint64_t linear_block_bytes =
+        static_cast<uint64_t>(blocks_wide) * blocks_high * bytes_per_block;
+    const uint64_t source_bytes = r8
+        ? static_cast<uint64_t>(texture.pitch) * texture.height
+        : rgba8 ? tiled_texture_32bpp_storage_bytes(texture.pitch,
+                                                     texture.height)
+                : rg16_float
+                    ? (texture.tiled
+                           ? tiled_texture_32bpp_storage_bytes(texture.pitch,
+                                                              texture.height)
+                           : static_cast<uint64_t>(texture.pitch) *
+                                 texture.height * 4u)
+                : compressed_texture_storage_bytes(
+                      texture.pitch, texture.height, bytes_per_block,
+                      texture.tiled);
+    if (output_bytes > std::numeric_limits<uint32_t>::max() ||
+        linear_block_bytes > std::numeric_limits<uint32_t>::max() ||
+        source_bytes > std::numeric_limits<uint32_t>::max() ||
+        texture.byte_length != source_bytes || byte_length != source_bytes) {
         return fail("captured texture byte range does not match its dimensions", error);
     }
 
-    std::vector<uint8_t> linear(static_cast<size_t>(expected_bytes));
+    if (r8) {
+        std::vector<uint8_t> rgba(static_cast<size_t>(output_bytes));
+        for (uint32_t y = 0; y < texture.height; ++y) {
+            for (uint32_t x = 0; x < texture.width; ++x) {
+                const uint8_t component =
+                    guest_bytes[static_cast<size_t>(y) * texture.pitch + x];
+                const size_t destination =
+                    (static_cast<size_t>(y) * texture.width + x) * 4u;
+                rgba[destination] = component;
+                rgba[destination + 1u] = component;
+                rgba[destination + 2u] = component;
+                rgba[destination + 3u] = component;
+            }
+        }
+        *vulkan_bytes = std::move(rgba);
+        if (error) error->clear();
+        return true;
+    }
+
+    if (compressed) {
+        const uint32_t pitch_blocks = texture.pitch / 4u;
+        std::vector<uint8_t> linear_blocks(static_cast<size_t>(linear_block_bytes));
+        for (uint32_t y = 0; y < blocks_high; ++y) {
+            for (uint32_t x = 0; x < blocks_wide; ++x) {
+                const size_t source = texture.tiled
+                    ? static_cast<size_t>(dxt5a
+                          ? tiled_2d_offset_8bpb(
+                                x + packed_offset_x_blocks,
+                                y + packed_offset_y_blocks, pitch_blocks)
+                          : tiled_2d_offset_16bpb(
+                                x + packed_offset_x_blocks,
+                                y + packed_offset_y_blocks, pitch_blocks))
+                    : (static_cast<size_t>(y + packed_offset_y_blocks) *
+                           pitch_blocks + x + packed_offset_x_blocks) *
+                          bytes_per_block;
+                const size_t destination =
+                    (static_cast<size_t>(y) * blocks_wide + x) * bytes_per_block;
+                if (source + bytes_per_block > source_bytes) {
+                    return fail("captured DXT address exceeds its byte range", error);
+                }
+                std::copy_n(guest_bytes + source, bytes_per_block,
+                            linear_blocks.begin() + destination);
+            }
+        }
+
+        for (size_t offset = 0; offset < linear_blocks.size(); offset += 2u) {
+            std::swap(linear_blocks[offset], linear_blocks[offset + 1u]);
+        }
+
+        if (dxt5a) {
+            std::vector<uint8_t> rgba(static_cast<size_t>(output_bytes));
+            for (uint32_t block_y = 0; block_y < blocks_high; ++block_y) {
+                for (uint32_t block_x = 0; block_x < blocks_wide; ++block_x) {
+                    const size_t block_offset =
+                        (static_cast<size_t>(block_y) * blocks_wide + block_x) * 8u;
+                    const Dxt5AlphaBlock alpha =
+                        decode_dxt5_alpha_block(linear_blocks.data() + block_offset);
+                    for (uint32_t y = 0; y < 4u; ++y) {
+                        for (uint32_t x = 0; x < 4u; ++x) {
+                            const uint32_t pixel = y * 4u + x;
+                            const uint32_t alpha_index = static_cast<uint32_t>(
+                                (alpha.indices >> (pixel * 3u)) & 7u);
+                            const size_t destination =
+                                (static_cast<size_t>(block_y * 4u + y) * texture.width +
+                                 block_x * 4u + x) * 4u;
+                            rgba[destination] = 255u;
+                            rgba[destination + 1u] = 255u;
+                            rgba[destination + 2u] = 255u;
+                            rgba[destination + 3u] = alpha.values[alpha_index];
+                        }
+                    }
+                }
+            }
+            *vulkan_bytes = std::move(rgba);
+            if (error) error->clear();
+            return true;
+        }
+
+        std::vector<uint8_t> rgba(static_cast<size_t>(output_bytes));
+        const auto expand_565 = [](uint16_t packed, uint8_t* color) {
+            color[0] = static_cast<uint8_t>(((packed >> 11) & 0x1Fu) * 255u / 31u);
+            color[1] = static_cast<uint8_t>(((packed >> 5) & 0x3Fu) * 255u / 63u);
+            color[2] = static_cast<uint8_t>((packed & 0x1Fu) * 255u / 31u);
+        };
+        for (uint32_t block_y = 0; block_y < blocks_high; ++block_y) {
+            for (uint32_t block_x = 0; block_x < blocks_wide; ++block_x) {
+                const size_t block_offset =
+                    (static_cast<size_t>(block_y) * blocks_wide + block_x) * 16u;
+                const uint8_t* block = linear_blocks.data() + block_offset;
+                const auto read_le16 = [block](size_t byte) {
+                    return static_cast<uint16_t>(block[byte]) |
+                           (static_cast<uint16_t>(block[byte + 1u]) << 8);
+                };
+                const Dxt5AlphaBlock alpha = dxt4_5
+                    ? decode_dxt5_alpha_block(block)
+                    : Dxt5AlphaBlock{};
+                const uint16_t color_0 = read_le16(8u);
+                const uint16_t color_1 = read_le16(10u);
+                std::array<std::array<uint8_t, 3>, 4> colors{};
+                expand_565(color_0, colors[0].data());
+                expand_565(color_1, colors[1].data());
+                for (size_t channel = 0; channel < 3; ++channel) {
+                    colors[2][channel] = static_cast<uint8_t>(
+                        (2u * colors[0][channel] + colors[1][channel]) / 3u);
+                    colors[3][channel] = static_cast<uint8_t>(
+                        (colors[0][channel] + 2u * colors[1][channel]) / 3u);
+                }
+                const uint32_t indices = static_cast<uint32_t>(block[12]) |
+                    (static_cast<uint32_t>(block[13]) << 8) |
+                    (static_cast<uint32_t>(block[14]) << 16) |
+                    (static_cast<uint32_t>(block[15]) << 24);
+                for (uint32_t y = 0; y < 4u; ++y) {
+                    for (uint32_t x = 0; x < 4u; ++x) {
+                        const uint32_t pixel = y * 4u + x;
+                        const uint32_t alpha_value = dxt4_5
+                            ? alpha.values[(alpha.indices >> (pixel * 3u)) & 7u]
+                            : (((block[pixel >> 1] >> ((pixel & 1u) * 4u)) & 0xFu) * 17u);
+                        const uint32_t color_index = (indices >> (pixel * 2u)) & 3u;
+                        const size_t destination =
+                            (static_cast<size_t>(block_y * 4u + y) * texture.width +
+                             block_x * 4u + x) * 4u;
+                        rgba[destination] = colors[color_index][0];
+                        rgba[destination + 1u] = colors[color_index][1];
+                        rgba[destination + 2u] = colors[color_index][2];
+                        rgba[destination + 3u] = static_cast<uint8_t>(alpha_value);
+                    }
+                }
+            }
+        }
+        *vulkan_bytes = std::move(rgba);
+        if (error) error->clear();
+        return true;
+    }
+
+    std::vector<uint8_t> linear(static_cast<size_t>(output_bytes));
     for (uint32_t y = 0; y < texture.height; ++y) {
         for (uint32_t x = 0; x < texture.width; ++x) {
-            const size_t source = static_cast<size_t>(
-                tiled_2d_offset_32bpp(x, y, texture.pitch));
+            const size_t source = texture.tiled
+                ? static_cast<size_t>(tiled_2d_offset_32bpp(
+                      x + packed_offset_x_pixels,
+                      y + packed_offset_y_pixels, texture.pitch))
+                : (static_cast<size_t>(y) * texture.pitch + x) * 4u;
             const size_t destination =
                 (static_cast<size_t>(y) * texture.width + x) * 4;
             if (source + 4 > byte_length) {
@@ -793,6 +2694,40 @@ bool untile_captured_texture_2d(
     if (error) {
         error->clear();
     }
+    return true;
+}
+
+bool copy_captured_r8_texture_2d(
+    const CapturedTextureFetch& texture,
+    const uint8_t* guest_bytes,
+    size_t byte_length,
+    std::vector<uint8_t>* vulkan_bytes,
+    std::string* error) {
+    if (!guest_bytes || !vulkan_bytes || texture.format != 2 ||
+        texture.endian_mode != 0 || texture.tiled || texture.dimension != 1 ||
+        !texture.width || !texture.height || texture.pitch < texture.width) {
+        return fail("unsupported captured R8 texture layout", error);
+    }
+    const uint64_t source_bytes = static_cast<uint64_t>(texture.pitch) * texture.height;
+    const uint64_t output_bytes = static_cast<uint64_t>(texture.width) * texture.height;
+    if (source_bytes > std::numeric_limits<uint32_t>::max() ||
+        output_bytes > std::numeric_limits<uint32_t>::max() ||
+        texture.byte_length != source_bytes || byte_length != source_bytes) {
+        return fail("captured R8 texture byte range does not match its dimensions", error);
+    }
+
+    vulkan_bytes->resize(static_cast<size_t>(output_bytes));
+    if (texture.pitch == texture.width) {
+        std::memcpy(vulkan_bytes->data(), guest_bytes,
+                    static_cast<size_t>(output_bytes));
+    } else {
+        for (uint32_t y = 0; y < texture.height; ++y) {
+            const uint8_t* row = guest_bytes + static_cast<size_t>(y) * texture.pitch;
+            std::memcpy(vulkan_bytes->data() + static_cast<size_t>(y) * texture.width,
+                        row, texture.width);
+        }
+    }
+    if (error) error->clear();
     return true;
 }
 
@@ -824,6 +2759,63 @@ bool normalize_captured_buffer_bytes(
     if (error) {
         error->clear();
     }
+    return true;
+}
+
+bool decode_captured_index_data(
+    const DecodedIndexedDraw& draw,
+    const uint8_t* guest_bytes,
+    size_t byte_length,
+    std::vector<uint8_t>* vulkan_bytes,
+    uint32_t* maximum_vertex_index,
+    std::string* error) {
+    constexpr uint32_t kMaximumCapturedIndexCount = 1u << 20;
+    if (!guest_bytes || !vulkan_bytes || !maximum_vertex_index ||
+        draw.index_type_bits != 16 || draw.index_endian_mode != 1 ||
+        draw.index_count == 0 || draw.index_count > kMaximumCapturedIndexCount ||
+        draw.index_byte_length != draw.index_count * 2u ||
+        byte_length != draw.index_byte_length) {
+        return fail("invalid captured 16-bit index span", error);
+    }
+
+    std::vector<uint8_t> normalized;
+    if (!normalize_captured_buffer_bytes(draw.index_endian_mode, guest_bytes,
+                                         byte_length, &normalized, error)) {
+        return false;
+    }
+    uint32_t maximum = 0;
+    for (uint32_t i = 0; i < draw.index_count; ++i) {
+        const size_t offset = static_cast<size_t>(i) * 2;
+        const uint32_t index = static_cast<uint32_t>(normalized[offset]) |
+                               (static_cast<uint32_t>(normalized[offset + 1]) << 8);
+        maximum = std::max(maximum, index);
+    }
+    *vulkan_bytes = std::move(normalized);
+    *maximum_vertex_index = maximum;
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_vertex_required_bytes(
+    uint32_t maximum_vertex_index,
+    uint32_t stride_bytes,
+    uint32_t attribute_offset_bytes,
+    uint32_t attribute_size_bytes,
+    uint32_t* required_bytes,
+    std::string* error) {
+    if (!required_bytes || stride_bytes == 0 || attribute_size_bytes == 0 ||
+        attribute_offset_bytes >= stride_bytes ||
+        static_cast<uint64_t>(attribute_offset_bytes) + attribute_size_bytes >
+            stride_bytes) {
+        return fail("invalid captured vertex attribute span", error);
+    }
+    const uint64_t length = static_cast<uint64_t>(maximum_vertex_index) * stride_bytes +
+                            attribute_offset_bytes + attribute_size_bytes;
+    if (length > std::numeric_limits<uint32_t>::max()) {
+        return fail("captured vertex span exceeds the supported address range", error);
+    }
+    *required_bytes = static_cast<uint32_t>(length);
+    if (error) error->clear();
     return true;
 }
 

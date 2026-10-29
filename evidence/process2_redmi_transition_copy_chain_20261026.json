@@ -1,0 +1,102 @@
+{
+  "schema": "shift.process2.redmi_transition_copy_chain.v1",
+  "captured_at_local": "2026-10-26 22:51:54 +03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "app_process_id": 14611
+  },
+  "source_log": {
+    "path": "process2_redmi_provider_resolve_disclaimer_live_20261026.log.gz",
+    "sha256_uncompressed": "114afc59c3c6360d013d6f7089b8d9473e0ee397f6487ac0a865cb91ade1b118",
+    "sha256_gzip": "6f3f1a7cb59c780d1eb894e0b338cc9bf9f9d590bfcce260644359954626ebeb"
+  },
+  "observed_failure": {
+    "time_local": "2026-10-26 22:42:34.805 +03:00",
+    "message": "Vulkan frame refresh failed for 1280x720 with 14 captured draws: mixed captured frame has an unsupported target format or Copy/Convert source extent",
+    "later_disclaimer_submissions_continued": true,
+    "exact_failed_predicate": "not distinguished by the runtime error; it is either an undefined Vulkan target format or a Copy/Convert source extent unequal to the first draw target",
+    "menu_background_open_failures_causal": "not established"
+  },
+  "captured_copy_states": [
+    {
+      "role": "mode-6 sample-averaging copy",
+      "draw_index": 0,
+      "surface_info": "0x14020500",
+      "color_info": "0x000C0000",
+      "source_color_format": 12,
+      "source_color_format_supported_by_p2": false,
+      "registers": {
+        "copy_control": "0x00100360",
+        "copy_dest_base": "0x0BE19000",
+        "copy_dest_pitch": "0x02D00500",
+        "copy_dest_info": "0x000B4D01"
+      },
+      "decoded_fields": {
+        "source_select": 0,
+        "sample_select": 6,
+        "sample_select_name": "k0123 (all four samples)",
+        "color_clear_enable": true,
+        "depth_clear_enable": true,
+        "command": "convert",
+        "destination_extent": [1280, 720],
+        "destination_format": 26,
+        "destination_format_name": "16_16_16_16",
+        "destination_number_format": 2,
+        "destination_number_format_name": "unsigned integer",
+        "destination_exp_bias": 11,
+        "destination_red_blue_swap": false
+      },
+      "decoder_result": "rejected fail-closed"
+    },
+    {
+      "role": "single-sample intermediate copies",
+      "draw_indices": [1, 3, 5, 7, 9, 11, 13],
+      "register_pattern": {
+        "copy_control": "0x00100100",
+        "sample_select": 0,
+        "color_clear_enable": true,
+        "depth_clear_enable": false,
+        "command": "convert",
+        "copy_dest_info": "0x0000EF82",
+        "destination_format": 31,
+        "destination_format_name": "16_16_FLOAT",
+        "destination_number_format": 7,
+        "destination_number_format_name": "float",
+        "destination_exp_bias": 0
+      },
+      "destinations": [
+        {"base": "0x0CC87000", "extent": [256, 243]},
+        {"base": "0x0CC7E000", "extent": [96, 81]},
+        {"base": "0x0CC7D000", "extent": [32, 27]},
+        {"base": "0x0CC7B000", "extent": [32, 9]},
+        {"base": "0x0CC7A000", "extent": [32, 3]},
+        {"base": "0x0CC79000", "extent": [32, 1]},
+        {"base": "0x0CD63000", "extent": [32, 1]}
+      ],
+      "decoder_result": "rejected fail-closed"
+    },
+    {
+      "role": "final presenter copy",
+      "time_local": "2026-10-26 22:42:34.764 +03:00",
+      "destination": "0x0975E000",
+      "extent": [1280, 720],
+      "format": 6,
+      "result": "accepted source-0/sample-0 Copy/Convert"
+    }
+  ],
+  "renderer_gap": {
+    "current_frame_model": "one captured draw vector and one retained Copy/Convert request per guest swap",
+    "intermediate_copy_writeback": "not implemented; internal destination buffers are not updated by the Vulkan presenter",
+    "mixed_frame_constraint": "all draws share the first draw target; its Copy/Convert source extent must match that target",
+    "next_required_work": "capture and execute ordered render-target/copy operations, including their distinct source extents and guest-memory destinations, before presenting the final frontbuffer copy"
+  },
+  "interpretation_limits": [
+    "The sequence of differently sized 16_16_FLOAT destinations resembles a downsample chain; this is an inference from the captured dimensions, not a proven game-purpose label.",
+    "The generic failure message does not identify which of its two predicates failed.",
+    "This record documents actual captured registers and the current P2 renderer boundary; it does not claim that the rejected frame was the cause of the menu stall or that intermediate-copy support alone will complete the transition."
+  ],
+  "register_semantics_reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/registers.h"
+}

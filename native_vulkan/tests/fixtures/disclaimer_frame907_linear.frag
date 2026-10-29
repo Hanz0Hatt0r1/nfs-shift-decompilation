@@ -1,0 +1,64 @@
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=1) in vec4 shift_interpolator1;
+layout(location=2) in vec4 shift_interpolator2;
+layout(location=3) in vec4 shift_interpolator3;
+layout(location=4) in vec4 shift_interpolator4;
+layout(location=5) in vec4 shift_interpolator5;
+layout(location=6) in vec4 shift_interpolator6;
+layout(location=7) in vec4 shift_interpolator7;
+layout(location=8) in vec4 shift_interpolator8;
+layout(location=9) in vec4 shift_interpolator9;
+layout(location=10) in vec4 shift_interpolator10;
+layout(location=11) in vec4 shift_interpolator11;
+layout(location=12) in vec4 shift_interpolator12;
+layout(location=13) in vec4 shift_interpolator13;
+layout(location=14) in vec4 shift_interpolator14;
+layout(location=15) in vec4 shift_interpolator15;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+layout(set=1,binding=0) uniform sampler2D shift_sampler_0;
+float shift_pwl_gamma_to_linear(float gamma) {
+  gamma=clamp(gamma,0.0,1.0);
+  float scale=gamma>=192.0/255.0 ? 8.0/1024.0 : gamma>=96.0/255.0 ? 4.0/1024.0 : gamma>=64.0/255.0 ? 2.0/1024.0 : 1.0/1024.0;
+  float offset=gamma>=192.0/255.0 ? -1024.0 : gamma>=96.0/255.0 ? -256.0 : gamma>=64.0/255.0 ? -64.0 : 0.0;
+  float linear=gamma*(255.0*1024.0)*scale+offset;
+  return (linear+trunc(linear*scale))/1023.0;
+}
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  float previous_scalar=0.0;
+  r[0]=shift_interpolator0;
+  r[1]=shift_interpolator1;
+  r[2]=shift_interpolator2;
+  r[3]=shift_interpolator3;
+  r[4]=shift_interpolator4;
+  r[5]=shift_interpolator5;
+  r[6]=shift_interpolator6;
+  r[7]=shift_interpolator7;
+  r[8]=shift_interpolator8;
+  r[9]=shift_interpolator9;
+  r[10]=shift_interpolator10;
+  r[11]=shift_interpolator11;
+  r[12]=shift_interpolator12;
+  r[13]=shift_interpolator13;
+  r[14]=shift_interpolator14;
+  r[15]=shift_interpolator15;
+  shift_color0=vec4(0.0);
+  vec4 sampled_0 = texture(shift_sampler_0, r[1].xy);
+  sampled_0.x=shift_pwl_gamma_to_linear(sampled_0.x);
+  sampled_0.y=shift_pwl_gamma_to_linear(sampled_0.y);
+  sampled_0.z=shift_pwl_gamma_to_linear(sampled_0.z);
+  vec4 fetched_0 = vec4(sampled_0.x, sampled_0.y, sampled_0.z, sampled_0.w);
+  r[1].x = fetched_0.x;
+  r[1].y = fetched_0.y;
+  r[1].z = fetched_0.z;
+  r[1].w = fetched_0.w;
+  vec4 alu_3 = (r[1].xyzw * r[0].xyzw);
+  shift_color0.x = alu_3.x;
+  shift_color0.y = alu_3.y;
+  shift_color0.z = alu_3.z;
+  shift_color0.w = alu_3.w;
+}

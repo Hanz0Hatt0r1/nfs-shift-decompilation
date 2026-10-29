@@ -1,0 +1,59 @@
+{
+  "schema": "shift.process2.retail_cjmp_diagnostic.v1",
+  "date": "2026-10-27",
+  "source": {
+    "implementation_commit": "0742292fa943c8077e466f40380c64f4ebe99e56",
+    "retail_capture": "evidence/process2_redmi_pm4_packet_limit_20261027.json",
+    "retail_log": "evidence/process2_redmi_pm4_packet_limit_20261027.log.gz",
+    "retail_log_event": "2026-10-27 03:53:25.874 MSK: draw #14 shader translation rejected for unsupported predicate/direction",
+    "reference": "https://raw.githubusercontent.com/xenia-project/xenia/master/src/xenia/gpu/ucode.h"
+  },
+  "change": {
+    "file": "native_vulkan/src/xbox_shader_translate.cpp",
+    "behavior_change": false,
+    "diagnostic_fields": [
+      "control-flow instruction index",
+      "opcode",
+      "jump address",
+      "bool constant",
+      "condition",
+      "unconditional flag",
+      "predicated flag",
+      "direction bit"
+    ],
+    "reason": "The retail shader bytes were not retained, so the log did not distinguish predication from the direction bit. The implementation reports the decoded fields while preserving fail-closed behavior."
+  },
+  "regression": {
+    "fixture": "Synthetic CJMP with predicated=1, direction=1, address=3 and bool constant 129.",
+    "assertion": "The translator rejects it and includes all decoded branch fields in the error.",
+    "retail_shader_replay": false
+  },
+  "validation": {
+    "linux_host_ctest": "4/4 passed; renderer test uses VK_LAYER_KHRONOS_validation",
+    "android_arm64_plugin_build": {
+      "ndk": "r28c / 28.2.13676358",
+      "api": 26,
+      "plugin_sha256": "930c5f5141ff1685f53c08db615cb1a124132789c04901c5d60f872a6e6be723",
+      "plugin_build_id": "8d5a5e9aad1e9e97a084acad12c3118db96d4ded"
+    },
+    "android_arm64_translator_check": {
+      "device": "Redmi Note 8 Pro / Mali-G76 MC4",
+      "binary_sha256": "a6de32248fcb968b12a3775a154ed40127a88fd320fad7f96e1290006217ee1a",
+      "result": "passed while the game stayed running"
+    }
+  },
+  "device_state": {
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 6382,
+    "screenshot_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+    "game_apk_or_plugin_replaced": false,
+    "game_restarted": false,
+    "input_sent": false
+  },
+  "limits": [
+    "The branch's predicated and direction semantics remain unsupported.",
+    "The retail shader bytes are absent; the synthetic fixture only tests diagnostic content.",
+    "The updated Android plugin was built but not installed.",
+    "The 14-draw Xenos target-layout transition and ordered mode-6 copies remain unsupported; no new retail video frame or parity is claimed."
+  ]
+}

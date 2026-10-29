@@ -1,0 +1,54 @@
+{
+  "schema": "shift.process2.current_resolve_android_plugin_candidate.v1",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "tree_head": "c534eb00af5d80dfd0fdbdcace809309a5fae711",
+    "plugin_last_source_change": "c69de3f2393e32f164ff7cc0581351bf24bfa730",
+    "sdk_branch": "work/process2-vulkan-resolve-capability-20261024",
+    "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99"
+  },
+  "build": {
+    "abi": "arm64-v8a",
+    "android_api": 26,
+    "ndk": "28.2.13676358 (r28c)",
+    "plugin_translation_unit": "current P2 source compiled with optional depth/stencil-resolve and geometry-shader provider overloads enabled",
+    "link": "CMake-generated link command; --no-undefined; reused the unchanged runtime DSO extracted from the installed APK because the full Android SDK runtime build is blocked in Process 1-owned fiber sources",
+    "runtime_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "debug_readback_frame": 1026,
+    "debug_readback_path": "/sdcard/Android/data/com.hanz0hatt0r.nfsshift/files/process2-frame1026-readback.a2b10g10r10"
+  },
+  "plugin": {
+    "stripped_package_path": "/home/pes/work/process2-current-resolve-android-plugin-20261025/apk-stage/lib/arm64-v8a/librexgpu-shift-natived.so",
+    "sha256": "6ddffab3c34d96e5fb7c78aad3cb90ecffa3edbb2ecb6e5bbff6a23201f788be",
+    "elf_build_id": "b1cf142d9cf83bf3bccd832053ed4a678d196a13",
+    "soname": "librexgpu-shift-natived.so",
+    "linker_check": "--no-undefined passed",
+    "aliases_byte_identical": true
+  },
+  "apk_candidate": {
+    "path": "/home/pes/work/process2-current-resolve-android-plugin-20261025/app-current-resolve-candidate.apk",
+    "sha256": "03ae4aef3b02e6f6b3a3ae05a8bab157f8b4c1b0d67988a17c2e3384c26b089f",
+    "base_apk_sha256": "03f76b915d9ec5b64ab83f1df43037761cdf8d63a57d2234be70c6b883c4e8df",
+    "preserved_runtime_entry_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "replaced_entries": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "signature_scheme": "APK Signature Scheme v3 verified",
+    "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "same_signer_as_installed_base": true,
+    "zipalign_check": "passed",
+    "installed_or_launched": false
+  },
+  "device_probes": {
+    "game_pid_after_build": 7611,
+    "game_package_updated_or_restarted": false,
+    "standalone_resolve_capability_check": "aborted with std::bad_cast against the extracted runtime outside the app; no provider capability result",
+    "standalone_dlopen_probe": "SIGSEGV in librexruntimed.so during shell-process dlopen before the probe returned; this is not an in-app plugin load test"
+  },
+  "limits": [
+    "This candidate has not been installed or launched in the Android application; runtime ABI and retail rendering remain unverified.",
+    "The standalone probe failures occurred outside the app Activity/JVM context and do not establish a plugin failure inside the app.",
+    "No claim is made for language-menu text, cutscene playback, or full retail visual parity."
+  ]
+}

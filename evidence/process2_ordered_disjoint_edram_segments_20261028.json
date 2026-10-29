@@ -1,0 +1,44 @@
+{
+  "schema": "shift.process2.ordered_disjoint_edram_segments.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "change": {
+    "ordered_execution": "A Draw run may split at a target-layout change only when the old and new Xenos color/depth tile footprints are disjoint. Each segment is submitted in PM4 order and retained in its exact-layout GPU CachedEdramTarget.",
+    "no_copy_segment": "Stores its cached color/depth attachments and transitions cached color to shader-read layout for later queue-ordered use. It does not render to or transition the presenter image.",
+    "fail_closed": "Invalid address layouts and overlapping EDRAM aliases remain rejected. No address-based color/sample conversion or shared physical EDRAM buffer was added."
+  },
+  "regression": {
+    "shape": "Draw(layout A), Draw(layout B), Copy/Convert; layout A and B use disjoint Xenos color and depth tile footprints.",
+    "checks": [
+      "both exact-layout targets remain in the Vulkan resource cache",
+      "ordered final Copy/Convert readback equals direct submission of layout B",
+      "VK_LAYER_KHRONOS_validation reports no test failure"
+    ],
+    "classification": "synthetic executor and cache regression; not retail graphics parity"
+  },
+  "verification": {
+    "native_linux": {
+      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /tmp/nfs-shift-p2-edram-build-20261028 --output-on-failure",
+      "result": "passed 4/4"
+    },
+    "linux_plugin": {
+      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
+      "result": "passed 6/6",
+      "plugin_sha256": "763163fa73e07a0c936760b4c3cd549e7daa17c3115eb86a9954e4af880ddacc",
+      "build_id": "9a6ebe8a7fb539968f0105745e21542545886edc",
+      "vulkan_minimum": "1.1"
+    },
+    "android_arm64_api26": {
+      "command": "cmake --build /home/pes/work/.build-process2-p2161-android-renderer-20261027 --target shift_xbox_live_vulkan_renderer xbox_live_vulkan_renderer_check --parallel 4",
+      "result": "renderer and check executable compiled",
+      "device_execution": "not run; adb devices -l returned no connected devices"
+    }
+  },
+  "remaining_blockers": [
+    "The retail 14-draw transition aliases color EDRAM across different extents, sample counts, and formats; that overlapping path still requires a shared physical backing store and sample/format transfer.",
+    "Xenos clear effects and depth/stencil persistence across aliased layouts are not implemented.",
+    "This change has not been replayed against a retail capture and makes no retail pixel-parity claim.",
+    "The source-1 interrupt packet-to-callback audit remains timestamp/order correlation; exact callback payload semantics are still open."
+  ],
+  "interrupt_audit_reference": "process2_v45_source1_interrupt_join_20261028.json"
+}

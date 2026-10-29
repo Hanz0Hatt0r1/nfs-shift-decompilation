@@ -1,0 +1,40 @@
+{
+  "schema": "shift.process2.mali_disclaimer_exact_replay.v1",
+  "date": "2026-10-27",
+  "process2": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "commit": "a8ddc79638ee3a4c9d254fdfcc12ad13a2893ba0",
+    "android_cmake_change": "Link shift_xbox_draw_input into xbox_live_vulkan_renderer_check."
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "android_release": "13",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "execution": "Offscreen ARM64 Vulkan renderer-check process; the game activity remained resumed."
+  },
+  "test": {
+    "target": "xbox_live_vulkan_renderer_check",
+    "android_abi": "arm64-v8a",
+    "minimum_android_api": 26,
+    "ndk": "r28c",
+    "binary_sha256": "d64a4fdd62b256d5a871b31c1bf7ebd8137969b3d3d9e70dc380435fbe124f8c",
+    "build_id": "ed97ab93e49197213d4a4ea62b89eb4a9f28e915",
+    "input": "Captured disclaimer draws 5058-5061, captured DXT4/5 texture bytes, decoded RGBA8 texture, four captured vertex payloads, and Vulkan 1.1 SPIR-V.",
+    "result": "captured retail disclaimer strip draws passed on Mali-G76 MC4; both horizontal rules remained visible and continuous with no gaps.",
+    "validation_layer": "Not enabled by the Android checker; the matching Linux renderer check passed with VK_LAYER_KHRONOS_validation."
+  },
+  "output": {
+    "extent": [1280, 720],
+    "raw_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "raw_sha256": "f74d8a5929dc756ea165985cfb441a9ef4cff11237fd1abd183e05cfc3103621",
+    "raw_bytes": 3686400,
+    "png": "process2_mali_disclaimer_exact_replay_20261027.png",
+    "png_sha256": "0969843568866ea3c765f06d7170ed9f17dfc63bba8e822a3b56b93bc7809b5f"
+  },
+  "limits": [
+    "The replay covers the four captured strip draws, not the full disclaimer frame or a complete game session.",
+    "No independent Xbox retail image establishes a different expected border color, thickness, position, or vertical geometry.",
+    "The installed APK contains an older renderer DSO; this is a direct renderer replay, not a fresh APK integration capture."
+  ]
+}

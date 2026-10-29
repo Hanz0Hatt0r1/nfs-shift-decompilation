@@ -1,0 +1,55 @@
+{
+  "schema": "shift.process2.android_async_inflight_apk.v1",
+  "date": "2026-10-25",
+  "source": {
+    "process2_commit": "f07ebff9c30243b6990e6f0da1fe9e279477f485",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "android_project": "/home/pes/work/nfsshift-rex/android",
+    "android_provider_sdk": "/home/pes/work/rexglue-sdk-v0.10.0-android",
+    "provider_capabilities": {
+      "geometry_shader": true,
+      "optional_depth_stencil_resolve": false
+    },
+    "build_command": "./gradlew --no-daemon :app:assembleDebug -PREXSDK_DIR=/home/pes/work/rexglue-sdk-v0.10.0-android -PSHIFT_NATIVE_PLUGIN_DIR=/home/pes/work/nfs-shift-xbox-live-ring-20261023/native_vulkan/rexglue_plugin"
+  },
+  "build": {
+    "result": "BUILD SUCCESSFUL",
+    "elapsed": "2m 28s",
+    "abi": "arm64-v8a",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "minimum_android_api": 29,
+    "target_android_api": 33,
+    "compile_sdk": 36,
+    "apk_path": "/home/pes/work/process2-android-inflight-apk/app-process2-android-inflight-20261025.apk",
+    "apk_size_bytes": 193572431,
+    "apk_sha256": "6a4e081472c8fd18238c1e30baa5adb82c296e1c0db01b0d5563b5db18be30f6",
+    "signature": {
+      "verification": "apksigner verified APK Signature Scheme v2",
+      "certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48"
+    }
+  },
+  "packaged_renderer": {
+    "entries": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "entries_byte_identical": true,
+    "stripped_plugin_sha256": "3800c86e43d5afaf777f4e59284d8bdf58c0cd7eefa0562125ced460ef9ed9b1",
+    "elf_build_id": "ed1ad229bc8e53168f6ff5e567d1c62a732889f1"
+  },
+  "device": {
+    "adb_endpoint": "192.168.1.32:33153",
+    "model": "Redmi Note 8 Pro",
+    "installed_candidate": false,
+    "existing_game_process_stopped_or_restarted": false,
+    "current_process_id": 22527,
+    "last_application_log_modification": "2026-10-25 15:53",
+    "language_selector_verified": false
+  },
+  "limitations": [
+    "The package uses the existing v0.10.0 provider and does not expose provider-confirmed enabled depth/stencil SAMPLE_ZERO resolve.",
+    "The APK build verifies packaging and signature only; it has not been installed or run as a game session.",
+    "The current phone process predates the APK and its application log has stopped advancing; no live result is attributed to this artifact.",
+    "Language-selector labels and sustained cutscene playback remain unverified on the phone."
+  ]
+}

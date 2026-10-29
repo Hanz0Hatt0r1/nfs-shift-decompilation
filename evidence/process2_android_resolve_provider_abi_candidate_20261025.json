@@ -1,0 +1,64 @@
+{
+  "schema": "shift.process2.android_resolve_provider_abi_candidate.v1",
+  "date": "2026-10-25",
+  "source": {
+    "process2_branch": "work/process2-xbox-live-ring-20261023",
+    "process2_renderer_commit": "f07ebff9c30243b6990e6f0da1fe9e279477f485",
+    "resolve_provider_sdk_commit": "fb151b9",
+    "sdk_path": "/home/pes/work/rexglue-sdk-process2-resolve-20261024"
+  },
+  "manual_link_experiment": {
+    "purpose": "Check whether the resolve-enabled Vulkan provider objects and P2 plugin can link against the existing Android runtime DSO without rebuilding Process 1 runtime sources.",
+    "base_runtime_source_apk": "/home/pes/work/nfsshift-rex/android/app/build/outputs/apk/debug/app-debug.apk",
+    "base_runtime_entry": "lib/arm64-v8a/librexruntimed.so",
+    "base_runtime_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "standard_cmake_target": "The CMake build successfully produced rexui-vulkan and the P2 renderer library, then stopped building rexruntime at the Bionic getcontext/makecontext/swapcontext and rex::GetAndroidApiLevel errors recorded in process2_android_resolve_plugin_build_20261025.json.",
+    "link_method": "Reused the generated CMake link scripts for the plugin and provider capability test, replacing only the missing SDK librexruntime.so input with the unchanged extracted librexruntimed.so. The plugin translation unit was compiled with SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER=1 and the resulting DSO contains VulkanProvider::Create(bool, bool, bool, bool). Linker --no-undefined checks succeeded.",
+    "resolve_capability_test_binary": {
+      "path": "/home/pes/work/process2-resolve-plugin-android-linked/resolve_capability_check",
+      "sha256": "c35cea891ea3036219c1e9fb531931da9bacaf44d40419c5197a5b0441911d05",
+      "build_id": "5dbc097e3c083621d4af62158f3687bf215b68df",
+      "device_execution": "Not run: the ADB Wi-Fi transport went offline before transfer."
+    }
+  },
+  "resolve_enabled_plugin": {
+    "unstripped_path": "/home/pes/work/process2-resolve-plugin-android-linked/librexgpu-shift-natived.so",
+    "unstripped_sha256": "9bebcac084dcfdb8e3cc973cc26a65fdc8e16974aa24767c7ce561db2ea16db1",
+    "stripped_package_plugin_sha256": "508917c88ff5821e98b91eeb93681e34c3d0a72ccb55f0df6e9d8c65ff5a2650",
+    "elf_build_id": "df32533efcffb379d49c2327c9edacfff899daec",
+    "soname": "librexgpu-shift-natived.so",
+    "needed_runtime": "librexruntimed.so",
+    "new_provider_overload_present": true
+  },
+  "apk_candidate": {
+    "path": "/home/pes/work/process2-android-resolve-plugin-apk-20261025/app-process2-resolve-provider-abi-candidate-20261025.apk",
+    "sha256": "39681bdc12d87ad06b8e74a824d83ebb8677727753f416aeb60f47c1261de51e",
+    "signature": "apksigner verified APK Signature Scheme v3",
+    "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "base_apk_sha256": "6a4e081472c8fd18238c1e30baa5adb82c296e1c0db01b0d5563b5db18be30f6",
+    "replaced_plugin_entries": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "aliases_byte_identical": true,
+    "runtime_entry_preserved_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "zip_payload_difference_before_signing": "Only the two plugin alias entries were replaced; apksigner then regenerated META-INF signature metadata."
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "last_observed_process_id_before_adb_loss": 22527,
+    "candidate_installed": false,
+    "game_process_mutated": false,
+    "last_known_adb_endpoint": "192.168.1.32:33153",
+    "adb_state": "offline; reconnect to the same endpoint returned Connection refused",
+    "ip_ping_reachable": true,
+    "adb_mdns_discovery": "No service found with SDK adb; system adb reports mDNS unsupported."
+  },
+  "limitations": [
+    "The manually linked plugin has not been loaded on Android; runtime ABI compatibility is unverified.",
+    "The provider capability test executable has not been run on Android.",
+    "The candidate APK has not been installed or launched.",
+    "The candidate APK retains the old runtime DSO. This experiment does not prove that the app uses the new provider symbols rather than an ABI-incompatible or interposed implementation.",
+    "No retail language-menu frame or text parity is claimed."
+  ]
+}

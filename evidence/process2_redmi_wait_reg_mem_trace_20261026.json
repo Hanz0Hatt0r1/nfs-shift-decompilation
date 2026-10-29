@@ -1,0 +1,59 @@
+{
+  "schema": "shift.process2.redmi_wait_reg_mem_trace.v1",
+  "date": "2026-10-26",
+  "captured_at_local": "2026-10-26T19:32:37+03:00",
+  "process2": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "source_commit": "61df66de0c3aeb9bf074a63814427b8ebc303a8e",
+    "trace_environment": "SHIFT_NATIVE_VULKAN_TRACE_RING=1"
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "gpu": "Mali-G76 MC4",
+    "android_version": "13",
+    "adb_endpoint": "192.168.1.32:38615",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 29306,
+    "activity_top_resumed": true,
+    "screen": "process2_redmi_wait_reg_mem_trace_20261026.png",
+    "screen_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839"
+  },
+  "plugin": {
+    "loaded_alias_path": "/data/app/~~dBumBWTmUrbG7ltXpS3hEA==/com.hanz0hatt0r.nfsshift-lhIuexTEXyXUqB1PXQCHaw==/lib/arm64/librexgpu-xenosd.so",
+    "loaded_file_sha256": "0d88433461e530a50d67d889fcb789509ded0ec798af3db656380f38591b69e6",
+    "packaged_candidate": "nfsshift-disclaimer-packed-mip-ringtrace-20261026.apk",
+    "packaged_candidate_sha256": "d8b9f13df03b70250d19b92ddb3ec017a604458449a85de104002d2265bc4761",
+    "wrapper_marker": "present but stale",
+    "wrapper_marker_timestamp": "2026-10-25T17:53:58+03:00",
+    "environment_note": "This marker predates the 2026-10-26 launch and was not refreshed. The Android launcher did not execute the packaged wrap.sh, and Android denied access to /proc/29306/environ. Trace activation in this run is unproven."
+  },
+  "guest_log": {
+    "file": "process2_redmi_wait_reg_mem_trace_20261026.log.gz",
+    "compressed_sha256": "947208d5d881f67ad17a8c6d144886c5b94f6ce247f9626c536f1f3c6f092cf1",
+    "uncompressed_sha256": "f76d9c37df78da8e03351a26e80b829c5608c4a1d5c54319ba49fc132714b5f4",
+    "uncompressed_bytes": 18145,
+    "memory_write_candidate_records": 0,
+    "candidate_set_gap": "The trace helper in source_commit omitted opcode 0x58 (EVENT_WRITE_SHD) from the candidate set. The plugin logged its two observed EVENT_WRITE_SHD packets through a separate handler; both targets differ from the wait address. Zero candidate records therefore does not establish that all possible GPU memory writes were absent.",
+    "wait": {
+      "guest_address": "0x1B964004",
+      "reference": "0x00000001",
+      "mask": "0xFFFFFFFF",
+      "endian_mode": 2,
+      "compare": 3,
+      "source_indirect_buffer": "0x095D0120",
+      "nesting_depth": 1,
+      "byte_offset": 1180
+    },
+    "observed_event_write_shd_targets": [
+      "0x17AF4004",
+      "0x17AF4000"
+    ]
+  },
+  "conclusion": {
+    "established": "The Android app was top-resumed but black and its latest plugin log stopped at WAIT_REG_MEM for 0x1B964004. The two logged EVENT_WRITE_SHD targets are different addresses.",
+    "not_established": "Trace activation is unproven, and the trace helper omitted EVENT_WRITE_SHD opcode 0x58 from its candidate set. The zero candidate-record count cannot exclude GPU memory writes or identify the CPU-side producer. The guest wait predicate was not changed.",
+    "process1_files_modified": false,
+    "app_data_cleared": false,
+    "app_stopped_or_restarted": false
+  }
+}

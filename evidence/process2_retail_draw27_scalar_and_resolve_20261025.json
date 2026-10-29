@@ -1,0 +1,74 @@
+{
+  "schema": "SHIFT.Process2RetailDraw27ScalarAndResolve/1",
+  "observed_at": "2026-10-25T00:39:08+03:00",
+  "checks_completed_at": "2026-10-25T00:54:16+03:00",
+  "retail_run": {
+    "platform": "Xbox 360 retail game through the Linux guest runtime",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "renderer": "project-owned native Vulkan plugin; Xenos GPU-emulation renderer disabled",
+    "device": "NVIDIA GeForce GTX 950, Vulkan 1.4",
+    "loaded_plugin_sha256": "bea5260510249cb15306cfb960462429b3c006cb09fd0666505457a7dbe048e3",
+    "raw_log_snapshot": "process2_retail_draw27_scalar_and_resolve_20261025.log.gz",
+    "raw_log_snapshot_sha256": "b6069d6bc5a3d8ce300cefbf8701316e08671ff06b3396606301b9a37a17599b",
+    "raw_log_lines": 38529
+  },
+  "draw_progress": {
+    "draw_27": {
+      "topology": "rectangle list",
+      "autoindex": true,
+      "index_count": 4,
+      "previous_blocker": "unsupported vector opcode 16 (DP3)",
+      "current_result": "DP3 no longer blocks translation; the captured pixel shader now reaches an unsupported scalar-result opcode.",
+      "captured_run_error": "captured ALU scalar opcode writes an unsupported result",
+      "source_log_time": "2026-10-25 00:29:47.395 +03:00",
+      "limitation": "This run used the plugin before the detailed scalar-opcode diagnostic was rebuilt, so the opcode number and instruction slot remain unknown."
+    },
+    "draw_28": {
+      "previous_blocker": "captured DXT4/5 descriptor with aliased base and mip page rejected",
+      "current_result": "The updated run contains no unresolved-draw rejection for draw 28; the alias is handled as base-level-only. Distinct mip pages remain unsupported without captured mip payload data."
+    },
+    "frame_refresh": {
+      "current_result": "The Vulkan frame refresh remains fail-closed for the 24-draw frame.",
+      "error": "mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability",
+      "first_observed": "2026-10-25 00:29:31.359 +03:00",
+      "cause": "The SDK checkout used by the live process predates the optional depth/stencil resolve provider contract."
+    }
+  },
+  "diagnostic_change": {
+    "source": "native_vulkan/src/xbox_shader_translate.cpp",
+    "behavior": "Unsupported scalar-result errors now include the scalar opcode and instruction slot. The translator also implements Xenos scalar FLOOR opcode 13 as floor(src0.a).",
+    "regression": "native_vulkan/tests/xbox_shader_translate_check.cpp checks opcode 13 floor emission and verifies that unsupported opcode 63 reports its number and instruction slot 7.",
+    "floor_semantics_reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/ucode.h",
+    "rebuilt_plugin_sha256": "9d6badc76e5fd905395926fad979ab0892931d6eb284e850368eed63f4509a0d",
+    "live_plugin_note": "The running retail process was left untouched and has not loaded this floor/diagnostic build; the current captured shader's scalar opcode remains unconfirmed."
+  },
+  "checks": {
+    "linux_native_vulkan_ctest": "4/4 passed; renderer regression ran with VK_LAYER_KHRONOS_validation.",
+    "linux_rexglue_plugin_ctest": "4/4 passed against the separate ReXGlue PR #2 provider branch, including the resolve capability regression.",
+    "android_arm64_shader_translation": {
+      "device": "Redmi Note 8 Pro (begonia), Mali-G76 MC4, Android 13",
+      "adb": "192.168.1.32:33153",
+      "result": "passed, exit code 0",
+      "binary_sha256": "317fcb8fc50eadb01b1e5b92e1e5a41350fea0411bf7f70819846e4758a113c3"
+    },
+    "provider_contract": {
+      "integration": "ReXGlue SDK PR #2",
+      "url": "https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/2",
+      "state_at_observation": "open, not merged",
+      "status": "Built and tested on NVIDIA GeForce GTX 950 with VK_LAYER_KHRONOS_validation: provider resolve pair=1, SAMPLE_ZERO=1, GPU-emulation features=disabled. This is provider capability evidence, not a retail-frame resolve result.",
+      "plugin_sha256": "ec245fc8522d9f1d676f3220e2c33345eb6e03dd608375c529d5e586f0dd2d5c"
+    }
+  },
+  "loading_bar_reference": {
+    "retail_frame_evidence": "process2_linux_retail_loading_frame10_20261024.json",
+    "filled_pixel_rgb": [249, 208, 130],
+    "empty_track_pixel_rgb": [14, 14, 14],
+    "observation": "The user-confirmed yellow-orange filled section and dark-gray empty section match the captured retail frame."
+  },
+  "visual_result": {
+    "retail_readback_for_this_run": false,
+    "visible_menu_or_race_verified": false,
+    "claim": "Submitted draw packets and shader decoding progress are implementation evidence only; the failed frame refresh does not establish a displayed retail frame or parity."
+  },
+  "windows": "Both existing NFS Shift processes were left running; neither was closed or restarted for this diagnostic-only build."
+}

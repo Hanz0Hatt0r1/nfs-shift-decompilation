@@ -1,0 +1,71 @@
+{
+  "schema": "shift.process2.redmi_menu_scene_block.v1",
+  "captured_at_local": "2026-10-26T00:08:18+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 24808,
+    "activity_resumed": true,
+    "apk_last_update_time_local": "2026-10-25T20:36:27+03:00"
+  },
+  "capture": {
+    "screenshot": "process2_redmi_menu_scene_block_20261026.png",
+    "screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "dimensions": [2340, 1080],
+    "screen": "Safety disclaimer text on black with thin purple horizontal strips.",
+    "same_hash_as_2026_10_25_capture": true,
+    "game_log": "process2_redmi_menu_scene_block_20261026.log.gz",
+    "game_log_raw_sha256": "28a49d5e9a74ec43c57e84f6776a27e07cecf98f909af2202e95af183210b214",
+    "game_log_raw_bytes": 591771,
+    "game_log_gzip_sha256": "abb8171cfbc096a8d381b4c006f2aa329e983689a7a789ce274db3a19a6842d7",
+    "game_log_last_modified_local": "2026-10-25T20:38:21+03:00"
+  },
+  "renderer_activity": {
+    "vulkan_device": "Mali-G76 MC4",
+    "first_submit_local": "2026-10-25T20:36:46.356+03:00",
+    "last_submit_local": "2026-10-25T20:38:20.537+03:00",
+    "accepted_copy_convert_records": 1090,
+    "successful_submit_records": 1090,
+    "draw_count_histogram": {
+      "1": 43,
+      "2": 235,
+      "4": 183,
+      "5": 184,
+      "6": 1,
+      "11": 26,
+      "14": 233,
+      "24": 185
+    },
+    "last_submit_draw_count": 14,
+    "unresolved_draw_reasons": [
+      "draw #0: incomplete captured raster register state, valid_mask=0x17038"
+    ],
+    "last_copy_convert": "2026-10-25T20:38:20.515+03:00"
+  },
+  "runtime_frontier": {
+    "subsequent_file_failures": [
+      {
+        "time_local": "2026-10-25T20:38:21.079+03:00",
+        "path": "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      },
+      {
+        "time_local": "2026-10-25T20:38:21.084+03:00",
+        "path": "D:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      }
+    ],
+    "current_screen_recheck_local": "2026-10-26T00:08:18+03:00",
+    "log_unchanged_since_last_runtime_event": true,
+    "interpretation": "The current app produced Vulkan submissions through the disclaimer, then logged missing menu scene files. The stable screen and missing-file errors do not prove a causal link or a renderer failure. No later menu or race draw is available to specify a Process 2 change."
+  },
+  "verification_limits": [
+    "The Android process maps could not be read, so the loaded renderer DSO hash is unverified.",
+    "The installed app was not restarted and no input was sent.",
+    "No Process 1 runtime, scene, or guest files were changed."
+  ]
+}

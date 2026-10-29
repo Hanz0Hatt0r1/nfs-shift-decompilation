@@ -1,0 +1,132 @@
+{
+  "schema": "nfs-shift-process2-native-interrupt-wait-correlation-v1",
+  "captured_on": "2026-10-28",
+  "assessment": {
+    "source1_packet_delivery": "confirmed",
+    "source1_masking": "not observed",
+    "wait_decode_or_compare_error": "not observed",
+    "native_frontend_or_input_cause": "undetermined",
+    "p2_behavior_change": "none"
+  },
+  "scene_gate_pair": {
+    "root": "/home/pes/work/nfs-shift-p1-scene-gate-input-pair-04479dc-20261028",
+    "comparison_sha256": "7df786cad19e22aa6efdc74a7a5e6758a89032e05d3ffb10dd57ae8c1fc98edf",
+    "native_events_sha256": "8a73be70eca76e4b28b1433b64ba3398e900256412b3f0d67c1a1318c121543b",
+    "native_plugin_sha256": "e5f5e955494c82d0dfbf70707c493183fd82fbc7db67d63053ce1f4f3bbfb0a3",
+    "native_build_id": "03dde9b89959a918813cc3f9f23263c2bfce4443",
+    "ring_interrupts": {
+      "count": 1017,
+      "source_counts": {
+        "1": 1017
+      },
+      "cpu_mask": "0x04",
+      "dispatched_cpu_mask": "0x04",
+      "callback": "0x823B37B8",
+      "callback_data": "0xB7365F00",
+      "status": "invoked"
+    },
+    "joined_dispatch": {
+      "dispatch_id": "0xC93",
+      "p1_elapsed_seconds": 38.255,
+      "p2_packet_ordinal": 1016,
+      "generation": 1,
+      "batch_rptr": 3380,
+      "batch_wptr": 3383,
+      "source_ib": "0x0966DD40",
+      "source_ib_byte_offset": 11924,
+      "packet_ordinal_in_ib": 246,
+      "cpu": 2,
+      "mask": "0x04",
+      "dispatched_mask": "0x04",
+      "callback_status": "invoked"
+    },
+    "p1_callback_sampling": {
+      "source1_callback_event_count": 1,
+      "gpu_dispatch_sample_calls": 1,
+      "interpretation": "one sampled record; not an exhaustive count of guest callback invocations"
+    },
+    "wait_after_join": {
+      "source_ib": "0x0966DD40",
+      "source_ib_byte_offset": 11972,
+      "guest_address": "0x1B964004",
+      "reference": "0x00000000",
+      "mask": "0xFFFFFFFF",
+      "endian": 2,
+      "compare": "equal",
+      "first_raw": "0x01000000",
+      "first_decoded": "0x00000001",
+      "first_condition": false,
+      "final_raw": "0x00000000",
+      "polls": 88568,
+      "elapsed_ms": 96446,
+      "approx_polls_per_second": 918,
+      "ring_rptr_at_entry": 3380,
+      "ring_wptr_at_entry": 3383,
+      "ring_rptr_after_release": 3389,
+      "ring_wptr_after_release": 3389
+    },
+    "frontend_input_observation": {
+      "bink_progress": "281/281",
+      "native_scene_gate_reached": false,
+      "native_xam_calls_after_setup": 0,
+      "native_scene_function_entries": 0,
+      "native_producer_calls": 3,
+      "native_producer_events": 0,
+      "native_worker_queues": "empty",
+      "input_profile_delivered_to_native": false
+    }
+  },
+  "bink_trigger_pair": {
+    "root": "/home/pes/work/nfs-shift-p1-current-input-pair-04479dc-20261028",
+    "native_events_sha256": "a9deedbe7f3e35ecbc613f22dec2331bc31aab64c663853ac5b2cc6edece52c3",
+    "joined_dispatch_id": "0xE53",
+    "joined_wait_source_ib": "0x0963D440",
+    "joined_wait_source_ib_byte_offset": 12076,
+    "wait_elapsed_ms": 79277,
+    "wait_polls": 72689,
+    "associated_scene_functions_entered_but_not_returned": [
+      "sub_82DDD1C8",
+      "sub_82E2CD10"
+    ],
+    "causal_link_proven": false,
+    "native_input_profile_delivered": false
+  },
+  "v64_alias_watch_capture": {
+    "root": "/home/pes/work/nfs-shift-p1-v64-native-waitword-aliases-04479dc-20261028-r1",
+    "native_events_sha256": "99c62b6378a9ab7d7d56d023e63a39833d33b30c04d0c9b47243a674cc0448d6",
+    "p2_log_sha256": "4aabaaa8d1a0211d0e6d4ff9a8822a467d7cb4926d046ba9140a8416376ae3c7",
+    "p1_fixed_watch_host_address": "0x21B964004",
+    "p1_callback_sample": {
+      "dispatch_id": 3256,
+      "elapsed_seconds": 40.318,
+      "wait_word_at_entry": 1,
+      "wait_word_at_return": 0,
+      "watch_write_count_at_entry_and_return": 4
+    },
+    "p2_wait": {
+      "source_ib": "0x09723F00",
+      "source_ib_byte_offset": 11972,
+      "guest_address": "0x1B964004",
+      "ring_rptr": 2921,
+      "ring_wptr": 2933,
+      "first_raw": "0x01000000",
+      "final_raw": "0x00000000",
+      "polls": 70,
+      "elapsed_ms": 278725
+    },
+    "interpretation": "poll count indicates the worker did not execute the 1 ms polling loop for most of the wall interval; scheduler/debugger perturbation is plausible but unproven, so this is not evidence of 278 seconds of repeated false reads",
+    "p2_poll_host_pointer_logged": false
+  },
+  "source_review": {
+    "source_file": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+    "source1_path": "PM4_INTERRUPT decodes CPU mask and synchronously calls DispatchGuestInterrupt(1, cpu, ring_host_worker); registered callback is executed via FunctionDispatcher::ExecuteInterrupt",
+    "wait_path": "WAIT_REG_MEM translates the guest physical address through XMemory::TranslatePhysical, acquire-loads the raw word, applies GpuSwap(endian), evaluates the captured predicate, then yields/sleeps 1 ms while false",
+    "limitations": [
+      "The P1 scene-gate run did not deliver the replayed input to Native, so Xenos scene progress is not a matched-input control.",
+      "P1 sampled only one source1 callback entry in this run; P2 ring records contain 1,017 source1 dispatches.",
+      "The v64 alias-watch run did not log the actual P2 poll pointer or continuous poll timestamps.",
+      "The temporal relationship between the first source1 callback, WAIT_REG_MEM, and scene progress does not establish that the WAIT caused the guest scene stall."
+    ]
+  },
+  "next_observation": "In a short Native run, record the actual poll_word pointer and sparse monotonic poll timestamps without frequent all-stop GDB sampling; capture writes to that exact backing address with writer PC/thread/value, and exhaustively pair PM4 dispatch IDs with guest callback entry/return. Do not alter guest WAIT, queue, scheduler, or input semantics from current evidence."
+}

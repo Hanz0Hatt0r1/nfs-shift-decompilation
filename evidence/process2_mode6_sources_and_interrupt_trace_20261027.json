@@ -1,0 +1,81 @@
+{
+  "schema": "shift.process2.mode6_sources_and_interrupt_trace.v1",
+  "date": "2026-10-27",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "base_commit": "31072293d264c04033e1fd4a602b1087b5f28e88",
+    "changed_files": [
+      "native_vulkan/include/shift_xbox_live_vulkan_renderer.hpp",
+      "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
+      "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/rexglue_plugin/live_ring_smoke.cpp",
+      "native_vulkan/rexglue_plugin/README.md",
+      "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
+      "evidence/process2_mode6_sources_and_interrupt_trace_20261027.json"
+    ]
+  },
+  "retail_blocker": {
+    "source_evidence": "process2_redmi_disclaimer_to_bink_blocker_20261027.json",
+    "observed_frame": "The 14-draw transition batch failed closed before a live video frame was shown.",
+    "mode6_source_registers": {
+      "surface_info": "0x14020500",
+      "color_info": "0x000c0000",
+      "depth_info": "0x00000400",
+      "mode_control": "0x00000006",
+      "interpretation": "format 12, 4x MSAA source; first captured Copy/Convert destination is format 26 at 1280x720"
+    },
+    "intermediate_copies": "The same batch contains seven distinct format-31 destinations before the final presenter copy.",
+    "causality": "The unsupported frame failure and the static disclaimer are temporally related; the capture does not prove that this failure prevents video startup."
+  },
+  "changes": {
+    "copy_source_contract": "Each captured Copy/Convert operation now retains raw source surface_info, color_info, depth_info, and mode_control alongside its destination state and source extent. Diagnostics therefore expose the mode-6 EDRAM source layout needed by a future ordered-copy executor.",
+    "interrupt_trace": "With SHIFT_NATIVE_VULKAN_TRACE_RING=1, the first 128 PM4_INTERRUPT packets log source=1, ring generation, batch read/write pointers, ring address, expanded packet ordinal, source IB and byte offset, requested CPU mask, and CPUs whose callbacks were dispatched.",
+    "behavior_change": false,
+    "copy_execution": false,
+    "edram_target_persistence": false
+  },
+  "interrupt_audit": {
+    "dispatch_contract": "The P2 expanded-packet loop handles each opcode-0x54 PM4_INTERRUPT once, decodes its CPU mask, and calls ExecuteInterrupt(source=1) once for each asserted CPU bit from 0 through 5. DispatchGuestInterrupt has no retry or coalescing state.",
+    "historical_p2_capture": "An older live run records two PM4_INTERRUPT packets and two guest callbacks across two separate ring batches; it is not the same watchpoint capture described by Process 1.",
+    "p1_watchpoint_attribution": "Not established: packet identities and CPU masks for the two callback stack entries are not present in the supplied observation. The new trace distinguishes separate packets, a multi-bit mask, and repeated packet publication in a future run.",
+    "coalescing_fix": false
+  },
+  "regressions": {
+    "renderer": "Draw -> format-31 Copy/Convert -> Draw preserves raw mode-6 source registers in diagnostics; reordered draw references remain rejected.",
+    "live_ring": "Three successive fixture batches each preserve one PM4_INTERRUPT with cpu_mask=0x04; the callback mask is zero because the smoke fixture does not register a guest callback.",
+    "retail_parity_claim": false
+  },
+  "validation": {
+    "native_linux": {
+      "result": "passed",
+      "ctest": "4/4",
+      "vulkan_validation_layer": "VK_LAYER_KHRONOS_validation"
+    },
+    "rexglue_linux_plugin": {
+      "result": "passed",
+      "ctest": "7/7",
+      "vulkan_validation_layer": "VK_LAYER_KHRONOS_validation",
+      "note": "An initial full-suite run had transient SIGBUS failures in live-ring integration checks; the checks passed on an isolated run and the complete serial rerun passed 7/7."
+    },
+    "android_arm64_plugin": {
+      "result": "not rebuilt in this iteration",
+      "installed_on_device": false
+    }
+  },
+  "redmi_note_8_pro": {
+    "model": "Redmi Note 8 Pro",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 6382,
+    "installed_candidate_changed": false,
+    "latest_screenshot_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+    "visible_screen": "Static English safety disclaimer; no input was sent and the game was left running."
+  },
+  "limits": [
+    "This change improves source-target evidence and interrupt attribution; it does not execute intermediate copies or render the Bink transition frame.",
+    "No new live retail video output or performance result is claimed.",
+    "The installed phone plugin predates this change, so the new PM4_INTERRUPT trace has not been collected from the current Redmi process."
+  ]
+}

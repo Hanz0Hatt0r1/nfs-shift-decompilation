@@ -1,0 +1,36 @@
+{
+  "schema": "shift.process2.redmi_current_disclaimer.v1",
+  "captured_at_local": "2026-10-25T19:48:28+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "adb_endpoint": "192.168.1.32:38615",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 7611,
+    "resumed_activity": "org.libsdl.app.NfsShiftActivity"
+  },
+  "installed_package": {
+    "last_update_time_local": "2026-10-25 17:53:56+03:00",
+    "base_apk_sha256": "03f76b915d9ec5b64ab83f1df43037761cdf8d63a57d2234be70c6b883c4e8df",
+    "arm64_plugin_aliases_identical": true,
+    "plugin_sha256": "f84281d8b48cad561f246fa4bf9e58172960ace16193bcd3dcd44d848b9a2f03",
+    "plugin_elf_build_id": "63b26354123b2e2755d39e89612abf29d0e10777",
+    "plugin_source_commit": null
+  },
+  "screen": {
+    "path": "process2_redmi_current_disclaimer_20261025.png",
+    "sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "resolution": "2340x1080",
+    "observation": "Black safety-disclaimer screen with readable white text and thin purple horizontal artifacts near the top and bottom. The language selector is not visible in this capture."
+  },
+  "test_scope": {
+    "app_installed_or_restarted_during_observation": false,
+    "process_maps_readable": false,
+    "process_maps_error": "Permission denied",
+    "language_selector_text_parity": "not verified by this capture",
+    "renderer_draw_or_readback_trace": "not collected"
+  },
+  "limits": [
+    "The APK hash and packaged ELF identify the current installed package contents; the restricted process maps prevented confirmation of the library mapped by PID 7611.",
+    "This static screen does not establish why the purple artifacts are present or prove renderer parity."
+  ]
+}

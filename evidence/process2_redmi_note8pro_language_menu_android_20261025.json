@@ -1,0 +1,68 @@
+{
+  "format": "SHIFT.Process2AndroidLanguageMenuSmoke/1",
+  "captured_at_local": "2026-10-25T12:53:03+03:00",
+  "title": "Need for Speed: Shift Xbox 360",
+  "title_id": "454108B4",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": "13",
+    "package": "com.hanz0hatt0r.nfsshift"
+  },
+  "renderer": "Process 2 native Vulkan plugin consuming the live retail guest draw stream; no Xenos GPU-render path or synthetic fragment color",
+  "build": {
+    "process2_branch": "work/process2-xbox-live-ring-20261023",
+    "process2_commit": "ac7f5793a9d794e81078cd08bdbef15e0babcd0e",
+    "android_plugin_target": "ARM64 build succeeded",
+    "plugin_sha256": "5ab05c61392cd076a7211dfc9300b96c81f2f36792da6fd98c2de99adcfea718",
+    "installed_apk_sha256": "28912e5bbc62082cda0fbb8ab8d30a573297bfb5a77ba87a8a6488a30069eddd",
+    "apk_signer_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "packaged_plugin_aliases": {
+      "librexgpu-shift-natived.so": "5ab05c61392cd076a7211dfc9300b96c81f2f36792da6fd98c2de99adcfea718",
+      "librexgpu-xenosd.so": "5ab05c61392cd076a7211dfc9300b96c81f2f36792da6fd98c2de99adcfea718"
+    },
+    "apk_method": "Started from the APK pulled from the phone, replaced only the two P2 plugin aliases, aligned and signed it with the same debug certificate, then installed without Android Incremental Install. A full Gradle Android APK rebuild did not complete."
+  },
+  "retail_data": {
+    "restored_files": 2098,
+    "restored_bytes": 4130818991,
+    "checksums_match": {
+      "default.xex": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "PakFiles/BOOTTEXTDB.bff": "2974f89851dc9812d92cc1fd105c810249b88a9c39a617c914646a76eb223049",
+      "Movies/NFS_SHIFT_DDAY.bik": "390b326b0bad3114e489a17a714e9e8f99fa598f1c6c4ece496156f108da1fd1"
+    }
+  },
+  "capture": {
+    "duration_seconds": 40,
+    "sample_count": 20,
+    "approximate_interval_seconds": 2,
+    "loading_screen": {
+      "image": "process2_redmi_note8pro_language_android_loading_20261025.png",
+      "sha256": "87cb30267296e71e3f7a4b7dadebcb74ee411f90a06fdc24e810cdc75da02b1a",
+      "dimensions": "2340x1080",
+      "observation": "Original retail SHIFT loading logo and yellow-orange progress bar are visible. The language selector has not appeared yet."
+    },
+    "after_loading": {
+      "image": "process2_redmi_note8pro_language_android_black_20261025.png",
+      "sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+      "dimensions": "2340x1080",
+      "observation": "The display turns black before the language selector or EA Intro becomes visible."
+    }
+  },
+  "runtime_log": {
+    "sha256": "69367e47740a7248eaf3d98374918b0b92a8a0ce29138af799d0c1e4949f639a",
+    "artifact": "process2_redmi_note8pro_language_menu_android_20261025.log.gz",
+    "artifact_sha256": "0aefbfba4acd5cbda333cceb2a1da775434a43fb7fd665a19de3a4de6fe9a23c",
+    "path_on_device": "files/nfs_shift/user/logs/nfs_shift_001.log",
+    "resolved_captured_draws": 16,
+    "unresolved_captured_draws": 1,
+    "mixed_sample_refresh_failures": 8,
+    "first_refresh_failure": "2026-10-25 12:53:53.450 local: Vulkan frame refresh failed for 1280x720 with 24 captured draws; mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability",
+    "interpretation": "The P2 plugin fails closed because the Android provider used by this APK was built from /home/pes/work/rexglue-sdk-v0.10.0-android, whose Vulkan provider header has no with_depth_stencil_resolve option. The optional provider capability implementation is available in Process 2 SDK commit fb151b9 on work/process2-vulkan-resolve-capability-20261024. The phone did not reach the language selector; this run does not verify selector labels."
+  },
+  "limitations": [
+    "The full Gradle Android APK rebuild did not complete; the phone package was assembled by replacing only the two Vulkan plugin libraries in the APK already installed on the device.",
+    "The Android provider capability has not yet been integrated into the runtime used by the phone package.",
+    "The Linux retail before/after captures show the language labels after the shader varying fix, but the same selector has not been visually recaptured on the phone."
+  ]
+}

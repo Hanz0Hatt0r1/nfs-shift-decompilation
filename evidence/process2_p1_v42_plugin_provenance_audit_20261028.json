@@ -1,0 +1,62 @@
+{
+  "schema": "shift.process2.p1_v42_plugin_provenance_audit.v1",
+  "date": "2026-10-28",
+  "branch_head": "e5f55437e5d47d1dc0c33d5e000214b6e21e9b2b",
+  "capture": {
+    "directory": "/tmp/nfs-shift-p1-menu-resource-results-v42-20261028/capture",
+    "run_schema": "shift.xbox360.linux-menu-resource-results-v42-run.v1",
+    "game_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "plugin_sha256": "72baae3d59432727e1e366259ec8a9b6641b7b60d623d8389274d74e368815de",
+    "log": "bin/logs/nfs_shift_001.log",
+    "log_sha256": "0ab799698bc35fa1caf2f55af7786847286bb7c73bb327a584054a1fe944cb3b",
+    "log_bytes": 2193468,
+    "log_lines": 16918,
+    "guest_memory_modified_by_probe": false
+  },
+  "comparison": {
+    "current_head_plugin_sha256": "763163fa73e07a0c936760b4c3cd549e7daa17c3115eb86a9954e4af880ddacc",
+    "current_head_build_id": "9a6ebe8a7fb539968f0105745e21542545886edc",
+    "same_binary": false,
+    "qualification": "The v42 run does not exercise the ordered-disjoint-target implementation at branch HEAD."
+  },
+  "revalidation": {
+    "linux_native_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation",
+    "linux_plugin_ctest": "6/6 passed with VK_LAYER_KHRONOS_validation",
+    "rebuilt_head_plugin_sha256": "763163fa73e07a0c936760b4c3cd549e7daa17c3115eb86a9954e4af880ddacc",
+    "rebuilt_head_plugin_build_id": "9a6ebe8a7fb539968f0105745e21542545886edc",
+    "android_arm64_renderer_and_check_build": "passed for shift_xbox_live_vulkan_renderer and xbox_live_vulkan_renderer_check, Android API 26",
+    "adb_devices": "none connected; device execution not run"
+  },
+  "observations": {
+    "refresh_failures": 8,
+    "failure_reasons": {
+      "unresolved_draw_packet_0": 1,
+      "packet_72_depth_stencil_resolve_capability_not_enabled": 7
+    },
+    "indexed_draw_submission_records": 110,
+    "accepted_copy_convert_records": 932,
+    "14_draw_refresh_records": 0,
+    "source1_pm4_interrupt_records": 0,
+    "guest_callback_registration": "0x823B37B8"
+  },
+  "interpretation": {
+    "packet_72_failures": "The v42 capture used a different P2 plugin binary, so it did not test the branch-HEAD disjoint-target change. A separate P2-owned replay with the branch-HEAD plugin reproduced the same seven packet-72 failures: the Linux ReXGlue provider did not enable depth/stencil resolve. The current Linux integration therefore still cannot execute this mixed-sample segment.",
+    "14_draw_transition": "No 14-draw refresh appears in this run, so it provides no new evidence about the retail EDRAM alias transition.",
+    "interrupt_trace": "This run provides no PM4_INTERRUPT packet trace and cannot update the source-1 callback correlation."
+  },
+  "current_head_replay": {
+    "evidence": "process2_linux_current_head_ordered_capture_20261028.json",
+    "plugin_sha256": "763163fa73e07a0c936760b4c3cd549e7daa17c3115eb86a9954e4af880ddacc",
+    "provider_sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+    "provider_api_lacks_depth_stencil_resolve_opt_in": true,
+    "provider_enabled_extensions": ["VK_KHR_swapchain", "VK_EXT_memory_budget"],
+    "packet_72_refresh_failures": 7,
+    "source1_interrupt_dispatches": 2840,
+    "outer_guest_callback": "0x823B37B8"
+  },
+  "limits": [
+    "The v42 run was not replayed with the branch-HEAD plugin.",
+    "No retail image parity or transition completion is established.",
+    "The 14-draw aliased EDRAM target sequence remains unsupported."
+  ]
+}

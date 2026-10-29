@@ -1,0 +1,68 @@
+{
+  "schema": "shift.process2.redmi_bink_source_reference.v1",
+  "date": "2026-10-26",
+  "source": {
+    "asset": "Movies/Franchise_Ident.bik",
+    "sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+    "format": "Bink video, 1280x720, 281 frames, 5000000/166833 fps, TV color range",
+    "decoder": "FFmpeg n9.0.1"
+  },
+  "retail_draw": {
+    "capture_record": "process2_redmi_bink_retail_draw_replay_20261025.json",
+    "presenter_frame": 400,
+    "draw_index": 2614,
+    "texture_planes": {
+      "luma_sha256": "228cff2ce890f70ddfa4456231a75c2640c875ee25c46409779cf821d6136e2a",
+      "chroma_v_sha256": "a81bcb8aca6abfc5ea1a79d915c851923ddc0a20b985f8b3a360067f053408d5",
+      "chroma_u_sha256": "f1953394e4d76212565e5dbf7e08f03b3fe196e88160d4648be497c9a6ac56b3"
+    }
+  },
+  "current_renderer_replay": {
+    "source_commit": "e908a6829ee2522c9da6913dead9fbc1ce88c1c6",
+    "android_renderer_archive_sha256": "fc3fd822059d9e6377e159b897e8c23f385ebf8bb2a0bf4f3c589a7b78e0ea3f",
+    "arm64_runner_sha256": "caec8a9eddc0b4dcde30ee27991188c6dda0b7a2110abddf51996125df7a7572",
+    "device": {
+      "model": "Redmi Note 8 Pro",
+      "gpu": "Mali-G76 MC4",
+      "android_api": 33,
+      "vulkan_api": "1.1.131",
+      "validation_layer_available": false,
+      "game_package": "com.hanz0hatt0r.nfsshift",
+      "pid": 24808,
+      "activity_remained_resumed": true,
+      "screenshot_sha256_after": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+      "install_restart_or_input_sent": false
+    },
+    "readback": {
+      "extent": [1280, 720],
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "bytes": 3686400,
+      "sha256": "8295d56ab66664365991ad06a6fb1f018dc3db37ba07afccdad91b2555f41ca1",
+      "fnv1a64": "0x1E43A3A8C1C044EB",
+      "nonblack_rgb_pixels": 921528,
+      "steady_submissions": 8,
+      "steady_mean_wall_ms": 7.84509,
+      "steady_mean_thread_cpu_ms": 1.69337,
+      "final_output_matches_first": true
+    }
+  },
+  "independent_bink_comparison": {
+    "best_matching_zero_based_frame": 244,
+    "search_method": "Decode all 281 Bink frames, scale each to 160x90, compare RGB MAE with the P2 rendered image.",
+    "best_scaled_rgb_mae": 0.177685,
+    "next_best_frame": 243,
+    "next_best_scaled_rgb_mae": 0.179931,
+    "full_resolution_frame_png_sha256": "910415dfda8f74578d68aa01f612ffc0a6322c128c990951831376ce72113298",
+    "full_resolution_renderer_png_sha256": "b78a0d4d632b4c732a902445ae4651fe03585604076775f23e0b6b5c706329b1",
+    "full_resolution_exact_rgb_pixels": 839930,
+    "full_resolution_total_rgb_pixels": 921600,
+    "full_resolution_mae_rgb": [0.159006, 0.134317, 0.165242],
+    "full_resolution_rms_rgb": [0.921774, 0.872608, 0.931367],
+    "full_resolution_max_difference_rgb": [42, 39, 39]
+  },
+  "conclusion": {
+    "established": "The exact latest Process 2 ARM64 renderer rebuilt from e908a6829 reproduced the previously recorded retail draw readback byte-for-byte on the Redmi. That output closely matches a frame from the original Bink movie, independently decoded by FFmpeg.",
+    "not_established": "This is one captured Bink draw replay with saved planes. It bypasses guest Bink decode and does not verify continuous movie playback, the full mixed-sample presenter frame, the following menu, or gameplay parity.",
+    "raw_movie_and_plane_bytes_committed": false
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "schema": "shift.process2.retail_cond_exec.v1",
+  "date": "2026-10-27",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "base_commit": "227c028e2ce5caab54c053f3d1d648b022c63a7d"
+  },
+  "retail_evidence": {
+    "device_log": "nfs_shift_033.12.log (local copy; not committed)",
+    "device_log_sha256": "8ce5903918b0e529029738cf81518295e839202a8668451c1e0220bfb2ce107c",
+    "timestamp_local": "2026-10-27 03:53:25.739",
+    "observation": "Transition draw 2 failed shader translation with a generic unsupported control-flow opcode diagnostic.",
+    "raw_shader_bytes_retained": false,
+    "opcode_identified_from_retail": false
+  },
+  "change": {
+    "opcodes": {
+      "3": "CEXEC",
+      "4": "CEXECE"
+    },
+    "conditions_supported": [128, 129],
+    "termination": "CEXECE terminates only when its captured boolean condition is true.",
+    "reference": "https://raw.githubusercontent.com/xenia-project/xenia/master/src/xenia/gpu/ucode.h",
+    "files": [
+      "native_vulkan/include/shift_xbox_draw_input.hpp",
+      "native_vulkan/src/xbox_draw_input.cpp",
+      "native_vulkan/src/xbox_shader_translate.cpp",
+      "native_vulkan/tests/xbox_draw_input_check.cpp",
+      "native_vulkan/tests/xbox_shader_translate_check.cpp"
+    ]
+  },
+  "regressions": {
+    "fixture": "Synthetic control-flow shader bytes; the retail shader bytes are unavailable.",
+    "verified": [
+      "CEXEC opcode and captured boolean fields decode.",
+      "Unknown control-flow diagnostics include the numeric opcode and instruction slot.",
+      "A true CEXEC executes its clause and continues to EXEC_END.",
+      "A false CEXEC skips its clause and continues to EXEC_END.",
+      "A true CEXECE executes its clause and terminates the path.",
+      "A false CEXECE falls through to the bounded EXEC_END."
+    ],
+    "retail_shader_replay": false
+  },
+  "validation": {
+    "native_linux": {
+      "result": "passed",
+      "ctest": "4/4",
+      "vulkan_validation_layer": "VK_LAYER_KHRONOS_validation"
+    },
+    "linux_plugin": {
+      "result": "passed",
+      "ctest": "7/7",
+      "vulkan_validation_layer": "VK_LAYER_KHRONOS_validation",
+      "plugin_sha256": "eadd086f4c8c0a45f98d023e1cee84352f681d4586bc9f113d2a66cb0a1d6733"
+    },
+    "android_arm64": {
+      "result": "passed",
+      "test": "shift_xbox_shader_translate_check",
+      "abi": "arm64-v8a",
+      "android_api": 26,
+      "device": "Redmi Note 8 Pro / Mali-G76 MC4",
+      "test_binary_sha256": "64d3bb2781d440520e539d1d4b13e7ce0ae322ad60e3e23d3498d6dafd9e2756"
+    }
+  },
+  "device_state": {
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 6382,
+    "screen_sha256": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+    "screen": "Disclaimer, unchanged",
+    "user_confirmed_disclaimer_is_automatic": true,
+    "input_sent": false,
+    "game_apk_or_plugin_replaced": false,
+    "game_restarted": false,
+    "test_binary_uploaded_to_data_local_tmp": true
+  },
+  "remaining_blockers": [
+    "The generic retail control-flow error cannot be mapped to opcode 3 or 4 without the shader bytes.",
+    "The captured transition still contains a texture-descriptor rejection and a conditional-branch predicate/direction rejection.",
+    "A 14-draw transition refresh still fails closed when the Xenos target layout changes; intermediate mode-6 copies and EDRAM persistence are not implemented.",
+    "No disclaimer-to-video transition or video parity result was observed."
+  ],
+  "limits": [
+    "The translation regression uses synthetic shader bytes, not the retail shader.",
+    "The Android check exercises the CPU shader translator only; it does not submit a retail Vulkan draw.",
+    "The CEXEC/CEXECE support has not been installed into the running game."
+  ]
+}

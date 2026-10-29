@@ -1,0 +1,88 @@
+{
+  "schema": "shift.process2.linux_exact_plugin_bink_frame.v1",
+  "captured_at_local": "2026-10-25",
+  "source_run": {
+    "process1_pr": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2155",
+    "process1_commit": "722b3c58dd0ab72592894e55959665746cf5c79c",
+    "process_id": 368226,
+    "duration_seconds": 43.34,
+    "termination": "Harness sent SIGINT; runtime returned 0.",
+    "title_id": "454108B4",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b",
+    "p2_plugin_source_commit": "b03c9f87",
+    "p2_plugin_sha256": "512eb2658935c48a3fddcc5abc0e100da948913fad6eb3f42148b12eb278fa98",
+    "mapped_plugin_sha256_matches_manifest": true,
+    "host_gpu": "NVIDIA GeForce GTX 950",
+    "host_vulkan_api": "1.4.357",
+    "synthetic_fragment_override": false,
+    "guest_memory_modified_by_probe": false
+  },
+  "retail_output": {
+    "presenter_frame": 551,
+    "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "extent": [
+      1280,
+      720
+    ],
+    "raw_bytes": 3686400,
+    "raw_sha256": "f06d77e9e71d15163166c3af8da1720867b936be0708f598834ffd198f1588d2",
+    "raw_gzip": "process2_linux_exact_p2_bink_frame551_20261025.bin.gz",
+    "raw_gzip_sha256": "5e5681172f62df614e0ad6dc6573218979d1ac4ed5a9e671b2d6d823fd698082",
+    "raw_gzip_bytes": 147835,
+    "decoded_png": "process2_linux_exact_p2_bink_frame551_20261025.png",
+    "decoded_png_sha256": "2878642b5812f0e5193bb28a5c84bfbc54edea70c316d3b9ff1fdbb30d387c10",
+    "non_black_rgb_pixels": 920723,
+    "content": "One full-screen EA intro mark frame from the live retail Bink draw path.",
+    "retail_draw_indices": [
+      5377,
+      5378,
+      5379,
+      5380
+    ],
+    "bink_draw_index": 5380,
+    "bink_r8_plane_bytes": [
+      921600,
+      230400,
+      230400
+    ],
+    "draw_5380_texture_hashes_fnv1a64": [
+      "b5837d996b70c989",
+      "bfb867d2dbebad40",
+      "3900a83442cf2ab3"
+    ]
+  },
+  "sustained_output_observation": {
+    "successful_presenter_refreshes": 640,
+    "last_logged_draw_submission_local": "2026-10-25T18:50:27.718+03:00",
+    "last_logged_copy_convert_local": "2026-10-25T18:50:33.646+03:00",
+    "x11_window_captures_at_seconds": [
+      32,
+      40
+    ],
+    "both_x11_captures_black": true,
+    "both_x11_captures_sha256": "bfab665b1a87ee24204163ac64183ba56e3a036b4d8ff10287888c1a301d10b9",
+    "later_presenter_frame_readback": null,
+    "conclusion": "The current P2 DSO renders one genuine Bink frame successfully. Earlier in the same run, eight 24-draw mixed-sample refreshes failed because the Linux provider did not expose enabled depth/stencil resolve. Later black X11 captures occur after draw submissions stop, but no readback was taken at the last successful presenter frame or paired with those screenshots. This is consistent with missing subsequent guest draw frames; a separate WSI failure is not established.",
+    "x11_window_capture_file": "process2_linux_exact_p2_bink_window32_20261025.png",
+    "x11_window_capture_file_sha256": "bfab665b1a87ee24204163ac64183ba56e3a036b4d8ff10287888c1a301d10b9",
+    "last_successful_presenter_frame": 640,
+    "presenter_refresh_failures_before_bink_frame": 8,
+    "refresh_failure_reason": "mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability",
+    "refresh_failure_draw_count": 24,
+    "refresh_failure_time_local_range": [
+      "2026-10-25T18:50:13.470+03:00",
+      "2026-10-25T18:50:13.682+03:00"
+    ]
+  },
+  "next_diagnostic": {
+    "target": "Re-run the exact XEX with the current resolve-capable provider; read back one failed 24-draw mixed-sample frame and the final successful presenter frame (frame 640 in the previous run), pairing each with an X11 window screenshot.",
+    "interpretation": "A black renderer readback points to guest/frame content; a non-black readback with a black X11 image isolates the surface/presentation path."
+  },
+  "limits": [
+    "This verifies one live EA intro frame on Linux, not sustained cutscene playback, the language selector, menu, race, or Redmi Note 8 Pro parity.",
+    "The disclaimer-purple-strip repro from Linux run 021 used a different mapped plugin hash; this capture does not determine whether the strips remain in the exact b03c9f87 build.",
+    "The live Linux run did not enable VK_LAYER_KHRONOS_validation; validation-layer coverage is from the separate host CTest/replay checks.",
+    "The exact Linux run used a provider without optional depth/stencil resolve: eight early 24-draw refreshes failed before later successful frames."
+  ]
+}

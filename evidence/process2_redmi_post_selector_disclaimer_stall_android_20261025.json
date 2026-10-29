@@ -1,0 +1,82 @@
+{
+  "schema": "shift.process2.redmi_post_selector_disclaimer_stall_android.v1",
+  "date": "2026-10-25",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 32662,
+    "activity_resumed": true
+  },
+  "build": {
+    "process2_branch": "work/process2-xbox-live-ring-20261023",
+    "renderer_code_commit": "c69de3f2393e32f164ff7cc0581351bf24bfa730",
+    "apk_sha256": "5006ed47a1510a2389d48de9a27ef0f7a4b8a7c8f8719249b14f242963662305",
+    "plugin_sha256": "f84281d8b48cad561f246fa4bf9e58172960ace16193bcd3dcd44d848b9a2f03",
+    "apk_last_update_time_local": "2026-10-25T17:01:05+03:00"
+  },
+  "observations": {
+    "language_selector": {
+      "evidence": "process2_redmi_language_selector_live_android_20261025.png",
+      "visible_labels": [
+        "English",
+        "Français",
+        "Italiano",
+        "Deutsch",
+        "Español",
+        "Nederlands"
+      ],
+      "interpretation": "The latest live selector capture shows all six labels; the non-selected rows are lower-contrast gray."
+    },
+    "later_screen": {
+      "capture_time_local": "2026-10-25T17:32:18.451+03:00",
+      "screen": "Original legal disclaimer text on black, with thin purple horizontal artifacts above and below the text.",
+      "screenshot": "process2_redmi_post_selector_disclaimer_stall_android_20261025.png",
+      "screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+      "repeat_capture_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+      "repeat_capture_interval_seconds": 8
+    },
+    "runtime_log": {
+      "file": "process2_redmi_post_selector_disclaimer_stall_android_20261025.log.gz",
+      "raw_sha256": "bd7fd10be9cce076ce9f9cc67861b7f76fa2a78e523530174fe220f4902971e1",
+      "compressed_sha256": "f7ec3819d4717360da752e587b7a910cddbd9558ee3292de0e379bb9a46fce17",
+      "raw_bytes": 353650,
+      "last_successful_draw": {
+        "time_local": "2026-10-25T17:27:42.335+03:00",
+        "captured_draw_packets": 14
+      },
+      "subsequent_file_probes": [
+        {
+          "time_local": "2026-10-25T17:27:42.686+03:00",
+          "path": "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+          "status": "0xc000000f"
+        },
+        {
+          "time_local": "2026-10-25T17:27:42.692+03:00",
+          "path": "D:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+          "status": "0xc000000f"
+        }
+      ],
+      "last_modified_local": "2026-10-25T17:27:42.690745415+03:00"
+    },
+    "input_check": {
+      "action": "One Android KEYCODE_BUTTON_A event was sent while the disclaimer was displayed.",
+      "screen_changed": false,
+      "log_changed": false
+    },
+    "process_state": {
+      "state": "alive, Android process state S<",
+      "focused_activity": "org.libsdl.app.NfsShiftActivity"
+    }
+  },
+  "interpretation": "The newest installed P2 APK rendered the language selector labels and later the original legal disclaimer. The display and guest log then stopped changing; a single confirm input did not advance the screen. The failed menu_background.xml probes precede the stop but do not prove its cause. No Process 1 runtime or asset files were changed.",
+  "limits": [
+    "No later menu or gameplay frame was captured.",
+    "The purple artifacts are visible but their draw/resource cause has not been isolated.",
+    "Android did not provide VK_LAYER_KHRONOS_validation; Vulkan validation was run on the host.",
+    "A stable screenshot proves the display stopped changing during the sampled interval, not that the entire guest process is deadlocked."
+  ]
+}

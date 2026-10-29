@@ -1,0 +1,132 @@
+{
+  "schema": "shift.process2.redmi_retail_bink_stream_replay.v1",
+  "date": "2026-10-25",
+  "source": {
+    "asset": "Movies/Franchise_Ident.bik",
+    "sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+    "format": "Bink video, 1280x720, 281 frames, 5000000/166833 fps, TV color range",
+    "decoder": "FFmpeg n9.0.1",
+    "decoded_stream": "YUV420p; Y/U/V input reordered to the captured retail shader's Y/V/U bindings"
+  },
+  "retail_draw": {
+    "capture_record": "process2_redmi_bink_retail_draw_replay_20261025.json",
+    "presenter_frame": 400,
+    "draw_index": 2614,
+    "shader": "Captured retail Bink vertex/pixel SPIR-V and rectangle-list geometry shader",
+    "planes_sha256": [
+      "228cff2ce890f70ddfa4456231a75c2640c875ee25c46409779cf821d6136e2a",
+      "a81bcb8aca6abfc5ea1a79d915c851923ddc0a20b985f8b3a360067f053408d5",
+      "f1953394e4d76212565e5dbf7e08f03b3fe196e88160d4648be497c9a6ac56b3"
+    ],
+    "source_plane_check": "Extracting the R channel of the previously captured retail texture dumps reproduced all three saved plane SHA-256 values exactly."
+  },
+  "renderer": {
+    "source_commit": "e908a6829ee2522c9da6913dead9fbc1ce88c1c6",
+    "android_renderer_archive_sha256": "fc3fd822059d9e6377e159b897e8c23f385ebf8bb2a0bf4f3c589a7b78e0ea3f",
+    "stream_runner_sha256": "21da4d117dc8af5181ff3c52f1cd97ea9118f96ee4eb283a1425e39a32391c6b",
+    "device": {
+      "model": "Redmi Note 8 Pro",
+      "gpu": "Mali-G76 MC4",
+      "android_api": 33,
+      "vulkan_api": "1.1.131",
+      "validation_layer_available": false
+    },
+    "submission": {
+      "frames": 281,
+      "mean_submit_ms": 1.6842,
+      "p95_submit_ms": 3.23754,
+      "mean_submit_thread_cpu_ms": 1.20662,
+      "sample_frame_indices": [
+        0,
+        140,
+        280
+      ],
+      "sample_readback_fnv32": [
+        "91972274",
+        "3df19eb5",
+        "91972274"
+      ],
+      "sample_readback_sha256": [
+        "b88ab630d9e30aa58b8103215185a0ee34cfd58cc31e823dccef007e5abc3106",
+        "032e25ae1bd3bcfb726fd161db7777a36dd38e9f2a48cf040bf2027e491365ab",
+        "b88ab630d9e30aa58b8103215185a0ee34cfd58cc31e823dccef007e5abc3106"
+      ],
+      "first_and_last_sample_output_identical": true
+    },
+    "stream_runner_source_sha256": "50bc3717df198dfbbfa0a357abe85e97148cb6dd1f94a11e19b4bc825d7a9497",
+    "stream_runner_source_committed": false,
+    "stream_runner_toolchain": "Android NDK r28c, arm64-v8a, API 29 target"
+  },
+  "independent_frame_comparison": {
+    "method": "Decode source frames with FFmpeg; convert Vulkan A2B10G10R10 output channels to RGB8 with round-to-nearest; compare at 1280x720.",
+    "frames": [
+      {
+        "source_frame": 0,
+        "source_png_sha256": "54456a01cfd75c5eb9720f69a0163b5437a7c773e24b04e57f94d49319b54206",
+        "renderer_png": "process2_redmi_bink_stream_frame000_20261025.png",
+        "renderer_png_sha256": "433f7ccbe502b2c5857a2261fe102969585b52cc305b04c2a64116d3237ea9b6",
+        "mae_rgb": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "max_diff_rgb": [
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "source_frame": 140,
+        "source_png_sha256": "74e7f5346fc19d9ebec51f02cb1172820287cd14342f5515902900c1371293ec",
+        "renderer_png": "process2_redmi_bink_stream_frame140_20261025.png",
+        "renderer_png_sha256": "3bc30836bbd930d31f3ba8ee335213bde16b3cf5c44d7bd977e44baa4627f755",
+        "exact_rgb_pixels": 52140,
+        "total_rgb_pixels": 921600,
+        "mae_rgb": [
+          1.722754,
+          0.453921,
+          2.100378
+        ],
+        "rms_rgb": [
+          1.905777,
+          0.787645,
+          2.349559
+        ],
+        "max_diff_rgb": [
+          19,
+          6,
+          38
+        ]
+      },
+      {
+        "source_frame": 280,
+        "source_png_sha256": "54456a01cfd75c5eb9720f69a0163b5437a7c773e24b04e57f94d49319b54206",
+        "renderer_png": "process2_redmi_bink_stream_frame000_20261025.png",
+        "renderer_png_sha256": "433f7ccbe502b2c5857a2261fe102969585b52cc305b04c2a64116d3237ea9b6",
+        "mae_rgb": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "max_diff_rgb": [
+          1,
+          0,
+          1
+        ]
+      }
+    ]
+  },
+  "game_state": {
+    "pid": 24808,
+    "activity_remained_resumed": true,
+    "before_screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "after_screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "input_install_or_restart_sent": false
+  },
+  "conclusion": {
+    "established": "The Redmi Vulkan core accepted all 281 decoded frames through the captured retail Bink draw and updated its R8 planes between submissions. Three sampled readbacks follow the source movie closely; the first and last samples are identical as in the decoded source.",
+    "not_established": "This is an offscreen renderer replay using FFmpeg-decoded movie planes. It bypasses the guest Bink decoder, guest scheduling, live presenter/Copy-Convert, and mixed-sample surrounding draws; it does not prove an in-game sustained cutscene or retail parity.",
+    "raw_movie_plane_stream_and_raw_readbacks_committed": false
+  }
+}

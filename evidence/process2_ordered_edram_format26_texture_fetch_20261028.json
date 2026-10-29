@@ -1,0 +1,180 @@
+{
+  "schema": "shift.process2.ordered_edram_format26_texture_fetch.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "implementation_commit": "e525a870",
+  "capture_specification": {
+    "capture_directory": "/tmp/nfs-shift-p1-gpu-backend-resolvepr2-frame322-20261028",
+    "log": "/tmp/nfs-shift-p1-gpu-backend-resolvepr2-frame322-20261028/runs/shift-native-r1/bin/logs/nfs_shift_001.log",
+    "capture_plugin_sha256": "07a953e6879c240867ca9ea0a0995ed53a6a92e165ab49cd946a5a99b304ca9e",
+    "capture_plugin_source_commit": "f6f0472bc2e86a952b27c120c5b9545453846f01",
+    "capture_log_observations": [
+      "Lines 971-1025 report nine preceding Copy/Convert operations writing 0x0BE19000 at 1280x720, format 26, sample-select 6.",
+      "Line 1041 records draw #10 rejected on descriptor words [0x8a024802, 0x0be1905a, 0x0059e4ff, 0x0106ad11, 0x0, 0x210].",
+      "This is an older-plugin capture used as the implementation specification; the new plugin has not yet replayed this retail operation batch."
+    ],
+    "descriptor_decode": {
+      "guest_address": "0x0BE19000",
+      "format": 26,
+      "endian": 1,
+      "integer_format": true,
+      "tiled": true,
+      "extent": [
+        1280,
+        720
+      ],
+      "pitch_pixels": 1280,
+      "tiled_storage_bytes": "0x730000",
+      "swizzle": "0x688",
+      "mag_filter": "point",
+      "min_filter": "point"
+    },
+    "copy_contract": {
+      "copy_control": "0x00100360",
+      "destination_base": "0x0BE19000",
+      "destination_extent": [
+        1280,
+        720
+      ],
+      "destination_format": 26,
+      "destination_number_format": 2,
+      "destination_endian": 1,
+      "destination_exp_bias": 11,
+      "sample_select": 6,
+      "color_clear": true,
+      "depth_clear": true,
+      "source_select": 0,
+      "command": "Convert",
+      "register_evidence": "process2_ordered_edram_copy_clear_20261028.json"
+    },
+    "capture_identity": {
+      "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd"
+    },
+    "followup_native_capture": {
+      "capture_directory": "/home/pes/work/nfs-shift-p1-native-sampler-fix-20261028",
+      "log": "runs/shift-native-r1/bin/logs/nfs_shift_001.1.log",
+      "log_sha256": "c03e5e576d830571452015f9cf80b9943c7c1fed65486d9cd352fdc98c1b6966",
+      "ordered_operations_line": 7920,
+      "ordered_operations_line_sha256": "1edfd5344970f506f0913686e546d99d0a65ce39aaeea19e85ccbedc5f07d0c6",
+      "format26_copy_evidence": "Copy packets 0..9 target 0x0BE19000 at logical extent 1280x720. Their source raster is 2560x1440 at 4x, surface pitch 1280, color base 0, depth base 0x400, guest format 12; destination format 26/number 2, endian 1, exp-bias 11, sample-select 6, clear color/depth, source-select 0, Convert.",
+      "draw10_result_with_prior_plugin": {
+        "line": 7737,
+        "line_sha256": "73893aabdfaa4a1cc7d16a2ddb60169bf37804466c85bb0eed3e1111063511eb",
+        "diagnostic": "raster=true inputs=true translated=true; captured format-26 texture has no preceding exact all-sample Copy/Convert"
+      },
+      "source1_interrupts_in_log": 782,
+      "source1_cpu_mask": "0x04",
+      "source1_callback": "0x823B37B8"
+    }
+  },
+  "implementation": {
+    "ordered_match": "A format-26 fetch matches only a preceding Copy/Convert to the exact guest address when the texture descriptor is 1280x720/pitch1280 and its source raster is the captured physical 2560x1440 4x target (surface pitch1280, color base0, guest format12, depth base0x400), together with the exact destination format/number/endian/exp-bias, all-sample selector, clear flags, source selection, and Convert command. The former source-dimension check incorrectly required 1280x720 and rejected the captured 4x raster.",
+    "vulkan_format": "Creates a mutable VK_FORMAT_R16G16B16A16_UINT color attachment and samples it through a compatible VK_FORMAT_R16G16B16A16_UNORM view.",
+    "integer_fetch": "For the captured integer-format descriptor, translated shader sampling scales UNORM components by 65535 before applying the captured swizzle.",
+    "fail_closed": "Unmatched format-26 descriptors reject. Raw uncached 64bpp tiled format-26 uploads remain unsupported.",
+    "regression": "A pure captured_format26_copy_matches_texture_fetch predicate accepts the real 2560x1440/4x source and 1280x720 destination contract, and rejects a logical-size source or a single-sample source."
+  },
+  "verification": {
+    "native_linux": {
+      "build": "cmake --build /home/pes/work/.build-process2-p2161-native-vulkan-20261028 -j6",
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-native-vulkan-20261028 --output-on-failure",
+      "result": "passed 4/4 with VK_LAYER_KHRONOS_validation after source-layout fix",
+      "format26_regression": "Matcher accepts exact captured source and destination layout; rejects the former logical-size-source assumption and non-4x source."
+    },
+    "linux_rexglue": {
+      "build": "cmake --build /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --parallel 2",
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
+      "ctest_result": "passed 6/6",
+      "plugin_sha256": "f65edaa4b95627871d334cbaa5ccb4e545c0784552f16e776e5ece02aff261eb",
+      "build_id": "71abe9ca09b7e14ea6b0da1867a7676e17180484",
+      "vulkan_minimum": "1.1"
+    },
+    "android_arm64": {
+      "build": "cmake --build /home/pes/work/.build-process2-p2161-vulkan-plugin-android-matched-20261028 --parallel 2",
+      "result": "Android API26 ARM64 plugin target compiled and linked after source-layout fix",
+      "plugin_sha256": "dff5540b3a4dfb4b98a0c7e566dfa0844b851226252628475a6fde5334c888c5",
+      "build_id": "09f8f83114aa09ca017d5102649e1163846bd648",
+      "device_runtime": "not run; no attached ADB device"
+    },
+    "diff_check": "git diff --check passed"
+  },
+  "parallel_interrupt_audit": {
+    "evidence": "process2_gpu_backend_resolvepr2_source1_interrupt_join_20261028.json",
+    "scope": "Existing P2 source-1 packet/callback correlation evidence; this format-26 change does not alter PM4 interrupt dispatch and adds no new interrupt capture."
+  },
+  "limitations": [
+    "The renderer regression is synthetic and is not retail framebuffer parity or visual confirmation of captured texture contents.",
+    "The source-layout DSO passes draw #10 resource matching in the retail capture but does not submit the packet-72 segment because the Process 1 runtime did not enable provider resolve capability.",
+    "A new DSO compiled with the optional resolve-capable SDK API passed provider tests but has not yet been replayed with a runtime that opts in.",
+    "Only the captured 1280x720 format-26 Copy/Convert texture contract is supported; other extents and unmatched copy states fail closed.",
+    "The complete ordered transition remains incomplete, including remaining format-31 intermediate copies and shader ordinals 12, 22, and 24; no full original game frame is established.",
+    "No Android Mali runtime validation was part of this Linux replay."
+  ],
+  "replay_after_fix": {
+    "status": "completed; format-26 matching now passes in the retail Native capture, next blocker is provider depth/stencil resolve opt-in",
+    "capture_directory": "/home/pes/work/nfs-shift-p1-native-format26-exact-fix-20261028",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+    "plugin_used_sha256": "f65edaa4b95627871d334cbaa5ccb4e545c0784552f16e776e5ece02aff261eb",
+    "plugin_used_build_id": "71abe9ca09b7e14ea6b0da1867a7676e17180484",
+    "plugin_build_source": "P2 HEAD c35dd5cf plus dirty source diff SHA-256 b96822739d15a92516eb97f011d2652bbbc748c9e1f0db753489bf2c28883264; diff contains the exact committed source-layout matcher now at 675d3e43",
+    "native_duration_seconds": 137.632,
+    "gdb_exit": 0,
+    "bink_progress": "281/281",
+    "ordered_snapshot": {
+      "log": "runs/shift-native-r1/bin/logs/nfs_shift_001.1.log",
+      "log_sha256": "57a013eea5ae5142060a736eafea5f2914f40e6e63006ba060a0165f2d60b5e0",
+      "line": 2059,
+      "line_sha256": "217dbc0b5e910ca151f56a4753e82ecff716b1713db024651a2a8864202a604a",
+      "shape": "14 Draw operations for packets 0..13 followed by Copy packet 38; capture is an ordered command snapshot, not proof of submission"
+    },
+    "draw10": "No unresolved draw #10 entry was emitted; the format-26 rejection is gone.",
+    "next_blocker": {
+      "log": "runs/shift-native-r1/bin/logs/nfs_shift_001.2.log",
+      "log_sha256": "ff43bd0baee593554cbd99e42f3e48456b783a55894a672825867e3eeab0aa90",
+      "line": 7124,
+      "line_sha256": "2a4087ac605404df8e5026d7b8d7e9d8a62e766a0924bb2b37c53bdd0a9321ed",
+      "message": "ordered Vulkan segment ending at packet 72 failed: mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability",
+      "repetitions": 7,
+      "other_refresh_failures": 1,
+      "submission": "The packet-72 segment returns before vkCmdDraw/vkQueueSubmit. Other presenter submissions in those logs belong to separate batches."
+    },
+    "source1": {
+      "interrupts": 1972,
+      "cpu_mask": "0x04",
+      "callback": "0x823B37B8",
+      "rptr_wraps": 3,
+      "wptr_wraps": 4,
+      "queue_producer_consumer": "623/414",
+      "completion_dequeue": "413/414",
+      "qualification": "Outer callback dispatch evidence only; does not prove nested callback effects or game progress."
+    },
+    "other_unresolved_ordinals": [
+      12,
+      22,
+      24
+    ],
+    "exact_draw10_shader_bytes": "not retained; only the already-known first-draw/frame322 selector is available",
+    "end_state": "final scene state_348=0/update_count_356=0; no input gate observed and no Start/A pulses sent",
+    "runtime_provider_cause": "This P2 plugin DSO was compiled against the older SDK header, so CreateShiftVulkanProvider selected the geometry-only overload and did not request depth/stencil resolve. The current P2 Native graphics-system plugin creates its own VulkanProvider with GPU-emulation features disabled; the runtime-owned Xenos provider is separate."
+  },
+  "provider_resolve_followup": {
+    "sdk_pull_request": "https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/2",
+    "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "plugin_build": "/home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028/output/librexgpu-shift-native.so",
+    "plugin_sha256": "6eeb19b8d1806a46a570fd9279153de2ee62995b4db1667a54c252e6c7a6d887",
+    "build_id": "840e83d01bcb5616539c78c7fc53a8d0f467583d",
+    "compile_capability": "SHIFT_REXGLUE_OPTIONAL_DEPTH_STENCIL_RESOLVE_PROVIDER=1",
+    "validation": "plugin CTest 7/7 with VK_LAYER_KHRONOS_validation; provider check reports NVIDIA GTX 950 Vulkan 1.4, create_renderpass2/depth_stencil_resolve enabled, SAMPLE_ZERO=1, GPU-emulation features disabled",
+    "status": "P2 DSO statically includes the resolve-capable provider implementation and CreateShiftVulkanProvider requests resolve with GPU-emulation disabled. The next replay is requested with this DSO and the existing Process 1 runtime; no Process 1 provider-source change is required.",
+    "p2_source_commit": "675d3e43",
+    "plugin_path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028/output/librexgpu-shift-native.so",
+    "capability_check_command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation rexgpu_vulkan_resolve_capability_check",
+    "capability_check_result": "passed on NVIDIA GeForce GTX 950, Vulkan 1.4; resolve extension pair enabled, SAMPLE_ZERO=1, GPU-emulation features disabled",
+    "provider_ownership": "The native plugin DSO itself creates its VulkanProvider. nm confirms VulkanProvider::Create and VulkanDevice::CreateIfSupported are defined in the DSO; ldd shows no separate librexui-vulkan dependency. The DSO still uses librexruntime for the IGraphicsSystem ABI.",
+    "process1_runtime_action": "Use the new P2 DSO with the existing runtime; do not change lib-rexgpu-xenos or its graphics_system provider factory."
+  }
+}

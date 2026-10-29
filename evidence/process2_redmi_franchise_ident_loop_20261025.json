@@ -1,0 +1,49 @@
+{
+  "schema": "shift.process2.redmi_franchise_ident_loop.v1",
+  "date": "2026-10-25",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 6314
+  },
+  "source_movie": {
+    "filename": "Franchise_Ident.bik",
+    "sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+    "duration_seconds": 9.376015
+  },
+  "captures": [
+    {
+      "file": "process2_redmi_franchise_ident_loop_before_20261025.png",
+      "sha256": "be861751851d7ee651ea739e26971c9eebfcaf90413125b068ae62e5df9c1229",
+      "capture_wall_utc": "2026-10-25T11:31:13.539554Z",
+      "best_source_frame_seconds": 8.0,
+      "grayscale_correlation": 0.99848
+    },
+    {
+      "file": "process2_redmi_franchise_ident_loop_after_20261025.png",
+      "sha256": "126191820b82b3481697f1d1a38523d93ee0d392ee6995a68d46e06f840d4100",
+      "capture_wall_utc": "2026-10-25T11:32:51.797915Z",
+      "best_source_frame_seconds": 1.6,
+      "grayscale_correlation": 0.99963
+    }
+  ],
+  "comparison": {
+    "method": "Crop the game viewport to 16:9, scale to 160x90 grayscale, and compare against Franchise_Ident.bik decoded at 10 fps using normalized Pearson correlation.",
+    "wall_interval_seconds": 98.258,
+    "source_wrap_progress_seconds": 2.976,
+    "estimated_source_time_per_wall_time": 0.03028,
+    "interpretation": "The fullscreen phone content reached the end of Franchise_Ident.bik and wrapped to its beginning during the interval; both captures match the original retail file at greater than 0.998 correlation. The startup screen remained on this video content across the sample rather than showing a language/menu transition."
+  },
+  "session_state": {
+    "game_process_still_active": true,
+    "apk_updated_or_reinstalled": false,
+    "game_closed_or_restarted": false
+  },
+  "limits": [
+    "The source-time matches are quantized to 0.1 seconds and do not count every presented frame.",
+    "The capture proves the observed screen is looping retail video; it does not prove whether the intended game flow requires input or identify the guest/runtime reason for remaining on the video."
+  ]
+}

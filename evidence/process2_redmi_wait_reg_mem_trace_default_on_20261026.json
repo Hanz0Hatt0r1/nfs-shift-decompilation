@@ -1,0 +1,77 @@
+{
+  "schema": "shift.process2.redmi_wait_reg_mem_trace_default_on.v1",
+  "date": "2026-10-26",
+  "captured_at_local": "2026-10-26T19:50:03+03:00",
+  "process2": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "source_commit": "9a4c9c4f3",
+    "trace_activation": "SHIFT_NATIVE_VULKAN_TRACE_RING_DEFAULT_ON=ON; no wrapper or process environment readback required"
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "gpu": "Mali-G76 MC4",
+    "android_version": "13",
+    "api": 33,
+    "adb_endpoint": "192.168.1.32:38615",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 31080,
+    "activity_top_resumed": true,
+    "screen": "process2_redmi_wait_reg_mem_trace_default_on_20261026.png",
+    "screen_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+    "screen_observation": "Black viewport; app remains top-resumed at the startup wait."
+  },
+  "package": {
+    "file": "/home/pes/work/process2-latest-renderer-handover-20261026/android-disclaimer-shd-trace-default-20261026/nfsshift-disclaimer-shd-trace-default.apk",
+    "sha256": "a3a665ae30bb009d661b8003ac3e8dae4be7f6e24faa753ef9add5c1a65dddd3",
+    "packaged_arm64_plugin_sha256": "bc5974acabb53c18fcfe5c0614a42b3835526722d07db8a5bffd6dfefdfe822f",
+    "unstripped_plugin_sha256": "10f308360a92241ded732ad614676f28618bcff7603204eba9d69713021f5c25",
+    "plugin_build_id": "e3460765ef995f391535f0d9a0875cf48e603d9f",
+    "mapped_plugin_independently_verified": false,
+    "mapped_plugin_note": "Android denied shell access to /proc process maps. The diagnostic package was installed with adb install -r; existing app data was preserved and the app process was relaunched."
+  },
+  "guest_log": {
+    "file": "process2_redmi_wait_reg_mem_trace_default_on_20261026.log.gz",
+    "compressed_sha256": "618072700bd62725108315fb446eea79825704819a42b0620759bff4cd536d96",
+    "uncompressed_sha256": "95dc4586c5406730d1b032c1b5d38cf089d045bb5fc006050f64d880c8c4ca3e",
+    "uncompressed_bytes": 23202,
+    "ring_snapshots": [
+      { "sequence": 3, "rptr": 0, "wptr": 22, "packets": 5 },
+      { "sequence": 6, "rptr": 22, "wptr": 25, "packets": 68 },
+      { "sequence": 11, "rptr": 25, "wptr": 31, "packets": 153 }
+    ],
+    "memory_write_candidates": [
+      {
+        "opcode": "0x58",
+        "guest_address": "0x17AF4004",
+        "source_ib": "0x095D0000",
+        "depth": 1,
+        "byte_offset": 240,
+        "bytes": 16
+      },
+      {
+        "opcode": "0x58",
+        "guest_address": "0x17AF4000",
+        "source_ib": "0x095D0000",
+        "depth": 1,
+        "byte_offset": 256,
+        "bytes": 16
+      }
+    ],
+    "wait": {
+      "guest_address": "0x1B964004",
+      "reference": "0x00000001",
+      "mask": "0xFFFFFFFF",
+      "endian_mode": 2,
+      "compare": 3,
+      "source_indirect_buffer": "0x095D0120",
+      "nesting_depth": 1,
+      "byte_offset": 1180
+    }
+  },
+  "conclusion": {
+    "established": "The corrected trace is active without the Android wrapper, logs the two observed EVENT_WRITE_SHD writes, and reaches the same WAIT_REG_MEM on 0x1B964004 while the app screen stays black.",
+    "not_established": "Neither observed write targets the wait address. The bounded snapshots do not rule out CPU writes or GPU writes outside the scanned batches and do not identify the wait producer. The guest wait predicate was unchanged.",
+    "app_data_cleared": false,
+    "process1_files_modified": false
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "schema": "shift.process2.redmi_language_selector_latest_android.v1",
+  "capture_date_local": "2026-10-26",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "android_version": "13",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id_at_capture": 17268
+  },
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "commit": "02696e693206f9c068ef5e21b39284072b14fe20",
+    "apk_path_outside_repository": "/home/pes/work/process2-latest-android-vulkan-candidate-20261026/app-process2-vulkan-latest-20261026.apk",
+    "apk_sha256": "e9185d08d8391589e567abaff4f84629fb5cc89d68bc53c2269c4df9136c10c9",
+    "arm64_plugin_sha256": "53eda9ca564c7f968dbd5405c87c0dbb6278f27830a007859a8ff6656da5e13b",
+    "plugin_aliases_identical": true,
+    "runtime_dso_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48"
+  },
+  "installation": {
+    "method": "adb install --incremental -r",
+    "candidate_install_succeeded": true,
+    "apk_v3_signature_verified": true,
+    "zipalign_verified": true,
+    "app_data_cleared": false,
+    "game_assets_changed": false,
+    "full_application_rebuild": "not performed; P2 plugin was linked against the unchanged packaged Android runtime DSO after the SDK full target hit the existing Bionic ucontext fiber compile gap",
+    "activity_launched_after_install": true,
+    "activity_top_resumed_at_capture": true
+  },
+  "language_selector": {
+    "heading_visible": true,
+    "select_prompt_visible": true,
+    "selected_entry": "English",
+    "visible_labels": [
+      "English",
+      "Français",
+      "Italiano",
+      "Deutsch",
+      "Español",
+      "Nederlands"
+    ],
+    "observation": "All six retail language labels are legible in the unmodified live Android screenshot. The selected English row is orange; unselected rows are gray.",
+    "screenshot": "process2_redmi_language_selector_latest_android_20261026.png",
+    "screenshot_sha256": "1c13514ea6f2ad7dfff70cd1b33cffa2024b39937895b2dfaa68cf8fb90ac676",
+    "captured_at_local": "2026-10-26T00:44:58.661+03:00"
+  },
+  "progression": {
+    "input": "One Android KEYCODE_BUTTON_A accepted the selected English option for this verification.",
+    "following_original_title_sequence": {
+      "screenshot": "process2_redmi_language_selector_title_latest_android_20261026.png",
+      "sha256": "4566e401ae5bdac8f8648497e7ace9aa508306d7f296c8882776af82cc5dbe0a",
+      "captured_at_local": "2026-10-26T00:45:19.224+03:00"
+    },
+    "later_screen": "The app reached the existing legal disclaimer; its screenshot hash matches the previous disclaimer screen (fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af).",
+    "app_was_closed": false
+  },
+  "renderer_log": {
+    "file": "process2_redmi_language_selector_latest_android_20261026.log.gz",
+    "raw_sha256": "2a579db2788e6505b57bfcdfdabf990102e6b864ea773acd6ca81121809116ca",
+    "compressed_sha256": "c2b4069a1bf019c3712829a35fae371e22bd1ec4d7218ee6e49dd71dc0d926a2",
+    "raw_bytes": 421944,
+    "line_count": 2597,
+    "first_log_time": "2026-10-26 00:44:20.668",
+    "last_log_time": "2026-10-26 00:45:46.704",
+    "presenter_submission_events": 1233,
+    "captured_indexed_draw_packets": 11267,
+    "accepted_copy_convert_operations": 1233,
+    "presenter_refresh_failures": 0,
+    "unresolved_draws": [
+      {
+        "draw": 0,
+        "reason": "incomplete captured raster register state",
+        "valid_mask": "0x17038"
+      }
+    ],
+    "last_scene_open_misses": [
+      {
+        "path": "d:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+        "time": "2026-10-26 00:45:46.698",
+        "status": "0xc000000f"
+      },
+      {
+        "path": "d:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+        "time": "2026-10-26 00:45:46.701",
+        "status": "0xc000000f"
+      },
+      {
+        "path": "d:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+        "time": "2026-10-26 00:45:46.703",
+        "status": "0xc000000f"
+      },
+      {
+        "path": "d:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+        "time": "2026-10-26 00:45:46.704",
+        "status": "0xc000000f"
+      }
+    ],
+    "scene_miss_causality_established": false
+  },
+  "current_read_only_recheck": {
+    "checked_at_local": "2026-10-26T01:32:34+03:00",
+    "adb_endpoint": "192.168.1.32:38615",
+    "device_connected": true,
+    "installed_apk_sha256": "e9185d08d8391589e567abaff4f84629fb5cc89d68bc53c2269c4df9136c10c9",
+    "installed_apk_matches_candidate": true,
+    "package_last_update_time_local": "2026-10-26 00:44:02+03:00",
+    "process_id": 17268,
+    "activity_top_resumed": true,
+    "screen": "The legal disclaimer remains visible with the same purple horizontal strips.",
+    "screenshot": "process2_redmi_language_selector_latest_current_screen_20261026.png",
+    "screenshot_sha256": "76b410ccc4368e3ef26aaf6283163e3df50a00b7e716f2b57f3b349b9b5d0716",
+    "input_sent": false,
+    "app_restarted_or_closed": false
+  },
+  "limits": [
+    "This capture verifies that all six language labels render in this Android candidate; it does not establish sustained menu operation, race rendering, or full retail visual parity.",
+    "The Android live run did not enable VK_LAYER_KHRONOS_validation; validation coverage must come from host tests.",
+    "The packaged runtime DSO is unchanged and the P2 plugin was manually linked against it; this is not a full Android runtime rebuild.",
+    "The current read-only recheck confirms the app remains resumed on the legal disclaimer; Process 2 did not close it."
+  ]
+}

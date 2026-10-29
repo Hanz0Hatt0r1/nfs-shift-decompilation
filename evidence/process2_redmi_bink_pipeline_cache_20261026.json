@@ -1,0 +1,90 @@
+{
+  "schema": "shift.process2.redmi_bink_pipeline_cache_replay.v1",
+  "date": "2026-10-26",
+  "task": "Compare the Process 2 renderer with and without its graphics-pipeline object cache on one captured retail Bink draw on Mali.",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1",
+    "validation_layer_available": false,
+    "existing_game_process": {
+      "app_id": "com.hanz0hatt0r.nfsshift",
+      "pid": 24808,
+      "activity_remained_resumed": true,
+      "screenshot_sha256_before_and_after": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+      "install_restart_or_input_sent": false
+    }
+  },
+  "retail_capture": {
+    "asset": "Franchise_Ident.bik",
+    "asset_sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+    "draw_index": 2614,
+    "vertex_shader_spirv_sha256": "6513c3af8972e760ebf88201197fc65bcabf87a6ccdab3c27aed57a5b658269f",
+    "pixel_shader_spirv_sha256": "77a4e4ea038010370ef61f327d49ee4230375c2eeee278032a3d23566188129b",
+    "geometry_shader_spirv_sha256": "c3bfd622a80f01d038d6b250e2fd2e666704f40f0b1350ddb1025f864acc61b0",
+    "copy_vertex_spirv_sha256": "e37d0dca1f6fccefef89a4b49735ed6e99e4997d806d7c5e8b4a8f2945d83646",
+    "copy_fragment_spirv_sha256": "8b19e33520fd634b3b434e069d34b65f302cba64c1bc16482b5defc5f6abf116",
+    "r8_planes_sha256": [
+      "228cff2ce890f70ddfa4456231a75c2640c875ee25c46409779cf821d6136e2a",
+      "a81bcb8aca6abfc5ea1a79d915c851923ddc0a20b985f8b3a360067f053408d5",
+      "f1953394e4d76212565e5dbf7e08f03b3fe196e88160d4648be497c9a6ac56b3"
+    ],
+    "scope": "Offscreen replay of one captured retail Bink draw with the captured translated shaders, constants, three R8 planes, and harness fullscreen rectangle geometry. It does not run guest Bink decode or the full mixed-sample presenter frame."
+  },
+  "comparison": {
+    "baseline": {
+      "description": "Previously recorded bounded-in-flight renderer candidate without the P2 VkPipeline object cache.",
+      "replay_binary_sha256": "726bbf855fa1bd97c64a9c16c05e36954304de0e234e2cf0b86065acfcfd7b6c",
+      "android_api_target": 29,
+      "prior_evidence": "process2_redmi_bink_async_inflight_20261025.json",
+      "source_revision_limit": "This exact replay binary was preserved and its hash is known, but its source revision was not embedded in the earlier evidence record."
+    },
+    "candidate": {
+      "renderer_source_commit": "99cdd93a92a580d562ca3f0c4c88e2e4a9d3b537",
+      "renderer_static_archive_sha256": "e877fdd6a70d0e95fda96670dd7fb44739360fd043c2622b696c3582b18f148d",
+      "replay_binary_sha256": "038477749f57bf556466e701523a13c1e0728d98af80175aa4bd3f02d9d707f7",
+      "android_api_target": 26,
+      "ndk": "28.2.13676358",
+      "custom_cache": "P2's 128-entry VkPipeline cache keyed by shader words, vertex layout, raster state, texture binding slots, and render-pass compatibility."
+    },
+    "shared_conditions": [
+      "Same Mali device and same captured draw/shader/plane files.",
+      "Both replay paths use the R8 texture cache, two frames in flight, and a Vulkan VkPipelineCache.",
+      "The candidate build adds P2's bounded graphics-pipeline object cache. Both runners perform the same timed draw calls; the old runner performs one additional output-equality check after timing. The old executable's exact source revision was not retained, so attribution is by its artifact hash and prior evidence record."
+    ],
+    "method": "Three alternating baseline/candidate pairs. Each process performs one initial readback, two warmup submissions, then eight timed cached no-readback submissions. CPU time uses CLOCK_THREAD_CPUTIME_ID around each renderer call."
+  },
+  "results": {
+    "baseline_mean_wall_ms_per_call": [7.79039, 7.85643, 8.01505],
+    "candidate_mean_wall_ms_per_call": [8.20741, 8.4526, 7.70754],
+    "baseline_average_wall_ms": 7.88729,
+    "candidate_average_wall_ms": 8.1225166667,
+    "candidate_wall_time_change_percent": 2.98,
+    "baseline_mean_thread_cpu_ms_per_call": [1.98197, 2.07815, 2.06799],
+    "candidate_mean_thread_cpu_ms_per_call": [1.29217, 1.42299, 1.19405],
+    "baseline_average_thread_cpu_ms": 2.0427033333,
+    "candidate_average_thread_cpu_ms": 1.30307,
+    "candidate_thread_cpu_time_reduction_percent": 36.21,
+    "readback": {
+      "extent": [1280, 720],
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "raw_bytes": 3686400,
+      "baseline_sha256": "8295d56ab66664365991ad06a6fb1f018dc3db37ba07afccdad91b2555f41ca1",
+      "candidate_sha256": "8295d56ab66664365991ad06a6fb1f018dc3db37ba07afccdad91b2555f41ca1",
+      "byte_identical": true,
+      "fnv1a64": "0x1E43A3A8C1C044EB",
+      "nonblack_rgb_pixels": 921528,
+      "preview": "process2_redmi_bink_retail_draw_replay_20261025.png"
+    }
+  },
+  "interpretation": {
+    "established": "The pipeline-cache build produces byte-identical output for the captured retail Bink draw and uses about 36% less replay-thread CPU time in this sample.",
+    "not_established": "Wall time did not improve in this A/B (about 3% higher for the candidate, within the observed run variation). This does not measure full-game throughput, video decode, mixed-sample frames, or sustained cutscene rate.",
+    "limits": [
+      "The baseline and candidate were built for Android API 29 and 26 respectively, though both use NDK r28.2 on the same API 33 device.",
+      "The candidate was a direct offscreen renderer-core replay, not the Android app plugin or a full APK.",
+      "The Mali device had no Vulkan validation layer; validation remains covered by the existing host tests.",
+      "The active retail app was left foreground and its screenshot was byte-identical before and after the benchmark."
+    ]
+  }
+}

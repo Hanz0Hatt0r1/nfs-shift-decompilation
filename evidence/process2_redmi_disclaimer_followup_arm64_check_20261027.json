@@ -1,0 +1,68 @@
+{
+  "schema": "shift.process2.redmi_disclaimer_followup_arm64_check.v1",
+  "date": "2026-10-27",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "commit": "73a61c069091d3d2a30e05f084b211103fe93904"
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": 13,
+    "api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615"
+  },
+  "user_clarification": {
+    "disclaimer_requires_input": false,
+    "expected_progression": "The disclaimer advances automatically to the next video.",
+    "input_sent_during_followup": false
+  },
+  "live_followup": {
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 6382,
+    "top_resumed_activity": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity",
+    "apk_or_plugin_replaced": false,
+    "process_restarted": false,
+    "device_log": "files/nfs_shift/user/logs/nfs_shift_033.log",
+    "device_log_sha256": "6271374d31dff72a17c4a89dfb4ac47a1b5c0dd0c7b42c85d187deb31b580eb5",
+    "observation_window_local": [
+      "2026-10-27 04:36:49.354",
+      "2026-10-27 04:38:14.452"
+    ],
+    "successful_13_draw_submissions": 145,
+    "accepted_final_presenter_copies": 145,
+    "wait_reg_mem_false_samples": 0,
+    "vulkan_refresh_failures": 0,
+    "screen_sha256_before": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+    "screen_sha256_after": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+    "interpretation": "The app remained active and repeatedly submitted the captured disclaimer frame path. This log window does not identify why the guest has not submitted a video frame."
+  },
+  "arm64_renderer_check": {
+    "ndk": "r28c (28.2.13676358)",
+    "android_platform": 26,
+    "abi": "arm64-v8a",
+    "renderer_check_sha256": "608e08718f08adf26f4400338ab00447c3a8d890dbbf6b1076bc3dc6e3fde2fa",
+    "renderer_check_build_id": "7f217f7b10a233c9468ebfb48a84fb0ace1d9ff9",
+    "result": "passed on the Redmi Mali-G76 MC4; synthetic Vulkan point/rectangle draws, 4x-to-1x depth/stencil SAMPLE_ZERO preservation, anisotropy, R16G16_SFLOAT target, and sample-zero Copy/Convert",
+    "vulkan_validation_layer": "not available/enabled on the device",
+    "other_arm64_checks": {
+      "draw_input": "passed",
+      "guest_ring": "passed",
+      "shader_translation": "passed"
+    }
+  },
+  "artifact_hashes": {
+    "shift_xbox_draw_input_check": "626abf2098b80fa5d931b86ecd71b1800f83343cc139e73160f0ffe50d2a6128",
+    "shift_xbox_guest_ring_check": "292e14c92dfbf1c721ec36161b89b8ead41d3a6df71fb7fbd4ec12c833b675b6",
+    "shift_xbox_shader_translate_check": "372314df827da55fe7afc7eded7efd84e4fe0a1095be3961c8ac36649b90f7c4"
+  },
+  "limits": [
+    "The ARM64 renderer check is offscreen and uses synthetic draw shaders; it is not a retail disclaimer-to-video replay.",
+    "The game APK and its loaded P2 plugin were not replaced or restarted.",
+    "The unchanged screenshot and successful ordinary disclaimer submissions do not prove whether video progression is blocked by guest logic or missing ordered target/Copy-Convert execution.",
+    "No new retail video frame or parity result is claimed."
+  ]
+}

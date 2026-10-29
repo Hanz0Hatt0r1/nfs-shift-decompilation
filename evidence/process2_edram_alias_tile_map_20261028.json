@@ -1,0 +1,101 @@
+{
+  "schema": "shift.process2.edram_alias_tile_map.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "implementation": {
+    "apis": [
+      "captured_xenos_edram_raster_tiles",
+      "captured_xenos_edram_alias_tiles"
+    ],
+    "behavior": "Enumerates every wrapped raster tile and its physical EDRAM index, including repeated indices. A second helper enumerates shared physical tiles and source/destination coordinates only when each layout maps uniquely. Ordered-renderer fail-closed diagnostics report same-plane alias counts or the map's ambiguity reason.",
+    "safety": "Rejects a full layout extent that wraps one physical tile more than once. Such an image-to-backing mapping needs exact draw coverage and operation order. It does not infer color/depth format conversion or transfer Vulkan image data.",
+    "format_scope": "The existing 32bpp EDRAM address model; true 64bpp color addressing remains unsupported."
+  },
+  "retail_layout_regression": {
+    "source": {
+      "draw_range": [1, 1],
+      "extent": [1280, 720],
+      "samples": 4,
+      "pitch": 640,
+      "color_base_tiles": 0,
+      "depth_base_tiles": 720,
+      "guest_color_format": 0
+    },
+    "destination": {
+      "draw_range": [2, 10],
+      "extent": [1280, 720],
+      "samples": 1,
+      "pitch": 1280,
+      "color_base_tiles": 0,
+      "depth_base_tiles": 720,
+      "guest_color_format": 1
+    },
+    "shared_tiles": 720,
+    "tile_coordinate_mapping": "Identity for all shared tile IDs: 16 columns x 45 rows.",
+    "sample_address_regression": "For physical tile 0, all 1,280 tile-local sample slots map through both layouts to the same byte address, independently for color and depth.",
+    "classification": "Captured target metadata drives the address regression; no retail image payload or Vulkan rendering is used."
+  },
+  "first_transition_limit": {
+    "source_draw": 0,
+    "extent": [2560, 1440],
+    "samples": 4,
+    "pitch": 1280,
+    "virtual_tiles_under_current_model": 2880,
+    "result": "Unique full-extent tile mapping fails closed because it spans more than the 2,048-tile EDRAM store.",
+    "interpretation_limit": "The captured metadata does not establish which tiles the draw geometry/scissor touches. This is a limit of the current full-extent mapping model, not proof that the retail draw itself is invalid."
+  },
+  "wrapped_raster_tile_regression": {
+    "api": "captured_xenos_edram_raster_tiles",
+    "layout": "Captured draw 0: 2560x1440, 4x, pitch 1280, color base 0.",
+    "virtual_raster_tiles": 2880,
+    "physical_edram_tiles": 2048,
+    "physical_tiles_with_two_raster_coordinates": 832,
+    "all_other_physical_tiles_have_one_raster_coordinate": true,
+    "depth_base_tiles": 1024,
+    "depth_plane_has_the_same_wrap_multiplicity": true,
+    "depth_plane_repeated_physical_tile_range": [1024, 1855],
+    "example": {
+      "physical_tile": 0,
+      "raster_coordinates": [[0, 0], [0, 64]]
+    },
+    "depth_example": {
+      "physical_tile": 1024,
+      "raster_coordinates": [[0, 0], [0, 64]]
+    },
+    "transfer_status": "enumeration only; the unique-layout alias transfer helper still rejects this layout because captured geometry/scissor coverage and last-writer order are unavailable"
+  },
+  "renderer_preflight_diagnostic": {
+    "color": "source{2880 raster tiles -> 2048 physical tiles; 832 physical tiles repeat (tile 0 at (0,0) and (0,64))}; destination{720 raster tiles -> 720 physical tiles}",
+    "depth": "source{2880 raster tiles -> 2048 physical tiles; 832 physical tiles repeat (tile 1024 at (0,0) and (0,64))}; destination{720 raster tiles -> 720 physical tiles}",
+    "execution": "The exact 14-draw preflight regression asserts both details before any Vulkan draw submission."
+  },
+  "verification": {
+    "native_linux": {
+      "build": "shift_xbox_draw_input_check and xbox_live_vulkan_renderer_check built successfully.",
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-native-vulkan-20261028 --output-on-failure",
+      "result": "passed 4/4"
+    },
+    "linux_rexglue_plugin": {
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
+      "result": "passed 6/6",
+      "plugin_sha256": "24a9fe0b93c002f2ed041ae28e6374cb67adb316c71fde465fcda4a0815afbc7",
+      "build_id": "badb711c47a0fe1084eb688d4cd736b2dd899820"
+    },
+    "android_arm64": {
+      "command": "cmake --build /home/pes/work/.build-process2-p2161-android-renderer-20261027 --target shift_xbox_draw_input_check xbox_live_vulkan_renderer_check --parallel 4",
+      "result": "both targets compiled",
+      "draw_input_library_sha256": "9746ac0dcea7e5364ac6d26491678240193b3fcb053030ae43747e6dfc474177",
+      "draw_input_check_sha256": "3db0d2ab0c8cbacc8aec9d9af1d131c172ae6c927dd264ea5b8d410515c0a1ab",
+      "renderer_library_sha256": "fb7c8f472f24dc03aac3a556f36d34d76463f679682aa51970e8dd7377571b4a",
+      "renderer_check_sha256": "d0901c7b44ffe0f09afb562017a92b0a52ff5020f02913808d1dd70f5703f67e",
+      "device_runtime": "not run; adb devices -l returned no connected devices"
+    },
+    "diff_check": "git diff --check passed"
+  },
+  "remaining_blockers": [
+    "No shared Vulkan physical EDRAM backing or sample data transfer is implemented.",
+    "The 2560x1440 draw-0 full extent wraps under the current 32bpp mapping; actual touched tiles need captured geometry/scissor evidence before backing transfer can be defined.",
+    "The supported 720-tile mapping does not implement raw-format reinterpretation, copy/convert, clear, or depth/stencil persistence.",
+    "This regression is not execution of the full 14-draw retail transition and makes no retail parity claim."
+  ]
+}

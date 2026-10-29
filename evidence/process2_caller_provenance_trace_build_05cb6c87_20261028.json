@@ -1,0 +1,52 @@
+{
+  "schema": "shift.process2.caller-provenance-build.v1",
+  "captured_on": "2026-10-28",
+  "source_commit": "05cb6c878b38d84e8867a1b477306b7edcea0dfd",
+  "verification_commit": "7584efa2",
+  "scope": "Diagnostic provenance only; no PM4 ordering or execution semantics changed.",
+  "trace_fields": [
+    "caller_ib",
+    "caller_offset",
+    "caller_depth",
+    "caller_packet"
+  ],
+  "regression": {
+    "test": "shift_xbox_guest_ring_check",
+    "result": "passed",
+    "assertion": "A nested packet resolves to the root batch INDIRECT_BUFFER command at batch-relative byte offset 4 and expanded packet ordinal 1."
+  },
+  "artifacts": {
+    "linux_x86_64": {
+      "path": "/home/pes/work/process2-caller-provenance-05cb6c87/linux-x86_64/librexgpu-shift-native.so",
+      "sha256": "f68f26343137208d8001fac180a9fa3fd83601ad5533995c49198b465e34753a",
+      "build_id": "0987409aad7c0a8072282a6545500ef552637e82",
+      "result": "built"
+    },
+    "android_arm64": {
+      "path": "/home/pes/work/process2-caller-provenance-05cb6c87/android-arm64/librexgpu-shift-natived.so",
+      "sha256": "feaf30953d920a5310dfb616835d3d79c4ea1c18ca11d2fb5eac55af5fc5e06f",
+      "build_id": "6bffe35692bdb6201e582ff18cb5307a3ff36fbc",
+      "result": "compile-only built",
+      "api_level": 26,
+      "ndk": "r28c",
+      "device_run": false,
+      "warning": "The compatible SDK fpscr.h assembly operand-width warning remains."
+    }
+  },
+  "checks": {
+    "shift_xbox_guest_ring_check": "passed (1/1)",
+    "rexgpu_shift_native_live_ring_write_trace_check": {
+      "result": "passed (1/1)",
+      "assertion": "The emitted EVENT_WRITE_SHD row names the root ring as caller_ib, with caller_offset=0, caller_depth=0, and caller_packet=0."
+    },
+    "rexgpu_shift_native_live_ring_check": {
+      "result": "failed before presenter submission",
+      "reason": "The fixture contains unresolved draw packet 2 and reports that the live PM4 fixture did not reach Vulkan presenter submission."
+    },
+    "git_diff_check": "passed"
+  },
+  "runtime_evidence": {
+    "retail_run_with_this_build": false,
+    "limitation": "The new caller fields have not yet been used in a retail capture; the producer of repeated IB 0x09710480 submissions remains unidentified."
+  }
+}

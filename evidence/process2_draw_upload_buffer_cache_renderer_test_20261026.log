@@ -1,0 +1,23 @@
+UpdateCTestConfiguration  from :/tmp/nfs-shift-p2-buffer-cache-build/DartConfiguration.tcl
+Test project /tmp/nfs-shift-p2-buffer-cache-build
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 4
+    Start 4: xbox_live_vulkan_renderer_check
+
+4: Test command: /tmp/nfs-shift-p2-buffer-cache-build/xbox_live_vulkan_renderer_check "/tmp/nfs-shift-p2-buffer-cache-build/shaders/live_draw_smoke.vert.spv" "/tmp/nfs-shift-p2-buffer-cache-build/shaders/live_draw_smoke.frag.spv" "/tmp/nfs-shift-p2-buffer-cache-build/shaders/live_draw_rectlist.geom.spv" "/tmp/nfs-shift-p2-buffer-cache-build/shaders/xenos_copy_sample0.vert.spv" "/tmp/nfs-shift-p2-buffer-cache-build/shaders/xenos_copy_sample0.frag.spv" "/tmp/nfs-shift-p2-buffer-cache-build/shaders/xenos_copy_sample0_single.frag.spv" "/tmp/nfs-shift-p2-buffer-cache-build/shaders/clip_disabled_window.vert.spv" "/tmp/nfs-shift-p2-buffer-cache-build/shaders/clip_disabled_window.frag.spv"
+4: Working Directory: /tmp/nfs-shift-p2-buffer-cache-build
+4: Test timeout computed to be: 10000000
+4: synthetic offscreen Vulkan 1.1 AutoIndex point and rectangle-list draw plus 4x-to-1x depth/stencil SAMPLE_ZERO preservation and captured sample-zero Copy/Convert passed on NVIDIA GeForce GTX 950 with validation enabled
+1/1 Test #4: xbox_live_vulkan_renderer_check ...   Passed    0.76 sec
+
+The following tests passed:
+	xbox_live_vulkan_renderer_check
+
+100% tests passed out of 1
+
+Total Test time (real) =   0.77 sec

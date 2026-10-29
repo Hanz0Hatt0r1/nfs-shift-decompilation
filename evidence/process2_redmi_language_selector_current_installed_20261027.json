@@ -1,0 +1,33 @@
+{
+  "schema": "shift.process2.redmi_language_selector_current_installed.v1",
+  "date": "2026-10-27",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615"
+  },
+  "app": {
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 4378,
+    "state": "top-resumed",
+    "screen": "Original LANGUAGE SELECT menu; English, French, Italian, German, Spanish, and Dutch labels are visible.",
+    "input_sent": false,
+    "closed_or_restarted": false
+  },
+  "installed_artifacts": {
+    "base_apk_sha256": "48d1b0920fe4d616aab5efb5cbdfa5c0e6ab753224c86683d4d9262e1ff83c1a",
+    "gpu_plugin_sha256": "3c2273aa1c981604a84ee242f5ec3eeba7e37892adab079f3b462e67ee1a88a",
+    "runtime_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "qualification": "These are the older artifacts already installed on the phone; they do not include the current P2 branch changes or the instrumented Linux plugin."
+  },
+  "screenshot": {
+    "path": "evidence/process2_redmi_language_selector_current_installed_20261027.png",
+    "sha256": "e9f4657c3fe83762bbb31f68da38fd22be843a838b4f183d71141b8c27c0d94c"
+  },
+  "limits": [
+    "This observation confirms readable language-selector text on the installed older build only.",
+    "It does not verify the current branch, the 14-draw transition, swapchain validation, or retail parity."
+  ]
+}

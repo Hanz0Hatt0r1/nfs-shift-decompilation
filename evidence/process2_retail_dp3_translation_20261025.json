@@ -1,0 +1,39 @@
+{
+  "schema": "SHIFT.Process2RetailDP3Translation/1",
+  "superseded_by": "process2_retail_draw27_scalar_and_resolve_20261025.json",
+  "observed_at": "2026-10-25T00:20:53+03:00",
+  "retail_observation": {
+    "run": "process2-linux-draw29-retail-20261025",
+    "log": "bin/logs/nfs_shift_001.log",
+    "log_sha256": "59a99ef1da262e64c30ed053b4bdde1a464b89c5767c04acbb747e6b377e3982",
+    "draw": 27,
+    "topology": 3,
+    "autoindex": true,
+    "count": 4,
+    "shader_instruction": 6,
+    "captured_vector_opcode": 16,
+    "previous_result": "Draw rejected before input capture: captured pixel shader ALU vector opcode 16 was unsupported."
+  },
+  "translation": {
+    "opcode": "Xenos DP3",
+    "glsl": "vec4(dot(src0.xyz, src1.xyz))",
+    "result": "Replicate the xyz dot product into all four vector result lanes, preserving the existing destination write mask and clamp handling.",
+    "reference": "https://raw.githubusercontent.com/xenia-project/xenia/master/src/xenia/gpu/ucode.h"
+  },
+  "checks": {
+    "linux_native_ctest": "4/4 passed, including a regression asserting DP3 xyz operands and replicated vector lanes.",
+    "android_arm64": {
+      "device": "Redmi Note 8 Pro (Mali-G76 MC4), Android Vulkan 1.1",
+      "adb_serial": "192.168.1.32:33153",
+      "test": "shift_xbox_shader_translate_check",
+      "exit_code": 0,
+      "binary_sha256": "b0a85d4f19c79d48d1a1cdd1417b43b155c43b8df2443243ef7ef9e2f0c093ff"
+    },
+    "linux_rexglue_plugin_ctest": "3/3 passed after rebuilding the plugin with opcode 16 support."
+  },
+  "limitations": [
+    "The shader regression uses a synthetic encoded instruction, not a full retail shader byte-for-byte fixture.",
+    "The captured retail log came from the previous plugin build. The currently open game process was left running and was not hot-reloaded, so draw 27 acceptance with the new plugin is not yet confirmed.",
+    "At this observation time, draw 28 still failed closed on its captured DXT5 descriptor. The later base/mip alias handling and current draw/frame blockers are recorded in the superseding evidence file. These checks do not establish retail image parity."
+  ]
+}

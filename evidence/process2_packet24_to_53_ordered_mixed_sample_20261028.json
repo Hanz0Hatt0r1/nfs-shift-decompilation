@@ -1,0 +1,96 @@
+{
+  "schema": "shift.process2.packet24_to_53_ordered_mixed_sample.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "retail_observation": {
+    "capture": "P1 v44 same-run Linux capture",
+    "capture_directory": "/dev/shm/nfs-shift-p1-post-bink-worker-route-v44-p2diagnostic-20261027",
+    "capture_log": "bin/logs/nfs_shift_001.2.log",
+    "capture_log_sha256": "3de085e4df2250f15b3586c24b24ae36888e65a4d82ea550a116dff27c6b872b",
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "captured_plugin_sha256": "4feb8ba496b625a578205f2c0b09a7b73e9ea54ecc9af2b36a42ee4184ff91d7",
+    "ordered_operations": [
+      {"type": "draw", "packet": 24, "color_base_tiles": "0x0", "depth_base_tiles": "0x2d0", "guest_color_format": 1, "color_format": 1, "extent": [1280, 720], "surface_pitch": 640, "samples": 4},
+      {"type": "draw", "packet": 25, "color_base_tiles": "0x0", "depth_base_tiles": "0x2d0", "guest_color_format": 1, "color_format": 1, "extent": [1280, 720], "surface_pitch": 1280, "samples": 1},
+      {"type": "draw", "packet": 26},
+      {"type": "draw", "packet": 27},
+      {"type": "draw", "packet": 28},
+      {
+        "type": "copy_convert",
+        "packet": 53,
+        "source_registers": {"surface_info": "0x14000500", "color_info": "0x0", "depth_info": "0x2d0", "mode_control": "0x6"},
+        "source": {"color_base_tiles": "0x0", "depth_base_tiles": "0x2d0", "guest_color_format": 0, "extent": [1280, 720], "surface_pitch": 1280, "samples": 1, "source_select": 0, "sample_select": 0},
+        "destination": {"guest_address": "0x0975e000", "extent": [1280, 720], "format": 6, "swap_red_blue": true, "clear_color": false, "clear_depth": false},
+        "captured_geometry": {"topology": 2, "index_count": 3, "auto_index": true, "vertex_bytes": 24}
+      }
+    ],
+    "old_plugin_failure": "draw packet 25 changed the layout from 4x/pitch-640 to 1x/pitch-1280 before Copy/Convert packet 53; the diagnostic repeated seven times. Packet 49 produced no source-layout rejection in this run.",
+    "14_draw_failure": "A separate 14-draw refresh failed at packet 1: packet 0 used RGBA8 gamma guest format 1 and packet 1 used a depth-only RGBA8 linear guest format 0 view with the same color/depth bases, 1280x720 extent, pitch 640, 4x samples, and depth format."
+  },
+  "implementation": {
+    "files": [
+      "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
+      "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
+      "native_vulkan/rexglue_plugin/README.md"
+    ],
+    "accepted_draw_transitions": [
+      "A same-base, same-depth-base, same-format, same-extent RGBA8 gamma 4x-to-1x transition with the same guest format and exactly doubled surface pitch.",
+      "An RGBA8 gamma color target and its depth-only view when bases, extent, pitch, samples, and depth format match exactly, the depth-only color mask is zero, and formats/guest formats match the captured gamma/depth-only pair."
+    ],
+    "execution_path": "The ordered segment containing draws 24..28 is sent to the existing mixed-sample Vulkan executor; its 4x color attachment resolves into the 1x color attachment before the captured 1x draws and packet-53 Copy/Convert geometry are submitted. The depth-only view is submitted in the same render pass against the matching depth attachment.",
+    "sample_and_edram_semantics": "The Vulkan color resolve currently uses its standard multisample resolve operation. These routes do not establish that its sample combination or backing representation matches Xenos EDRAM for the retail transition."
+  },
+  "verification": {
+    "native_linux": {
+      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/process2-p2161-ordered-transition-check-20261028 --output-on-failure",
+      "result": "passed",
+      "tests": "4/4",
+      "regressions": [
+        "Synthetic packet-24..28 4x-to-1x draw sequence followed by Copy 53 submits through the ordered executor and matches the direct mixed-sample executor readback.",
+        "A captured-shaped gamma target followed by its exact 4x depth-only view and Copy/Convert submits through ordered execution and matches direct Vulkan submission.",
+        "The captured-shaped 4x pitch 640 to 1x pitch 1280 transition is accepted.",
+        "The near-match 1x pitch 1272 remains fail-closed at packet 25; unsupported depth-only aliases remain rejected."
+      ]
+    },
+    "linux_plugin": {
+      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
+      "result": "passed",
+      "tests": "6/6",
+      "plugin_path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-20261027/output/librexgpu-shift-native.so",
+      "plugin_sha256": "a0026207902f5fd3a0578138d0c0edd8875cecbd98119d33b26a65a4382b5ccf",
+      "build_id": "e1e9bfa7bf4960893d9ee24f2e06a60af13fcfc0"
+    },
+    "android_arm64_api26": {
+      "command": "cmake --build /home/pes/work/.build-process2-p2161-android-renderer-20261027 --target shift_xbox_live_vulkan_renderer xbox_live_vulkan_renderer_check --parallel 4",
+      "result": "renderer core and regression executable compiled",
+      "abi": "arm64-v8a",
+      "vulkan_minimum": "1.1",
+      "renderer_object_sha256": "4d558c134e43b6490a8e34ff5d43f6ffddd3c405d136582c07e6cb815ac0e868",
+      "renderer_check_sha256": "d2a245443839211c7e6e69c6dfe7fb8a89f1586d36326fdbe784aba3ce402b2a",
+      "device_execution": "not run; adb devices -l reported no connected device"
+    },
+    "p1_interrupt_trace": {
+      "p1_source_1_guest_callback_entries": 962,
+      "p1_registered_guest_callback_targets": {
+        "0x823A4758": 374,
+        "0x823B8C60": 588
+      },
+      "p2_callback_dispatch": "0x823B37B8 (outer CPU-dispatched wrapper)",
+      "p2_source_1_pm4_interrupts_in_join": 962,
+      "p2_interrupt_id_range": [1101, 2062],
+      "p2_cpu_mask": "0x04",
+      "p2_wait_reg_mem_samples": 12602,
+      "event_count_delta_p2_minus_p1": 0,
+      "packet_to_guest_callback_join": "all 962 P1 source-1 callback rows timestamp/order-correlate with P2 PM4_INTERRUPT IDs 1101..2062; callback target and outer wrapper are different layers, so this does not prove payload-level guest semantic equivalence"
+    }
+  },
+  "limitations": [
+    "This renderer regression uses synthetic shaders and geometry and validates executor routing only; it is not a retail image comparison.",
+    "The rebuilt plugin has not yet been replayed against the retail XEX. P1 was given its path, SHA-256, and Build ID for the next same-run capture.",
+    "The Vulkan resolve/sample behavior and persistent representation across the captured Xenos EDRAM transition are not yet validated against retail pixels or an authoritative sample map.",
+    "The depth-only and mixed-sample routes are regression-tested but not yet confirmed by retail replay. Other draws and Copy/Convert operations in the wider 14-draw transition, intermediate destination images, later target-layout changes, and presentation still need retail validation.",
+    "PM4 interrupt packet-to-guest-callback correlation remains off by one in this same-run interval.",
+    "The Android renderer core and test executable compile, but no phone was connected for execution."
+  ]
+}

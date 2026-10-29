@@ -1,0 +1,60 @@
+{
+  "format": "SHIFT.Process2VulkanProviderResolveIntegration/1",
+  "observed_at": "2026-10-25",
+  "branches": {
+    "nfs_shift": "work/process2-xbox-live-ring-20261023",
+    "rexglue_sdk": "work/process2-vulkan-resolve-capability-20261024",
+    "rexglue_sdk_base": "process2/rexui-vulkan"
+  },
+  "contract": {
+    "provider_api": "optional depth/stencil resolve overload; old overloads preserved",
+    "vulkan_11": "request VK_KHR_create_renderpass2 and VK_KHR_depth_stencil_resolve atomically",
+    "vulkan_12": "use promoted core support",
+    "capability": "true only when depth and stencil both support SAMPLE_ZERO and renderpass2 entry point exists",
+    "gpu_emulation_features": "not enabled by the resolve request",
+    "plugin_fallback": "older SDK header builds retain fail-closed behavior"
+  },
+  "linux_validation": {
+    "sdk_target": "rexui-vulkan",
+    "plugin_target": "rexgpu-shift-native",
+    "provider_check": {
+      "result": "passed",
+      "device": "NVIDIA GeForce GTX 950",
+      "device_vulkan_api": "1.4.312",
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "resolve_extension_pair": true,
+      "sample_zero": true,
+      "gpu_emulation_features": "disabled"
+    },
+    "plugin_ctest": "4/4 passed"
+  },
+  "android_arm64": {
+    "sdk_target": "rexui-vulkan built",
+    "toolchain": "NDK 28.2.13676358, API 26, arm64-v8a",
+    "plugin_and_check_translation_units": "compiled",
+    "full_integration_link": "blocked in existing ReXGlue POSIX fibers: bionic does not provide getcontext/makecontext/swapcontext",
+    "runtime_fiber_source_modified": false,
+    "integrated_consumer_rebuild_2026_10_25": {
+      "configuration": "passed against the SDK depth/stencil resolve branch; Vulkan 1.1 target, Android API 26, arm64-v8a",
+      "compiled_translation_units": [
+        "P2 shift_native_gpu_plugin.cpp with the optional four-argument provider call enabled",
+        "SDK vulkan_provider.cpp",
+        "SDK vulkan_device.cpp"
+      ],
+      "full_consumer_target": "failed before link while compiling src/core/fiber_posix.cpp",
+      "compiler_error": "Bionic headers do not declare getcontext, makecontext, or swapcontext",
+      "owner": "shared ReXGlue fiber/runtime integration; P2 did not modify scheduler or fiber sources"
+    }
+  },
+  "redmi_note_8_pro": {
+    "raw_vulkan_hardware_probe": "passed; Vulkan 1.1.131, Mali-G76 MC4, both KHR extensions, depth/stencil SAMPLE_ZERO",
+    "new_provider_api_test_run_on_device": false,
+    "source_evidence": "process2_redmi_note8pro_depth_resolve_20261024.json"
+  },
+  "limits": [
+    "No new retail scene draw was observed.",
+    "The synthetic capability check does not establish Xbox Xenos resolve semantics or retail image parity.",
+    "Full Android ReXGlue integration remains blocked by the pre-existing fiber implementation.",
+    "The provider-enabled ARM64 translation units compile, but a full Android consumer build and Redmi cutscene run still require the shared Android-compatible runtime."
+  ]
+}

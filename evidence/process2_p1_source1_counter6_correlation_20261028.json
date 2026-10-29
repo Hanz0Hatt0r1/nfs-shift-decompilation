@@ -1,0 +1,247 @@
+{
+  "schema": "shift.process2.p1_source1_counter6_correlation.v1",
+  "date": "2026-10-28",
+  "scope": "Read-only correlation of P1 paired guest callback/queue events with the native P2 source=1 PM4_INTERRUPT log. No Process 1 source or capture files were modified.",
+  "capture": {
+    "directory": "/tmp/nfs-shift-p1-gpu-backend-pair-ringtrace-20261028",
+    "comparison": "comparison-v3-r1.json",
+    "native_events": "runs/shift-native-r1/events.json",
+    "native_ring_logs": [
+      "runs/shift-native-r1/bin/logs/nfs_shift_001.log",
+      "runs/shift-native-r1/bin/logs/nfs_shift_001.1.log",
+      "runs/shift-native-r1/bin/logs/nfs_shift_001.2.log"
+    ],
+    "xenos_events": "runs/xenos-r1/events.json",
+    "identity": {
+      "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+      "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+      "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+      "native_plugin_sha256": "22ad3949e35c2d9db11540fc6563e895a8bc2d03f6d1166eb1979222ffb87dac",
+      "native_plugin_build_id": "baeac82aa4c84011ad3c536bbbde2e3add78d0b1",
+      "current_p2_pr_head_plugin_sha256_at_analysis": "24a9fe0b93c002f2ed041ae28e6374cb67adb316c71fde465fcda4a0815afbc7",
+      "capture_plugin_note": "The capture uses the frozen 22ad plugin, not the current 24a9 PR-head plugin."
+    }
+  },
+  "native_counter_operation_6": {
+    "local_time": "2026-10-28 03:37:45.274 +03:00",
+    "wall_clock_epoch_ms": 1793147865274,
+    "trace_sequence": 2281,
+    "write_index": 6,
+    "guest_address": "0xB7368A04",
+    "transition": "1 -> 0",
+    "signed_delta": -1,
+    "thread": "XThreadB0FF86C0",
+    "caller": "sub_823B85D0",
+    "related_completion": {
+      "event_id": 865,
+      "trace_sequence": 2277,
+      "token": "0xC0000000",
+      "expected_delta": -1,
+      "signed_delta": -1,
+      "entry_time": "2026-10-28 03:37:45.224 +03:00",
+      "return_time": "2026-10-28 03:37:45.288 +03:00",
+      "parent_dequeue_id": 858,
+      "parent_record": "0xC96B5580",
+      "worker": "0xB73689C4",
+      "queue": "0xB7368BE0",
+      "consumer": 6,
+      "producer": 11,
+      "stream_words": [
+        "0xC0000000",
+        "0x22080",
+        "0x0",
+        "0x0"
+      ],
+      "interpretation": "The observed counter write falls inside this completion callback's entry/return interval and matches its expected signed delta."
+    },
+    "parent_dequeue": {
+      "event_id": 858,
+      "record": "0xC96B5580",
+      "queue": "0xB7368BE0",
+      "consumer": "5 -> 6",
+      "producer": "9 -> 12",
+      "entry_time": "2026-10-28 03:37:45.073 +03:00",
+      "return_time": "2026-10-28 03:37:45.291 +03:00"
+    }
+  },
+  "nearest_native_source1_pm4_interrupts": [
+    {
+      "ordinal": 1118,
+      "time": "2026-10-28 03:37:45.182 +03:00",
+      "delta_ms_from_counter_write": -92,
+      "generation": 1,
+      "batch_rptr": 5024,
+      "batch_wptr": 5029,
+      "ring_guest": "0x09752580",
+      "packet_ordinal": 181,
+      "packet_source": "0x09690C80+2628"
+    },
+    {
+      "ordinal": 1119,
+      "time": "2026-10-28 03:37:45.214 +03:00",
+      "delta_ms_from_counter_write": -60,
+      "generation": 1,
+      "batch_rptr": 5029,
+      "batch_wptr": 5054,
+      "ring_guest": "0x09752580",
+      "packet_ordinal": 181,
+      "packet_source": "0x09690C80+2628"
+    },
+    {
+      "ordinal": 1120,
+      "time": "2026-10-28 03:37:45.256 +03:00",
+      "delta_ms_from_counter_write": -18,
+      "generation": 1,
+      "batch_rptr": 5029,
+      "batch_wptr": 5054,
+      "ring_guest": "0x09752580",
+      "packet_ordinal": 205,
+      "packet_source": "0x096D55A0+92"
+    },
+    {
+      "ordinal": 1121,
+      "time": "2026-10-28 03:37:45.286 +03:00",
+      "delta_ms_from_counter_write": 12,
+      "generation": 1,
+      "batch_rptr": 5029,
+      "batch_wptr": 5054,
+      "ring_guest": "0x09752580",
+      "packet_ordinal": 872,
+      "packet_source": "0x09691700+19632"
+    },
+    {
+      "ordinal": 1122,
+      "time": "2026-10-28 03:37:45.327 +03:00",
+      "delta_ms_from_counter_write": 53,
+      "generation": 1,
+      "batch_rptr": 5054,
+      "batch_wptr": 5066,
+      "ring_guest": "0x09752580",
+      "packet_ordinal": 742,
+      "packet_source": "0x096C2F40+19632"
+    }
+  ],
+  "interrupt_dispatch": {
+    "source": 1,
+    "cpu_mask": "0x04",
+    "dispatched_cpu_mask": "0x04",
+    "dispatch_callback_cpu": 2,
+    "dispatch_callback": "0x823B37B8",
+    "dispatch_data": "0xB7365F00",
+    "dispatch_status": "invoked",
+    "stop_context_guest_target": "0x823B37B8",
+    "stop_context_host_chain": [
+      "FunctionDispatcher::Execute",
+      "FunctionDispatcher::ExecuteInterrupt",
+      "ShiftNativeGraphicsSystem::DispatchGuestInterrupt"
+    ],
+    "capture_counts": {
+      "records": 1928,
+      "source1_records": 1928,
+      "generation_values": [
+        1
+      ],
+      "cpu_mask_values": [
+        "0x04"
+      ],
+      "malformed_records": 0
+    }
+  },
+  "nested_guest_callbacks_near_native_write": [
+    {
+      "time": "2026-10-28 03:37:45.284 +03:00",
+      "trace_sequence": 2283,
+      "callback": "0x823A4758",
+      "data": "0x208",
+      "delta_ms_from_counter_write": 10
+    },
+    {
+      "time": "2026-10-28 03:37:45.319 +03:00",
+      "trace_sequence": 2288,
+      "callback": "0x823A4758",
+      "data": "0x208",
+      "delta_ms_from_counter_write": 45
+    },
+    {
+      "time": "2026-10-28 03:37:45.185 +03:00",
+      "trace_sequence": 2271,
+      "callback": "0x823B8C60",
+      "data": "0xC969C980",
+      "delta_ms_from_counter_write": -89
+    },
+    {
+      "time": "2026-10-28 03:37:45.232 +03:00",
+      "trace_sequence": 2278,
+      "callback": "0x823B8C60",
+      "data": "0xC96CE180",
+      "delta_ms_from_counter_write": -42
+    }
+  ],
+  "xenos_counter_operation_6": {
+    "local_time": "2026-10-28 03:35:28.172 +03:00",
+    "trace_sequence": 2301,
+    "write_index": 6,
+    "guest_address": "0xB7368A04",
+    "transition": "1 -> 2",
+    "signed_delta": 1,
+    "thread": "Core 0/0: Main",
+    "caller": "sub_823B31A0",
+    "producer": {
+      "producer_call": 859,
+      "tag": 35,
+      "record": "0xA95E88B8",
+      "counter_before": 1,
+      "counter_after": 2,
+      "event_time": "2026-10-28 03:35:28.183 +03:00"
+    },
+    "queue_completions": [
+      {
+        "event_id": 870,
+        "parent_dequeue_id": 867,
+        "parent_record": "0xC9748680",
+        "token": "0xC0000000",
+        "expected_delta": 0,
+        "signed_delta": 0,
+        "entry_time": "2026-10-28 03:35:28.012 +03:00",
+        "return_time": "2026-10-28 03:35:28.045 +03:00"
+      },
+      {
+        "event_id": 879,
+        "parent_dequeue_id": 873,
+        "parent_record": "0xC9748680",
+        "token": "0xC0000000",
+        "expected_delta": -1,
+        "signed_delta": -1,
+        "entry_time": "2026-10-28 03:35:28.244 +03:00",
+        "return_time": "2026-10-28 03:35:28.300 +03:00"
+      }
+    ],
+    "nested_callback": {
+      "time": "2026-10-28 03:35:28.176 +03:00",
+      "callback": "0x823A4758",
+      "data": "0x208"
+    }
+  },
+  "queue_end": {
+    "native": {
+      "queue": "0xB7368BE0",
+      "producer": 595,
+      "consumer": 394,
+      "observed_backlog": 201
+    },
+    "xenos": {
+      "queue": "0xB7368BE0",
+      "producer": 146,
+      "consumer": 146,
+      "observed_backlog": 0
+    }
+  },
+  "interpretation_and_limits": [
+    "The native counter write is directly enclosed by the matching 0xC0000000 completion event and belongs to its parent dequeued record in the P1 event trace.",
+    "PM4 ordinal 1121 is 12 ms after the counter write; the nested guest callback 0x823A4758(data=0x208) is 10 ms after it. This is close temporal correlation, not a proven one-to-one causal join.",
+    "The ring log records the outer 0x823B37B8 dispatch but does not propagate an interrupt ordinal into the nested callback or worker completion.",
+    "Xenos is recorded as a paired comparison, not as a semantic oracle. Its sixth counter operation is a tag-35 producer increment, while Native's is a completion decrement.",
+    "This capture does not establish retail render parity or authorize changing counter/completion semantics."
+  ]
+}

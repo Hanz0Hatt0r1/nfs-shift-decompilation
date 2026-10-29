@@ -1,0 +1,147 @@
+{
+  "schema": "shift.process2.repeated_sampler_glsl_symbols.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "implementation_commit": "99ebea14352e6bc27097cbc77ec76dba06f39792",
+  "capture": {
+    "root": "/home/pes/work/nfs-shift-p1-native-sampler-fix-20261028",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "native_plugin_sha256": "5448535186919fed6eac7ba68185ba7dc1712a4dfd20e9e7fab1b46c6aa48907",
+    "native_plugin_build_id": "d9bf24aabafcc2cedaaf6c30d03167eae17f43f0",
+    "native_plugin_source_commit": "99ebea14352e6bc27097cbc77ec76dba06f39792",
+    "pair": {
+      "duration_seconds_each": 135,
+      "order": [
+        "Xenos",
+        "Native"
+      ],
+      "both_reached_bink_progress": "281/281",
+      "native_submitted_frame": 322,
+      "native_source1_interrupts": 1974,
+      "native_source1_cpu_mask": "0x04",
+      "native_source1_callback": "0x823B37B8",
+      "native_ring_pointer_wraps": 3,
+      "qualification": "Xenos has no equivalent raw-ring capture in this pair; interrupt counts do not explain the first producer/completion mismatch or prove nested callback effects."
+    },
+    "ordered_refresh": {
+      "log": "runs/shift-native-r1/bin/logs/nfs_shift_001.1.log",
+      "log_sha256": "c03e5e576d830571452015f9cf80b9943c7c1fed65486d9cd352fdc98c1b6966",
+      "draw_list_line": 2025,
+      "draw_list_line_sha256": "216e18186ac48140594d82a75af7ccedc92ad3c7752a6495a80240937ecae7c9",
+      "operation_shape": "14 Draw operations with packets 0..13, then Copy packet 38",
+      "draw10_register_state": {
+        "valid_mask": "0x1ffff",
+        "surface_info": "0x14000500",
+        "color_info": "0x00010000",
+        "depth_info": "0x000002d0",
+        "mode_control": "0x00000004",
+        "raster": "1280x720, pitch 1280, 1 sample",
+        "depth_test": true,
+        "depth_write": false,
+        "stencil": false,
+        "scissor": "full"
+      }
+    },
+    "failure": {
+      "log_line": 7737,
+      "line_sha256": "73893aabdfaa4a1cc7d16a2ddb60169bf37804466c85bb0eed3e1111063511eb",
+      "diagnostic": "unresolved captured draw #10 topology=2 autoindex=true count=24 raster=true inputs=true translated=true: captured format-26 texture has no preceding exact all-sample Copy/Convert",
+      "pixel_shader_bytes_retained": false,
+      "evidence_limit": "The captured Native run clears the duplicate GLSL-local failure but does not retain exact draw-10 pixel-shader bytes and does not create/submit the draw pipeline."
+    },
+    "native_only_replay": {
+      "duration_seconds": 137.661,
+      "mode": "Native only; no Xenos comparison replay",
+      "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+      "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+      "gdb_exit": 0,
+      "bink_progress": "281/281",
+      "log": "runs/shift-native-r1/bin/logs/nfs_shift_001.1.log",
+      "log_sha256": "c03e5e576d830571452015f9cf80b9943c7c1fed65486d9cd352fdc98c1b6966",
+      "operation_snapshot": {
+        "line": 2025,
+        "line_sha256": "216e18186ac48140594d82a75af7ccedc92ad3c7752a6495a80240937ecae7c9",
+        "shape": "14 Draw operations with packets 0..13 followed by Copy packet 38; capture is a command snapshot, not proof of successful draw submission"
+      },
+      "draw10": {
+        "line": 7737,
+        "line_sha256": "73893aabdfaa4a1cc7d16a2ddb60169bf37804466c85bb0eed3e1111063511eb",
+        "result": "raster=true inputs=true translated=true; now rejected because the preceding format-26 Copy/Convert source did not match the plugin logical-size source check",
+        "prior_glsl_duplicate_local_error": "not present on this draw in the replay; draw advanced through shader translation"
+      },
+      "source1_interrupts_in_this_log": 782,
+      "source1_cpu_mask": "0x04",
+      "source1_callback": "0x823B37B8",
+      "raw_shader_dump": "Exact draw-10 pixel-shader bytes were not retained; the run-time dump selector still did not select this packet."
+    },
+    "format26_followup_replay": {
+      "capture_directory": "/home/pes/work/nfs-shift-p1-native-format26-exact-fix-20261028",
+      "plugin_sha256": "f65edaa4b95627871d334cbaa5ccb4e545c0784552f16e776e5ece02aff261eb",
+      "plugin_build_id": "71abe9ca09b7e14ea6b0da1867a7676e17180484",
+      "log1_sha256": "57a013eea5ae5142060a736eafea5f2914f40e6e63006ba060a0165f2d60b5e0",
+      "log2_sha256": "ff43bd0baee593554cbd99e42f3e48456b783a55894a672825867e3eeab0aa90",
+      "draw10": "No unresolved draw #10 entry; format-26 matcher passed.",
+      "next_failure": "seven 24-draw refreshes reject packet 72 before vkCmdDraw/vkQueueSubmit because the runtime provider did not enable depth/stencil resolve; one other refresh fails at incomplete raster state.",
+      "representative_error_line": 7124,
+      "representative_error_sha256": "2a4087ac605404df8e5026d7b8d7e9d8a62e766a0924bb2b37c53bdd0a9321ed",
+      "source1_interrupts": 1972,
+      "source1_cpu_mask": "0x04",
+      "source1_callback": "0x823B37B8",
+      "limits": "There are separate presenter submissions in these logs, but they are not submissions of the packet-72 segment and do not establish retail parity."
+    }
+  },
+  "implementation": {
+    "files": [
+      "native_vulkan/src/xbox_shader_translate.cpp",
+      "native_vulkan/tests/xbox_shader_translate_check.cpp"
+    ],
+    "behavior": "Count executed texture fetches by fetch constant. Keep existing GLSL local names for a single use; when a fetch constant is sampled multiple times, suffix each sampled/fetched temporary with its fetch ordinal. The sampler uniform binding and fetch semantics are unchanged.",
+    "runtime_status": "Two bounded Native-only replays confirm progression: the shader-local fix passes draw #10 translation, and the format-26 source-layout fix removes draw #10 from unresolved diagnostics. The latest stream now reaches packet 72, where the Process 1-created provider has resolve disabled; no Vulkan submission for that segment is confirmed."
+  },
+  "regression": {
+    "basis": "A bounded reproduction extends the repository's captured retail pixel-shader slice with a second executed texture fetch at instruction 6 using the same fetch constant as instruction 4.",
+    "exact_draw10_shader": false,
+    "assertions": [
+      "Both executed fetches share sampler binding 0.",
+      "Generated sampled_0_fetch_0/fetched_0_fetch_0 and sampled_0_fetch_1/fetched_0_fetch_1 locals are distinct.",
+      "The existing single-fetch captured shader keeps its sampled_0/fetched_0 names."
+    ],
+    "classification": "Shader-source name-collision regression; not a captured draw-10 shader replay or retail parity result."
+  },
+  "verification": {
+    "native_linux": {
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "ctest": "passed 4/4"
+    },
+    "linux_rexglue_plugin": {
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "ctest": "passed 6/6",
+      "plugin_sha256": "5448535186919fed6eac7ba68185ba7dc1712a4dfd20e9e7fab1b46c6aa48907",
+      "build_id": "d9bf24aabafcc2cedaaf6c30d03167eae17f43f0",
+      "vulkan_minimum": "1.1"
+    },
+    "glsl_vulkan11": {
+      "glslangValidator": "passed -V --target-env vulkan1.1 -S frag on generated repeated-fetch shader",
+      "spirv_val": "passed --target-env vulkan1.1"
+    },
+    "android_arm64_api26": {
+      "translator_check": "compiled",
+      "binary_sha256": "7244d7396a783f7eab2f33bfb74cdb7319ade960d2d8beab504f44fde113095a",
+      "plugin": "librexgpu-shift-natived.so",
+      "plugin_sha256": "b69817b653f14afd3c47e02d7627fd38c642575660c97508adf993bec1472e76",
+      "build_id": "012b84c95a650c9534f0d5fe99d78d5ca373ac4f",
+      "elf": "64-bit AArch64, Android API 26",
+      "device_execution": "not run; adb devices -l returned no connected devices"
+    },
+    "diff_check": "git diff --check passed"
+  },
+  "remaining_blockers": [
+    "Process 1 runtime must opt into the SDK depth/stencil resolve provider overload; replay the matching runtime and SDK-PR2-built P2 DSO to check packet 72.",
+    "The original draw-10 pixel-shader bytes were not preserved; the unit regression reproduces the duplicate-local failure pattern rather than those exact bytes.",
+    "Draws 12, 22, and 24 still have separately reported unsupported shader control-flow or texture-sign cases.",
+    "The ordered 14-draw EDRAM/Copy/Convert transition still lacks shared physical EDRAM persistence, generic copy/conversion, and intermediate-image parity."
+  ]
+}

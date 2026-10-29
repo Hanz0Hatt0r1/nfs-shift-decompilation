@@ -1,0 +1,106 @@
+{
+  "schema": "shift.process2.redmi_resolve_provider_live_run.v1",
+  "date": "2026-10-25",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 30182,
+    "activity_remained_resumed": true
+  },
+  "source": {
+    "process2_branch": "work/process2-xbox-live-ring-20261023",
+    "process2_commit": "c69de3f2393e32f164ff7cc0581351bf24bfa730",
+    "apk_sha256": "5006ed47a1510a2389d48de9a27ef0f7a4b8a7c8f8719249b14f242963662305",
+    "plugin_sha256": "f84281d8b48cad561f246fa4bf9e58172960ace16193bcd3dcd44d848b9a2f03",
+    "plugin_build_id": "63b26354123b2e2755d39e89612abf29d0e10777",
+    "runtime_dso_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "previous_installed_apk_sha256": "0e574c0a7a92a2cf07a87c245aebe8b657dcd7ad392ffa6ecb651b1877e0b40a"
+  },
+  "installation": {
+    "method": "adb install -r",
+    "install_time_local": "2026-10-25T17:01:05+03:00",
+    "device_apk_sha256_matches_candidate": true,
+    "game_data_cleared": false,
+    "game_assets_changed": false,
+    "two_plugin_aliases_replaced": true,
+    "game_process_launched": true
+  },
+  "renderer": {
+    "provider_logged_depth_stencil_resolve_extension": true,
+    "extension_log_time_local": "2026-10-25T17:01:11.605+03:00",
+    "successful_presenter_submissions": 1285,
+    "accepted_copy_convert_operations": 1285,
+    "captured_indexed_draw_packets": 12482,
+    "first_submission_local": "2026-10-25T17:01:14.683+03:00",
+    "last_submission_local": "2026-10-25T17:02:28.884+03:00",
+    "measurement_seconds": 74.201,
+    "submission_rate_per_second": 17.317,
+    "refresh_failures": 0,
+    "unresolved_draws": [
+      {
+        "draw": 0,
+        "time_local": "2026-10-25T17:01:13.958+03:00",
+        "reason": "incomplete captured raster register state",
+        "valid_mask": "0x17038"
+      }
+    ]
+  },
+  "guest_transition": {
+    "menu_background_probe_failures": [
+      {
+        "path": "d:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+        "time_local": "2026-10-25T17:02:29.246+03:00",
+        "status": "0xc000000f"
+      },
+      {
+        "path": "d:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+        "time_local": "2026-10-25T17:02:29.253+03:00",
+        "status": "0xc000000f"
+      }
+    ],
+    "last_presenter_submission_precedes_probes": true,
+    "causal_relationship_established": false,
+    "process_remained_alive": true,
+    "later_screenshot_same_hash_as_first_disclaimer": true
+  },
+  "visual_evidence": {
+    "loading": {
+      "file": "process2_redmi_resolve_provider_live_loading_20261025.png",
+      "sha256": "36ece6a72c35cf260e3765351b33168bf5634e83b19e1e1681a75621cb479ca8",
+      "captured_at_local": "2026-10-25T17:01:21.906+03:00"
+    },
+    "title_sequence": {
+      "file": "process2_redmi_resolve_provider_live_title_20261025.png",
+      "sha256": "8963e23ca3aa060fa82966816285cd535720935bb185c6f9eb13615cd6db4be4",
+      "captured_at_local": "2026-10-25T17:02:04.888+03:00"
+    },
+    "legal_disclaimer": {
+      "file": "process2_redmi_resolve_provider_live_disclaimer_20261025.png",
+      "sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+      "captured_at_local": "2026-10-25T17:03:08.744+03:00",
+      "observation": "Original legal text is visible; thin horizontal image fragments remain near the upper and lower edges."
+    }
+  },
+  "renderer_log": {
+    "file": "process2_redmi_resolve_provider_live_20261025.log.gz",
+    "sha256": "69309bb2b3f0edd990053a78a4aeeac58b652f404e9a6d81e32febc7f35390af",
+    "uncompressed_bytes": 439105
+  },
+  "diagnostic_harnesses": {
+    "resolve_capability_check_outside_app": "Aborted with std::bad_cast during C++ runtime initialization when run from /data/local/tmp.",
+    "plugin_dlopen_check_outside_app": "Segfaulted in librexruntimed.so constructor when loaded from a bare shell process.",
+    "interpretation": "These shell harnesses do not reproduce the app's runtime initialization. The actual app then loaded this APK and submitted retail Vulkan draws; the shell failures are retained as separate diagnostics and are not treated as plugin launch failures."
+  },
+  "scope_and_limits": [
+    "The live run confirms the resolve-enabled provider can load in the real app process on this device and sustain Vulkan submissions through the captured startup sequence.",
+    "The language selector was not captured; its labels on Mali remain unverified.",
+    "The game stopped submitting after the menu_background.xml path probes; no causal claim is made and no Process 1 files were changed.",
+    "This run does not establish sustained menu/race rendering or full retail parity.",
+    "The app remains open on the device; no force-stop or data reset was performed."
+  ]
+}

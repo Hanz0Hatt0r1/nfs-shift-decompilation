@@ -1,0 +1,88 @@
+{
+  "format": "SHIFT.Process2RedmiNote8ProVulkanFrame10Pixels/1",
+  "observed_at": "2026-10-25T03:27:00+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "build_fingerprint": "Redmi/begonia/begonia:11/RP1A.200720.011/V12.5.8.0.RGGMIXM:user/release-keys",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:33153",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "activity": "org.libsdl.app.NfsShiftActivity"
+  },
+  "build": {
+    "renderer": "project-owned native Vulkan live-ring renderer",
+    "plugin_sha256": "63fbacd91701699926ee145f1b80b8d4f90c7a306c41cc4283bb00ab6d92b7e4",
+    "apk": "nfsshift-retail-frame10-20261025-alias-debug.apk",
+    "apk_sha256": "679258d8c3ee1a1e1402e3750e1e083fa7f71c7e6f1bdc657f6e57614fde0051",
+    "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "plugin_entries": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "plugin_entries_identical": true,
+    "android_target_api": 29,
+    "debug_readback_target_submitted_frame": 10,
+    "tracy": false
+  },
+  "retail_data": {
+    "files": 2098,
+    "bytes_transferred": 4130818991,
+    "default_xex_sha256_host_and_device": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "bootsplash_bff_sha256_host_and_device": "656795d9967716bdc8ab14a1961ebd0fd805494d46c3126008735b104905517e"
+  },
+  "retail_draw_evidence": {
+    "runtime_log": "process2_redmi_note8pro_vulkan_frame10_pixels_20261025.log",
+    "runtime_log_sha256": "363f6dc233b711ca6949b301ec7d78569bba9e6f2210819aada5b0cb3c5a886a",
+    "submitted_frame": 10,
+    "submitted_draw_count": 5,
+    "copy_convert_accepted": true,
+    "fragment_color_override": false,
+    "vulkan_device": "Mali-G76 MC4",
+    "presenter_swapchain_extent": "2340x1080",
+    "output_readback": {
+      "extent": "1280x720",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "file": "process2_redmi_note8pro_vulkan_frame10_pixels_20261025.bin",
+      "bytes": 3686400,
+      "sha256": "94227846bdd782d9edf4e979f09f15c6c817604ab2b221916ac34c9971546246",
+      "non_black_pixels": 59103,
+      "fnv1a": "0FED7AEE9AE4656E"
+    }
+  },
+  "decoded_output_image": {
+    "file": "process2_redmi_note8pro_vulkan_frame10_pixels_20261025_decoded.png",
+    "sha256": "7ed69a4e1cf42f52d9bb3fbf7fae68144c4543ced60b8f7b5f00927eade116d5",
+    "extent": "1280x720",
+    "decoder": "Read little-endian uint32 pixels; R=bits 0-9, G=bits 10-19, B=bits 20-29, A=bits 30-31; scale UNORM channels to 8-bit RGBA.",
+    "validated_non_black_pixel_count": 59103,
+    "observed": "The decoded readback contains the same retail SHIFT loading screen as the device screenshot."
+  },
+  "device_screenshot": {
+    "file": "process2_redmi_note8pro_vulkan_frame10_pixels_20261025.png",
+    "observed_at": "2026-10-25T03:28:06+03:00",
+    "sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+    "extent": "2340x1080",
+    "top_resumed_activity": "org.libsdl.app.NfsShiftActivity",
+    "observed": "The phone displays the complete Loading text, yellow-orange filled progress segment, dark-gray empty segment, and SHIFT logo. The screenshot remained the same after later 24-draw refresh failures."
+  },
+  "later_runtime": {
+    "captured_draws": 24,
+    "refresh_failures": 8,
+    "failure_reason": "mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability",
+    "limitation": "This APK packages the older ReXGlue provider snapshot, which does not expose the opt-in depthStencilResolveSampleZero capability used by the separate provider integration. The renderer correctly fails closed."
+  },
+  "checks": {
+    "game_data_copy": "2098 files transferred; default.xex and BOOTSPLASH.bff SHA-256 matched host source",
+    "apk_signature": "apksigner verification passed",
+    "vulkan_instance_and_device": "passed; Mali-G76 reports Vulkan 1.1.131",
+    "native_retail_frame_readback": "passed at submitted frame 10; output visually matches the device screenshot"
+  },
+  "limitations": [
+    "This proves actual retail loading-screen graphics through the native Vulkan renderer, not synthetic rendering.",
+    "The loading scene is not the game menu or a race scene; full visual parity is not established.",
+    "Later 24-draw frames are not refreshed on this APK because its older provider lacks the enabled depth/stencil resolve capability."
+  ]
+}

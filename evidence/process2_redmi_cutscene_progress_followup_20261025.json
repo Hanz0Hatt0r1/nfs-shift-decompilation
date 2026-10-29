@@ -1,0 +1,54 @@
+{
+  "schema": "shift.process2.redmi_cutscene_progress_followup.v1",
+  "date": "2026-10-25",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 6314
+  },
+  "source_movie": {
+    "filename": "Franchise_Ident.bik",
+    "sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+    "duration_seconds": 9.376015,
+    "path_on_device": "/sdcard/Android/data/com.hanz0hatt0r.nfsshift/files/game/Movies/Franchise_Ident.bik"
+  },
+  "captures": [
+    {
+      "file": "process2_redmi_cutscene_progress_e_20261025.png",
+      "sha256": "8d410a3ecccae53e675d8f9346d7967aac4dff51ba5d4912b49f7dd2a1091bc5",
+      "local_capture_time": "2026-10-25T15:15:28.494+03:00",
+      "best_source_match_seconds": 0.7,
+      "pearson_grayscale_correlation": 0.85931
+    },
+    {
+      "file": "process2_redmi_cutscene_progress_f_20261025.png",
+      "sha256": "91117bd4e6671cbd773ae44023d82ebd437a11a44e78f696e6bc9285972f65dd",
+      "local_capture_time": "2026-10-25T15:16:55.057+03:00",
+      "best_source_match_seconds": 4.3,
+      "pearson_grayscale_correlation": 0.91819
+    }
+  ],
+  "comparison": {
+    "method": "Resize the phone viewport and retail Bink samples to 160x90 grayscale, sample the retail source at 10 fps, and choose the maximum normalized Pearson correlation.",
+    "wall_seconds": 86.563,
+    "retail_source_seconds_advanced": 3.6,
+    "estimated_playback_rate": 0.04159,
+    "interpretation": "The live native Vulkan output advances through the original Franchise_Ident video at about 4.2% of its source rate. It continues showing intro-video frames rather than reaching the startup menu during this sample."
+  },
+  "installed_build": {
+    "plugin_includes_r8_native_plane_path": false,
+    "candidate_apk_sha256": "e21061537fa3d659504a18c75c8adcb3afb226056a6b4a623e1c0cd98ccc26c3",
+    "candidate_source_commit": "9b0057264d28a4b31738f24eadbd25a03a340783",
+    "candidate_installed": false,
+    "game_process_restarted": false
+  },
+  "limits": [
+    "Source positions are nearest matches from a 10-fps sample and are quantized to 0.1 seconds.",
+    "This is a live playback-rate observation, not a before/after speedup result; the installed app predates the R8 native-plane and row-copy optimizations.",
+    "The sample does not establish whether the intro loop requires input or identify the guest/runtime cause of the slow rate.",
+    "No language-selector or later gameplay frame was captured."
+  ]
+}

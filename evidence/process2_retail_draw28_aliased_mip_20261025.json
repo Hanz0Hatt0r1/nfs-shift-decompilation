@@ -1,0 +1,51 @@
+{
+  "schema": "SHIFT.Process2RetailDraw28AliasedMip/1",
+  "observed_at": "2026-10-25T00:27:23+03:00",
+  "retail_observation": {
+    "run": "process2-linux-draw29-retail-20261025",
+    "log": "bin/logs/nfs_shift_001.log",
+    "log_sha256": "59a99ef1da262e64c30ed053b4bdde1a464b89c5767c04acbb747e6b377e3982",
+    "draw": 28,
+    "topology": 0,
+    "autoindex": true,
+    "count": 6,
+    "previous_result": "Rejected as unsupported captured texture-fetch descriptor before input capture or shader submission.",
+    "descriptor_words": [
+      "0x840248fe",
+      "0x0a24b054",
+      "0x0000e1ff",
+      "0x06a80d10",
+      "0x00000e43",
+      "0x0a24ba10"
+    ],
+    "decoded_contract": {
+      "format": 20,
+      "endian_mode": 1,
+      "extent": [512, 8],
+      "tiled_pitch_pixels": 512,
+      "base_address": "0x0a24b000",
+      "mip_address": "0x0a24b000",
+      "mip_range": [0, 9],
+      "mip_filter": 1,
+      "base_storage_bytes": 65536,
+      "decoded_rgba8_bytes": 16384
+    }
+  },
+  "change": "Accept the exact nonzero base/mip page alias as one available base level. The renderer already allocates a one-level Vulkan image and clamps sampler maxLod to zero. Keep rejecting mip descriptors that require a distinct page/subresource payload.",
+  "checks": {
+    "linux_native_ctest": "4/4 passed, including decoding and untiling synthetic DXT5 blocks for the exact retail descriptor and rejection of a distinct mip page.",
+    "linux_rexglue_plugin_ctest": "3/3 passed after rebuilding the plugin.",
+    "android_arm64_device": {
+      "device": "Redmi Note 8 Pro (Mali-G76 MC4)",
+      "adb_serial": "192.168.1.32:33153",
+      "test": "shift_xbox_draw_input_check",
+      "exit_code": 0,
+      "binary_sha256": "309fa86021b7583981e2edafbd3a9d55d569c9609d6647d318b48a137435f46f"
+    }
+  },
+  "limitations": [
+    "The texture bytes used by the decode/untile regression are synthetic; this verifies layout and bounds, not the retail texture pixels.",
+    "The currently open game process uses the prior plugin build and was left running. A new retail run has not yet confirmed draw 28 reaches Vulkan submission with this change.",
+    "Descriptors with a distinct mip page and their mip payloads remain unsupported. This does not establish retail image parity."
+  ]
+}

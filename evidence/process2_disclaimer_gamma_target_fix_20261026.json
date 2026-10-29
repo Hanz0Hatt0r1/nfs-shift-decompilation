@@ -1,0 +1,103 @@
+{
+  "schema": "shift.process2.disclaimer_gamma_target_fix.v1",
+  "date": "2026-10-26",
+  "process2": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "head_at_build": "3f4a779049410d7e1b48e39cba6c41c0bd794087",
+    "dirty_worktree": true
+  },
+  "retail_reference": {
+    "capture": "process2_disclaimer_draw_isolation_20261026.json",
+    "submit": 907,
+    "draw_ids": [5058, 5059, 5060, 5061],
+    "texture_address": "0x0A24B000",
+    "texture_format": "Xenos format 20 / DXT4-5",
+    "texture_extent": [512, 8],
+    "target_format": "RGBA8_GAMMA"
+  },
+  "correction": {
+    "observed_problem": "Gamma-target translated draw shaders encoded their output before blending into the linear UNORM16 intermediate, then Copy/Convert encoded it again.",
+    "new_behavior": "Use the linear-target shader for RGBA8_GAMMA draws when the frame uses the linear UNORM16 intermediate; apply Xenos gamma encoding once in Copy/Convert.",
+    "covered_paths": [
+      "regular 4x-MSAA gamma target and multisample Copy/Convert",
+      "mixed 4x-to-1x gamma target and single-sample Copy/Convert"
+    ],
+    "untouched": [
+      "captured texture bytes and DXT4-5 decoding",
+      "captured strip vertices, UV coordinates, and blend register values",
+      "Process 1 runtime files"
+    ]
+  },
+  "verification": {
+    "renderer_ctest": {
+      "passed": 4,
+      "total": 4,
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "host": "Linux offscreen Vulkan"
+    },
+    "plugin_ctest": {
+      "passed": 5,
+      "total": 5,
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "host": "Linux offscreen Vulkan"
+    },
+    "gamma_regression": "Synthetic fragment shaders assert that 0.25 stays linear in the UNORM16 intermediate and becomes approximately 0.498 in final Xenos 10-bit output."
+  },
+  "android_device_renderer_check": {
+    "status": "passed",
+    "device": "Redmi Note 8 Pro / Mali-G76 MC4 / Vulkan 1.1",
+    "execution": "Ran the ARM64 offscreen renderer-check executable directly from /data/local/tmp; no APK or game process was used.",
+    "result": "The renderer regression completed, including the synthetic 4x gamma-target path and mixed 4x-to-1x gamma Copy/Convert path.",
+    "validation_layer": "Not requested for this shell run; Linux core and plugin CTests used VK_LAYER_KHRONOS_validation.",
+    "binary": {
+      "path": "/home/pes/work/process2-android-renderer-check-async-build/xbox_live_vulkan_renderer_check",
+      "sha256": "36ca92ab8cbe558bb02227902ebcc050346e0ef682b03b5aec48f60982dd7f61",
+      "build_id": "879f89bb84f1a7324ea04e2307975a534bfb7484"
+    },
+    "output": "synthetic offscreen Vulkan 1.1 AutoIndex point and rectangle-list draw plus 4x-to-1x depth/stencil SAMPLE_ZERO preservation and 4:1 anisotropy sampler and captured sample-zero Copy/Convert passed on Mali-G76 MC4"
+  },
+  "artifacts": {
+    "linux_plugin": {
+      "path": "/home/pes/work/rexglue-sdk-rexui-vulkan-20261023/out/linux-amd64/librexgpu-shift-native.so",
+      "sha256": "1ed00fc4e497f9a815fd5729e80a5ffdb3ee948447e3fd77db9b9e67a92c84db",
+      "build_id": "426e3d67ed2424868f1514154d5b6eac594ed345"
+    },
+    "android_arm64_plugin": {
+      "path": "/home/pes/work/process2-android-inflight-plugin/plugin-output/librexgpu-shift-natived.so",
+      "sha256": "be0d203a2522e3bc7a06e5001521d647bacc3d9b438e15a5ab31a6551030d459",
+      "build_id": "17d82d188418bf8e0698bfd6262357996541d15f",
+      "abi": "arm64-v8a",
+      "minimum_android_api": 29,
+      "build": "success"
+    }
+  },
+  "visual_check": {
+    "status": "pending fresh retail capture",
+    "latest_available_screenshot": "process2_redmi_disclaimer_live_20261026.png",
+    "latest_screenshot_uses_corrected_plugin": false,
+    "process1_handoff": "Linux and Android ARM64 plugin binaries were sent to Process 1; the Android package needs a fresh retail capture."
+  },
+  "android_install_attempt": {
+    "status": "failed_insufficient_storage",
+    "device": "Redmi Note 8 Pro / Android 13 / Mali-G76 MC4",
+    "internal_free_before_attempt_mb": 488,
+    "internal_free_after_data_preserving_uninstall_mb": 619,
+    "external_storage": "Public SD volume 6FF5-35AA has 19 GB free but is not adoptable for application installation.",
+    "actions": [
+      "Repeated install attempts failed with INSTALL_FAILED_INSUFFICIENT_STORAGE or the public-SD volume was rejected for app installation.",
+      "The existing package was uninstalled with `cmd package uninstall -k`; package data/cache were retained.",
+      "A cache-only trim raised free space to 979 MB; the updated APK still failed to install. Further cache trimming did not recover enough space."
+    ],
+    "internal_free_current_mb": 779,
+    "package_currently_registered": false,
+    "app_data_cleared": false,
+    "previous_signed_apk_backup": "/home/pes/work/process2-latest-renderer-handover-20261026/android-pm4-interrupt-order-20261026/nfsshift-process2-pm4-interrupt-order-20261026.apk",
+    "updated_signed_apk": "/home/pes/work/process2-latest-renderer-handover-20261026/android-disclaimer-gamma-target-20261026/nfsshift-disclaimer-gamma-target-20261026.apk",
+    "updated_apk_sha256": "69150ffaa64bf2d2ab75942651b5fe7bbee982e3a64622d68b312eeb4a5eeded"
+  },
+  "limits": [
+    "The shader regressions are synthetic and validate the gamma pipeline, not full retail image parity.",
+    "The saved Linux and Redmi screenshots predate the corrected plugins.",
+    "No independent Xenos reference image was available for the disclaimer strips."
+  ]
+}

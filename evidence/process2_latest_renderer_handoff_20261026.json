@@ -1,0 +1,63 @@
+{
+  "schema": "shift.process2.latest_renderer_handoff.v1",
+  "date_local": "2026-10-26",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "commit": "02696e693206f9c068ef5e21b39284072b14fe20"
+  },
+  "linux_x86_64": {
+    "plugin_path": "/home/pes/work/process2-latest-renderer-handover-20261026/linux-amd64/librexgpu-shift-native.so",
+    "plugin_sha256": "dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1",
+    "plugin_build_id": "60e3a7549235b97386d145ada68592df8de1590e",
+    "runtime_path": "/home/pes/work/process2-latest-renderer-handover-20261026/linux-amd64/librexruntime.so",
+    "runtime_sha256": "127181adbfb99b65e9d1a8f1d6aed12308e1cf320b86067588ad421f17eda68e",
+    "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "build_command": "cmake --build /home/pes/work/process2-p1-ring-trace-resolve-build-20261026 --target rexgpu-shift-native --parallel 4",
+    "link_check": "ldd -r completed with no undefined symbols",
+    "plugin_ctest": {
+      "passed": 5,
+      "total": 5,
+      "validation_layer": "VK_LAYER_KHRONOS_validation forced by VK_INSTANCE_LAYERS; LastTest.log confirms loader inserted it",
+      "last_test_log_sha256": "fd316dc36d451abdf76669129c84ab3fc0d0786f4ea672b1ba32ad096e239363",
+      "compressed_log_file": "process2_latest_renderer_plugin_ctest_20261026.log.gz",
+      "compressed_log_sha256": "942861f016151075f4daf113a9212d78c117fecc8db3256c84d63279ab793ce1"
+    }
+  },
+  "native_vulkan_core": {
+    "build_dir": "/home/pes/work/process2-native-vulkan-current-20261026",
+    "build_command": "cmake --build /home/pes/work/process2-native-vulkan-current-20261026 --parallel 4",
+    "ctest": {
+      "passed": 4,
+      "total": 4,
+      "validation_layer": "VK_LAYER_KHRONOS_validation forced by VK_INSTANCE_LAYERS",
+      "last_test_log_sha256": "eda08c60df6c75b83cd545f2bd3754f5e238bc515eeb2dcd3fb99624ef3a2fb9",
+      "compressed_log_file": "process2_latest_native_vulkan_ctest_20261026.log.gz",
+      "compressed_log_sha256": "880e2f543af1bffcb1e3752c8dab8ab7b302af1b1933785ad3b492d0f6927de9"
+    },
+    "relevant_regression": "shift_xbox_shader_translate_check checks nonzero Xenos interpolator exports retain Vulkan location 1 and the pixel shader consumes r[1]."
+  },
+  "android_redmi_note_8_pro": {
+    "apk_path": "/home/pes/work/process2-latest-android-vulkan-candidate-20261026/app-process2-vulkan-latest-20261026.apk",
+    "apk_sha256": "e9185d08d8391589e567abaff4f84629fb5cc89d68bc53c2269c4df9136c10c9",
+    "installed_apk_sha256_matches_candidate": true,
+    "android_plugin_aliases_sha256": "53eda9ca564c7f968dbd5405c87c0dbb6278f27830a007859a8ff6656da5e13b",
+    "runtime_dso_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a",
+    "apk_signature_v3_verified": true,
+    "zipalign_verified": true,
+    "language_selector_all_six_labels_visible": true,
+    "current_process_id": 17268,
+    "activity_top_resumed": true,
+    "screen": "legal disclaimer",
+    "evidence": "process2_redmi_language_selector_latest_android_20261026.json",
+    "installed_package_last_update_local": "2026-10-26 00:44:02+03:00",
+    "current_activity_top_resumed": true,
+    "current_screen": "legal disclaimer; not closed or restarted"
+  },
+  "handoff_directory": "/home/pes/work/process2-latest-renderer-handover-20261026",
+  "limits": [
+    "Linux plugin regression fixtures are synthetic; the exact current Linux DSO still needs a fresh P1 retail run.",
+    "Android was tested live through the selector, original title sequence, and disclaimer; post-disclaimer menu and race output are not verified.",
+    "Android package uses the unchanged runtime DSO because the SDK full Android target still fails on Bionic ucontext fiber calls; this is not a full runtime rebuild.",
+    "Neither result establishes complete retail parity."
+  ]
+}

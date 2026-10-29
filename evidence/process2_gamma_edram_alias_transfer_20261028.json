@@ -1,0 +1,142 @@
+{
+  "schema": "shift.process2.gamma_edram_alias_transfer.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "capture": {
+    "record": "process2_ordered_14draw_copy38_frame622_readback_20261028.json",
+    "record_sha256": "ab15b78ff1b0342a1274c65aeccdf22edae58bef081cfe5d0c9bcd7b98480d1f",
+    "presenter_frame": 622,
+    "presenter_operation_order": "indexed draws 0..13, then Copy/Convert packet 38",
+    "color_transition": {
+      "source_draws": [0],
+      "source_extent": [1280, 720],
+      "source_guest_format": 1,
+      "source_color_format": "RGBA8 gamma",
+      "source_pitch": 640,
+      "source_samples": 4,
+      "destination_draws": [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13],
+      "destination_extent": [1280, 720],
+      "destination_guest_format": 1,
+      "destination_color_format": "RGBA8 gamma",
+      "destination_pitch": 1280,
+      "destination_samples": 1,
+      "color_base_tiles": "0x0",
+      "depth_base_tiles": "0x2d0"
+    },
+    "depth_states": {
+      "draw_0_4x_color": {
+        "depth_test": true,
+        "depth_write": true,
+        "stencil_test": true,
+        "depth_control": "0x8777"
+      },
+      "draw_1_4x_depth_only": {
+        "depth_test": false,
+        "depth_write": false,
+        "stencil_test": true,
+        "depth_control": "0x8701"
+      },
+      "draw_2_first_1x_color": {
+        "depth_test": true,
+        "depth_compare_code": 7,
+        "depth_compare": "ALWAYS",
+        "depth_write": false,
+        "stencil_test": false,
+        "depth_control": "0x700772"
+      },
+      "draw_11_4x_depth_only": {
+        "depth_test": false,
+        "depth_write": false,
+        "stencil_test": true,
+        "depth_control": "0x8701"
+      }
+    },
+    "source_capture_plugin_sha256": "d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90",
+    "source_capture_gpu_emulation": "disabled"
+  },
+  "address_mapping": {
+    "tile_extent_pixels": [80, 16],
+    "alias_tiles": 720,
+    "color_alias_coordinates_identity": true,
+    "depth_alias_coordinates_identity": true,
+    "destination_to_source_mapping": "src=(tile_x*40+local_x/2,tile_y*8+local_y/2), sample=(local_y%2)*2+(local_x%2)",
+    "basis": "captured_xenos_edram_alias_tiles regression and the frame-622 captured target registers"
+  },
+  "implementation": {
+    "renderer": "the matching mixed-sample Vulkan executor stores the 4x color attachment, transitions it to shader-read layout, and inserts the Vulkan 1.1 multisample alias transfer before the first 1x guest draw",
+    "captured_depth_noop": "a depth test with compare ALWAYS, depth writes disabled, and stencil disabled has no depth/stencil attachment effect; the Vulkan pipeline disables this exact no-op state, avoiding a needless depth resolve for the isolated color transition",
+    "synthetic_frame622_ordered_replay": "the renderer regression submits all 14 captured target/depth layouts in order, including the trailing 4x stencil-only draw and final Copy38, using smoke shaders and geometry",
+    "format": "R16G16B16A16_UNORM linear intermediate; transfer fetches and writes values directly without an intermediate RGBA8 quantization",
+    "scope_guard": "only 1280x720, pitch 640/1280, 4x-to-1x, same-base, same-depth-format RGBA8 gamma targets with 720 identity aliases",
+    "fail_closed": "the exact transition is rejected if its Vulkan 1.1 alias-transfer shaders are unavailable",
+    "copy_order": "guest 1x draws and the captured format-6 Copy/Convert remain after the inserted transfer"
+  },
+  "verification": {
+    "native_linux": {
+      "build_directory": "/dev/shm/nfs-shift-p2-native-edram-alias-retry-20261028",
+      "command": "TMPDIR=/dev/shm/nfs-shift-p2-tmp-20261028 cmake --build ... --parallel 4; VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --output-on-failure",
+      "ctest_passed": 4,
+      "ctest_total": 4,
+      "validation_errors_observed": 0,
+      "physical_device": "NVIDIA GeForce GTX 950",
+      "covered_regressions": [
+        "captured-shaped gamma 4x-to-1x alias transfer",
+        "four 4x sample lanes seeded with distinct colors; every 1280x720 alias result matches a direct 1x lane-pattern baseline byte-for-byte",
+        "all four sample-lane colors remain distinguishable in the packed 10-bit red channel",
+        "captured 1x ALWAYS/no-write/no-stencil color draw matches its depth-disabled baseline without requiring a depth resolve",
+        "all 14 frame-622 target/depth layouts plus Copy38 submitted with provider-confirmed depth/stencil SAMPLE_ZERO resolve",
+        "fail-closed behavior when the exact alias-transfer shaders are absent",
+        "mixed-sample Copy/Convert and depth resolve controls"
+      ]
+    },
+    "shader_validation": {
+      "validator": "spirv-val --target-env vulkan1.1",
+      "alias_vertex_shader": "passed",
+      "alias_fragment_shader": "passed",
+      "lane_seed_fixture": "passed",
+      "lane_baseline_fixture": "passed"
+    },
+    "linux_rexglue_plugin": {
+      "sdk_commit": "b3648b0",
+      "compiler": "Clang 22.1.8",
+      "ctest_passed": 7,
+      "ctest_total": 7,
+      "validation_layer_forced": true,
+      "plugin_sha256": "f794272592ea955c66f00a11c784a56bc77baa6f2205c83fdad8269fdac5443f",
+      "plugin_build_id": "ebbb619ab5a5142d3392b62867b88848744492c0"
+    },
+    "android_arm64_compile": {
+      "abi": "arm64-v8a",
+      "minimum_api": 26,
+      "ndk": "28.2.13676358",
+      "sdk_commit": "b3648b0",
+      "plugin_sha256": "7186786583751a10d130ebc9add099f02906f790292ce28bb575988fb7a3df21",
+      "plugin_build_id": "3787a8b3f3f5afed30bf3a55971d9b0cc229881f",
+      "elf_machine": "AArch64",
+      "device_execution": false
+    },
+    "current_device_inventory": "adb devices -l returned no connected devices"
+  },
+  "result": {
+    "exact_capture_layout_recognized": true,
+    "synthetic_vulkan_alias_transfer_submitted": true,
+    "synthetic_four_lane_alias_matches_direct_1x_baseline": true,
+    "synthetic_four_lane_colors_distinct_after_transfer": true,
+    "synthetic_14_draw_copy38_layout_sequence_submitted_after_change": true,
+    "synthetic_14_draw_copy38_readback_nonblack": true,
+    "ordered_retail_14_draw_frame_replayed_after_change": false,
+    "post_change_retail_readback_captured": false,
+    "xenos_pixel_parity_established": false,
+    "retail_pixel_parity_established": false
+  },
+  "limitations": [
+    "The available frame-622 presenter and pre-Copy readbacks were produced by the plugin build named in the capture record, before this change; they are not evidence of this transfer's output.",
+    "The regression uses synthetic shader/geometry smoke inputs with the captured raster layout. It verifies Vulkan submission, address selection, and fail-closed behavior, not the retail image.",
+    "The four-lane oracle seeds multisample values and compares the alias result to a direct single-sample shader; both use synthetic shaders and do not establish retail shader or pixel parity.",
+    "The full 14-draw regression uses smoke point geometry/shaders and checks only that the readback is non-black. It is not a replay of captured retail vertex/index/resource payloads and does not establish retail pixel parity.",
+    "This is a bounded color transfer, not a shared physical EDRAM store. Prior-frame target persistence and general Copy/Convert or format-31 chains remain separate work.",
+    "The isolated color regression removes the no-op 1x ALWAYS depth test but keeps later guest depth/stencil uses conservative. The complete frame includes a later 4x stencil-only operation and may require provider-confirmed depth/stencil resolve; parity with Xenos EDRAM depth/stencil sample addressing is unverified.",
+    "The Android ARM64 artifact was compiled only. ADB found no device, so Mali execution and a game replay were not performed."
+  ]
+}

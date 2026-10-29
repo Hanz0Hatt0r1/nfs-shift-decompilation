@@ -1,0 +1,91 @@
+{
+  "schema": "shift.process2.event-write-shd-virtual-alias.v1",
+  "captured_on": "2026-10-25",
+  "retail_run": {
+    "title_id": "454108B4",
+    "default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "gpu_plugin_sha256": "42f338bc48e144e9dbc70dd208f9a169f437b506d1c338832896c1a6b83b7f10",
+    "runtime_log": "/tmp/nfs-p1-private-bin-20261025/logs/nfs_shift_020.log",
+    "runtime_log_sha256": "58562d75817f37a6590cd53fd9189b98258d112951ce17ac336bfc129c58a533"
+  },
+  "retail_packet_observation": {
+    "opcode": "PM4_EVENT_WRITE_SHD (0x58)",
+    "decoded_payload_dword_count": 3,
+    "canonical_header_if_unpredicated": "0xC0025800",
+    "header_note": "The live runtime log records decoded fields, not the raw header dword; the canonical header is derived from the validated Type-3 opcode/count framing and is not claimed as a raw-byte capture.",
+    "first_descriptor_write": {
+      "initiator": "0x00000003",
+      "encoded_physical_address": "0x17AF4002",
+      "aligned_physical_destination": "0x17AF4000",
+      "endian_mode": 2,
+      "packet_value": "0x00000003",
+      "guest_big_endian_value_before_after": ["0x00000001", "0x00000003"]
+    },
+    "next_descriptor_write": {
+      "initiator": "0x00000003",
+      "encoded_physical_address": "0x17AF4002",
+      "aligned_physical_destination": "0x17AF4000",
+      "endian_mode": 2,
+      "packet_value": "0x00000005",
+      "guest_big_endian_value_before_after": ["0x00000003", "0x00000005"]
+    },
+    "separate_rptr_writeback": {
+      "guest_physical_destination": "0x17AF403C",
+      "first_guest_big_endian_value_before_after": ["0x00000000", "0x00000019"]
+    },
+    "source_log_lines": [
+      "EVENT_WRITE_SHD #1 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000003 swap_counter=0 guest_value=00000001->00000003",
+      "EVENT_WRITE_SHD #3 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000005 swap_counter=0 guest_value=00000003->00000005",
+      "RPTR writeback #0 guest=17AF403C, translated=0x217af403c, value=00000019, memory=00000000->00000019"
+    ]
+  },
+  "implementation_audit": {
+    "decoder": "native_vulkan/src/xbox_guest_ring.cpp:219",
+    "live_handler": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp:1606",
+    "behavior": "Decode aligned physical address and Xenos endianness; use the packet value unless the counter flag is set; GpuSwap then store through TranslatePhysical. PM4_INTERRUPT callbacks are a separate path.",
+    "upstream_comparison": "Matches ReXGlue 0.10 CommandProcessor::ExecutePacketType3_EVENT_WRITE_SHD: reads initiator/address/value, applies counter selection and GpuSwap, then stores to TranslatePhysical.",
+    "retail_guest_alias": "The logged physical target 0x17AF4000 aliases guest virtual descriptor base 0xB7AF4000 in the inspected ReXGlue file-backed memory mapping."
+  },
+  "regression": {
+    "test": "rexgpu_shift_native_live_ring_check",
+    "fixture": "Synthetic PM4 EVENT_WRITE_SHD with initiator=3, encoded address=0x17AF4002, endian=2, value=3; the test seeds the guest virtual alias at 0xB7AF4000 with 1.",
+    "assertion": "After the live ring consumes the event, both TranslatePhysical(0x17AF4000) and TranslateVirtual(0xB7AF4000) read 3.",
+    "plugin_ctest": "4/4 passed, including live-ring, selected-frame geometry-dump, and readback checks.",
+    "geometry_dump_ctest": "Selected-frame normalized vertex and index dump matched the fixture bytes."
+  },
+  "p1_same_run_alias_probe": {
+    "evidence_path": "/home/pes/work/nfs-shift-xbox360-runtime-p1-20261023/evidence/xbox360_linux_guest_ring_physical_virtual_alias_20261025.json",
+    "runtime_plugin_sha256": "42f338bc48e144e9dbc70dd208f9a169f437b506d1c338832896c1a6b83b7f10",
+    "method": "Hardware watchpoint on physical host alias 0x217AF4000; read guest virtual alias at guest base + 0xB7AF4000 on every hit.",
+    "matching_writes": 360,
+    "value_range": ["0x00000005", "0x000002D7"],
+    "virtual_alias_matched_on_every_hit": true,
+    "retail_wait_samples": [
+      {"hit": 1, "descriptor": "0x00000003", "rptr": "0x0000001C", "tail": 21},
+      {"hit": 256, "descriptor": "0x00000049", "rptr": "0x000000E5", "tail": 81},
+      {"hit": 512, "descriptor": "0x00000099", "rptr": "0x000001D5", "tail": 161},
+      {"hit": 768, "descriptor": "0x000002AF", "rptr": "0x00000817", "tail": 695}
+    ],
+    "conclusion": "The descriptor alias mismatch hypothesis is closed for this exact-XEX run. This does not prove a visible frontend transition or correct Vulkan output."
+  },
+  "android_arm64": {
+    "ndk": "28.2.13676358",
+    "plugin_translation_unit": {
+      "result": "compiled",
+      "object": "/home/pes/work/process2-p2161-plugin-android-current/CMakeFiles/rexgpu-shift-native.dir/shift_native_gpu_plugin.cpp.o",
+      "object_sha256": "30597857d2a4b9aa3bed87d8ac2f4fda3a0c59da70ca6cb02c1ff63b3a5587b4",
+      "machine": "AArch64"
+    },
+    "full_plugin_target": {
+      "result": "blocked by upstream SDK compile error",
+      "source": "rexglue-sdk/src/core/fiber_posix.cpp",
+      "error": "Android NDK does not declare getcontext/makecontext/swapcontext in this SDK build."
+    }
+  },
+  "limits": [
+    "The alias regression uses synthetic packet bytes and proves the plugin write path plus ReXGlue alias visibility; it is not a retail gameplay transition test.",
+    "The same-run retail log proves physical stores to 0x17AF4000 and separate RPTR stores to 0x17AF403C, but does not prove the retail waiter read the virtual alias after those stores.",
+    "A hardware watchpoint attached only to the virtual host mapping may miss writes made through ReXGlue's separate physical mapping; a direct guest virtual read in the same retail run is needed to establish the observed value.",
+    "No completion flag, callback, software-queue cursor, or guest memory was fabricated or changed by Process 2."
+  ]
+}

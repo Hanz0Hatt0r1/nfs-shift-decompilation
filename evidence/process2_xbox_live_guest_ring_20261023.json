@@ -1,0 +1,1031 @@
+{
+  "format": "SHIFT.Process2LiveGuestRingVulkanEvidence/1",
+  "status": "live_retail_autoindex_point_and_rectangle_draws_submitted_to_project_vulkan; native_shader_readback_black; visible_output_unverified",
+  "run": {
+    "date": "2026-10-23",
+    "title_id": "0x454108B4",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin": {
+      "path": "librexgpu-shift-native.so",
+      "sha256": "f4491af23723e3f4c2d591a3d3263a9c2cc3ecfa5200c835df6645a29f0c4e2b",
+      "mapped_in_process": true,
+      "rexgpu_xenos_mapped": false
+    },
+    "rexglue_runtime_sha256": "48c5c315c528c0ffeba189594c32392ae2e87cbaa4ff88f1f30470e51eba2463",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "presenter_swapchain": "1920x1080",
+    "logging": "debug",
+    "game_data_root": "/tmp/nfs_shift_xbox_game_root_20261023",
+    "private_log": "/tmp/process2-live-nfs/logs/shift-native-debug.log"
+  },
+  "live_guest_ring": {
+    "initialized": true,
+    "guest_address": "0x09752580",
+    "capacity_bytes": 32768,
+    "batch_count": 4,
+    "batches": [
+      {
+        "pm4_packets": 73,
+        "raw_register_writes": 58,
+        "constant_spans_loaded": 0,
+        "shader_programs_loaded": 0,
+        "draw_indx_packets": 0,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0,
+        "unsupported_forms": 24
+      },
+      {
+        "pm4_packets": 153,
+        "raw_register_writes": 281,
+        "constant_spans_loaded": 0,
+        "shader_programs_loaded": 0,
+        "draw_indx_packets": 0,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0,
+        "unsupported_forms": 26
+      },
+      {
+        "pm4_packets": 808,
+        "raw_register_writes": 289,
+        "constant_spans_loaded": 0,
+        "shader_programs_loaded": 0,
+        "draw_indx_packets": 0,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 0,
+        "unsupported_forms": 0
+      },
+      {
+        "pm4_packets": 794,
+        "raw_register_writes": 590,
+        "constant_spans_loaded": 0,
+        "shader_programs_loaded": 0,
+        "draw_indx_packets": 0,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 0,
+        "unsupported_forms": 50
+      }
+    ],
+    "total_packets": 1828,
+    "total_draw_indx_packets": 0,
+    "total_guest_swaps": 2,
+    "total_vulkan_frames_submitted": 0
+  },
+  "opcode_audit": {
+    "source_log": "/tmp/process2-live-nfs/opcode-run2/logs/shift-native-opcode.log",
+    "plugin_state": "histogram-only build before DRAW_INDX_2 and IM_LOAD_IMMEDIATE decoding",
+    "total_packets": 1828,
+    "batch_packet_counts": [
+      73,
+      153,
+      808,
+      9,
+      785
+    ],
+    "type3_opcode_counts": {
+      "0x22_DRAW_INDX": 0,
+      "0x27_IM_LOAD": 0,
+      "0x2b_IM_LOAD_IMMEDIATE": 14,
+      "0x2f_LOAD_ALU_CONSTANT": 0,
+      "0x36_DRAW_INDX_2": 100
+    },
+    "raw_packet_words_saved": false,
+    "interpretation": "The histogram does not distinguish DMA indexed draws from AutoIndex DRAW_INDX_2 packets and does not validate inline shader payloads."
+  },
+  "visual": {
+    "screenshot": "/tmp/shift_native_live_20261023.png",
+    "sha256": "c1161e09bb43363d2777bdb410b3e59e98b33eae3b374322b5e86079ab089a12",
+    "result": "black presenter output; no retail draw was submitted"
+  },
+  "validation": {
+    "linux_plugin_ctest": "2/2 passed",
+    "linux_renderer_ctest": "4/4 passed",
+    "log_evidence": "four initial and five opcode-audit per-batch shift-native summaries followed live CP_RB_WPTR notifications; raw words for 0x2b and 0x36 packets were not saved",
+    "controller_input": "A and Start were sent after initialization; no additional guest draw batch followed",
+    "result": "proves the retail runtime loaded the emulator-free plugin and its live PM4 ring consumer handled guest batches and swaps; does not prove retail draw routing or frame parity"
+  },
+  "follow_up_raw_packet_run": {
+    "date": "2026-10-23",
+    "log": "/tmp/process2-live-nfs/headless-20261023/retail-live/logs/p2-autoindex-counts-20261023.log",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_sha256": "7c62549c061c96c7b0335fafcd26e47088554e7ea7ad1fcd146b2fad45ab30c5",
+    "runtime_sha256": "d9e090c0b455972f9e70f9f54c1686f72e12938069b827b5d6a1c3f7d39d98ac",
+    "guest_ring_batches": [
+      {
+        "pm4_packets": 73,
+        "draw_indx_2_packets": 24,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 4,
+        "draw_indx_2_packets": 0,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 149,
+        "draw_indx_2_packets": 26,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 280,
+        "draw_indx_2_packets": 0,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 528,
+        "draw_indx_2_packets": 0,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 794,
+        "draw_indx_2_packets": 50,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 0
+      }
+    ],
+    "total_pm4_packets": 1828,
+    "total_draw_indx_2_packets": 100,
+    "source_primitive_histogram": {
+      "AutoIndex point list": 96,
+      "AutoIndex rectangle list": 4
+    },
+    "initiator_index_count_histogram": {
+      "1": 96,
+      "3": 4
+    },
+    "raw_packet_samples": [
+      {
+        "packet_bytes_hex": "c000360000010081",
+        "header_dword": "0xc0003600",
+        "initiator_dword": "0x00010081",
+        "source_select": "AutoIndex (2)",
+        "primitive_type": "point list (1)",
+        "index_count": 1,
+        "packet_length_bytes": 8
+      },
+      {
+        "packet_bytes_hex": "c000360100030088",
+        "header_dword": "0xc0003601",
+        "initiator_dword": "0x00030088",
+        "source_select": "AutoIndex (2)",
+        "primitive_type": "rectangle list (8)",
+        "index_count": 3,
+        "packet_length_bytes": 8
+      }
+    ],
+    "decoder_result": "all 100 DRAW_INDX_2 packets were counted as source_select=AutoIndex; the captured point-list and rectangle-list forms are explicitly rejected as unsupported, rather than misreported as truncated indexed packets",
+    "vulkan_frames_submitted": 0,
+    "limitation": "The run proves live packet capture and form classification only. No retail draw reached Vulkan submission, and the AutoIndex samples do not prove a DMA DrawIndexedPrimitive call."
+  },
+  "follow_up_fetch_contract_diagnostic": {
+    "source_log": "/tmp/process2-live-nfs/headless-20261023/run-fetch-contract/logs/p2-autoindex-fetchcontract.log",
+    "captured_vertex_shader_bytes": 108,
+    "scheduled_vertex_fetches": [
+      {
+        "kind": "vfetch_full",
+        "fetch_constant_index": 0,
+        "format_id": 57,
+        "stride_dwords": 7,
+        "offset_dwords": 0
+      },
+      {
+        "kind": "vfetch_mini",
+        "live_binary_result": "decoder rejected mini form before the current parser update"
+      }
+    ],
+    "resource_snapshot_result": "fixed constant-95 descriptor was incomplete",
+    "frames_submitted": 0,
+    "parser_update": {
+      "result": "vfetch_mini is now identified and its encoded fields are decoded",
+      "unit_fixture": "synthetic 96-bit instruction",
+      "live_rerun_after_update": true,
+      "limit": "does not prove inherited address resolution, resource fetch, or Vulkan submission"
+    },
+    "validation_after_parser_update": {
+      "plugin_live_ring_ctest": "1/1 passed",
+      "xbox_draw_input_check": "1/1 passed",
+      "xbox_shader_translate_check": "1/1 passed"
+    },
+    "fetch_inheritance_regression": {
+      "preceding_full_fetch": {
+        "fetch_constant_index": 10,
+        "source_register": 2,
+        "source_swizzle": 2,
+        "stride_dwords": 5
+      },
+      "raw_mini_instruction": {
+        "fetch_constant_index": 19,
+        "source_register": 3,
+        "source_swizzle": 1,
+        "stride_dwords": 0,
+        "format_id": 7,
+        "offset_dwords": -1,
+        "destination_register": 4
+      },
+      "resolved_mini_fetch": {
+        "fetch_constant_index": 10,
+        "source_register": 2,
+        "source_swizzle": 2,
+        "stride_dwords": 5,
+        "format_id": 7,
+        "offset_dwords": -1,
+        "destination_register": 4
+      },
+      "result": "synthetic inheritance helper regression passed; helper is now wired into the shader translator, but live resource resolution is not verified"
+    }
+  },
+  "post_parser_live_run": {
+    "date": "2026-10-23",
+    "log": "/tmp/process2-live-nfs/headless-20261023/run-mini-parser/logs/nfs_shift.log",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_sha256": "3e047ac03432efbab660b92a2bb6043686cb9f9b591bc016ccd070e12de1d7a6",
+    "runtime_sha256": "d9e090c0b455972f9e70f9f54c1686f72e12938069b827b5d6a1c3f7d39d98ac",
+    "gpu_plugin_selection": "shift-native only; rexgpu-xenos was not requested",
+    "guest_ring_address": "0x09752580",
+    "guest_ring_capacity_bytes": 32768,
+    "pm4_batch_sizes": [
+      73,
+      153,
+      808,
+      9,
+      194,
+      591
+    ],
+    "draw_indx_2_packets": 100,
+    "draw_indx_2_forms": {
+      "autoindex_point_list_count_1": 96,
+      "autoindex_rectangle_list_count_3": 4
+    },
+    "live_vertex_fetches": [
+      {
+        "kind": "vfetch_full",
+        "fetch_constant_index": 0,
+        "format_id": 57,
+        "stride_dwords": 7,
+        "offset_dwords": 0,
+        "destination_register": 1
+      },
+      {
+        "kind": "vfetch_mini",
+        "format_id": 38,
+        "offset_dwords": 3,
+        "destination_register": 0,
+        "stride": "inherited from preceding vfetch_full"
+      }
+    ],
+    "shader_translation_regression": {
+      "result": "synthetic full/mini VS regression passed; translator inherits the full fetch's descriptor and stride and emits float3/float4 inputs at byte offsets 0/12 with stride 28",
+      "live_shader_translation_verified": false,
+      "descriptor_lookup_verified": false
+    },
+    "guest_swaps": 2,
+    "vulkan_frames_submitted": 0,
+    "result": "live parser decoded vfetch_mini fields; no retail draw reached Vulkan submission"
+  },
+  "latest_live_vulkan_submission": {
+    "date": "2026-10-23",
+    "log": "/tmp/process2-live-nfs/headless-20261023/retail-live-v6/shift-native-debug.log",
+    "game_executable_sha256": "38b1d3fd5ff21714deeda8044be7bc415cab922e7747af29db61faa5a9c9f38f",
+    "gpu_plugin_sha256": "81e44d3a43dec9dfa28434a173b8097d2a68a97caee2cc86e26d41e2efd7c3ba",
+    "gpu_plugin_selection": "shift-native; rexgpu-xenos was not requested",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "surface": "Gamescope headless + Xwayland",
+    "guest_ring_address": "0x09752580",
+    "guest_ring_capacity_bytes": 32768,
+    "batches": [
+      {
+        "pm4_packets": 73,
+        "draw_indx_2_packets": 24,
+        "supported_raster_draws": 0,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 970,
+        "draw_indx_2_packets": 26,
+        "source_primitive_histogram": {
+          "AutoIndex point list": 24,
+          "AutoIndex rectangle list": 2
+        },
+        "draws_with_supported_raster_state": 25,
+        "shader_pairs_translated": 25,
+        "resource_sets_resolved": 24,
+        "guest_swaps": 1,
+        "submitted_point_draws": 24,
+        "vulkan_frames_submitted": 1,
+        "presenter_extent": "1280x720"
+      },
+      {
+        "pm4_packets": 785,
+        "draw_indx_2_packets": 50,
+        "source_primitive_histogram": {
+          "AutoIndex point list": 48,
+          "AutoIndex rectangle list": 2
+        },
+        "draws_with_supported_raster_state": 25,
+        "shader_pairs_translated": 25,
+        "resource_sets_resolved": 24,
+        "guest_swaps": 1,
+        "submitted_point_draws": 24,
+        "vulkan_frames_submitted": 1,
+        "presenter_extent": "1280x720"
+      }
+    ],
+    "totals": {
+      "pm4_packets": 1828,
+      "draw_indx_2_packets": 100,
+      "autoindex_point_draws_submitted": 48,
+      "guest_swaps": 2,
+      "vulkan_frames_submitted": 2,
+      "dma_indexed_draws_observed": 0
+    },
+    "window_capture": {
+      "path": "process2_xbox_live_retail_window_black_20261023.png",
+      "sha256": "73046986e81df0e77e0a33d0e41af61ae828d8d37656bed18b485d8a214f8426",
+      "extent": "1920x1080",
+      "pixel_histogram": {
+        "black": 2073574,
+        "white_cursor": 26
+      },
+      "result": "The captured Gamescope Xwayland game window remained black apart from the cursor after both Vulkan frame submissions; no visible retail content was present."
+    },
+    "result": "The project-owned translator compiled and resolved 24 real retail point-list draws at each of two guest swaps. The ReXGlue Vulkan presenter accepted both submissions, but the captured game window stayed black. The retail full/mini-fetch VS also translated; its rectangle-list draws remain unsupported.",
+    "retail_vulkan_submission_confirmed": true,
+    "game_window_capture_confirmed": true,
+    "visible_retail_content_confirmed": false,
+    "full_scene_parity_verified": false,
+    "vulkan_validation_layer_enabled": false,
+    "superseded_by": "latest_live_rectangle_submission"
+  },
+  "gpu_interrupt_routing_update": {
+    "date": "2026-10-23",
+    "plugin_source": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+    "plugin_sha256": "3a3111b7d1d2487555ac453648d36e2a1b5b6eef1ffb1c9cacf46acd17d6cd92",
+    "behavior": "decodes captured PM4_INTERRUPT CPU masks and dispatches registered guest GPU callbacks on a ReXGlue XHostThread after the current ring batch read-pointer writeback",
+    "ordering_limit": "callback dispatch is deferred until the batch is consumed; exact ordering at each interrupt packet within a batch is not verified",
+    "linux_checks": {
+      "plugin_ctest": "2/2 passed",
+      "vulkan_validation_layer_live_ring_smoke": "1/1 passed",
+      "captured_interrupt_decoder_regression": "passed"
+    },
+    "android_device_check": {
+      "device": "Redmi Note 8 Pro (begonia, Android API 33, arm64-v8a, Mali-G76 MC4)",
+      "test": "shift_xbox_guest_ring_check",
+      "result": "passed",
+      "scope": "Android parser and guest-ring regression only; not a Vulkan retail game or full game build",
+      "temporary_device_binary_removed": true
+    },
+    "retail_rerun_after_update": true,
+    "visible_retail_output_verified": false
+  },
+  "post_scalar_destination_live_rerun": {
+    "date": "2026-10-23",
+    "source_checkout_head_before_fix": "b038c4fd426d11272efbf38cae1e9734807ea2b2",
+    "shader_change": "Translated captured scalar-destination-relative ALU writes against initial aL=0; loop control flow remains fail-closed.",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_sha256": "ad6f329c976a470c6a6252487a2cedc0a74f761d462330b7770e5dfc0dbdf26a",
+    "rexglue_runtime_sha256": "3249616d110308968b1224bce9c85fbea655f8255ac64f296a2edb73282ead63",
+    "gpu_plugin_selection": "shift-native; rexgpu-xenos was not requested",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "surface": "Gamescope headless + Xwayland",
+    "game_data_root": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+    "private_log": "/tmp/process2-live-nfs/headless-20261023/retail-current-source/logs/retail.log",
+    "guest_ring_address": "0x09752580",
+    "guest_ring_capacity_bytes": 32768,
+    "batches": [
+      {
+        "pm4_packets": 73,
+        "draw_indx_2_packets": 24,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 961,
+        "draw_indx_2_packets": 26,
+        "point_list_packets": 24,
+        "rectangle_list_packets": 2,
+        "draws_with_supported_raster_state": 25,
+        "shader_pairs_translated": 25,
+        "resource_sets_resolved": 24,
+        "submitted_point_draws": 24,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 1,
+        "presenter_extent": "1280x720",
+        "interrupt_packets_consumed": 1,
+        "guest_callbacks_dispatched": 1
+      },
+      {
+        "pm4_packets": 794,
+        "draw_indx_2_packets": 50,
+        "point_list_packets": 48,
+        "rectangle_list_packets": 2,
+        "draws_with_supported_raster_state": 25,
+        "shader_pairs_translated": 25,
+        "resource_sets_resolved": 24,
+        "submitted_point_draws": 24,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 1,
+        "presenter_extent": "1280x720",
+        "interrupt_packets_consumed": 1,
+        "guest_callbacks_dispatched": 1
+      }
+    ],
+    "totals": {
+      "pm4_packets": 1828,
+      "draw_indx_2_packets": 100,
+      "autoindex_point_draws_submitted": 48,
+      "guest_swaps": 2,
+      "vulkan_frames_submitted": 2,
+      "interrupt_packets_consumed": 2,
+      "guest_callbacks_dispatched": 2,
+      "dma_indexed_draws_observed": 0
+    },
+    "checks": {
+      "linux_native_renderer_and_parser_ctest": "4/4 passed",
+      "linux_plugin_ctest": "2/2 passed",
+      "linux_offscreen_vulkan_validation": "Synthetic Vulkan 1.1 AutoIndex point draw passed on NVIDIA GeForce GTX 950 with VK_LAYER_KHRONOS_validation enabled.",
+      "android_arm64_shader_translation_check": {
+        "device": "Redmi Note 8 Pro (begonia, Android API 33, arm64-v8a)",
+        "result": "shift_xbox_shader_translate_check exited 0",
+        "scope": "shader translation regression only; no Android retail game or Vulkan presenter run"
+      }
+    },
+    "headless_run_stop": "The isolated retail process was stopped after the two swap submissions with a 45-second timeout.",
+    "presented_image_captured": false,
+    "visible_retail_output_verified": false,
+    "full_scene_parity_verified": false,
+    "vulkan_validation_layer_enabled": false,
+    "result": "The current-source emulator-free plugin translated and submitted the captured retail point-list subset to Vulkan and dispatched the observed guest callbacks. This does not establish visible retail content or scene parity."
+  },
+  "post_submission_output_readback": {
+    "date": "2026-10-23",
+    "source_checkout_head": "283b5c5f + optional output-readback working-tree change",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_sha256": "0e271c55e0588b23dc471488ce0feccb66d26a54b27f82d8af0514510e2f5eb1",
+    "rexglue_runtime_sha256": "3249616d110308968b1224bce9c85fbea655f8255ac64f296a2edb73282ead63",
+    "gpu_plugin_selection": "shift-native; rexgpu-xenos was not requested",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "surface": "Gamescope headless + Xwayland",
+    "game_data_root": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+    "log": "/tmp/process2-live-nfs/logs/nfs_shift_010.log",
+    "readback_opt_in": "SHIFT_NATIVE_VULKAN_READBACK_PATH",
+    "swaps_submitted": 2,
+    "submitted_point_draws": 48,
+    "readback": {
+      "extent": "1280x720",
+      "vk_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "raw_file": "/tmp/process2-live-nfs/headless-20261023/retail-vulkan-readback/vulkan-output.a2b10g10r10",
+      "raw_bytes": 3686400,
+      "raw_sha256": "62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1",
+      "decoded_pixel_count": 921600,
+      "unique_packed_words": 1,
+      "packed_word_histogram": {
+        "0xC0000000": 921600
+      },
+      "non_black_pixel_count": 0,
+      "decoded_png": "process2_xbox_live_vulkan_output_readback_black_20261023.png",
+      "decoded_png_sha256": "16e6b2954c683e157639ef50e980d4cb96ae160cf82328eba859924630437e8f"
+    },
+    "checks": {
+      "linux_native_renderer_ctest": "4/4 passed",
+      "linux_plugin_ctest": "2/2 passed",
+      "linux_renderer_validation": "synthetic Vulkan 1.1 draw plus readback passed with VK_LAYER_KHRONOS_validation on NVIDIA GeForce GTX 950",
+      "linux_plugin_readback_integration_smoke": {
+        "ctest": "rexgpu_shift_native_live_ring_check passed 1/1 with SHIFT_NATIVE_VULKAN_READBACK_PATH set",
+        "output_bytes": 3686400,
+        "scope": "synthetic live-ring fixture verifies plugin-to-renderer readback wiring; its zeroed captured constants do not represent retail visual output"
+      },
+      "android_arm64_readback_smoke": {
+        "device": "Redmi Note 8 Pro (begonia, Android API 33, arm64-v8a, Mali-G76 MC4)",
+        "build": "NDK r28.2, android-33, local current-source renderer check",
+        "result": "synthetic offscreen Vulkan 1.1 AutoIndex point draw and output readback passed",
+        "validation_layer": false,
+        "full_game_test": false,
+        "temporary_device_files_removed": true
+      },
+      "android_current_source_arm64_device_run": {
+        "source_checkout_head": "699b38a72823b08821b53dc95e45da4d9340f20f",
+        "build": "NDK r28.2.13676358, arm64-v8a, android-29",
+        "device": "Redmi Note 8 Pro (begonia, Android API 33, Mali-G76 MC4)",
+        "tests": {
+          "shift_xbox_draw_input_check": {
+            "sha256": "11d7d1ce9742e0cb6728bcfc976ac5f47038a1fa232517b43219e2603ae6ba60",
+            "result": "exit 0; captured PM4 draw input check passed"
+          },
+          "shift_xbox_guest_ring_check": {
+            "sha256": "b6a5e914c6d214dcb3c200fd5cb1dcd4d3c0566731e3f8cbde544f8df627a97a",
+            "result": "exit 0"
+          },
+          "shift_xbox_shader_translate_check": {
+            "sha256": "8f46420a10446913ebb0b1b540bb84b617a986c7938a975240c7a72877d583a5",
+            "result": "exit 0"
+          },
+          "xbox_live_vulkan_renderer_check": {
+            "sha256": "ddbda400f4e0d2276a271b478f866d904b370f50107ea44126da697d39e84ee2",
+            "result": "synthetic offscreen Vulkan 1.1 AutoIndex point draw and output readback passed on Mali-G76 MC4"
+          }
+        },
+        "plugin_source_arm64_api29_compile": {
+          "source": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+          "source_sha256": "b141901879459088f8fd3458b5cce22490bd19bcb2b8a426d9f3ba818b5a565c",
+          "object_sha256": "9e511eaba290e057d55b4077102a1b45d12164578de67f28beefbef69be3d218",
+          "toolchain": "NDK r28.2.13676358, Clang 19.0.1, aarch64-none-linux-android29",
+          "result": "translation unit compiled with exit 0; no ReXGlue runtime link or game run",
+          "warning": "non-fatal -Wasm-operand-widths in rex/platform/fpscr.h:78"
+        },
+        "validation_layer": false,
+        "retail_game_or_live_ring_test": false,
+        "temporary_device_files_removed": true
+      }
+    },
+    "vulkan_validation_layer_enabled": false,
+    "result": "The readback confirms the project Vulkan presenter image stayed at its opaque black clear value across all pixels after live retail point-draw submission. This does not establish why those submitted draws produced no color or prove visible retail output/scene parity."
+  },
+  "post_fragment_override_retail_diagnostic": {
+    "date": "2026-10-23",
+    "source_checkout_head": "f4720cc52998a7c29856ab53fa12485879735034",
+    "plugin_source_sha256": "b141901879459088f8fd3458b5cce22490bd19bcb2b8a426d9f3ba818b5a565c",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_sha256": "07c2afdc1e1ad371e29d9bf941d924686edd340fdc2c28c6338cce5bbd783cdd",
+    "rexglue_runtime_sha256": "7d2072c33ec30e2f85a61620ff5eda0b289d8c17b6054d3c2702d284a18835f2",
+    "gpu_plugin_selection": "shift-native; rexgpu-xenos was not requested",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "surface": "Gamescope headless + Xwayland",
+    "debug_fragment_override": "plugin log confirms the constant magenta pixel shader was active",
+    "debug_log": "/tmp/process2-live-nfs/headless-20261023/retail-vulkan-magenta-current-20261023/logs/retail-debug.log",
+    "batches": [
+      {
+        "pm4_packets": 73,
+        "autoindex_point_draws": 24,
+        "vulkan_frames_submitted": 0,
+        "first_error": "missing vertex shader control register 0x2307"
+      },
+      {
+        "pm4_packets": 970,
+        "draw_indx_2_packets": 26,
+        "autoindex_point_draws_submitted": 24,
+        "rectangle_list_draws_skipped": 2,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 1
+      },
+      {
+        "pm4_packets": 785,
+        "draw_indx_2_packets": 50,
+        "autoindex_point_draws_submitted": 24,
+        "rectangle_list_draws_skipped": 2,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 1
+      }
+    ],
+    "totals": {
+      "autoindex_point_draws_submitted": 48,
+      "guest_swaps": 2,
+      "vulkan_frames_submitted": 2,
+      "dma_indexed_draws_observed": 0
+    },
+    "readback": {
+      "extent": "1280x720",
+      "vk_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "raw_file": "/tmp/process2-live-nfs/headless-20261023/retail-vulkan-magenta-current-20261023/readback-debug.a2b10g10r10",
+      "raw_bytes": 3686400,
+      "raw_sha256": "62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1",
+      "decoded_pixel_count": 921600,
+      "unique_packed_words": 1,
+      "packed_word_histogram": {
+        "0xC0000000": 921600
+      },
+      "non_black_pixel_count": 0,
+      "fnv1a64_from_plugin_log": "68D8B1C5D0E72325"
+    },
+    "interpretation": "The active constant magenta pixel shader still produced no visible pixels for the submitted retail point draws. A separate renderer regression using the logged center-position vertex shape and captured retail point-raster profile does produce color on GTX 950 and Mali-G76 MC4. The remaining difference is at the live draw construction or presenter-target boundary; this does not identify the cause or establish game-level frame parity.",
+    "superseded_by": "latest_live_rectangle_submission"
+  },
+  "retail_vs_kinds_followup_run": {
+    "date": "2026-10-23",
+    "source_checkout_head": "f4720cc52998a7c29856ab53fa12485879735034",
+    "plugin_source_sha256": "099a3c7a2ef68a1b16901db2a0780f9464ea9db5c387a2e0df3ba549a8a496fe",
+    "gpu_plugin_sha256": "502095e803a91ee7b865716f06da74f68ab98a59262d61b01762de85ac7e3f17",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_selection": "shift-native; rexgpu-xenos was not requested",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "log": "/tmp/process2-live-nfs/headless-20261023/retail-vulkan-magenta-current-20261023/logs/retail-vs-kinds.log",
+    "log_sha256": "5df3abee28c71a062f7095dd4c85c1d06f9ef35e0623abcea5182f8ff6f00091",
+    "shader_and_draw_observations": {
+      "submitted_draws": "24 AutoIndex point-list draws at each of two guest swaps",
+      "vertex_shader": "96-byte no-input shader; translated gl_Position=(0,0,0,1) and gl_PointSize=1",
+      "pixel_shader": "constant magenta debug override active",
+      "initial_batch": "24 draws skipped because vertex shader control register 0x2307 was not yet present",
+      "rectangle_lists": "two rectangle-list draws per swap skipped as unsupported"
+    },
+    "readback": {
+      "path": "/tmp/process2-live-nfs/headless-20261023/retail-vulkan-magenta-current-20261023/readback-vs-kinds.a2b10g10r10",
+      "extent": "1280x720",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "bytes": 3686400,
+      "sha256": "62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1",
+      "pixels": 921600,
+      "packed_word_histogram": {
+        "0xC0000000": 921600
+      },
+      "non_black_pixels": 0
+    },
+    "interpretation": "The live app path submits the captured point packets but writes no pixels, while a standalone renderer regression using the same center-position shader shape and retail raster profile writes color on host and Mali. This isolates the unresolved issue to a live plugin draw/target input difference; it does not prove which difference is responsible or establish game-level frame parity."
+  },
+  "retail_point_raster_regression": {
+    "date": "2026-10-23",
+    "source": "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
+    "source_sha256": "b441273f0e6c7cb4d919f7b270e8975005e750a84a7de8eb7097e34bd11e638a",
+    "profile": {
+      "draw": "single AutoIndex point",
+      "extent": "1280x720 source scissor, scaled into the offscreen target",
+      "samples": 4,
+      "depth_stencil": "D24S8, depth and stencil enabled, compare ALWAYS",
+      "viewport": "Y-flipped",
+      "blend": "disabled"
+    },
+    "host": {
+      "device": "NVIDIA GeForce GTX 950",
+      "ctest": "xbox_live_vulkan_renderer_check passed",
+      "validation_layer_enabled": true,
+      "test_binary_sha256": "11eb3addc6f51844f1771ef90f0eff1bb7e212c0ddf131adcfa3e3321fd9a986"
+    },
+    "android": {
+      "device": "Redmi Note 8 Pro",
+      "android_api": 33,
+      "gpu": "Mali-G76 MC4",
+      "result": "rebuilt ARM64 offscreen renderer check passed with the retail raster profile",
+      "validation_layer_enabled": false,
+      "test_binary_sha256": "205b957b7abf89f091d857409ebe25b846d9654154f77599702d7c1b76d9abc2"
+    },
+    "exact_center_shader_fixture": {
+      "vertex_spirv_sha256": "7041cbbb3c64632c6bdd64d09c42d83cbcb9394b67c16a08e568fd4a28d113c5",
+      "magenta_fragment_spirv_sha256": "f89a8d99e1c5dd4a8de34bbc0a79c1071c5684a2590dd7a4c62f0050d2f66c9e",
+      "result": "synthetic center-point rendering and non-black readback passed on both devices"
+    },
+    "limit": "This validates the standalone project renderer with synthetic shaders and does not exercise the ReXGlue presenter target or claim retail output."
+  },
+  "remaining_blockers": [
+    "The live ring has 96 one-index AutoIndex point draws and four three-index AutoIndex rectangle-list draws; no DMA-indexed draw packet was observed, so DMA indexed-draw behavior remains unverified.",
+    "Two rectangle-list draws reached Vulkan, one per guest swap; two other rectangle variants were rejected because captured mode_control=0x00000006 and color_info=0 are outside the decoded raster contract. Xenos EDRAM accumulation and guest-frontbuffer resolution remain unimplemented.",
+    "The native captured-shader presenter readback was black in the tested early-startup state. The magenta override produces non-black pixels, but visible original retail content and scene parity are not established.",
+    "The integrated Android APK also showed a black screen in this startup capture; no later guest draw batches were observed, so visible retail gameplay and scene parity remain unverified."
+  ],
+  "android_app_vulkan_integration_20261023": {
+    "date": "2026-10-23",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "apk": "/home/pes/work/nfsshift-rex/android/app/build/outputs/apk/debug/app-debug.apk",
+    "apk_sha256": "09bffa81c7aabba2bb0c8acd864ab12db0e66a91d32131e0e4ff3f8a33b655e8",
+    "installed_update_time": "2026-10-23 22:19:28",
+    "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, arm64-v8a, Mali-G76 MC4, Vulkan 1.1.131)",
+    "gpu_plugin_loader_id": "xenos (Android host startup hook alias)",
+    "apk_gpu_plugin_entries": {
+      "lib/arm64-v8a/librexgpu-shift-natived.so": "4fdcf9cf8ab37dea4afec030fa1b1e42e6fa258a36a30f2d486e96ce81012618",
+      "lib/arm64-v8a/librexgpu-xenosd.so": "4fdcf9cf8ab37dea4afec030fa1b1e42e6fa258a36a30f2d486e96ce81012618",
+      "identical": true,
+      "interpretation": "Both entries contain the Process 2 Vulkan plugin; the xenos-named entry is only a loader alias and is not the Xenos GPU emulator."
+    },
+    "runtime_log": "files/nfs_shift/user/logs/nfs_shift_024.log",
+    "runtime_observation": "The emulator-free Vulkan frontend loaded on Mali-G76 MC4, consumed the guest PM4 ring, and submitted two 1280x720 frames with one framebuffer-writing retail draw each. The two mode-6 EDRAM Copy/Convert variants remain rejected. The app screen was black in this early-startup run; no visible retail scene or parity is established.",
+    "pm4_progress": "The captured startup batches contained no later guest PM4 after the two swaps, so this run cannot establish gameplay rendering."
+  },
+  "latest_live_rectangle_submission": {
+    "date": "2026-10-23",
+    "source_checkout_head": "38c6e890e6e7225a03f00dbc22ac59aca3b87e69",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_sha256": "dbbacc40d993cac1a0b3519ab1ae7392b6fcb26457ebe5d8cb4faf3249dff05b",
+    "gpu_plugin_selection": "shift-native; rexgpu-xenos was not requested or mapped",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "surface": "Gamescope headless + Xwayland",
+    "guest_ring_address": "0x09752580",
+    "guest_ring_capacity_bytes": 32768,
+    "live_capture": {
+      "total_pm4_packets": 1828,
+      "guest_swaps": 2,
+      "draw_indx_2_packets": 100,
+      "forms": {
+        "autoindex_point_list_count_1": 96,
+        "autoindex_rectangle_list_count_3": 4,
+        "dma_indexed_draws_observed": 0
+      },
+      "vulkan_frames_submitted": 2,
+      "extent": "1280x720",
+      "submitted_per_frame": {
+        "autoindex_point_list": 24,
+        "autoindex_rectangle_list": 1
+      },
+      "rectangle_lists_rejected": 2,
+      "rejected_rectangle_state": {
+        "mode_control": "0x00000006",
+        "color_info": "0x00000000",
+        "reason": "unsupported captured target or raster state"
+      },
+      "readback_log": "/tmp/process2-live-nfs/headless-20261023/retail-rectlist-clean-20261023/logs/retail.log"
+    },
+    "fragment_override_readback": {
+      "mode": "SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR=magenta",
+      "raw_file": "/tmp/process2-live-nfs/headless-20261023/retail-rectlist-clean-20261023/readback.a2b10g10r10",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "extent": "1280x720",
+      "raw_bytes": 3686400,
+      "raw_sha256": "21d2868e9e0b91638d96e30dfe446a4748ef217efaa09e10ed179697e95e35e8",
+      "non_black_pixels": 518400,
+      "fnv1a64_from_plugin_log": "DA74DA070BC0D725",
+      "interpretation": "Live captured geometry rasterized into the Vulkan presenter. The fragment shader is synthetic magenta, so this is not retail pixel output.",
+      "decoded_png": "process2_xbox_live_vulkan_magenta_raster_diagnostic_20261023.png",
+      "decoded_png_sha256": "4a78c2e091bca86119b8cdd2f2ca7bb848681dbad46aa84755953b835e8cf82d"
+    },
+    "captured_pixel_shader_readback": {
+      "raw_file": "/tmp/process2-live-nfs/headless-20261023/retail-rectlist-native-shader-20261023/readback.a2b10g10r10",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "extent": "1280x720",
+      "raw_bytes": 3686400,
+      "raw_sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+      "non_black_pixels": 0,
+      "fnv1a64_from_plugin_log": "B161DE6EEC272325",
+      "captured_pixel_shader_bytes": 36,
+      "interpretation": "The translated retail shader output is black for this early-startup capture. A later diagnostic recorded a zero location-1 vertex input; this is consistent with the capture but does not establish gameplay output."
+    },
+    "visible_retail_output_confirmed": false,
+    "full_scene_parity_verified": false,
+    "live_vulkan_validation_layer_enabled": false,
+    "result": "The project-owned Vulkan renderer accepted captured AutoIndex point-list and rectangle-list retail draws in two frames. One additional rectangle state variant per frame remains fail-closed. Magenta readback demonstrates live rasterization; the unmodified captured pixel shader readback remains black. This is live draw routing, not visible-output or parity evidence.",
+    "linux_verification_after_docs_and_diagnostic_cleanup": {
+      "plugin_rebuild": "rexgpu-shift-native target built successfully",
+      "ctest": {
+        "tests": [
+          "rexgpu_shift_native_factory_check",
+          "rexgpu_shift_native_live_ring_check",
+          "rexgpu_shift_native_live_ring_readback_check"
+        ],
+        "result": "3/3 passed sequentially with VK_LAYER_KHRONOS_validation enabled",
+        "scope": "synthetic ABI/ring/presenter regressions; not a live retail validation-layer run"
+      }
+    },
+    "android_copy_register_decoder_20261023": {
+      "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, Mali-G76 MC4)",
+      "source": "files/nfs_shift/user/logs/nfs_shift_024.log",
+      "captured_registers": {
+        "copy_valid_mask": "0x0f",
+        "copy_control": "0x00100000",
+        "copy_dest_base": "0x0975e000",
+        "copy_dest_pitch": "0x02d00500",
+        "copy_dest_info": "0x01000300",
+        "swap_frontbuffer": "0x0975e000"
+      },
+      "decoded_contract": {
+        "source_select": 0,
+        "sample_select": 0,
+        "command": "Convert",
+        "destination": "1280x720",
+        "destination_format": 6,
+        "destination_swap_red_blue": true
+      },
+      "parser_regression": {
+        "host_target": "shift_xbox_draw_input_check",
+        "host_ctest": "passed",
+        "host_binary_sha256": "e3112ffaf65a06defeb48e20aa088cce699d1061ee0c63f6cf9abbd425fcda05",
+        "android_arm64_target": "shift_xbox_draw_input_check",
+        "android_device_result": "passed on Redmi Note 8 Pro",
+        "android_binary_sha256": "d2bbc87d8461508b38b99a8a134409eea82b92de9654a13301bee453ae0ebce5",
+        "negative_cases": [
+          "incomplete copy register set",
+          "reserved copy-control bit",
+          "reserved destination-info bit",
+          "uncaptured depth-source request"
+        ]
+      },
+      "live_output_check": {
+        "installed_game_process": 20380,
+        "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+        "vulkan_readback_sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+        "non_black_pixels": 0,
+        "result": "still black; the decoder is not connected to a Vulkan EDRAM source or Copy/Convert submission"
+      },
+      "status": "register contract recognized and ARM64-tested; no visible-output or retail-parity claim"
+    }
+  },
+  "android_vulkan_sample0_copy_20261023": {
+    "date": "2026-10-23",
+    "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, arm64-v8a, Mali-G76 MC4, Vulkan 1.1.131)",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "installed_process": 28531,
+    "apk_sha256": "ff5c30af24013b315280e161cd383c4cd50874a1e096f0d0383364f004a311c6",
+    "plugin_entries": {
+      "lib/arm64-v8a/librexgpu-shift-natived.so": "7a62b62eddb5dabea9d7f78728ce45a4d59910f1642dcd7da32e6aec93a760f3",
+      "lib/arm64-v8a/librexgpu-xenosd.so": "7a62b62eddb5dabea9d7f78728ce45a4d59910f1642dcd7da32e6aec93a760f3",
+      "identical": true,
+      "interpretation": "The xenos-named Android loader alias contains the Process 2 Vulkan plugin, not the Xenos GPU renderer."
+    },
+    "runtime_log": "files/nfs_shift/user/logs/nfs_shift_026.log",
+    "observed_frame": {
+      "pm4_packets_in_live_batch": 153,
+      "captured_indexed_draws": 26,
+      "supported_raster_state_draws": 25,
+      "framebuffer_noops_elided": 24,
+      "retail_draws_translated_and_resource_resolved": 1,
+      "vulkan_draws_submitted_per_swap": 1,
+      "guest_swaps": 2,
+      "copy_convert": {
+        "source_select": 0,
+        "sample_select": 0,
+        "command": "Convert",
+        "destination": "0x0975e000",
+        "extent": "1280x720",
+        "format": 6,
+        "swap_red_blue": true,
+        "matches_guest_swap": true,
+        "vulkan_sample_zero_pass_submitted": true
+      },
+      "later_pm4_batches_after_startup_swaps": 0
+    },
+    "output": {
+      "extent": "1280x720",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "non_black_pixels": 0,
+      "fnv1a64": "B161DE6EEC272325",
+      "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+      "visible_retail_output_confirmed": false,
+      "full_scene_parity_verified": false
+    },
+    "offscreen_renderer_regression": {
+      "host_vulkan_ctest": "4/4 passed; validation layer enabled on host",
+      "linux_plugin_ctest": "3/3 passed with VK_LAYER_KHRONOS_validation enabled",
+      "android_arm64": "synthetic Vulkan 1.1 sample-zero Copy/Convert and captured R/B swap passed on Mali-G76 MC4",
+      "android_live_validation_layer": false,
+      "scope": "Validates the bounded Vulkan pass and channel conversion only; it does not establish retail image output or parity."
+    },
+    "result": "The Android Vulkan path now submits the captured source-0/sample-0 Copy/Convert operation, but the current early-startup retail readback is still completely black. The Vulkan renderer is not ready for visible retail output; no later PM4 draw batch was observed after the two startup swaps."
+  },
+  "android_presenter_magenta_diagnostic_20261023": {
+    "date": "2026-10-23",
+    "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, Mali-G76 MC4, Vulkan 1.1.131)",
+    "diagnostic_apk_sha256": "38d465046d44192bc03a09e35a7293fe6e250493af184817cd6d1c95e785a6b3",
+    "diagnostic_plugin_entries": {
+      "lib/arm64-v8a/librexgpu-shift-natived.so": "5d8828a3a149f9596768942b8dbaa0449e01182b136c5cbb0c25605e7a604d5a",
+      "lib/arm64-v8a/librexgpu-xenosd.so": "5d8828a3a149f9596768942b8dbaa0449e01182b136c5cbb0c25605e7a604d5a",
+      "interpretation": "Temporary Android debug-only fragment override; not committed and not retail output."
+    },
+    "runtime_log": "files/nfs_shift/user/logs/nfs_shift_027.log",
+    "submitted_draws": 1,
+    "copy_convert_destination": "0x0975e000, 1280x720, format 6, sample 0, R/B swap",
+    "readback": {
+      "extent": "1280x720",
+      "non_black_pixels": 518400,
+      "fnv1a64": "DA74DA070BC0D725"
+    },
+    "screen": {
+      "screenshot": "process2_redmi_note8pro_android_vulkan_magenta_diagnostic_20261023.png",
+      "sha256": "ff3670d2ba0c0d27cdbb2b52ab121de00cff74e0ab31f84b848d66ce3a0b30f1",
+      "extent": "2340x1080",
+      "magenta_pixels": 1164151,
+      "black_pixels": 1358549
+    },
+    "interpretation": "The Android Vulkan presenter displayed the submitted captured retail rectangle geometry and the sample-zero Copy/Convert output. The synthetic magenta shader is diagnostic only and is not retail pixel evidence or scene parity.",
+    "restored_original_build": {
+      "apk_sha256": "ff5c30af24013b315280e161cd383c4cd50874a1e096f0d0383364f004a311c6",
+      "plugin_sha256": "7a62b62eddb5dabea9d7f78728ce45a4d59910f1642dcd7da32e6aec93a760f3",
+      "running_process": 30809,
+      "runtime_log": "files/nfs_shift/user/logs/nfs_shift_028.log",
+      "readback_non_black_pixels": 0,
+      "readback_fnv1a64": "B161DE6EEC272325",
+      "screen_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+      "result": "Original build restored and running; its retail startup frame remains black."
+    }
+  },
+  "android_rptr_writeback_diagnostic_20261023": {
+    "date": "2026-10-23",
+    "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, Mali-G76 MC4, Vulkan 1.1.131)",
+    "diagnostic_apk_sha256": "86129ac9b92d6d038b72a0e681a7b6e4a4200366d41b51356abdacaa880f9ed7",
+    "plugin_entries_sha256": "dd985073cb1a919b42d9777bc98daa9c5fcf1b1f15547ba81275137ee521c577",
+    "runtime_log": "files/nfs_shift/user/logs/nfs_shift_030.log",
+    "runtime_log_sha256": "93d109367dbdc24c23dd83a9fbc9227a512e5744b25c08ace1dcd40b51b623bf",
+    "writeback": {
+      "guest_address": "0x17AF403C",
+      "block_size_log2": 6,
+      "translated_host_pointer": "0x217af403c",
+      "initial_guest_value": "0x00000000",
+      "verified_guest_values": [
+        "0x00000019",
+        "0x0000001F",
+        "0x00000049"
+      ],
+      "read_after_write_matched": true
+    },
+    "render_observation": {
+      "guest_swaps": 2,
+      "vulkan_frames_submitted": 2,
+      "live_draws_submitted": 1,
+      "readback_non_black_pixels": 0,
+      "readback_fnv1a64": "B161DE6EEC272325",
+      "screenshot": "process2_xbox_live_vulkan_output_readback_black_20261023.png",
+      "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839"
+    },
+    "restored_original_apk": {
+      "apk_sha256": "ff5c30af24013b315280e161cd383c4cd50874a1e096f0d0383364f004a311c6",
+      "runtime_log": "files/nfs_shift/user/logs/nfs_shift_031.log",
+      "foreground_pid": 32421,
+      "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+      "foreground_observation": {
+        "duration_seconds": 45,
+        "runtime_log_sha256": "397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21",
+        "guest_swaps": 2,
+        "additional_draw_batches_after_second_swap": 0,
+        "process_remained_foreground": true,
+        "screen_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+        "result": "No further PM4 batches or swaps arrived during 45 seconds; the screen remained black."
+      }
+    },
+    "comparison_note": "A later same-title Linux/GDB probe confirmed that VdEnableRingBufferRPtrWriteBack also receives 0x17AF403C and translates it to 0x217af403c. Its 0xB7AF4000 observation is the ring base, not the RPTR destination.",
+    "interpretation": "The P2 Android plugin receives VdEnableRingBufferRPtrWriteBack and writes the translated guest read pointer correctly for this startup run. The retail Vulkan output remains black, and no later guest draw batch was observed after the two startup swaps. The separate Linux/GDB probe confirms the same pointer contract but does not establish later game progression or retail visual parity."
+  },
+  "linux_rptr_crosscheck_20261024": {
+    "source_owner": "Process 1 read-only GDB runtime evidence; no Process 1 files changed",
+    "source_log": "/tmp/p1-vdwriteback-probe-20261024/logs/gdb-vd-writeback-target.log",
+    "source_log_sha256": "82bea36b0cd951f50da0c623331e7a58a98b9c70809fce88ddce23f3fe3513a9",
+    "captured_at": "2026-10-24T00:20:44+03:00",
+    "api_call": {
+      "name": "VdEnableRingBufferRPtrWriteBack",
+      "guest_argument": "0x17AF403C",
+      "block_log2": 6,
+      "translated_host_pointer": "0x217af403c"
+    },
+    "address_distinction": {
+      "guest_ring_base": "0xB7AF4000",
+      "rptr_writeback_destination": "0x17AF403C",
+      "same_as_android_writeback_destination": true
+    },
+    "host_word_watchpoint_changes": [
+      {"old": "0x00000000", "new": "0x19000000"},
+      {"old": "0x19000000", "new": "0x31000000"},
+      {"old": "0x31000000", "new": "0x49000000"}
+    ],
+    "final_guest_stack": "The final debugger snapshot included sub_823A0310, the guest queue-polling frame identified by Process 1.",
+    "debugger_state_at_capture": "GDB stopped the game thread at hardware watchpoints while reading the writeback target, then killed the inferior after capturing the final snapshot. The OS not-responding dialog during the probe is consistent with debugger suspension, not proof of an independent guest-runtime deadlock.",
+    "interpretation": "Linux and Android use the same VdEnableRingBufferRPtrWriteBack guest argument and translated host address. The prior 0xB7AF4000 comparison was a ring-base/writeback-destination mix-up. This verifies pointer routing only; the final stack snapshot does not establish that the guest advanced to visible gameplay, and retail pixels remain unverified."
+  },
+  "android_xbox_key_input_check_20261024": {
+    "observed_at_utc": "2026-10-24",
+    "device": "Redmi Note 8 Pro (Android 13/API 33, Mali-G76 MC4, Vulkan 1.1.131)",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "foreground_pid_before_and_after": 32421,
+    "input_attempts": [
+      {
+        "source": "default keyboard",
+        "command": "adb shell input keyevent KEYCODE_BUTTON_A KEYCODE_BUTTON_START",
+        "observation_delay_seconds": 5
+      },
+      {
+        "source": "gamepad",
+        "command": "adb shell input gamepad keyevent KEYCODE_BUTTON_A KEYCODE_BUTTON_START",
+        "observation_delay_seconds": 5
+      },
+      {
+        "source": "default keyboard",
+        "command": "adb shell input keyevent KEYCODE_ENTER",
+        "observation_delay_seconds": 5,
+        "screen_sha256_after": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+        "runtime_log_sha256_after": "397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21",
+        "new_pm4_batches_or_swaps": 0
+      }
+    ],
+    "joystick_device_probe": {
+      "focused_activity": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity",
+      "device_node": "/dev/input/event4",
+      "device_name": "uinput-fpc",
+      "android_sources": ["KEYBOARD", "JOYSTICK"],
+      "supported_button": "BTN_EAST (Linux code 305)",
+      "injection_command": "sendevent /dev/input/event4 1 305 1; ... release",
+      "injection_result": "Permission denied; no event was delivered",
+      "adb_keyevent_sdl_logs": ["Unknown keycode 96", "Unknown keycode 108"],
+      "screen_sha256_after_probe": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+      "interpretation": "The shell could not inject through this vendor input device, so this was not a controller-input test and cannot explain the absence of later guest draws."
+    },
+    "runtime_log_sha256_before_and_after": "397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21",
+    "screen_sha256_before_and_after": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+    "logged_guest_swaps": 2,
+    "new_pm4_batches_or_swaps": 0,
+    "result": "A/Start from default and gamepad sources and Enter from the default keyboard did not change the foreground app, runtime log, screenshot, or observed PM4 output. The vendor joystick node could not be injected by shell, so this does not establish that a real controller input route is ineffective."
+  },
+  "android_guest_cpu_probe_20261024": {
+    "observed_at_utc": "2026-10-23T21:58:08Z",
+    "device": "Redmi Note 8 Pro (Android 13/API 33, Mali-G76 MC4, Vulkan 1.1.131)",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 32421,
+    "focused_activity": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity",
+    "command": "adb shell top -H -b -d 2 -n 2 -p 32421",
+    "thread_samples": [
+      {"name": "Core 2/1: Main", "tid": 32513, "sample_1_cpu_percent": 121, "sample_2_cpu_percent": 100},
+      {"name": "SDLThread", "tid": 32477, "sample_1_cpu_percent": 110, "sample_2_cpu_percent": 81},
+      {"name": "SHIFT Native GP", "tid": 32511, "sample_1_cpu_percent": 0, "sample_2_cpu_percent": 0}
+    ],
+    "runtime_log_sha256": "397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21",
+    "screen_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+    "logged_guest_swaps": 2,
+    "later_pm4_batches": 0,
+    "evidence_file": "process2_redmi_note8pro_guest_cpu_probe_20261024.txt",
+    "interpretation": "The app main/SDL threads consume CPU while the Vulkan ring worker is idle and receives no new draw work. This is consistent with a guest/runtime progress loop outside the renderer, but these CPU samples do not identify the guest function or prove the cause. Guest scheduling/execution is Process 1 ownership; no Process 1 files were changed."
+  }
+}

@@ -1,0 +1,193 @@
+{
+  "schema": "shift.process2.v81_v85_counter_source1_correlation.v1",
+  "captured_on": "2026-10-28",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "scope": "Read-only analysis of the matched Native v81 and Xenos v85 guest counter captures and the Native transition-focused GPU log. No Process 1 runtime or P-code files were changed.",
+  "identity": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+    "gdb_script_sha256": "74ad97ca60976ce1ebdbe33428261e9b53007c8f51b67a8d551398faf092d51b",
+    "native_plugin_sha256": "f213f4ca9b679660e18e17b68aa1cc6f64667388c8f0375ecd80b245db13f1c9",
+    "native_plugin_build_id": "c70bfffdc0ec57c5db33b347749f4c25fbc70ef2",
+    "xenos_plugin_sha256": "19053b691d7d1f8f17bbe3e90be38ba3acc60439cbe5c1dfcad271e07b47ce43",
+    "same_retail_inputs_and_script": true
+  },
+  "captures": {
+    "native": {
+      "root": "/home/pes/work/nfs-shift-p1-v81-native-counter-input-20261028",
+      "bink": "281/281",
+      "input_profile": [
+        "Start at 79.753s",
+        "A at 85.753s",
+        "Start at 91.753s"
+      ],
+      "gdb_log_sha256": "b699177299a751547c23029d32d74c16067bfd83cd89f6fdacc9996dd4577c7f",
+      "runner_log_sha256": "073f73ae2bd89832349302e79bdc31396431a4366f74be8d3bdc28950b208f09",
+      "native_gpu_log_sha256": "6245259e24b32bd069b4a67c3bcee6f8077c012b36e705312defe3abea9a4022",
+      "p2_trace_scope": "Transition-focused watched WAIT_REG_MEM provenance. No full `ring trace PM4_INTERRUPT` records were present in the captured log."
+    },
+    "xenos": {
+      "root": "/home/pes/work/nfs-shift-p1-v85-xenos-counter-input-20261028",
+      "bink": "281/281",
+      "gdb_log_sha256": "b0aa834ae4f5b8d004682b14aca30ad68ba9e53c515359954ee28632e5b5775d",
+      "runner_log_sha256": "bb37b6b9140ba95d9d4392092e027e40523b5ba147c81bb0a075c79595d4182a",
+      "gpu_log_sha256": "89685435f54429d7f5c55e95199b34416446789c7ff622546e1c47013a9bf631",
+      "gpu_trace_scope": "The captured Xenos runtime log records SetInterruptCallback but contains no per-packet source=1 PM4 or ring-batch records."
+    }
+  },
+  "guest_counter": {
+    "address": "0xB7368A04",
+    "queue_address": "0xB7368BE0",
+    "completion_token": "0xC0000000",
+    "static_branch_fact": "In the supplied PPC body for sub_823B85D0, the decrement path is reached only when the word at r30 equals 0xC0000000. This identifies the guest path, not the GPU event that caused it.",
+    "native_first_writes": [
+      {
+        "index": 1,
+        "elapsed_seconds": 92.454,
+        "writer": "sub_823B31A0",
+        "before": 0,
+        "after": 1,
+        "delta": 1,
+        "producer": 0,
+        "consumer": 0
+      },
+      {
+        "index": 2,
+        "elapsed_seconds": 92.464,
+        "writer": "sub_823B85D0",
+        "before": 1,
+        "after": 0,
+        "delta": -1,
+        "producer": 4,
+        "consumer": 2
+      },
+      {
+        "index": 3,
+        "elapsed_seconds": 92.653,
+        "writer": "sub_823B85D0",
+        "before": 0,
+        "after": -1,
+        "delta": -1,
+        "producer": 4,
+        "consumer": 4
+      }
+    ],
+    "xenos_first_writes": [
+      {
+        "index": 1,
+        "elapsed_seconds": 55.071,
+        "writer": "sub_823B31A0",
+        "before": 0,
+        "after": 1,
+        "delta": 1,
+        "producer": 0,
+        "consumer": 0
+      },
+      {
+        "index": 2,
+        "elapsed_seconds": 55.089,
+        "writer": "sub_823B85D0",
+        "before": 1,
+        "after": 0,
+        "delta": -1,
+        "producer": 2,
+        "consumer": 2
+      },
+      {
+        "index": 3,
+        "elapsed_seconds": 55.116,
+        "writer": "sub_823B31A0",
+        "before": 0,
+        "after": 1,
+        "delta": 1,
+        "producer": 2,
+        "consumer": 2
+      },
+      {
+        "index": 4,
+        "elapsed_seconds": 55.134,
+        "writer": "sub_823B85D0",
+        "before": 1,
+        "after": 0,
+        "delta": -1,
+        "producer": 4,
+        "consumer": 4
+      }
+    ],
+    "first_guest_sequence_divergence": "Native write #3 is a second decrement (0 to -1); Xenos write #3 begins the next balanced pair with a producer increment (0 to 1). This is a measured guest-sequence difference, not yet a GPU-cause attribution."
+  },
+  "native_gpu_observation": {
+    "source1_pollword_clear": {
+      "log": "bin/logs/nfs_shift_001.log:725",
+      "wall_clock": "2026-10-28 23:17:05.916",
+      "pollword_guest_physical": "0x1B964004",
+      "pollword_transition": "0x00000001 -> 0x00000000",
+      "ring_generation": 1,
+      "batch": 1,
+      "batch_rptr": 25,
+      "batch_wptr": 43,
+      "ring_guest": "0x09752580",
+      "source_ib": "0x095D0120",
+      "source_ib_depth": 1,
+      "packet_ordinal": 108,
+      "packet_byte_offset": 1304,
+      "packet_type": 3,
+      "packet_opcode": "0x54",
+      "interrupt_source": 1,
+      "cpu": 2,
+      "callback": "0x823B37B8",
+      "callback_data": "0xB7365F00",
+      "guest_thread_id": 3,
+      "dispatch_id": "0x7F5",
+      "cpu_mask": null,
+      "raw_packet_dwords": null
+    },
+    "next_recorded_source1_pollword_clear": {
+      "log": "bin/logs/nfs_shift_001.log:1038",
+      "wall_clock": "2026-10-28 23:17:07.089",
+      "ring_generation": 1,
+      "batch": 20,
+      "batch_rptr": 277,
+      "batch_wptr": 289,
+      "ring_guest": "0x09752580",
+      "source_ib": "0x096B5900",
+      "packet_ordinal": 237,
+      "packet_byte_offset": 18352,
+      "packet_type": 3,
+      "packet_opcode": "0x54",
+      "interrupt_source": 1,
+      "cpu": 2,
+      "callback": "0x823B37B8",
+      "callback_data": "0xB7365F00",
+      "dispatch_id": "0x84F"
+    },
+    "event_join": {
+      "p1_counter_write_has_gpu_dispatch_id": false,
+      "shared_monotonic_wall_clock_anchor_recorded": false,
+      "direct_join": false,
+      "interpretation": "The P2 log proves that dispatch 0x7F5 cleared the watched guest pollword inside a source=1 callback. The P1 counter log separately records the +1 then -1 sequence 10 ms apart on its GDB-relative monotonic clock. The capture metadata does not give a common clock epoch or dispatch ID on the P1 counter write, so attributing write #2 to dispatch 0x7F5 remains a temporal hypothesis. Write #3 is the first extra guest decrement versus Xenos, but is not joined to a GPU dispatch."
+    }
+  },
+  "conclusion": {
+    "measured": [
+      "The matched guest traces differ first at counter write ordinal 3: Native decrements again while Xenos starts another producer/completion pair.",
+      "Native source=1 dispatch 0x7F5 executes PM4_INTERRUPT packet 108 in ring batch 1 and clears guest pollword 0x1B964004.",
+      "The Xenos capture has no packet-level source=1 ring trace to compare against Native batch 1."
+    ],
+    "inference": [
+      "Native write #2 may be the guest completion associated with dispatch 0x7F5, given the shared-run ordering and 10 ms spacing from producer write #1. The available artifacts do not establish this by a shared ID or clock anchor."
+    ],
+    "unknown": [
+      "Which source=1 PM4 dispatch, if any, owns Native guest completion write #3.",
+      "Whether Xenos receives an equivalent source=1 packet at the corresponding guest sequence point.",
+      "Whether Native processes an extra completion, Xenos misses one, or guest queue work differs for another reason."
+    ],
+    "next_required_evidence": [
+      "A Native capture with SHIFT_NATIVE_VULKAN_TRACE_RING=1, retaining raw interrupt dwords, CPU mask, ring batch/source-IB provenance, callback result, and dispatch ID.",
+      "A P1 queue publication/dequeue/counter trace that links the exact sentinel work item and counter store to the source=1 callback or dispatch ID, with a shared clock anchor if IDs cannot cross the async queue.",
+      "An equivalent Xenos source=1 PM4/ring trace for the first balanced counter pairs."
+    ]
+  }
+}

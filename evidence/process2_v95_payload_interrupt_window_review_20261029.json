@@ -1,0 +1,75 @@
+{
+  "schema": "shift.process2.v95-payload-interrupt-window-review.v1",
+  "date": "2026-10-29",
+  "source_evidence": "/home/pes/work/nfs-shift-xbox360-runtime-p1-20261023/evidence/xbox360_linux_backend_payload_pair_native_v95_xenos_v95_20261029.json",
+  "correction": {
+    "status": "prior payload-byte and raw-IB memory claims retracted",
+    "cause": "The v95/v96 GDB sampler read GPU guest-physical addresses as virtual_membase + address. ReX physical translation requires physical_membase + (address & 0x1FFFFFFF), where physical_membase = virtual_membase + 0x100000000.",
+    "confirmed_sampler_bug": "tools/xbox360/trace_linux_post_bink_payload_words_v95_20261029.gdb reads payload via base + payload; the v96 neighbor-window capture used the same incorrect alias for physical PM4 memory.",
+    "valid_v95_fields": ["manager inputs sampled from guest-virtual addresses", "producer descriptor header 0x8100000B", "backend context/log offsets and dispatch metadata"],
+    "invalid_v95_v96_fields": ["payload words and SHA-256", "raw guest-physical PM4 window words", "header mismatch observed only in the wrongly translated v96 memory window"],
+    "required_action": "Discard the previously reported all-zero payload and matching hash. Do not use the v96 sampled header mismatch as a PM4 stream difference. Recapture from the corrected physical backing before making either claim."
+  },
+  "payload_follow_up": {
+    "matched_builder_inputs": {
+      "manager_plus_11012": 0,
+      "manager_plus_11832_u64": "0x00000000FFFFFFFF",
+      "manager_plus_10942_u8": "0x04",
+      "manager_plus_14904_u32": "0xA95D0000",
+      "manager_plus_14908_u32": "0xA974FFFC"
+    },
+    "payload": {
+      "bytes": 44,
+      "words_u32be": 11,
+      "snapshot_status": "invalid-physical-alias",
+      "usable_content": "unknown",
+      "previously_reported_hash_to_discard": "85759b3811ff7dc47b03792ac85317be51431a3f9e01dcafce317ed736a391b0"
+    },
+    "descriptor": ["0x8100000B", "payload_guest_address"],
+    "interpretation": "The sampled manager inputs and descriptor header remain valid and match. The direct-memory payload sample used the wrong physical alias; its all-zero words and hash are invalid and must be discarded. Payload-content equality is unknown, so this sample does not close the payload-content hypothesis. The unused r4 words remain excluded."
+  },
+  "source1_interrupt_pair": {
+    "xenos": {
+      "dispatch_id_local": "0x3DE",
+      "source_ib": "0x096861C0",
+      "command_buffer_kind": 2,
+      "byte_offset": "0x2EFC",
+      "packet_ordinal": 88,
+      "header": "0xC0005400",
+      "cpu_mask": "0x04"
+    },
+    "native": {
+      "dispatch_id_local": "0xC53",
+      "source_ib": "0x096558C0",
+      "byte_offset": "0x2EFC",
+      "packet_ordinal": 247,
+      "plugin_reported_raw_dwords": ["0xC0005400", "0x00000004"],
+      "cpu_mask": "0x04"
+    },
+    "interpretation": "Backend plugin context/logs place the reported source=1 interrupt at byte offset 0x2EFC in each respective IB and report header/mask 0xC0005400/0x04. The guest-physical backing bytes have not been independently validated because the v96 sampler used the wrong alias. Backend-local packet ordinals and dispatch IDs are not cross-backend identities."
+  },
+  "assessment_of_fixed_window": {
+    "proposed": "64 dwords before and 32 dwords after the interrupt packet",
+    "calculated_window_if_centered_on_packet": {
+      "start_offset": "0x2DFC",
+      "end_offset_exclusive": "0x2F84",
+      "bytes": 392
+    },
+    "sufficient_as_context": true,
+    "guarantees_previous_packet_boundary": false,
+    "guarantees_complete_next_packet": false,
+    "v96_sample_status": "invalid-physical-alias; sampled words and header mismatch are discarded",
+    "reason": "PM4 packets are variable length. A fixed backward slice can begin in the middle of a preceding packet; a fixed forward slice can end in the middle of the next packet. Matching offsets in this pair do not make those bytes packet-aligned."
+  },
+  "recommended_capture": {
+    "preferred": [
+      "At dispatch, retain the decoder's packet-boundary history and exact raw dwords for the last eight complete packets before the interrupt, the interrupt itself, and the next eight complete packets. Decode each backend independently from a confirmed start of the same IB; do not infer boundaries by aligning offsets across backends.",
+      "For each row, record IB guest base, IB length, byte offset, packet ordinal, type/opcode, header-declared length, raw dwords, and any nested-IB source provenance.",
+      "Starting from the interrupt end (0x2F04 here), inspect the next header and capture exactly the full packet it declares, repeating until eight complete successor packets are collected. Bound every read by the parent IB extent; if the next packet is truncated by that extent or the capture cap, mark it truncated rather than treating the final dword as a boundary.",
+      "If Xenos cannot retain parser history, snapshot the confirmed IB execution prefix from its known packet-stream start through the target plus the parsed successor packets. The target is only about 12 KB from offset zero in this pair, so this remains a small bounded read. Translate every GPU guest-physical address with physical_membase + (address & 0x1FFFFFFF), then verify that the chosen host range is readable before decoding."
+    ],
+    "fixed_window_use": "Keep the 64/32-dword slice as a cheap cross-check and verify that it contains the plugin-reported interrupt header/mask using the corrected physical backing. Do not use it alone to claim adjacent packet boundaries.",
+    "boundary_check": "Re-parse captured raw words from a known IB packet-stream start and verify that the decoded target begins exactly at 0x2EFC with header 0xC0005400 and mask 0x04. If byte offset zero is not a confirmed stream start, use the actual entry offset supplied by the indirect-buffer invocation."
+  },
+  "causality": "This capture is diagnostic only. The v95/v96 guest-physical memory snapshots are invalid, and no raw-byte comparison is established. Even a corrected adjacent raw-stream difference would need correlation with guest callback/queue effects before assigning cause."
+}

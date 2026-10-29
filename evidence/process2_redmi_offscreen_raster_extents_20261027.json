@@ -1,0 +1,75 @@
+{
+  "schema": "shift.process2.redmi_offscreen_raster_extents.v1",
+  "date": "2026-10-27",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "commit": "364d162e4c333699bde78e28389871188f167ddd",
+    "working_tree_clean_at_capture": true,
+    "capture_evidence": "process2_redmi_transition_copy_chain_20261026.json"
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": "13",
+    "api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "app_package": "com.hanz0hatt0r.nfsshift",
+    "app_pid_before_and_after": 14611,
+    "top_resumed_activity": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity"
+  },
+  "captured_contract": {
+    "problem": "Single-sample offscreen target height was estimated by scaling the 1280x720 guest-output aspect ratio. That underestimates captured top-left targets whose viewport/scissor is taller than the scaled estimate.",
+    "register_source": "The exact surface_info, viewport, window scissor, and following Copy/Convert destinations are recorded in process2_redmi_provider_resolve_disclaimer_live_20261026.log.gz around 2026-10-26 22:42:34 MSK.",
+    "targets": [
+      {"surface_pitch": 320, "viewport_scissor_extent": [243, 243], "next_copy_destination_extent": [256, 243], "inferred_image_extent": [320, 243]},
+      {"surface_pitch": 160, "viewport_scissor_extent": [81, 81], "next_copy_destination_extent": [96, 81], "inferred_image_extent": [160, 81]},
+      {"surface_pitch": 80, "viewport_scissor_extent": [27, 27], "next_copy_destination_extent": [32, 27], "inferred_image_extent": [80, 27]},
+      {"surface_pitch": 80, "viewport_scissor_extent": [9, 9], "next_copy_destination_extent": [32, 9], "inferred_image_extent": [80, 9]},
+      {"surface_pitch": 80, "viewport_scissor_extent": [3, 3], "next_copy_destination_extent": [32, 3], "inferred_image_extent": [80, 3]},
+      {"surface_pitch": 80, "viewport_scissor_extent": [1, 1], "next_copy_destination_extent": [32, 1], "inferred_image_extent": [80, 1]},
+      {"surface_pitch": 80, "viewport_scissor_extent": [1, 1], "next_copy_destination_extent": [32, 1], "inferred_image_extent": [80, 1]}
+    ]
+  },
+  "implementation": {
+    "behavior": "For a single-sample target whose surface pitch differs from the guest output width and whose viewport/scissor begin at the origin, infer image height as the maximum of viewport height and effective scissor bottom. Other target forms retain the guest-output aspect-ratio fallback. The existing surface-pitch/MSAA width rule is unchanged.",
+    "files": [
+      "native_vulkan/include/shift_xbox_draw_input.hpp",
+      "native_vulkan/src/xbox_draw_input.cpp",
+      "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/tests/xbox_draw_input_check.cpp"
+    ]
+  },
+  "verification": {
+    "native_vulkan_ctest": {"passed": 4, "total": 4, "validation_layer": "VK_LAYER_KHRONOS_validation"},
+    "linux_plugin_ctest": {"passed": 7, "total": 7, "validation_layer": "VK_LAYER_KHRONOS_validation"},
+    "arm64_draw_input_regression": {
+      "status": "passed",
+      "output": "captured PM4_DRAW_INDX input check passed",
+      "device": "Redmi Note 8 Pro / Android 13",
+      "built_with": "NDK r28c, Android API 29",
+      "sha256": "e3b8d47d237581ebd34153e26d41eacb0803bc5ce271d8fe36a0936866e5d737",
+      "build_id": "e64d3ce7a0eefc08574040d104886375afa32043"
+    },
+    "android_plugin": {
+      "target_build": "rexgpu-shift-native succeeded",
+      "abi": "AArch64",
+      "minimum_android_api": 26,
+      "ndk": "r28c",
+      "sha256": "eb3d1147a773fae1731010fa7aa1a1ea689ffdfb19ae45545b413eb15c21450b",
+      "build_id": "5758c9e28fb2d3942bb96b7643d1da55e4a1ec53"
+    },
+    "live_app_untouched": {
+      "apk_installed_or_replaced": false,
+      "app_relaunched": false,
+      "screenshot_sha256_before": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8",
+      "screenshot_sha256_after": "a4c30ee09c73fcdfa724bc9b2f5f3d3657ed8ede7e27cbefe24052ef975d9ef8"
+    }
+  },
+  "limitations": [
+    "This fixes the inferred minimum target height used while preparing captured single-sample offscreen draws; it does not change or validate live retail pixels because the rebuilt plugin was not installed.",
+    "The ordered mode-6 render-target and Copy/Convert operations are still not executed, and the current presenter still rejects this mixed-target frame.",
+    "No exact full render-target height exists in the captured surface registers; the offscreen path derives the extent needed by the captured top-left viewport/scissor."
+  ]
+}

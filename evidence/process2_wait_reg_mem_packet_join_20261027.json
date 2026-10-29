@@ -1,0 +1,98 @@
+{
+  "schema": "shift.process2.wait_reg_mem_packet_join.v1",
+  "date": "2026-10-27",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "source_capture": {
+    "run": "Linux v38, 2026-10-27",
+    "guest_source_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "plugin_sha256": "bec4c074f765f82fa9da1258c7b8e86353750c9dd14fe94d5e5df4f25b71167b",
+    "plugin_build_id": "0195297bd3486bdd49ad9cece30d474f7bed9fb7"
+  },
+  "observed_capture": {
+    "pm4_interrupt": {
+      "plugin_record": 533,
+      "source": 1,
+      "ring_generation": 1,
+      "batch_rptr": 5308,
+      "batch_wptr": 5311,
+      "ring_guest_address": "0x09752580",
+      "packet_ordinal": 246,
+      "packet_source": "0x096CEF40+11924",
+      "cpu_mask": "0x04",
+      "dispatched_cpu_mask": "0x04",
+      "guest_callback": "0x823B37B8",
+      "callback_data": "0xB7365F00",
+      "status": "invoked"
+    },
+    "wait_reg_mem": {
+      "guest_address": "0x1B964004",
+      "poll_address": "0x1B964006",
+      "reference": "0x00000000",
+      "mask": "0xFFFFFFFF",
+      "endian": 2,
+      "compare": 3,
+      "raw_value_transition": ["0x01000000", "0x00000000"],
+      "observed_value_transition": ["0x00000001", "0x00000000"],
+      "condition_transition": [false, true],
+      "source": "0x096CEF40",
+      "byte_offset": 11972,
+      "packet_ordinal": "not present in this earlier WAIT sample"
+    },
+    "interrupt_counts": {
+      "plugin_source_1_packets": 543,
+      "plugin_packet_ids": "#0 through #542",
+      "p1_gdb_guest_callback_entries": 542,
+      "one_to_one_join": "not established; counts differ by one"
+    },
+    "p1_watchpoint": "Observed GPU scratch write 0->1 and duplicate 1->1; no CPU 1->0 guest store was captured on the four monitored aliases."
+  },
+  "p2_read_path": {
+    "file": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+    "steps": [
+      "Validate physical_span_valid(wait.guest_address, sizeof(uint32_t)).",
+      "Resolve poll_word with memory_->TranslatePhysical<uint32_t*>(wait.guest_address).",
+      "Poll the translated word using __atomic_load_n(poll_word, __ATOMIC_ACQUIRE).",
+      "Convert raw_value to observed_value with rex::graphics::xenos::GpuSwap(raw_value, wait.endian_mode)."
+    ],
+    "renderer_shadow_used": false,
+    "separate_shadow_path": "COHER_STATUS_HOST uses renderer-owned state only when wait.memory is false.",
+    "writer_attribution": "The P2 read path proves the value came from the shared guest physical-memory mapping. It does not identify the CPU/GPU actor that changed it."
+  },
+  "new_trace_fields": [
+    "ring generation",
+    "batch read/write pointers",
+    "ring guest address",
+    "expanded packet ordinal",
+    "indirect-buffer source, nesting depth, and byte offset",
+    "guest physical wait address",
+    "raw and endian-adjusted values",
+    "reader=guest-physical-memory"
+  ],
+  "verification": {
+    "host_plugin_build": {
+      "result": "passed",
+      "sha256": "f14658244bf1fc4fe36da2795bdd0efd3b21d49f64686429195d5c07109f603e",
+      "build_id": "2e64d150dd076c7fafb1e49726e70933ba53f095"
+    },
+    "host_plugin_ctest": "6/6 passed with VK_LAYER_KHRONOS_validation; includes a synthetic WAIT trace assertion for packet/ring join fields.",
+    "android_arm64_compile": {
+      "ndk": "r28c / 28.2.13676358",
+      "api": 26,
+      "plugin_translation_unit": "compiled",
+      "plugin_object_sha256": "72e98d5a9bb84c7481ad2c6cc3e0e061b8baa7cc2bc8e30aeee60b6e7de1fb6b",
+      "shift_guest_ring_and_draw_input": "compiled",
+      "draw_input_object_sha256": "20a4bedc05ec53c3c6b3c1e3a80ad1906bae3363d9d1fe603414cfe99991c829",
+      "vulkan_renderer_core": "compiled",
+      "renderer_object_sha256": "1ba73859629d11527e6861bd5d244d582724c8f0107bb17faea7cbdd2ef89600",
+      "plugin_dso_linked_or_installed": false,
+      "adb_device_available": false
+    },
+    "retail_capture_after_instrumentation": false
+  },
+  "limitations": [
+    "No new retail run was performed; the Redmi was not connected to ADB.",
+    "The new packet/ring join is verified by a synthetic live-ring fixture, not by the prior retail v38 log.",
+    "The existing watchpoint did not observe the 1->0 writer, so the writer remains unknown.",
+    "The discrepant 543 plugin interrupt records versus 542 P1 guest callback entries prevents a complete one-to-one callback join."
+  ]
+}

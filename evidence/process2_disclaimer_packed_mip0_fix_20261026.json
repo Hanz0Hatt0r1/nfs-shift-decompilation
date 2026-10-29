@@ -1,0 +1,60 @@
+{
+  "schema": "shift.process2.disclaimer_packed_mip0_fix.v1",
+  "capture": {
+    "frame": 907,
+    "draw_ids": [5058, 5059, 5060, 5061],
+    "texture_guest_address": "0x0A24B000",
+    "descriptor_words": [
+      "0x840248FE",
+      "0x0A24B054",
+      "0x0000E1FF",
+      "0x06A80D10",
+      "0x00000E43",
+      "0x0A24BA10"
+    ],
+    "texture": {
+      "format": 20,
+      "format_name": "DXT4/5",
+      "dimensions": [512, 8],
+      "pitch_pixels": 512,
+      "tiled": true,
+      "packed_mips": true,
+      "mip_range": [0, 9],
+      "base_and_mip_address_equal": true
+    }
+  },
+  "raw_capture": {
+    "file": "process2_disclaimer_frame907_draw5058_dxt5_raw_20261026.bin",
+    "guest_memory_source": "read-only shared guest-memory snapshot at physical address 0x0A24B000",
+    "bytes": 65536,
+    "sha256": "31cd6b2c3f21b649592e0cde1f0a778d6047ed892dbfb62ed44b82b8f3e7f15a"
+  },
+  "cause_and_fix": {
+    "cause": "The Xenos fetch marks this tiled DXT resource as packed_mips, but the decoder read the base image from block row 0. For a 512x8 base level whose mip tail begins at level 0, the image is offset 16 texels along its short axis, or four 4x4 DXT block rows.",
+    "change": "Retain the captured packed_mips flag and apply the level-0 packed offset when untiling supported tiled DXT and RGBA8 resources. Unsupported packed linear layouts still fail closed.",
+    "old_decode_sha256": "43c9836efa8500630ab1cb7a304c1a8740e7e7e44a74ff1932ce0986270a3dab",
+    "corrected_rgba_file": "process2_disclaimer_frame907_draw5058_packed_mip0_rgba8_20261026.bin",
+    "corrected_rgba_sha256": "0e2011a233a014596a9b0bfe12afd6e60863071bbbff3091146da0723549ab82"
+  },
+  "replay": {
+    "image": "process2_disclaimer_packed_mip0_replay_mali_20261026.png",
+    "sha256": "27cd88cd5565480610785b886a4ed22dfd1ee986a3ebacdeeaf8b9926ff2afba",
+    "method": "Offscreen Vulkan 1.1 replay of the four captured retail draws, shaders, vertices, states, packed DXT texture, and Copy/Convert pass.",
+    "device": "Redmi Note 8 Pro, Mali-G76 MC4",
+    "observed_border_pixels": {
+      "horizontal_rows": [186, 187, 188, 189, 540, 541, 542, 543],
+      "continuous_x_range": [180, 1099],
+      "pixels_per_row": 920
+    }
+  },
+  "verification": {
+    "linux": "Build succeeded; all four CTest checks passed, including the packed-DXT byte regression, exact captured-draw replay, and Vulkan validation.",
+    "android_renderer_check": "ARM64 check target built and passed on Mali-G76 MC4 using the same capture fixtures; the readback has continuous border rows.",
+    "android_plugin": "ARM64 ReXGlue Vulkan plugin target built successfully against the unchanged runtime DSO. One existing SDK warning remains for the fpcr inline-assembly operand width.",
+    "live_app": "No APK or currently running game window was modified or closed."
+  },
+  "limits": [
+    "The replay reproduces the captured disclaimer draws; it does not establish full-scene retail parity.",
+    "No independent original-console screenshot comparison was available for the border color or thickness."
+  ]
+}

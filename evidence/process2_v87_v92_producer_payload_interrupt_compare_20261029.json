@@ -1,0 +1,108 @@
+{
+  "schema": "shift.process2.v87-v92-producer-payload-interrupt-compare.v1",
+  "date": "2026-10-29",
+  "pair_evidence": "/home/pes/work/nfs-shift-xbox360-runtime-p1-20261023/evidence/xbox360_linux_backend_pair_native_v92_xenos_v87_20261029.json",
+  "scope": "Compare the first post-Bink sub_823B31A0 producer call and first captured source=1 PM4 interrupt in the Xenos v87 / Native v92 run pair. No Process 1 runtime changes.",
+  "shared_run_identity": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+    "native_plugin_sha256": "f213f4ca9b679660e18e17b68aa1cc6f64667388c8f0375ecd80b245db13f1c9",
+    "xenos_diagnostics_plugin_sha256": "8b5abe7a0c59a8a41af5aa166df23de46fed191bfc863e183c98d6023c54e4de"
+  },
+  "producer_call": {
+    "shared_observations": {
+      "ordinal": 1,
+      "caller_lr": "0x823B342C",
+      "caller": "sub_823B33A0",
+      "callee": "sub_823B31A0",
+      "manager": "0xB7365F00",
+      "tag_r6": 11,
+      "delta_r7": 0,
+      "stream_r8": "0xB7369338",
+      "manager_plus_11012_before": 0,
+      "route": "sub_823B2AF0"
+    },
+    "backend_addresses": {
+      "xenos": {
+        "producer_r4_record": "0xA96C2CAC",
+        "producer_r5_payload_guest": "0x096C2C80",
+        "interrupt_source_ib": "0x096B6AC0",
+        "captured_r4_words": ["0x00700772", "0x07060706", "0x87000007", "0x00000001"]
+      },
+      "native": {
+        "producer_r4_record": "0xA95DC1EC",
+        "producer_r5_payload_guest": "0x095DC1C0",
+        "interrupt_source_ib": "0x095D0000",
+        "captured_r4_words": ["0x3F43E93E", "0x3FBB18D9", "0xFFFFFFFF", "0x3DCC0000"]
+      }
+    },
+    "address_relationship": {
+      "both_payload_guest_addresses_are_source_ib_plus": "0xC1C0",
+      "both_r4_addresses_are_payload_plus_virtual_alias_and_payload_extent": "0xA000002C",
+      "interpretation": "The different absolute addresses have the same observed relative placement. This is consistent with different allocation bases/layout and is not evidence that payload contents differ."
+    },
+    "retail_path_evidence": {
+      "source": "P1 evidence xbox360_linux_sub_823B31A0_producer_path_ghidra_20261028.json, cross-checked against generated PPC functions sub_823B2D30, sub_823B33A0, sub_823B25D8 and sub_823B31A0",
+      "caller_gates": ["manager+13232 == 0", "(manager+10940 & 0x80) == 0"],
+      "sub_823B2D30_reads": ["manager+11832 (64-bit)", "bit 1 of manager+10942", "manager+14904", "manager+14908"],
+      "tag_formula": "11 * ((manager+11832 != UINT64_MAX ? 1 : 0) + bit1(manager+10942)) as generated PPC control flow; observed tag 11 means exactly one payload block branch contributed in each run.",
+      "producer_zero_counter_branch": "When manager+11012 is zero and r7 is zero, sub_823B31A0 does not dereference or write the incoming r4 record. It constructs the stack descriptor [0x8100000B, r5] and calls sub_823B2AF0(manager, stack_descriptor, 1).",
+      "allocation_units": "sub_823B25D8 scales its size argument by four before forwarding the allocation request. The payload request of 11 therefore covers 44 bytes; the separate r4 request of 4 covers 16 bytes.",
+      "implication": "The four captured r4 words are present in the allocated record region but are not consumed by this call path. They must not be treated as a producer semantic mismatch or GPU divergence signal."
+    },
+    "unresolved_inputs": {
+      "manager_field_values_at_call": "not captured",
+      "payload_bytes_at_r5": "not captured",
+      "payload_semantic_equality": "unknown",
+      "earliest_divergent_write_to_manager_fields": "unknown",
+      "disposition": "The payload is generated from manager fields that may already reflect earlier guest/GPU state. Equal tag and allocation-relative placement do not prove equal payload content. No first wrong payload or Vulkan defect is established."
+    }
+  },
+  "source1_interrupt": {
+    "xenos": {
+      "dispatch_id_backend_local": "0x3E3",
+      "generation": 1113,
+      "rptr_wptr": [3176, 3179],
+      "source_ib": "0x096B6AC0",
+      "command_buffer_kind": 2,
+      "packet_ordinal": 88,
+      "byte_offset": "0x2EFC",
+      "raw_header": "0xC0005400",
+      "cpu_mask": "0x04"
+    },
+    "native": {
+      "dispatch_id_backend_local": "0xCC2",
+      "generation": 1,
+      "rptr_wptr": [3290, 3293],
+      "ring_guest": "0x09752580",
+      "source_ib": "0x095D0000",
+      "packet_ordinal": 246,
+      "byte_offset": "0x2E94",
+      "raw_dwords": ["0xC0005400", "0x00000004"],
+      "cpu_mask": "0x04"
+    },
+    "packet_comparison": "The backend plugin context/logs report the same source=1 header and CPU mask. Dispatch IDs are backend-local. Buffer base, packet ordinal, and byte offset differ, but this alone does not establish semantic divergence. Independent guest-physical backing bytes still require correct physical-membase translation.",
+    "native_adjacent_packets": [
+      {"ordinal": 239, "offset": "0x2E18", "opcode": "WAIT_REG_MEM", "guest": "0x1B964004", "reference": "0x00000001", "condition_at_sample": true},
+      {"ordinal": 243, "offset": "0x2E4C", "opcode": "WAIT_REG_MEM", "guest": "0x1B964000", "reference": "0x00000004", "condition_at_sample": true},
+      {"ordinal": 244, "offset": "0x2E64", "opcode": "WAIT_REG_MEM", "guest": "0x1B964014", "reference": "0x00000208", "condition_at_sample": true},
+      {"ordinal": 245, "offset": "0x2E7C", "opcode": "WAIT_REG_MEM", "guest": "0x1B964010", "reference": "0x823A4758", "condition_at_sample": true},
+      {"ordinal": 246, "offset": "0x2E94", "opcode": "PM4_INTERRUPT", "source": 1, "cpu_mask": "0x04"},
+      {"ordinal": 248, "offset": "0x2EA4", "opcode": "WAIT_REG_MEM", "guest": "0x1B964000", "reference": "0x00000000", "condition_at_sample": true},
+      {"ordinal": 250, "offset": "0x2EC4", "opcode": "WAIT_REG_MEM", "guest": "0x1B964004", "reference": "0x00000000", "condition_at_first_sample": false, "eventually_completed": true}
+    ],
+    "xenos_adjacent_packets": "not captured by the v87 diagnostics-only run",
+    "disposition": "The plugin-reported interrupt context matches. Native neighboring waits show ready callback context before dispatch and a later guest-memory condition that eventually completed. There is no joined worker completion for this dispatch, and Xenos adjacent raw packet bytes are unavailable. The later v95/v96 direct-memory sampler used an invalid physical-pointer translation, so its raw IB bytes must not be used; no causal claim follows.",
+    "raw_guest_physical_memory_status": "not independently validated; the P1 sampler bug is corrected in evidence/process2_v95_payload_interrupt_window_review_20261029.json"
+  },
+  "minimal_rerun_needed": [
+    "At sub_823B2D30 entry/exit in both backends, snapshot exact bytes for manager+11832, manager+10942, manager+14904..+14911, manager+13232, and manager+10940, plus outputs tag and payload guest address.",
+    "At producer entry, capture exactly 44 bytes from the actual payload allocation (not the r4 record), with the translation from guest address to backing memory and a SHA-256.",
+    "At sub_823B2AF0 entry, capture the 8-byte stack descriptor and join it to the producer ordinal.",
+    "For the first source=1 packet, capture packet boundaries and raw dwords in a bounded window of at least eight packets on both sides, including nested-IB provenance and decoded WAIT_REG_MEM values.",
+    "If manager input bytes differ, record the last writer/command provenance for only those fields so the earlier divergence can be identified without presuming Xenos correctness."
+  ],
+  "conclusion": "Discard the differing r4 words as a semantic signal. The first producer's actual 44-byte payload and its manager inputs were not captured. The source=1 interrupt payload/mask match, but packet provenance differs and the Xenos neighboring packet window is missing. Current evidence does not establish the first wrong payload, a Vulkan renderer defect, or a causal link from that interrupt to guest queue/frontier state."
+}

@@ -1,0 +1,35 @@
+{
+  "schema": "shift.process2.ordered_edram_interrupt_trace_progress.v1",
+  "date": "2026-10-27",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "source_base": "b952d8f6",
+  "changes": {
+    "operation_preflight": [
+      "Reject unresolved draw operations before Vulkan submission.",
+      "Reject Copy/Convert operations missing source or destination extent/base/pitch.",
+      "Require complete, unique, ordered draw references and strictly increasing packet ordinals.",
+      "Retain each Copy/Convert packet's own raw source registers and compiled shaders; reject unresolved or unprepared copy payloads before submission."
+    ],
+    "ordered_executor": "The plugin routes captured operations to a Vulkan queue-order executor. Same-layout color/depth targets persist between segments; copy-only execution may use an exact cached source layout. A later draw can sample an intermediate format-31 image only for a matching linear base-level descriptor and complete copy tuple. Tiled base-level format-31 descriptors have a guest-memory untile path. The complete retail package remains blocked by EDRAM layout aliasing, source association, and full clear/depth effects.",
+    "texture_descriptor": "Prepared textures retain guest address/layout metadata. For a preceding format-31 copy with exact base, pitch, height, format 31, number format 7, endian 2, sample 0, no array/slice/swizzle/gamma conversion, a linear non-mip texture fetch binds the GPU image directly and skips stale guest RAM reads. Tiled base-level format-31 textures instead read/untile guest memory. Other mip/subresource layouts remain fail-closed.",
+    "copy_convert_primitives": "Added standalone Vulkan output paths for captured format-26 all-four-sample conversion and format-31 sample-zero copies (1x and 4x sources), plus GPU-resident destination images cached by guest address and complete captured layout. Repeated submissions reuse the target with exact readback; see process2_copy_convert_primitives_20261027.json.",
+    "interrupt_trace": "With ring tracing enabled, each PM4_INTERRUPT record includes generation, batch read/write pointers, ring guest address, expanded packet ordinal, source IB and byte offset, requested/dispatched CPU masks, and per-asserted-CPU callback guest address, callback data, and dispatch status."
+  },
+  "verification": {
+    "native_linux_ctest": "4/4 passed with VK_LAYER_KHRONOS_validation; includes the captured draw-12 format-31 decode and untile regression.",
+    "linux_plugin_compile": "current-source Clang Release DSO linked successfully with -march=x86-64-v2; plugin CTest passed 6/6 with VK_LAYER_KHRONOS_validation; DSO SHA-256 068886f84ce1557cfdc8a536a599215d74658342a6551405ce22de779f70107f",
+    "android_arm64_compile": "NDK r28c compiled current plugin and renderer translation units; plugin DSO was not linked or installed; plugin object SHA-256 c9b67a655b4a09a4f6bfa6462119ae9f8f2e419a7e2b8d6c2490407161e3d827",
+    "android_draw12_descriptor_check": "current draw-input check passed on Redmi Note 8 Pro and covers the exact tiled base-level draw-12 descriptor plus synthetic untile payload; SHA-256 03addae35f5bccb52ede91f41636a36bf7a7823c5a7e7c242fdaf5bb50da68b5",
+    "android_offscreen_renderer": "current ARM64 renderer check (SHA-256 2c36898a398f6ef5a5892f7ab19001fffc6bf656d1bde1b01c2db39c4d7469ed) passed on Redmi Note 8 Pro Mali-G76 MC4 / Vulkan 1.1.131, including ordered format-31 cached-copy sampling against an uploaded half-float reference; Android Khronos validation layer is unavailable",
+    "android_device": "Redmi Note 8 Pro is visible to ADB at 192.168.1.32:38615; no NFS Shift PID is present and filtered logcat contains no PM4_INTERRUPT/callback trace. The offscreen checker ran without launching or restarting the game process."
+  },
+  "not_implemented": [
+    "The ordered executor handles compatible draw/copy segments and same-layout persistent targets, but the full 14-draw transition package is not executable because EDRAM alias reinterpretation, complete source association, and clear/depth effects remain unsupported.",
+    "Format-31 cache consumption is limited to an exact linear base-level descriptor. Captured draw 12 is a tiled 1x1 base-level fetch at 0x0CD64000, separate from the 0x0CD63000 copy destination; its guest-memory upload path and synthetic tile transform are tested, but captured retail texel bytes and the sampled game output are not.",
+    "The captured format-12 4x to format-26 conversion and seven format-31 outputs have shader/render-target primitives and ordered segment submission; full-stream execution remains unverified.",
+    "No current-device PM4_INTERRUPT callback-address trace was collected; the game is not running under the new instrumented plugin.",
+    "No trace has been sent to Process 1 because there is not yet a fresh live trace to share."
+  ],
+  "retail_evidence_reference": "process2_redmi_transition_copy_chain_20261026.json",
+  "limits": "These changes improve operation validation and trace observability. They do not establish rendered parity, video-transition success, guest synchronization correctness, or Android renderer readiness."
+}

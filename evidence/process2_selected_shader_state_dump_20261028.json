@@ -1,0 +1,89 @@
+{
+  "schema": "shift.process2.selected_shader_state_dump.v1",
+  "date": "2026-10-28",
+  "p2_branch": "work/process2-xbox-live-ring-20261023",
+  "p2_source_commit": "2020b159c291eb138b303e34388035966c20ef43",
+  "selector": {
+    "packet_variable": "SHIFT_NATIVE_VULKAN_DUMP_DRAW_PACKET_INDEX",
+    "frame_variable": "SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME",
+    "ordinal_semantics": "Zero-based DRAW_INDX/DRAW_INDX_2 ordinal since the preceding XE_SWAP; repeated ordinals are captured once per matching presenter frame unless a frame filter is set.",
+    "dump_contents": "Original guest VS and PS instruction bytes are saved before translation. Other resource dumps require their own prefixes.",
+    "path_pattern": ".frameN.packetM.vs.bin and .frameN.packetM.ps.bin"
+  },
+  "regression": {
+    "test": "rexgpu_shift_native_live_ring_selected_draw_dump_check",
+    "fixture": "Three successive guest swaps reuse draw ordinal zero.",
+    "assertion": "Three distinct presenter-frame dumps contain the exact original synthetic VS and PS bytes.",
+    "linux_resolve_pr2_ctest": "passed 8/8 with VK_LAYER_KHRONOS_validation",
+    "linux_compatibility_ctest": "not rerun: the saved compatibility build directory has no registered CTest tests",
+    "native_renderer_ctest": "passed 4/4 with VK_LAYER_KHRONOS_validation",
+    "retail_shader_translation_test": "shift_xbox_shader_translate_check passes on the captured post-Bink draw #10 VS/PS pair"
+  },
+  "linux_plugin": {
+    "path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-resolvepr2-20261028/output/librexgpu-shift-native.so",
+    "sha256": "d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90",
+    "build_id": "0fb71ebd09a498fc0515de313289b39ccfc22300",
+    "plugin_source_commit": "ec657d411c25d91a03e7a5991c0dc41f50e1af43",
+    "build": "Linux x86-64 Release, provider SDK PR #2 checkout; GPU emulation disabled."
+  },
+  "android_compile": {
+    "path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-android-matched-20261028/plugin-output/librexgpu-shift-natived.so",
+    "sha256": "751ceaf31d75b498f8b2394add510184786a28ff9869b6b6f0cb0881150026b2",
+    "build_id": "a3ec143512f6262310054e391c0b76892847bc8c",
+    "target": "Android API 26, arm64-v8a, NDK r28c; plugin-only build."
+  },
+  "retail_target": {
+    "capture_directory": "/home/pes/work/nfs-shift-p1-native-draw10-shader-artifacts-20261028",
+    "same_run_log": "runs/shift-native-r1/bin/logs/nfs_shift_001.1.log",
+    "same_run_log_sha256": "0c8e69a0315d1ae687a71745c468a84baa46686ef9c91da46a882f25620cb08f",
+    "selected_shader_state_log_line": 21261,
+    "resolved_draw_log_lines": "21268-21275",
+    "presenter_frame": 591,
+    "draw_ordinal": 10,
+    "resolved_draw": {
+      "draw_number": 6114,
+      "packet": 58,
+      "index_count": 222,
+      "topology": 0,
+      "vertex_fetch_guest_address": "0x09624510",
+      "vertex_payload_bytes": 5328,
+      "vertex_attributes": 3
+    },
+    "ordered_batch": {
+      "snapshot_log_line": 6986,
+      "submit_log_line": 7000,
+      "operation_sequence": "24 draws (packets 24..47, ordinals 0..23), followed by Copy/Convert packet 72",
+      "relation_to_selected_shader": "This is a separate earlier batch; frame 591 and packet ordinal 10 belong to the post-Bink packet-48..58 batch below."
+    },
+    "post_bink_batch": {
+      "snapshot_log_line": 21241,
+      "submit_log_line": 21244,
+      "operation_sequence": "11 draws (packets 48..58, ordinals 0..10), followed by Copy/Convert packet 83",
+      "submitted_draw_count": 11
+    },
+    "shader_pair": {
+      "vertex_fixture": "native_vulkan/tests/fixtures/retail_draw10_packet10.vert.bin",
+      "vertex_bytes": 156,
+      "vertex_sha256": "dbc9eb77834533aeb682e46686e4144d6274fcc6d270c8a47e8cd2d260564ac8",
+      "pixel_fixture": "native_vulkan/tests/fixtures/retail_draw10_packet10.frag.bin",
+      "pixel_bytes": 60,
+      "pixel_sha256": "8f000cb30f9159fc79b5417493f30bbef923fbdaf2f48ee66ae8070657d11fdf",
+      "translation": "Both original byte streams translate with the bounded captured-shader translator. The vertex shader reflects three input attributes; the pixel shader samples texture fetch constant 0. Generated vertex and fragment GLSL compile with glslangValidator -V --target-env vulkan1.1 and pass spirv-val --target-env vulkan1.1.",
+      "vertex_glsl_sha256": "d10e41ae59a0c61bbb11bcc2a69a9aa8d3d04fa6243d872168edc4d5654c5eb9",
+      "pixel_glsl_sha256": "4243907774819bf9ce0be614077e8075875ed6aa1c2160f5beff40c8fd0cb539"
+    },
+    "capture_identity": {
+      "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "plugin_sha256": "d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90",
+      "plugin_build_id": "0fb71ebd09a498fc0515de313289b39ccfc22300",
+      "plugin_source_commit": "ec657d411c25d91a03e7a5991c0dc41f50e1af43"
+    },
+    "status": "The selected raw retail VS/PS pair is now captured, checked into the translator regression fixtures, translated, and validated as Vulkan 1.1 SPIR-V. It is from the post-Bink 11-draw/Copy83 batch, not the earlier 24-draw/Copy72 batch."
+  },
+  "limits": [
+    "The captured draw #10 pair proves translation and Vulkan 1.1 shader validity only; exact descriptor semantics and rendered pixels are not validated by this regression.",
+    "The earlier 24-draw/Copy72 ordered batch has not yet had its own ordinal-10 shader pair isolated.",
+    "The Android artifact was compiled only; it was not installed or run on device.",
+    "The capture contains no input-gate event, and no menu entry or retail image parity is claimed."
+  ]
+}

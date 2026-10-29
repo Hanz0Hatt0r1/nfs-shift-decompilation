@@ -1,0 +1,43 @@
+{
+  "schema": "shift.process2.bink_r8_row_copy_followup.v1",
+  "date": "2026-10-25",
+  "retail_capture": {
+    "draw_index": 2614,
+    "source_evidence": "process2_linux_bink_cutscene_replay_20261025.json",
+    "source_log": "local nfs_shift_015.log; not committed",
+    "texture_planes": [
+      {"role": "luma", "width": 1280, "height": 720, "pitch": 1280, "format": "R8_UNORM", "byte_length": 921600},
+      {"role": "chroma V", "width": 640, "height": 360, "pitch": 640, "format": "R8_UNORM", "byte_length": 276480},
+      {"role": "chroma U", "width": 640, "height": 360, "pitch": 640, "format": "R8_UNORM", "byte_length": 276480}
+    ]
+  },
+  "change": {
+    "file": "native_vulkan/src/xbox_draw_input.cpp",
+    "behavior": "Resize the destination once; bulk-copy tightly packed planes, otherwise copy each bounded source row into its tightly packed destination row.",
+    "tight_plane_copy_calls_before": 1440,
+    "tight_plane_copy_calls_after": 3,
+    "payload_bytes_changed": false,
+    "allocation_claim": "No reduction in production per-frame allocations is claimed; the current draw path supplies a fresh destination vector for each texture."
+  },
+  "verification": {
+    "host_build": "Release CMake/Ninja build of the native Vulkan suite succeeded.",
+    "host_ctest": "4/4 passed with VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation.",
+    "android_arm64_api": 26,
+    "android_arm64_binary_sha256": "1dff735e1de52c7764aed3bffe0f267007a5e9187764ef7cf4e1f0fed74d4289",
+    "redmi_note_8_pro": {
+      "device": "begonia, Android API 33, Mali-G76 MC4",
+      "check": "captured PM4_DRAW_INDX input check passed",
+      "active_game_pid_after_check": 6314,
+      "apk_installed_or_game_restarted": false
+    },
+    "simpleperf": {
+      "result": "unavailable",
+      "reason": "Permission denied opening the cpu-cycles perf event for process 6314."
+    }
+  },
+  "limits": [
+    "The unit regression exercises real captured format and pitch contracts, but not a live rendered video frame.",
+    "No FPS or cutscene completion improvement is claimed; the installed APK predates this code change.",
+    "The existing game process was left running."
+  ]
+}

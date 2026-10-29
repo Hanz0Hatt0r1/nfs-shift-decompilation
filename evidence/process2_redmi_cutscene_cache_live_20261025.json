@@ -1,0 +1,95 @@
+{
+  "schema": "shift.process2.redmi_cutscene_cache_live.v1",
+  "date": "2026-10-25",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 22527,
+    "activity_remained_resumed": true
+  },
+  "installed_build": {
+    "apk_sha256": "0e574c0a7a92a2cf07a87c245aebe8b657dcd7ad392ffa6ecb651b1877e0b40a",
+    "apk_bytes": 193529223,
+    "plugin_sha256": "24e0a2c4e604f759a736dbc2b0a7b451493c5a22406df758c0fd28748f558011",
+    "plugin_elf_build_id": "281ccb2021bdfab5603c4918af608a3dd5e75828",
+    "packaged_plugin_aliases_byte_identical": true,
+    "provider": "ReXGlue SDK v0.10.0 Android provider without optional depth/stencil resolve"
+  },
+  "retail_movie": {
+    "file": "Franchise_Ident.bik",
+    "sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+    "width": 1280,
+    "height": 720,
+    "duration_seconds": 9.376015
+  },
+  "phone_captures": [
+    {
+      "file": "process2_redmi_cutscene_cache_live_a_20261025.png",
+      "sha256": "6eab29186e2f3c440b23b81fd575dccb10d96707d19fd6c26004d107539c6283",
+      "captured_at_local": "2026-10-25T15:51:17.219+03:00",
+      "best_source_frame_10fps": 15,
+      "best_source_seconds": 1.5,
+      "pearson_grayscale_correlation": 0.99421,
+      "interpretation": "Strong visual match to the original retail Bink cutscene."
+    },
+    {
+      "file": "process2_redmi_cutscene_cache_live_b_20261025.png",
+      "sha256": "d1e193767bbcb3a2f25a7a2bb26c3997aeb5a551752f93aaeaab1649cbec433f",
+      "captured_at_local": "2026-10-25T15:52:23.280+03:00",
+      "best_source_frame_10fps": 53,
+      "best_source_seconds": 5.3,
+      "pearson_grayscale_correlation": 0.59253,
+      "interpretation": "The visible SHIFT title image resembles the retail frame; the numeric match is moderate and should not be treated as exact frame identification."
+    }
+  ],
+  "exploratory_source_rate": {
+    "wall_interval_seconds": 66.061,
+    "estimated_media_advance_seconds": 3.8,
+    "media_seconds_per_wall_second": 0.05752,
+    "estimated_percent_of_realtime": 5.75,
+    "limits": [
+      "This estimate uses only two screenshots; the second source-frame match has moderate correlation.",
+      "It does not isolate renderer time from guest Bink decode, audio synchronization, game scheduling, or Android presentation."
+    ]
+  },
+  "renderer_log": {
+    "file": "nfs_shift_002.log",
+    "first_successful_vulkan_submission": "2026-10-25T15:50:17.068+03:00",
+    "last_successful_vulkan_submission": "2026-10-25T15:52:33.949+03:00",
+    "successful_submission_records": 630,
+    "last_accepted_copy_convert": "2026-10-25T15:53:17.823+03:00",
+    "last_successful_draw_count": 2,
+    "subsequent_game_log": [
+      "2026-10-25T15:53:18.322+03:00: attempted d:\\tracks\\_data\\instances\\scenes\\menu_background.xml, not found",
+      "2026-10-25T15:53:18.329+03:00: attempted d:\\tracks\\_data\\static\\scenes\\menu_background.xml, not found"
+    ],
+    "refresh_failure_messages_after_last_submission": 0,
+    "interpretation": "Copy/Convert continued after the last logged draw submission, followed by failed raw menu-scene path probes. This timing does not establish the exact cause of the later black screen."
+  },
+  "black_screen_capture": {
+    "file": "process2_redmi_cutscene_cache_black_20261025.png",
+    "sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+    "captured_at_local": "2026-10-25T15:53:59.518+03:00",
+    "dimensions": [2340, 1080],
+    "nonblack_pixels": 0
+  },
+  "current_device_recheck": {
+    "checked_at_local": "2026-10-25T16:10:49+03:00",
+    "process_id": 22527,
+    "activity_remained_resumed": true,
+    "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+    "same_as_black_screen_capture": true,
+    "game_log_last_modified_local": "2026-10-25T15:53:18.326+03:00",
+    "interpretation": "The foreground game process remains alive, but the captured screen is still all black and its log has not changed since the raw menu-scene path probes. The temporal relationship does not prove those missing paths caused the black screen."
+  },
+  "limits": [
+    "The displayed Bink frames are authentic retail content rendered through the native Vulkan path, not synthetic output.",
+    "The live sample shows substantial slowdown and does not demonstrate real-time cutscene playback or complete game startup.",
+    "The Android provider lacks the optional depth/stencil resolve capability, and the language-menu transition remains unverified.",
+    "No Process 1 runtime, game scheduling, guest media decoder, or game-data files were changed."
+  ]
+}

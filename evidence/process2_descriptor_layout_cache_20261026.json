@@ -1,0 +1,72 @@
+{
+  "schema": "shift.process2.descriptor_layout_cache.v1",
+  "recorded_at_utc": "2026-10-26T07:53:23Z",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "commit": "345fc2ef69f485ab3f2f15effbb4d837be96c51f",
+    "previous_commit": "56b90b67966eb666e8bf8e576dac213626083ab4",
+    "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+    "changed_paths": [
+      "native_vulkan/include/shift_xbox_live_vulkan_renderer.hpp",
+      "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
+      "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
+      "native_vulkan/rexglue_plugin/README.md"
+    ]
+  },
+  "change": {
+    "description": "Reuse compatible descriptor-set layouts and pipeline layouts across captured Vulkan draws.",
+    "cache_key": "sorted Xenos texture fetch binding indices; descriptor types and stage flags are fixed by this renderer",
+    "entry_limit": 128,
+    "reused_objects": [
+      "constant-buffer VkDescriptorSetLayout",
+      "texture VkDescriptorSetLayout",
+      "VkPipelineLayout"
+    ],
+    "per_draw_objects_retained": [
+      "VkDescriptorPool",
+      "VkDescriptorSet"
+    ],
+    "lifetime": "Cached layouts are device-scoped; clear waits for in-flight frames, destroys cached pipelines before layouts, then resets the cache."
+  },
+  "linux_amd64": {
+    "build_command": "cmake --build /home/pes/work/process2-current-p2-r8-scratch-linux-build-20261026 --target rexgpu-shift-native --parallel 4",
+    "build_result": "passed",
+    "plugin_sha256": "78d02ba81efa7a8d07e8a1cc6c1b93c22259954dd401b029a02d24bc08fc61d6",
+    "plugin_build_id": "2ca8cc113fef865e3a6630089bd4a240db890e22",
+    "sdk_runtime_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "sdk_runtime_sha256": "1c436773e551544fbc4b49847826d73093042b8ef8be146932b622450fbefae7",
+    "sdk_runtime_build_id": "aab45bc0c09e262d3f1b95dbda5f631250f4a352",
+    "ldd_r_unresolved_symbols": 0,
+    "tests": {
+      "vulkan_validation_layer": "VK_LAYER_KHRONOS_validation",
+      "native_vulkan_ctest": {
+        "directory": "/home/pes/work/process2-native-vulkan-current-20261026",
+        "passed": 4,
+        "failed": 0
+      },
+      "plugin_ctest": {
+        "directory": "/home/pes/work/process2-current-p2-r8-scratch-linux-build-20261026",
+        "passed": 6,
+        "failed": 0
+      }
+    }
+  },
+  "android_arm64": {
+    "renderer_check": {
+      "build_directory": "/home/pes/work/process2-android-renderer-check-async-build",
+      "result": "passed on Redmi Note 8 Pro",
+      "device_gpu": "Mali-G76 MC4",
+      "vulkan_api": "1.1",
+      "coverage": "Synthetic offscreen draw regression, including compatible-layout reuse and cache clear."
+    },
+    "plugin_dso_sha256": "cbbc83685ed7188db04d86a19d7f60ac0016a17568336cfbd9b4d158260a59aa",
+    "plugin_dso_build_id": "d180791ffc1ec6524579acec3d46e22a1ffd07ff",
+    "apk_installed_or_replaced": false
+  },
+  "retail_validation": {
+    "fresh_retail_playback_with_this_commit": false,
+    "visual_parity_claim": false,
+    "frame_time_improvement_claim": false,
+    "reason": "This is a Vulkan object-creation reuse change; current evidence covers regression output, validation-layer checks, and ARM64 device execution only."
+  }
+}

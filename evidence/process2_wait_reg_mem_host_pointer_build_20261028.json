@@ -1,0 +1,41 @@
+{
+  "schema": "nfs-shift-process2-wait-reg-mem-host-pointer-build-v1",
+  "captured_on": "2026-10-28",
+  "source": {
+    "commit": "c6e467730f4aea5972ccf385260ee54ea3a89590",
+    "file": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+    "file_sha256": "1e0d97afedfec2d09a25ab2c7bc202f97dfc867e5b18a34e22bacdaf91ac715d"
+  },
+  "change": {
+    "purpose": "diagnostic only",
+    "entry_log_field": "host_poll_word={:p}",
+    "completion_log_field": "host_poll_word={:p}",
+    "per_poll_logging_added": false,
+    "wait_predicate_changed": false,
+    "poll_loop_or_sleep_changed": false,
+    "synchronization_changed": false
+  },
+  "build": {
+    "target": "rexgpu-shift-native",
+    "result": "success",
+    "cmake_version": "4.4.3",
+    "cxx_compiler": "clang++-20 (Clang 22.1.8)",
+    "build_type": "Release",
+    "tests_enabled": false,
+    "tests_run": false,
+    "configure_command": "cmake -S native_vulkan/rexglue_plugin -B /home/pes/work/process2-native-wait-pollptr-20261028/build -DSHIFT_REXGLUE_SDK_ROOT=/home/pes/work/rexglue-sdk-retail-lwsync-20261027 -DSHIFT_REXGLUE_PREBUILT_RUNTIME=/home/pes/work/rexglue-sdk-retail-lwsync-20261027/out/linux-amd64/Release/librexruntime.so -DSHIFT_REXGLUE_PLUGIN_OUTPUT_DIR=/home/pes/work/process2-native-wait-pollptr-20261028/plugin-output -DSHIFT_REXGLUE_NATIVE_BUILD_TESTS=OFF -DCMAKE_CXX_COMPILER=clang++-20 -DCMAKE_BUILD_TYPE=Release",
+    "build_command": "cmake --build /home/pes/work/process2-native-wait-pollptr-20261028/build --target rexgpu-shift-native --parallel 4",
+    "sdk_runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd"
+  },
+  "artifact": {
+    "path": "/home/pes/work/process2-native-wait-pollptr-20261028/plugin-output/librexgpu-shift-native.so",
+    "architecture": "x86-64 Linux ELF shared object",
+    "sha256": "dbdf91c8f83642927d78cf822f5ec7984b91c652270b104615f812ae1396e19b",
+    "build_id": "1dae6b4dc30d8ae21d65d275564d3c874172c8c8",
+    "stripped": false
+  },
+  "limits": [
+    "The plugin was built but not replayed against the retail game.",
+    "This Linux x86-64 artifact is diagnostic evidence and is not an Android ARM64 build."
+  ]
+}

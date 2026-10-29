@@ -1,0 +1,27 @@
+{
+  "format": "SHIFT.Process2AndroidVulkanDeviceSmokeEvidence/1",
+  "date": "2026-10-23",
+  "commit": "e03b0a100afbbe59f01d83996692682ffebea9d8",
+  "ci": {
+    "workflow": "android-vulkan",
+    "run_id": "39938067570",
+    "run_url": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/actions/runs/39938067570",
+    "artifact_name": "shift-android-vulkan-smoke-arm64",
+    "artifact_downloaded": true
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "android_api": 33,
+    "abi": "arm64-v8a",
+    "vulkan_gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1"
+  },
+  "execution": {
+    "test": "xbox_live_vulkan_renderer_check",
+    "inputs": "synthetic Vulkan 1.1 vertex and fragment SPIR-V",
+    "output": "offscreen Vulkan 1.1 indexed draw passed on Mali-G76 MC4",
+    "validation_layer_enabled": false,
+    "exit_code": 0
+  },
+  "scope": "Confirms the project offscreen Vulkan renderer executes an indexed draw on this Android GPU. It does not consume a live Xbox PM4 ring, use retail shaders or resources, launch the game, or establish retail image parity."
+}

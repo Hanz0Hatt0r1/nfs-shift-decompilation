@@ -1,0 +1,111 @@
+{
+  "schema": "shift.process2.sampler_anisotropy_capability.v1",
+  "date_local": "2026-10-26",
+  "source": {
+    "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "base_commit": "251a8c79b7db747584de5ddca797cd1dcb7720bb",
+    "retail_contract": "process2_xbox_live_mixed_sample_vulkan_20261024.json",
+    "captured_texture": "0x0679a000",
+    "format": 19,
+    "d3d9_anisotropy_enum": 3,
+    "captured_ratio": "4:1",
+    "contract_scope": "Sampler-specific evidence only; this capture is superseded for general renderer progress."
+  },
+  "implementation": {
+    "summary": "Request Vulkan samplerAnisotropy independently from Xenos GPU-emulation features and clamp captured 4:1 sampling to the physical-device limit.",
+    "sdk_branch": "work/process2-vulkan-sampler-anisotropy-20261026",
+    "sdk_commit": "89c11ed76c694680c917d6f3d4c2d0236859d3ac",
+    "sdk_pull_request": "https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/6",
+    "sdk_api": "Additive VulkanProvider::Create and VulkanDevice::CreateIfSupported overloads; existing overloads retain their signatures and route to the new overload with optional anisotropy disabled. GPU-emulation requests retain their previous samplerAnisotropy behavior.",
+    "p2_compatibility": "Feature-detect the added provider overload at configure time; older SDK headers retain their existing call path.",
+    "gpu_emulation_enabled": false
+  },
+  "verification": {
+    "linux_provider_ctest": {
+      "result": "1/1 passed",
+      "gpu": "NVIDIA GeForce GTX 950",
+      "validation_layer": "VK_LAYER_KHRONOS_validation forced with VK_INSTANCE_LAYERS",
+      "assertions": "samplerAnisotropy enabled when supported, max ratio valid, GPU-emulation-only Vulkan features disabled, and vkCreateSampler accepted the clamped 4:1 sampler.",
+      "output_log": "process2_sampler_anisotropy_host_validation_20261026.log",
+      "output_log_sha256": "ebff6cb8cc559cc2b431316b24228c694b268270899b8fc6868a52a74e0ce3dc"
+    },
+    "linux_renderer_ctest": {
+      "result": "1/1 passed",
+      "gpu": "NVIDIA GeForce GTX 950",
+      "validation_layer": "VK_LAYER_KHRONOS_validation enabled",
+      "output": "Synthetic offscreen Vulkan 1.1 point and rectangle-list draw, depth/stencil SAMPLE_ZERO, captured Copy/Convert, and 4:1 anisotropy sampler passed.",
+      "output_log": "process2_sampler_anisotropy_renderer_host_validation_20261026.log",
+      "output_log_sha256": "08096e960b09605ebbf7944d9fa0166ef826c2fa7e5af767f7c1c1ae73ec4715"
+    },
+    "android_arm64_renderer": {
+      "result": "passed on Redmi Note 8 Pro",
+      "device": "Redmi Note 8 Pro (begonia), Mali-G76 MC4, Android 13/API 33, Vulkan 1.1.131",
+      "validation_layer_available": false,
+      "output": "Synthetic offscreen Vulkan 1.1 AutoIndex point and rectangle-list draw, depth/stencil SAMPLE_ZERO, captured Copy/Convert, and 4:1 anisotropy sampler passed.",
+      "binary_sha256": "c4ed22c53008e521e50912e0607358c8d6cdf770e84f77b3ce46dfc4e4377ae7",
+      "output_log": "process2_redmi_sampler_anisotropy_renderer_20261026.log",
+      "output_log_sha256": "cbbe9ba80f9befcc45f3b4e8d31197085093130c6e590ba0fc51de9702e2671"
+    },
+    "android_plugin_build": {
+      "result": "ARM64 plugin target compiled and linked against the existing runtime DSO",
+      "ndk": "28.2.13676358",
+      "android_abi": "arm64-v8a",
+      "android_api": 26,
+      "runtime_rebuilt": false,
+      "provider_level_runtime_harness": "Could not execute: dlopen crashed in the imported librexruntimed.so constructor before the test hook. No Android provider-level capability result is claimed."
+    },
+    "apk": {
+      "result": "signed and aligned; verification passed",
+      "package": "com.hanz0hatt0r.nfsshift",
+      "version": "1.0 (1)",
+      "signature_scheme": "APK Signature Scheme v3",
+      "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+      "same_certificate_as_base_candidate": true,
+      "native_library_16k_alignment": true,
+      "changed_payload_entries": [
+        "lib/arm64-v8a/librexgpu-shift-natived.so",
+        "lib/arm64-v8a/librexgpu-xenosd.so"
+      ],
+      "signature_metadata_regenerated": true
+    }
+  },
+  "artifacts": {
+    "linux_plugin": {
+      "path": "/home/pes/work/process2-latest-renderer-handover-20261026/linux-anisotropy-20261026/librexgpu-shift-native.so",
+      "sha256": "37780c537bc01e68a91ff030f70caed6146d3af8b6233fe12d2cf8e87b190cc3"
+    },
+    "linux_runtime_pair": {
+      "path": "/home/pes/work/process2-latest-renderer-handover-20261026/linux-anisotropy-20261026/librexruntime.so",
+      "sha256": "127181adbfb99b65e9d1a8f1d6aed12308e1cf320b86067588ad421f17eda68e",
+      "ldd_r": "No unresolved symbols."
+    },
+    "android_plugin": {
+      "path": "/home/pes/work/process2-latest-renderer-handover-20261026/android-plugin-sampler-anisotropy-20261026/librexgpu-shift-natived.so",
+      "sha256": "03a3a1da0e98e4a5912c4089b1b33c8e661317b13fdff9a3e01db4e081412b2b"
+    },
+    "android_apk": {
+      "path": "/home/pes/work/process2-latest-renderer-handover-20261026/android-plugin-sampler-anisotropy-20261026/app-process2-vulkan-sampler-anisotropy-20261026.apk",
+      "sha256": "7f53d606ca691cfb610ad0321e9d69a6ea454f49a0f1fe199508bee4432c2357",
+      "size_bytes": 184346034,
+      "base_apk_sha256": "3aa064b7da0c08d515db81ecb53fbd67290c0132132aa8c889d175b24ccecb77",
+      "packaged_runtime_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a"
+    }
+  },
+  "live_device_state": {
+    "device": "Redmi Note 8 Pro (begonia), Mali-G76 MC4, Vulkan 1.1.131",
+    "endpoint": "192.168.1.32:38615",
+    "package_pid": 24561,
+    "top_resumed": true,
+    "screen": "Existing installed candidate remains on the retail disclaimer.",
+    "screenshot_sha256_before_and_after_offscreen_checks": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "new_candidate_installed_or_loaded": false,
+    "game_restarted_or_input_sent": false
+  },
+  "limits": [
+    "Offscreen fixtures are synthetic renderer checks; they do not establish new retail output, retail parity, selector labels, cutscene playback, or racing scenes.",
+    "The Android plugin candidate is built but not installed or loaded by the game.",
+    "The Android provider-level harness could not run against the reused runtime DSO; only the independent renderer-core sampler regression passed on the phone.",
+    "Process 1 runtime, scheduler, startup, and rendering files were not modified."
+  ]
+}

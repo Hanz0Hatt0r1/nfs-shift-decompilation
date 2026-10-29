@@ -1,0 +1,94 @@
+{
+  "schema": "shift.process2.v45_depth_only_4x_transition.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "retail_capture": {
+    "capture": "P1 v45 same-XEX Linux run",
+    "capture_directory": "/dev/shm/nfs-shift-p1-post-bink-worker-route-v45-ordered-route-20261027",
+    "capture_log": "bin/logs/nfs_shift_001.2.log",
+    "capture_log_sha256": "f59faf9776f6b8b3e1275daed1c465ebe7366607b9d1c036ebd004e5fccae994",
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "plugin_sha256_used_by_capture": "a0026207902f5fd3a0578138d0c0edd8875cecbd98119d33b26a65a4382b5ccf",
+    "observed_streams": [
+      {
+        "operations": "draw packets 24..29, then Copy/Convert packet 54",
+        "transition": "packet 25 gamma 1x pitch 1280 to packet 29 depth-only 4x pitch 640",
+        "shared_layout": {
+          "color_base_tiles": "0x0",
+          "depth_base_tiles": "0x2d0",
+          "extent": [1280, 720]
+        },
+        "renderer_result": "failed closed before packet 29 because ordered target persistence for this alias was not implemented"
+      },
+      {
+        "operations": "draw packets 24..47, then Copy/Convert packet 72",
+        "transition": "packet 25 depth-only 4x pitch 640 to packet 26 gamma 1x pitch 1280",
+        "shared_layout": {
+          "color_base_tiles": "0x0",
+          "depth_base_tiles": "0x2d0",
+          "extent": [1280, 720]
+        },
+        "renderer_result": "failed closed before packet 26 because ordered target persistence for this alias was not implemented"
+      }
+    ],
+    "raster_side_effect_fields": "not retained in this run: color write mask, depth/stencil enables, and stencil write mask are unavailable; no draw-side effects are inferred"
+  },
+  "implementation": {
+    "accepted_depth_only_aliases": "matching bases, 1280x720 extent, depth format, gamma color format and linear depth-only format, nonzero gamma color write mask and zero depth-only color write mask; either the same 4x pitch or 1x gamma pitch exactly twice the depth-only 4x pitch",
+    "copy_source_selection": "uses the most recent color-writing draw in the ordered segment, allowing the observed 1x gamma draw to match the 1x linear Copy/Convert source after an earlier depth-only draw",
+    "fail_closed_cases": [
+      "unmatched bases, extent, depth format, format, or pitch",
+      "color-writing trailing 4x draw after the first 1x draw",
+      "depth/stencil preservation across sample counts without provider-confirmed resolve capability"
+    ]
+  },
+  "verification": {
+    "linux_renderer": {
+      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/process2-p2161-ordered-transition-check-20261028 --output-on-failure",
+      "result": "passed 4/4",
+      "new_regressions": [
+        "synthetic 4x gamma to 1x gamma to 4x depth-only draw sequence followed by Copy/Convert",
+        "synthetic 4x depth-only to 1x gamma draw sequence followed by Copy/Convert",
+        "direct and ordered Vulkan readback equality",
+        "unmatched packet-29 pitch 636 remains rejected"
+      ]
+    },
+    "linux_plugin": {
+      "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027 --output-on-failure",
+      "result": "passed 6/6",
+      "plugin_path": "/home/pes/work/.build-process2-p2161-vulkan-plugin-20261027/output/librexgpu-shift-native.so",
+      "plugin_sha256": "6ebecf71c0ac58bcbc24811dfec3bd2de72f059a06b5fd066265bd5cab5b08e6",
+      "build_id": "f63dbe347d580f25250e9581fca0144470d7c422",
+      "vulkan_minimum": "1.1"
+    },
+    "android_arm64_api26": {
+      "command": "cmake --build /home/pes/work/.build-process2-p2161-android-renderer-20261027 --target shift_xbox_live_vulkan_renderer xbox_live_vulkan_renderer_check --parallel 4",
+      "result": "renderer core and check executable compiled",
+      "renderer_archive_sha256": "50881de9e6204fe83134dd83a288beaad193cad74a48b6f65dd8e91f2b603e3b",
+      "check_executable_sha256": "de23865abb80c276e4ceb8499e67a5840db335fe1d1ac0c872ee4c34bdfc0110",
+      "device_execution": "not run; adb devices -l reported no connected device"
+    },
+    "interrupt_trace": {
+      "p1_source1_guest_callback_events": 881,
+      "p2_source1_pm4_interrupt_ids_correlated": [969, 1849],
+      "ordered_timestamp_join": "881/881 P1 callbacks map in order to continuous P2 PM4_INTERRUPT IDs; absolute delta is 0..77 ms, median 22 ms",
+      "exact_p1_timestamp_span_count": 880,
+      "boundary_note": "P2 PM4_INTERRUPT #1849 is 8 ms after the final P1 callback, so only 880 PM4 timestamps lie inside the inclusive P1 first/last timestamp span; including that boundary event yields the complete 881-row ordered join",
+      "p2_cpu_mask": "0x04",
+      "p1_registered_guest_callback_targets": {
+        "0x823A4758": 357,
+        "0x823B8C60": 524
+      },
+      "callback_layer_note": "P1 callback_function records the registered guest target; P2 callback_dispatches records outer CPU-dispatched wrapper 0x823B37B8. Sequence/time correspondence is continuous, but callback payload and guest-side semantic equivalence are not proven.",
+      "row_level_evidence": "process2_v45_source1_interrupt_join_20261028.json"
+    }
+  },
+  "limitations": [
+    "Synthetic regressions validate ordered route selection and Vulkan executor equality only, not retail pixels or Xenos EDRAM sample semantics.",
+    "The v45 capture used the preceding plugin and stopped before this change could be exercised against the retail game.",
+    "The capture does not retain depth/stencil write fields, so actual packet side effects remain unverified.",
+    "Full EDRAM backing persistence, intermediate copy targets, and the wider transition package remain incomplete.",
+    "Android ARM64 was compile-checked only; no phone was attached for execution."
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "schema": "shift.process2.retail_wait_pre_wait_shader_effect.v1",
+  "date": "2026-10-26",
+  "task": "Determine whether the captured shader programs or render destinations before WAIT_REG_MEM write guest physical 0x1B964004.",
+  "process1_source": {
+    "evidence": "/home/pes/work/nfs-shift-xbox360-runtime-p1-20261023/evidence/xbox360_linux_retail_wait_reg_mem_observation_20261026.json",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_sha256": "2b0d46856da000cecafb46581ddff50da99f549ff335bee9ba489238eed24059",
+    "mapped_p2_dso_sha256": "879b711ef16109a52b26df838ce2562e09d53d7c6daf89a102159abdd309c91b",
+    "p2_source_head": "6277bda6dc6a9bf3a6dcda92a2d9725417500f78",
+    "diagnostic_dso_worktree_diff_loaded": true
+  },
+  "wait": {
+    "outer_ib_guest_address": "0x095D0120",
+    "outer_ib_bytes": 1916,
+    "outer_ib_sha256": "0314df2bd6d5142ec11417cffdb6b192bf4b046d22418528772f476ca3cc2580",
+    "ring_batch": [25, 73],
+    "expanded_packet_count": 961,
+    "byte_offset": "0x49C",
+    "raw_words": [
+      "0xC0043C00",
+      "0x00000013",
+      "0x1B964006",
+      "0x00000001",
+      "0xFFFFFFFF",
+      "0x00000100"
+    ],
+    "guest_physical_word": "0x1B964004",
+    "reference": "0x00000001",
+    "mask": "0xFFFFFFFF"
+  },
+  "captured_streams": {
+    "outer_ib": {
+      "file": "process2_retail_wait_pre_wait_outer_ib_20261026.bin",
+      "bytes": 1916,
+      "sha256": "0314df2bd6d5142ec11417cffdb6b192bf4b046d22418528772f476ca3cc2580"
+    },
+    "nested_0975B660": {
+      "file": "process2_retail_wait_pre_wait_nested_0975B660_20261026.bin",
+      "guest_address": "0x0975B660",
+      "dwords": 74,
+      "sha256": "515d445533bd11926618e9d1cbd5a4f7eaf51930dd27b7935b1efecf24845d7b",
+      "contents": "Two inline shader loads followed by register writes."
+    },
+    "nested_0975C3A0": {
+      "file": "process2_retail_wait_pre_wait_nested_0975C3A0_20261026.bin",
+      "guest_address": "0x0975C3A0",
+      "dwords": 13,
+      "sha256": "7faaea1a5e85dd8155e2ec67f1c3c63ba1bf57e1d52165c44f254b6099f684a9",
+      "contents": "Type-0 register writes only; no memory-write or copy packet."
+    },
+    "nested_0975CFE0": {
+      "file": "process2_retail_wait_pre_wait_nested_0975CFE0_20261026.bin",
+      "guest_address": "0x0975CFE0",
+      "dwords": 48,
+      "sha256": "4f2445f960ffe0265688c12b9081c0cdb17e8c0a4c8191cbfecb6bfd6bb8dbfc",
+      "contents": "24 DRAW_INDX_2 packets; each has auto-index source, point-list primitive, and index count 1."
+    }
+  },
+  "pre_wait_shader_programs": [
+    {
+      "stream": "outer_ib",
+      "packet_offset": "0x28C",
+      "stage": "vertex",
+      "bytes": 108,
+      "sha256": "abfec28e9858fd1b9b27afd527f08421c38f288e9333cc7fc10d6391ac190fa9",
+      "translated_exports": ["gl_Position", "shift_interpolator0"]
+    },
+    {
+      "stream": "outer_ib",
+      "packet_offset": "0x304",
+      "stage": "pixel",
+      "bytes": 36,
+      "sha256": "9d4a64e81064abb794c5cba3642feda86a5a1e6b75a13cd4c4d7917bea83e01e",
+      "translated_export": "shift_color0"
+    },
+    {
+      "stream": "nested_0975B660",
+      "packet_offset": "0x008",
+      "stage": "vertex",
+      "bytes": 96,
+      "sha256": "a5ffccb2a2cdccd0093b55f9051330166881a987052e76249b4841ee7170c608",
+      "translated_exports": ["gl_Position", "shift_interpolator0"]
+    },
+    {
+      "stream": "nested_0975B660",
+      "packet_offset": "0x074",
+      "stage": "pixel",
+      "bytes": 36,
+      "sha256": "9d4a64e81064abb794c5cba3642feda86a5a1e6b75a13cd4c4d7917bea83e01e",
+      "translated_export": "shift_color0"
+    }
+  ],
+  "destination_registers": {
+    "raster_surface_registers": {
+      "0x2000": "0x0A020280",
+      "0x2001": "0x00010000",
+      "0x2002": "0x000002D0",
+      "decoded": "1280x720 4x EDRAM color target at color base tile 0; depth base tile 720."
+    },
+    "copy_destination_registers": {
+      "0x2318": "0x00000000",
+      "0x2319": "0x00000000",
+      "0x231A": "0x00000000",
+      "0x231B": "0x00000000"
+    },
+    "copy_convert_before_wait": false,
+    "load_alu_constant_opcode_0x2F_before_wait": false,
+    "guest_wait_word_literal_in_pre_wait_streams": false
+  },
+  "renderer_translation": {
+    "pixel_export_mapping": "emit_alu maps pixel export_data with color allocation type 2 to shift_color0.",
+    "vertex_export_mapping": "emit_alu maps vertex allocation type 1 to gl_Position and type 2 to interpolators.",
+    "guest_memory_write_api_in_current_plugin": false,
+    "conclusion": "These four pre-wait shader programs export only graphics outputs. They contain no shader storage/image write and do not name 0x1B964004. The 24 nested point draws can affect the EDRAM color target, but the captured packets do not configure a linear memory destination for that target before the wait."
+  },
+  "watchpoint_observation": {
+    "source": "Process 1's same-run report",
+    "host_aliases": ["physical", "A-window", "C-window", "E-window with 0x1000 host offset"],
+    "observed_writes": 0,
+    "duration_after_wait_entry_seconds_approx": 22,
+    "limit": "Host watchpoints do not observe GPU/DMA writes or uninstrumented aliases."
+  },
+  "regression": {
+    "test": "shift_xbox_shader_translate_check",
+    "fixture": "Exact four captured pre-wait shader programs, with the duplicate pixel program kept once.",
+    "assertion": "Vertex exports remain position/varying outputs and the captured pixel export remains color0; no storage/image/atomic write is generated.",
+    "result": "passed",
+    "native_cmake_ctest": {
+      "passed": 4,
+      "total": 4,
+      "build_directory": "/tmp/process2-wait-shader-regression-20261026"
+    }
+  },
+  "limits_and_next_evidence": [
+    "This excludes the captured shaders as a direct shader-memory writer; it does not identify a CPU, prior-ring, cache-flush, or device-side producer.",
+    "The next decisive capture needs the full producer chain across prior and current ring batches plus a GPU/DMA-capable write observation for 0x1B964004; do not relax the captured wait predicate."
+  ],
+  "process1_files_modified": false
+}

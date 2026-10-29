@@ -1,0 +1,75 @@
+{
+  "schema": "shift.process2.resolve_blackframe_window_transition.v1",
+  "capture_date": "2026-10-25",
+  "source": {
+    "owner": "Process 1 exact-XEX runtime probe; P2 only read and preserved its output",
+    "runtime_repo_pr": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2155",
+    "runtime_repo_commit_at_probe": "74827e341945e184e585cb40ea46a626a167720b",
+    "source_run_directory": "/tmp/nfs-p1-blackframe-threads-20261026",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_source_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "rexglue_runtime_sha256": "d15165b314797e56f3eed7810161849dd2f2e3105424f7472e39453deafd9839",
+    "p2_renderer_source_commit": "700c43568bab6af77b19ecdd0c88d8ccd4a3e65f",
+    "p2_renderer_plugin_sha256": "1fa623feecb9a7ac6c1cd8d6de61bcabc6a4a01b12dfbeb9b0255fa29945042c"
+  },
+  "run": {
+    "duration_seconds": 60.036,
+    "termination": "GDB bounded stop; runtime and GDB returned 0",
+    "input_pulses": [
+      {"at_seconds": 8.038, "button": "A"},
+      {"at_seconds": 15.011, "button": "Start"},
+      {"at_seconds": 24.005, "button": "A"},
+      {"at_seconds": 35.002, "button": "Start"}
+    ],
+    "runtime_log": {
+      "file": "process2_resolve_blackframe_runtime_20261025.log.gz",
+      "raw_bytes": 833592,
+      "raw_sha256": "fbdef03767da6767eb8941c383ade03e1358075e707ee2e470555e438fe67d8e",
+      "compressed_sha256": "02b388c371845f5ab8f5d26451d4130bc2064cf48b7f2c640da92696f0c8eaa6",
+      "successful_14_draw_submission_entries": 103,
+      "first_submit_local": "2026-10-25T19:29:33.834+03:00",
+      "last_submit_local": "2026-10-25T19:29:40.082+03:00",
+      "menu_background_xml_failures": [
+        {"time_local": "2026-10-25T19:29:40.147+03:00", "path": "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml", "status": "0xc000000f"},
+        {"time_local": "2026-10-25T19:29:40.147+03:00", "path": "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml", "status": "0xc000000f"},
+        {"time_local": "2026-10-25T19:29:40.147+03:00", "path": "D:\\tracks\\_data\\static\\scenes\\menu_background.xml", "status": "0xc000000f"},
+        {"time_local": "2026-10-25T19:29:40.147+03:00", "path": "D:\\tracks\\_data\\static\\scenes\\menu_background.xml", "status": "0xc000000f"}
+      ]
+    }
+  },
+  "window_captures": [
+    {
+      "elapsed_seconds": 40.031,
+      "captured_at_local": "2026-10-25T19:29:47.507+03:00",
+      "file": "process2_resolve_blackframe_t40_20261025.png",
+      "sha256": "4db5f78d7f2d07aac70b818c04319596f3261684b714ef8a7bd2ba68bb8ae9df",
+      "visual_observation": "Original safety disclaimer text with thin purple horizontal strips."
+    },
+    {
+      "elapsed_seconds": 55.032,
+      "captured_at_local": "2026-10-25T19:30:02.501+03:00",
+      "file": "process2_resolve_blackframe_t55_20261025.png",
+      "sha256": "2d284bc3e647ac0762c8606ac821995fa5992669b74c9598a8e37f8a309a9521",
+      "visual_observation": "Black game viewport with the same thin purple horizontal strips; disclaimer text is absent."
+    }
+  ],
+  "timing": {
+    "seconds_after_last_submit_at_t40_capture": 7.425,
+    "seconds_after_last_submit_at_t55_capture": 22.419,
+    "submissions_after_last_submit": 0
+  },
+  "readback": null,
+  "interpretation": {
+    "supported": [
+      "The exact resolve-capable P2 plugin accepted 103 consecutive 14-draw presenter submissions before the guest stopped submitting.",
+      "The Wayland window capture changed from disclaimer text plus strips to strips only after those submissions had stopped."
+    ],
+    "not_proven": [
+      "Whether the captured change is a Vulkan presenter/WSI lifetime issue, an external window/compositor change, or a guest transition; this run has no paired Vulkan readback.",
+      "Whether the A/Start pulses caused or affected the visual transition; there is no same-run retail input-consumer trace.",
+      "Whether the four menu_background.xml misses caused the cessation of draw submissions."
+    ],
+    "next_discriminating_capture": "Repeat with SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME=103 and SHIFT_NATIVE_VULKAN_READBACK_FRAME=103, geometry/texture dump prefixes, and window screenshots around the selected frame and 55 seconds."
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "format": "SHIFT.Process2AndroidFranchiseIdentMatch/1",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_version": "13",
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift"
+  },
+  "renderer": "Process 2 native Vulkan plugin presenting live retail guest draws; no Xenos GPU-render path or synthetic shader output",
+  "runtime_log": {
+    "artifact": "process2_redmi_note8pro_franchise_ident_android_20261025.log.gz",
+    "sha256": "6d576b6a42b67d90af8485fb5bb345483ceccea6eac4de92454140b5b8b0b46f",
+    "compressed_sha256": "4e93d316412c1bfdf2c688b0888916dc02201cede5d4cb5e2e91e62cec2d2f6c"
+  },
+  "phone_capture": {
+    "screenshot_time_local": "2026-10-25T13:13:42+03:00",
+    "screenshot": "process2_redmi_note8pro_franchise_ident_android_20261025.png",
+    "screenshot_sha256": "226f6d8625139da6d5583a0250ba952201f2a3d718828dec29f1c47131b1d4ee",
+    "screen_recording_time_local": "2026-10-25T13:14:19+03:00",
+    "screen_recording": "process2_redmi_note8pro_franchise_ident_android_20261025.mp4",
+    "screen_recording_sha256": "371da3c66fdf4f3df9d269d4d77211bf8e78ccf477828ef45fe6da9e755d3efd",
+    "screen_recording_codec": "H.264",
+    "screen_recording_extent": "2340x1080",
+    "screen_recording_duration_seconds": 10.082,
+    "screen_recording_size_bytes": 2500358
+  },
+  "retail_bink_asset": {
+    "path_on_phone": "/sdcard/Android/data/com.hanz0hatt0r.nfsshift/files/game/Movies/Franchise_Ident.bik",
+    "path_in_game_data": "Movies/Franchise_Ident.bik",
+    "sha256_on_phone": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+    "sha256_local": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+    "ffprobe": {
+      "video_codec": "binkvideo",
+      "extent": "1280x720",
+      "frame_rate": "5000000/166833",
+      "duration_seconds": 9.376015
+    }
+  },
+  "visual_match": {
+    "method": "Decoded phone recording and candidate retail Bink videos at 2 fps, stretched/downscaled to grayscale 128x59, then computed Pearson pixel correlation for each phone frame against every candidate frame.",
+    "phone_frame_count": 20,
+    "closest_source_frame_one_based": 13,
+    "closest_source_time_approx_seconds": 6,
+    "franchise_ident_best_correlation_range": [0.7735, 0.8102],
+    "negative_control_candidates": {
+      "NFS_SHIFT_DDAY.bik_best_correlation_range": [0.4216, 0.4326],
+      "NFS_SHIFT_TestLap.bik_best_correlation_range": [0.2288, 0.2364]
+    },
+    "conclusion": "The rendered NFS SHIFT title and pink background match the retail Franchise_Ident.bik sequence. This identifies the displayed source video; it does not prove real-time playback speed or verify the earlier language-menu labels."
+  },
+  "playback_performance_snapshot": {
+    "log_interval_local": "2026-10-25T13:13:00+03:00/2026-10-25T13:13:59+03:00",
+    "accepted_copy_convert_frames": 58,
+    "submitted_four_draw_frames": 57,
+    "estimated_vulkan_submissions_per_second": 0.95,
+    "cpu_sample_time_local": "2026-10-25T13:19:25+03:00",
+    "top_capture": "process2_redmi_note8pro_franchise_ident_android_20261025.top.txt",
+    "top_capture_sha256": "dce8a523925c9e9d618a45095c1b7979a6847b2bc8b132f6666089d002ade0bd",
+    "process_cpu_percent_one_shot": 555,
+    "threads_cpu_percent_one_shot": {
+      "SHIFT Native GP": 100,
+      "Core 0/0: Main": 102,
+      "controller_thread_tid_6431": 97,
+      "controller_thread_tid_6432": 97,
+      "Audio Worker": 58.8
+    },
+    "interpretation": "The app is advancing the native Vulkan output at roughly one four-draw submission per second in this capture. CPU use spans guest/runtime, renderer, and audio threads; this snapshot does not isolate the renderer as the sole bottleneck."
+  },
+  "language_menu_status": "Still unverified on Mali. The previous Android package contains the shader-interpolator fix and the Linux retail capture shows all six labels, but no direct phone capture of the language menu's draw stream is available."
+}

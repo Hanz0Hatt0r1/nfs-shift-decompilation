@@ -1,0 +1,52 @@
+{
+  "schema": "shift.process2.redmi.black_idle_thread_probe.v1",
+  "captured_at_local": "2026-10-26T13:15:40+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:38615",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "process_id": 21346,
+    "activity_top_resumed": true
+  },
+  "installed_candidate": {
+    "apk_sha256": "5d6f68303b299cb57d881127bdb8b7950da1d193de6371afd9859b310d499d94",
+    "arm64_plugin_sha256": "ab6900ab1a4802469c07055a739ecbbe99bf4d90678ca6465fdb4018e3c1eb55",
+    "runtime_dso_sha256": "724978a126fedcb6dfd6a09ec3a1d9c7c578dc419e3fda7ddbe194f8de6c888a"
+  },
+  "screen": {
+    "observation": "Black fullscreen output; same SHA as the immediately preceding read-only black-screen recheck.",
+    "screenshot": "process2_redmi_pm4_interrupt_order_black_recheck_20261026.png",
+    "screenshot_sha256": "ca2e7ef708be4e086e78c6921ab25cbd9b871744c1c983089c7de250f7104528",
+    "prior_matching_screenshot_time_local": "2026-10-26T13:10:29+03:00"
+  },
+  "thread_sample": {
+    "command": "top -H -b -n 5 -p 21346",
+    "collection_end_local": "2026-10-26T13:15:54+03:00",
+    "raw_log": "process2_redmi_black_idle_top_20261026.log.gz",
+    "raw_log_sha256": "d0529ad665e448990fefb0e96ad5b60d2ca5db5e8a2a60998f0e1f37fc7196e7",
+    "final_sample_percent_cpu": {
+      "Core 0/0: Main": 99.6,
+      "SDLThread": 100.0,
+      "Core 2/1: Controller A": 94.0,
+      "Core 2/1: Controller B": 93.6,
+      "Audio Worker": 63.6,
+      "SHIFT Native GP": 0.0,
+      "SHIFT Native VS": 2.6
+    },
+    "interpretation": "Guest main/controller work is CPU-active while the P2 GPU worker is sleeping in the sampled intervals. This is consistent with little or no renderer work being consumed, but does not prove ring producer state or explain the black screen."
+  },
+  "actions": {
+    "app_stopped_or_restarted": false,
+    "application_data_changed": false,
+    "input_sent_during_this_probe": false
+  },
+  "limits": [
+    "The Android system restricted direct /proc/<pid>/task/<tid>/wchan reads to 0, so this snapshot does not identify the exact wait site.",
+    "No renderer submit counter or guest ring pointer was exposed in this read-only sampling path.",
+    "This thread sample is diagnostic evidence only; it is not proof that the guest emitted no PM4 packets or that a runtime bug caused the black screen."
+  ]
+}

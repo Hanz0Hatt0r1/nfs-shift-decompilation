@@ -1,0 +1,85 @@
+{
+  "schema": "shift.process2.redmi_disclaimer_idle_recheck.v1",
+  "observed_at_local": "2026-10-25T19:18:52+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid": 7611
+  },
+  "display": {
+    "activity_top_resumed": "org.libsdl.app.NfsShiftActivity",
+    "screen": "Original safety disclaimer on black with thin purple horizontal bands",
+    "screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "identical_to_prior_post_selector_capture": true,
+    "capture_method": "Read-only adb screencap; no input events sent"
+  },
+  "input_probe": {
+    "captured_at_local": "2026-10-25T19:26:31.876+03:00",
+    "events": [
+      {"command": "adb shell input keyevent 96", "android_keycode": "BUTTON_A"},
+      {"command": "adb shell input keyevent 66", "android_keycode": "ENTER"}
+    ],
+    "wait_after_each_event_seconds": 3,
+    "screenshots": [
+      {"after": "BUTTON_A", "sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af"},
+      {"after": "ENTER", "sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af"}
+    ],
+    "process_still_alive": true,
+    "loaded_renderer_sha256": "f84281d8b48cad561f246fa4bf9e58172960ace16193bcd3dcd44d848b9a2f03",
+    "interpretation": "The display did not change after either confirmation event. adb accepted the input commands, but this does not prove the guest consumed them or identify why it produced no new frame."
+  },
+  "runtime_log": {
+    "file": "files/nfs_shift/user/logs/nfs_shift_010.log",
+    "size_bytes": 402951,
+    "last_modified_local": "2026-10-25 17:55",
+    "last_presenter_submit_local": "2026-10-25T17:55:35.960+03:00",
+    "last_submit_draw_count": 14,
+    "subsequent_file_probes": [
+      {
+        "time_local": "2026-10-25T17:55:36.387+03:00",
+        "path": "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      },
+      {
+        "time_local": "2026-10-25T17:55:36.389+03:00",
+        "path": "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      },
+      {
+        "time_local": "2026-10-25T17:55:36.392+03:00",
+        "path": "D:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      },
+      {
+        "time_local": "2026-10-25T17:55:36.393+03:00",
+        "path": "D:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+        "status": "0xc000000f"
+      }
+    ],
+    "no_log_writes_after_last_probe": true
+  },
+  "thread_sample": {
+    "samples": 5,
+    "interval_seconds": 1,
+    "command": "adb shell top -b -H -d 1 -n 5 -p 7611",
+    "mean_cpu_percent": {
+      "Core 0/0: Main": 94.64,
+      "SDLThread": 81.24,
+      "Core 2/1: Controller A": 76.74,
+      "Core 2/1: Controller B": 76.9,
+      "Audio Worker": 54.84,
+      "SHIFT Native GP": 0.0,
+      "SHIFT Native VS": 2.94
+    }
+  },
+  "interpretation": "The display and renderer log remain unchanged while guest, SDL, controller, and audio threads are CPU-active and the native GPU worker is idle. This locates the current wait beyond new Vulkan submissions but does not establish that the missing XML paths caused it.",
+  "limits": [
+    "This is a live state snapshot, not a root-cause diagnosis of guest execution.",
+    "The 19:18 snapshot itself sent no inputs. A later A/Enter probe left the process and renderer untouched; the command success does not prove the guest consumed those events.",
+    "The purple bands are recorded as observed output; this snapshot does not identify their source draw or establish that retail output should omit them."
+  ]
+}

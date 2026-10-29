@@ -1,0 +1,22 @@
+# Redmi Note 8 Pro Android RPTR writeback diagnostic
+
+Diagnostic APK SHA-256: `86129ac9b92d6d038b72a0e681a7b6e4a4200366d41b51356abdacaa880f9ed7`
+Both Vulkan plugin entries SHA-256: `dd985073cb1a919b42d9777bc98daa9c5fcf1b1f15547ba81275137ee521c577`
+Full on-device runtime log SHA-256: `93d109367dbdc24c23dd83a9fbc9227a512e5744b25c08ace1dcd40b51b623bf`
+
+Observed log lines:
+
+```text
+[2026-10-23 23:55:25.020] [info] shift-native: guest PM4 ring at 09752580, 32768 bytes
+[2026-10-23 23:55:25.020] [info] shift-native: RPTR writeback enabled guest=17AF403C, block_log2=6, physical_valid=true, translated=0x217af403c, initial=00000000
+[2026-10-23 23:55:25.030] [info] shift-native: RPTR writeback #0 guest=17AF403C, translated=0x217af403c, value=00000019, memory=00000000->00000019
+[2026-10-23 23:55:26.283] [info] shift-native: RPTR writeback #1 guest=17AF403C, translated=0x217af403c, value=0000001F, memory=00000019->0000001F
+[2026-10-23 23:55:26.481] [info] shift-native: read back Vulkan guest output 1280x720 as VK_FORMAT_A2B10G10R10_UNORM_PACK32 (Android debug only); non-black pixels 0, FNV-1a B161DE6EEC272325
+[2026-10-23 23:55:26.582] [info] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-23 23:55:26.583] [debug] shift-native: framed 1602 PM4 packets, 879 raw register writes, 50 captured indexed draw packets (49 with supported raster state, 48 elided as framebuffer no-ops, 1 translated to project GLSL), 2 guest swaps, 2 Vulkan frames submitted
+[2026-10-23 23:55:26.584] [info] shift-native: RPTR writeback #2 guest=17AF403C, translated=0x217af403c, value=00000049, memory=0000001F->00000049
+```
+
+The original APK (`ff5c30af24013b315280e161cd383c4cd50874a1e096f0d0383364f004a311c6`) was restored afterward and relaunched; PID 32421 was foreground and its screenshot SHA-256 was `2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839`. Its frame remained black through a 45-second foreground observation; runtime log SHA-256: `397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21`. No further PM4 batches or swaps arrived. A later Linux/GDB probe confirmed the same writeback argument and showed that `0xB7AF4000` is the guest ring base, not the writeback destination; see [`process2_linux_rptr_crosscheck_20261024.txt`](process2_linux_rptr_crosscheck_20261024.txt). Neither run establishes visible retail output.
+
+On 2026-10-24, the original app remained foreground as PID `32421`. Two ADB input sequences sent `KEYCODE_BUTTON_A` and `KEYCODE_BUTTON_START`, first using the default keyboard source and then the explicit gamepad source. After each five-second observation, the runtime-log SHA-256 remained `397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21`, and the screenshot SHA-256 remained `2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839`. The existing log still records two startup guest swaps and no later PM4 batch. Neither sequence advanced that app instance; other Android/gamepad input routes remain untested. See the `android_xbox_key_input_check_20261024` entry in [`process2_xbox_live_guest_ring_20261023.json`](process2_xbox_live_guest_ring_20261023.json).

@@ -1,0 +1,82 @@
+{
+  "schema": "shift.process2.coher_status_host_wait.v1",
+  "date": "2026-10-26",
+  "task": "Implement the exact captured Xenos COHER_STATUS_HOST register wait without weakening the separate guest-memory waits.",
+  "source_capture": {
+    "process1_evidence": "/home/pes/work/nfs-shift-xbox360-runtime-p1-20261023/evidence/xbox360_linux_retail_wait_reg_mem_observation_20261026.json",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "outer_indirect_buffer": {
+      "guest_address": "0x095D0120",
+      "bytes": 1916,
+      "sha256": "0314df2bd6d5142ec11417cffdb6b192bf4b046d22418528772f476ca3cc2580",
+      "local_copy": "process2_retail_wait_pre_wait_outer_ib_20261026.bin"
+    },
+    "register_writes": {
+      "status_register": "0xA31",
+      "captured_status_value": "0x02000000",
+      "base_register": "0xA30",
+      "captured_base_value": "0x1B962000",
+      "size_register": "0xA2F",
+      "captured_size_value": "0x00400000"
+    },
+    "register_waits": {
+      "count": 4,
+      "packet_opcode": "0x3C",
+      "control": "0x03",
+      "poll_register": "0xA31",
+      "reference": "0x00000000",
+      "mask": "0x80000000",
+      "interval": "0x00000008"
+    },
+    "separate_memory_wait": {
+      "guest_physical_word": "0x1B964004",
+      "reference": "0x00000001",
+      "outer_ib_byte_offset": "0x49C",
+      "unchanged": true
+    }
+  },
+  "implementation": {
+    "register_writes": "Track captured COHER_SIZE_HOST, COHER_BASE_HOST, and COHER_STATUS_HOST writes from PM4 and MMIO paths.",
+    "status": "Mark the captured host status dirty on writes; clear it only after the renderer fence drain succeeds and the register generation is unchanged.",
+    "renderer_sync": "Wait for all submitted Vulkan frame fences on the presenter thread. Each draw copies guest texture and vertex data into renderer-owned upload buffers.",
+    "unsupported_forms": "Continue to reject/log other WAIT_REG_MEM register-space forms; retain the existing bounded support for the captured memory wait.",
+    "process1_files_modified": false
+  },
+  "regressions": {
+    "native_vulkan": {
+      "result": "4/4 passed",
+      "build_directory": "/tmp/nfs-shift-p2-native-vulkan-check-20261026",
+      "coverage": [
+        "Exact captured COHER_STATUS_HOST packet decode and predicate",
+        "Wait for asynchronous Vulkan submissions without clearing reusable pipeline or texture cache entries"
+      ]
+    },
+    "linux_plugin": {
+      "result": "5/5 passed",
+      "build_directory": "/home/pes/work/process2-live-current-plugin-build",
+      "validation_layer_requested": "VK_LAYER_KHRONOS_validation",
+      "coverage": "Three live-ring fixture batches exercise the captured register writes and wait before captured memory waits; status clears and base/size values remain readable."
+    },
+    "android_arm64_plugin": {
+      "result": "linked successfully",
+      "abi": "arm64-v8a",
+      "api": 29,
+      "ndk": "28.2.13676358",
+      "sdk": "/home/pes/work/process2-android-sdk-v0.10.0-snapshot",
+      "scope": "Plugin build only; not a full APK, app-runtime compatibility check, or device game run.",
+      "warning": "Existing SDK fpcr inline-assembly operand-width warning."
+    }
+  },
+  "interpretation": {
+    "confirmed": [
+      "The exact captured register-space wait form is supported by the Process 2 ring worker.",
+      "The plugin waits for prior in-flight renderer work before satisfying the captured COHER_STATUS_HOST predicate.",
+      "The separate captured memory wait at 0x1B964004 remains unchanged."
+    ],
+    "not_confirmed": [
+      "A new exact-XEX run using this plugin.",
+      "That the separate guest-memory wait word 0x1B964004 is produced or becomes nonzero.",
+      "A post-disclaimer menu, race scene, or complete retail frame parity."
+    ]
+  }
+}

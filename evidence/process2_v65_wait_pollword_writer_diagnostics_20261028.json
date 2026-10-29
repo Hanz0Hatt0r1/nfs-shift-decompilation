@@ -1,0 +1,109 @@
+{
+  "schema": "shift.process2.v65_wait_pollword_writer_diagnostics.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "target": {
+    "guest_address": "0x1B964004",
+    "host_alias_in_v65": "0x21B964004",
+    "virtual_alias_guest_address": "0xFB963004",
+    "virtual_alias_resolves_to": "0x1B964004",
+    "virtual_alias_host_in_v64_capture": "0x1FB963004",
+    "transition_log_limits": {
+      "max_total_records": 88,
+      "1_to_0": 64,
+      "0_to_1": 8,
+      "other_changed_values": 16
+    },
+    "writers_instrumented": [
+      "ApplyScratchRegisterWrite from PM4 Type-0/Type-1 packets",
+      "ApplyScratchRegisterWrite from PM4 constant-load packets",
+      "ApplyScratchRegisterWrite from MMIO register callbacks",
+      "EVENT_WRITE_SHD direct guest-memory store",
+      "RPTR writeback",
+      "guest callback interval observations around ExecuteInterrupt"
+    ],
+    "recorded_fields": [
+      "writer and origin",
+      "guest destination and resolved host pointer",
+      "logical value before and after",
+      "register index and decoded register value when applicable",
+      "ring generation, batch id, batch RPTR/WPTR, and ring base",
+      "source IB, nesting depth, expanded packet ordinal, packet byte offset/type/opcode",
+      "active GPU dispatch id, interrupt source/CPU/callback/data, and guest/host thread ids when present",
+      "physical and virtual-E guest/host mappings and current values"
+    ]
+  },
+  "change": {
+    "purpose": "bounded diagnostic only",
+    "wait_predicate_changed": false,
+    "poll_loop_or_sleep_changed": false,
+    "synchronization_changed": false,
+    "guest_memory_write_semantics_changed": false,
+    "capture_replayed_with_this_build": false
+  },
+  "prior_capture": {
+    "root": "/home/pes/work/nfs-shift-p1-p2-14841319-paired-physical-counter-20261028",
+    "native_wait_observations": 11530,
+    "source1_interrupt_dispatches": 5765,
+    "source1_callback_returns": 5765,
+    "physical_alias_watch": {
+      "host_address": "0x21B964004",
+      "captured_write": "0x00000000 -> 0x00000001",
+      "writer_stack": "ShiftNativeGraphicsSystem::ApplyScratchRegisterWrite <- RingWorkerLoop",
+      "captured_1_to_0_writer": false
+    },
+    "interpretation": "The v65 capture confirms the scratch-register set operation but does not identify the later clear. The wait completing with zero proves the word changed, not which writer changed it."
+  },
+  "related_prior_alias_evidence": {
+    "capture": "/home/pes/work/nfs-shift-p1-v63-native-physical-waitword-04479dc-20261028-r1",
+    "follow_up_version": "v64",
+    "guest_writer": "sub_823A4640 + 1058 through callback 0x823B37B8",
+    "writer_thread": "SHIFT Native VS",
+    "writer_host_alias": "0x1FB963004",
+    "writer_guest_virtual": "0xFB963004",
+    "observed_value_change": "0x00000001 -> 0x00000000",
+    "join_confidence": "strong for that v64 run; separate from v65 and not used to label v65 causality",
+    "address_correction": "The earlier v64 JSON listed guest virtual 0xEB963004, which conflicts with host pointer 0x1FB963004. Current SDK mapping resolves 0xFB963004 to host alias 0x1FB963004 and guest physical 0x1B964004; the corrected F address is used by the instrumentation."
+  },
+  "build": {
+    "source_commit_before_change": "dc7b63d52e6bd20bc5f088a1781541a287570a72",
+    "source_file": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+    "source_file_sha256": "05236b098303b96dc2d871d4c7bc82ae6c6e5456ea3a4754cda58a1b0a265f2c",
+    "target": "rexgpu-shift-native",
+    "result": "success",
+    "build_type": "Release",
+    "tests_enabled": false,
+    "tests_run": false,
+    "sdk_runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd"
+  },
+  "previous_build": {
+    "source_commit": "dc7b63d52e6bd20bc5f088a1781541a287570a72",
+    "sha256": "93ea894c609e80407ae63cb64527bc985b36bb2da81c56bc6acfcd3c2bbaab2c",
+    "build_id": "fe3b4ff03ee63a51686ede4dbf41c38973dceb92"
+  },
+  "artifact": {
+    "path": "/home/pes/work/process2-native-wait-pollptr-20261028/plugin-output/librexgpu-shift-native.so",
+    "architecture": "x86-64 Linux ELF shared object",
+    "sha256": "f213f4ca9b679660e18e17b68aa1cc6f64667388c8f0375ecd80b245db13f1c9",
+    "build_id": "c70bfffdc0ec57c5db33b347749f4c25fbc70ef2",
+    "stripped": false
+  },
+  "v66_follow_up": {
+    "capture_root": "/home/pes/work/nfs-shift-p1-v66-native-pollword-writer-diagnostics-20261028",
+    "native_wait_samples": 12629,
+    "ref_zero_waits_observed_1_then_zero": 1691,
+    "polls_to_completion_min_max": [1, 22],
+    "prior_bounded_log_saturation": "All 64 records were repeated scratch register 0-to-1 writes; the first 1-to-0 change was omitted.",
+    "new_transition_policy": "Discard unchanged observations; reserve independent limits for 64 1-to-0, 8 0-to-1, and 16 other changed-value records.",
+    "callback_observation": "Sample the physical alias and verified virtual-E alias before and after each synchronous ExecuteInterrupt; record callback identity, dispatch ID, CPU, batch, packet, and thread context on a transition.",
+    "ordinary_guest_cpu_store_hook": "None in the plugin API. ReXGlue exposes page/cache invalidation access callbacks, not an exact per-store callback. Callback interval sampling observes changes within ExecuteInterrupt but does not identify an individual CPU store instruction.",
+    "capture_replayed_with_follow_up_build": false
+  },
+  "limits": [
+    "This follow-up artifact has not yet been replayed against the retail game; use the same-XEX run to test whether a 1-to-0 transition occurs inside a guest callback interval.",
+    "The v64 virtual-alias writer identifies the analogous clear in that run, but does not establish the v65 writer.",
+    "Callback interval sampling may observe a concurrent write occurring during the callback; P1 GDB is still required to identify an exact CPU store instruction.",
+    "This is a Linux x86-64 diagnostic artifact, not an Android ARM64 build."
+  ]
+}

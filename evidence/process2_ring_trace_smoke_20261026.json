@@ -1,0 +1,177 @@
+{
+  "schema": "shift.process2.guest_ring_trace_smoke.v1",
+  "date": "2026-10-26",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "source_tree_commit": "847ba2c3c",
+  "change": {
+    "files": [
+      "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/rexglue_plugin/README.md"
+    ],
+    "trace_environment": "SHIFT_NATIVE_VULKAN_TRACE_RING=1",
+    "record_limit": 32768,
+    "trace_points": [
+      "accepted CP_RB_WPTR notification",
+      "ring worker wake and pointer snapshot",
+      "batch snapshot and indirect-buffer expansion result",
+      "consumed range and guest RPTR writeback"
+    ],
+    "normal_mode": "disabled unless the environment variable equals 1"
+  },
+  "build": {
+    "target": "rexgpu-shift-native",
+    "compiler": "Clang 22.1.8",
+    "architecture": "linux-amd64",
+    "artifact": "/home/pes/work/process2-p1-ring-trace-handover-20261026b/librexgpu-shift-native.so",
+    "sha256": "9aaa4ea81faf1fb55981cce7ac59e99b34ca66943bbec7850af18e20c73425bc",
+    "canonical_p1_handover_alias": "/home/pes/work/process2-p1-ring-trace-handover-20261026/librexgpu-shift-native.so",
+    "old_8192_cap_backup": "/home/pes/work/process2-p1-ring-trace-handover-20261026/librexgpu-shift-native-8192cap.so"
+  },
+  "validation": {
+    "command": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation SHIFT_NATIVE_VULKAN_TRACE_RING=1 /usr/bin/ctest --test-dir /home/pes/work/process2-p2161-plugin-build-clang --output-on-failure -V -R '^rexgpu_shift_native_live_ring_'",
+    "result": "3/3 passed",
+    "tests": [
+      "rexgpu_shift_native_live_ring_check",
+      "rexgpu_shift_native_live_ring_selected_draw_dump_check",
+      "rexgpu_shift_native_live_ring_readback_check"
+    ],
+    "scope": "The ring tests submit synthetic fixture geometry/resources through Vulkan 1.1. The selected-draw dump and magenta readback are test fixtures, not retail parity evidence.",
+    "validation_layer": "VK_LAYER_KHRONOS_validation was forced through the Vulkan loader environment; CTest exited successfully and emitted no validation diagnostics."
+  },
+  "trace_transparency_check": {
+    "test": "rexgpu_shift_native_live_ring_readback_check",
+    "validation_layer": "VK_LAYER_KHRONOS_validation",
+    "trace_off_readback_sha256": "bac5569a33a5dbff11ac418a9c89bd18824c1bc0c862420c8da1d7598fc328f2",
+    "trace_on_readback_sha256": "bac5569a33a5dbff11ac418a9c89bd18824c1bc0c862420c8da1d7598fc328f2",
+    "byte_identical": true,
+    "fixture_scope": "Synthetic magenta live-ring draw fixture, not a retail frame."
+  },
+  "trace_observation": {
+    "format_strings_present_in_plugin": true,
+    "smoke_harness_log_capture": "Plugin REXLOG trace records were not surfaced in the smoke harness output; the harness verifies ring consumption but not the logger sink. A P1 retail run is needed to confirm records and correlate the live guest WPTR.",
+    "retail_trace": "The first two P1 retail runs used the earlier 8,192-record DSO and exhausted its cap before the menu_background.xml probes. A third run loaded the 32,768-record build, received CP_RB_WPTR=5651, and the worker consumed the range containing it."
+  },
+  "first_p1_retail_trace": {
+    "process_id": 547583,
+    "workdir": "/dev/shm/nfs-p1-ring-trace-retail-20261026b",
+    "loaded_plugin": "/home/pes/work/process2-p1-ring-trace-handover-20261026/librexgpu-shift-native.so",
+    "loaded_plugin_sha256": "8f456faa20677d87daa3e729dda009b3000c3c62937dfbe190dcb066f56fe5b9",
+    "trace_environment_confirmed": "SHIFT_NATIVE_VULKAN_TRACE_RING=1",
+    "log": "/dev/shm/nfs-p1-ring-trace-retail-20261026b/bin/logs/nfs_shift_001.log",
+    "trace_records_emitted": 8192,
+    "last_trace_record": {
+      "id": 8191,
+      "time_local": "2026-10-25T22:53:27.697+03:00",
+      "kind": "wptr",
+      "previous": 5393,
+      "new": 5396,
+      "rptr": 5393,
+      "ring_dwords": 8192,
+      "generation": 1
+    },
+    "nearby_guest_event": {
+      "time_local": "2026-10-25T22:53:31.203+03:00",
+      "event": "two failed probes of D:\\tracks\\_data\\instances\\scenes\\menu_background.xml and two of D:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+      "status": "0xc000000f"
+    },
+    "interpretation": "The trace cap was reached 3.506 seconds before the menu_background.xml probes. It proves WPTR notifications and normal packet snapshot/expansion earlier in this run, but does not establish whether WPTR 5651 reached the plugin at the later transition. The log continued to record Copy/Convert operations through 22:53:31.121.",
+    "process_state_at_inspection": "The retail process was still alive. It was not stopped or modified by Process 2."
+  },
+  "second_p1_retail_trace": {
+    "process_id": 551463,
+    "workdir": "/dev/shm/nfs-p1-ring-trace-retail-20261026c",
+    "loaded_plugin_path": "/home/pes/work/process2-p1-ring-trace-handover-20261026/librexgpu-shift-native.so",
+    "loaded_plugin_sha256": "8f456faa20677d87daa3e729dda009b3000c3c62937dfbe190dcb066f56fe5b9",
+    "trace_records_emitted": 8192,
+    "last_trace_record": {
+      "id": 8191,
+      "time_local": "2026-10-25T22:58:36.367+03:00",
+      "kind": "wptr",
+      "previous": 5414,
+      "new": 5417,
+      "rptr": 5393,
+      "ring_dwords": 8192,
+      "generation": 1
+    },
+    "menu_background_probes_time_local": "2026-10-25T22:58:44.558+03:00",
+    "termination_time_local": "2026-10-25T22:59:04.206+03:00",
+    "interpretation": "The second run repeated the cap exhaustion with the same old 8,192-record plugin path. The guest reached the same menu_background.xml missing-file probes; it did not exercise the 32,768-record build. The old DSO was preserved separately and the canonical handover path was updated only after the process exited."
+  },
+  "third_p1_retail_trace": {
+    "process_id": 552820,
+    "workdir": "/dev/shm/nfs-p1-ring-trace-retail-20261026d",
+    "loaded_plugin": "/home/pes/work/process2-p1-ring-trace-handover-20261026b/librexgpu-shift-native.so",
+    "loaded_plugin_sha256": "9aaa4ea81faf1fb55981cce7ac59e99b34ca66943bbec7850af18e20c73425bc",
+    "trace_environment_confirmed": "SHIFT_NATIVE_VULKAN_TRACE_RING=1",
+    "log": "evidence/process2_p1_ring_trace_20261026.log.gz",
+    "source_log_sha256": "c12b3d682454138096feb9f59b7ac941336d7980f0fc4c3859031e28f83a9900",
+    "compressed_log_sha256": "e21cb08c4ef7ed2beb09ed0e2f5899e755d9f0dc49c4bf84ed1b4d3c72c09c90",
+    "trace_records_emitted": 10973,
+    "wptr_5651": {
+      "trace_id": 8395,
+      "time_local": "2026-10-25T23:00:19.539+03:00",
+      "previous": 5648,
+      "new": 5651,
+      "rptr": 5642,
+      "ring_dwords": 8192,
+      "generation": 1
+    },
+    "presenter_refresh_failures_before_wptr_5651": {
+      "count": 8,
+      "first_time_local": "2026-10-25T23:00:04.885+03:00",
+      "last_time_local": "2026-10-25T23:00:05.037+03:00",
+      "draw_count": 24,
+      "error": "mixed 4x-to-1x depth/stencil preservation requires a provider-confirmed enabled resolve capability"
+    },
+    "worker_consumed_range_containing_5651": {
+      "snapshot_trace_id": 8400,
+      "complete_trace_id": 8401,
+      "time_local": "2026-10-25T23:00:19.556+03:00",
+      "snapshot": "rptr=5645 wptr=5657; snapshot-ok=true; batch-bytes=48; expand-ok=true; packets=83",
+      "consumed": "[5645,5657)",
+      "guest_rptr_writeback": "17AF403C: 0000160D->00001619"
+    },
+    "menu_background_probes": {
+      "time_local": "2026-10-25T23:00:23.441+03:00 through 23:00:23.442+03:00",
+      "paths": [
+        "D:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+        "D:\\tracks\\_data\\static\\scenes\\menu_background.xml"
+      ],
+      "attempts_per_path": 2,
+      "status": "0xc000000f"
+    },
+    "ring_activity_after_probes": {
+      "last_trace_id": 10972,
+      "last_trace_time_local": "2026-10-25T23:00:24.366+03:00",
+      "last_event": "consumed [1365,1371), current-rptr=1371 current-wptr=1371",
+      "interpretation": "Ring trace activity continued about 0.924 seconds after the last XML miss. The log then has no further ring trace before Window closing at 23:00:51.875 and Title terminated at 23:00:52.076; this does not establish why the guest later stopped or closed."
+    },
+    "capture": {
+      "screenshot": "evidence/process2_p1_ring_trace_t54_20261026.png",
+      "screenshot_sha256": "8215d9523c2b43ab5518e00a84f0dd944a2230ceb36f7ee910d61ad2dd92a20a",
+      "observation": "A very dark disclaimer screen with faint text; no menu or cutscene is visible."
+    },
+    "interpretation": "This confirms the cap-32768 plugin received CP_RB_WPTR=5651 and its worker consumed a snapshot whose [RPTR,WPTR) range contains it. It verifies ring delivery and packet expansion for this run, not downstream scene rendering, why the menu asset probes failed, or retail graphics parity."
+  },
+  "p1_correlation_target": {
+    "observed_guest_snapshot": {
+      "queue_head": 5641,
+      "queue_tail": 5651,
+      "predicate": "0x04"
+    },
+    "third_run_result": "Confirmed in the third run: CP_RB_WPTR new=5651 was trace record 8395, and the worker later consumed [5645,5657), which includes that pointer. This run used a different process instance than the earlier guest snapshot, so it confirms the plugin path and pointer value but does not correlate the old snapshot to the third run."
+  },
+  "resolve_capable_trace_followup_build": {
+    "evidence": "evidence/process2_linux_resolve_provider_build_20261026.json",
+    "plugin_path": "/home/pes/work/process2-p1-ring-trace-resolve-handover-20261026/librexgpu-shift-native.so",
+    "plugin_sha256": "dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1",
+    "purpose": "Combine the current P2 ring tracing build with the provider-confirmed depth/stencil resolve capability that the third retail run lacked.",
+    "retail_status": "Built and validation-tested; no retail recapture with this candidate has been observed yet."
+  },
+  "language_selector_note": {
+    "root_cause_commit": "ac7f5793a9d794e81078cd08bdbef15e0babcd0e",
+    "fix": "Keep all 16 Xenos interpolator indices mapped to matching Vulkan locations across vertex, pixel, and rectangle-list geometry stages.",
+    "retail_device_evidence": "evidence/process2_redmi_language_selector_live_android_20261025.png shows the original live retail selector with all six labels readable on Redmi Note 8 Pro.",
+    "scope": "The current phone is on the disclaimer screen; this turn did not restart or reset game state to recapture the selector."
+  }
+}

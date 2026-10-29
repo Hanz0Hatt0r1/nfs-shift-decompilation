@@ -1,0 +1,205 @@
+{
+  "schema": "shift.process2.source_color_readback.v1",
+  "date_local": "2026-10-26",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "base_commit": "19f95e5b8",
+    "implementation_commit": "f18a19b34d96f27d7cddfed9bc0772624a8fda28",
+    "paths": [
+      "native_vulkan/include/shift_xbox_live_vulkan_renderer.hpp",
+      "native_vulkan/src/xbox_live_vulkan_renderer.cpp",
+      "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+      "native_vulkan/tests/xbox_live_vulkan_renderer_check.cpp",
+      "native_vulkan/shaders/xenos_copy_black.frag",
+      "native_vulkan/CMakeLists.txt",
+      "native_vulkan/android/CMakeLists.txt",
+      "native_vulkan/rexglue_plugin/README.md"
+    ]
+  },
+  "behavior": {
+    "opt_in_environment_variable": "SHIFT_NATIVE_VULKAN_SOURCE_READBACK_PATH",
+    "frame_selection_environment_variable": "SHIFT_NATIVE_VULKAN_READBACK_FRAME",
+    "default_selected_frame": 1,
+    "captures_final_output_alongside_source": true,
+    "source_metadata": [
+      "width",
+      "height",
+      "VkFormat",
+      "captured sample count",
+      "average resolve indicator",
+      "non-black pixel count",
+      "FNV-1a64",
+      "raw byte size"
+    ],
+    "homogeneous_4x_path": "Resolve into an opt-in sidecar image using VK_RESOLVE_MODE_AVERAGE_BIT; original 4x image returns to shader-read layout for the existing sample-zero Copy/Convert.",
+    "mixed_4x_to_1x_path": "Read the single-sample source after the existing MSAA resolve and the later 1x draws, immediately before Copy/Convert.",
+    "unsupported_readback": "Optional source staging, image usage, and host mapping failures are reported in status/reason while final output submission continues. Frames with no captured Copy/Convert source are reported unsupported."
+  },
+  "checks": {
+    "native_vulkan_ctest": {
+      "passed": 4,
+      "total": 4,
+      "build_directory": "/tmp/nfs-p2-source-readback-build",
+      "renderer_device": "NVIDIA GeForce GTX 950",
+      "renderer_validation": "VK_LAYER_KHRONOS_validation enabled; no validation errors",
+      "targeted_regression": "A colored 4x source with a black Copy shader has non-black source bytes and black final output; a separately rendered black source with the same shader has black source and final output."
+    },
+    "linux_plugin_build": {
+      "target": "rexgpu-shift-native",
+      "result": "passed",
+      "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+      "runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+      "ldd_r": "resolved without undefined symbols",
+      "factory_smoke": "passed"
+    },
+    "linux_plugin_ctest": {
+      "selected_passed": 2,
+      "selected_total": 2,
+      "selected_tests": [
+        "rexgpu_shift_native_factory_check",
+        "rexgpu_vulkan_resolve_capability_check"
+      ],
+      "complete_live_ring_suite": "not run: enabling the full external SDK build failed in unrelated ReXGlue code (SSSE3 target configuration in host memory.cpp; Android getcontext/makecontext/swapcontext declarations)."
+    },
+    "per_draw_visibility_linux_plugin": {
+      "result": "plugin built; ldd -r resolved; current-DSO factory smoke passed",
+      "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+      "path": "/tmp/nfs-p2-source-readback-resolve-build/plugin-output/librexgpu-shift-nativerd.so",
+      "sha256": "414ce5a95ad946c59117eb37250a4c20b717edda93b92cc4d16c05a73e2a7667",
+      "build_id": "11eb91c7594138674ed46d2780b2ce44498c23d1"
+    },
+    "per_draw_visibility_android_plugin_build": {
+      "result": "ARM64 debug plugin compile and link passed; no APK install or live plugin run",
+      "sdk_root": "/home/pes/work/process2-android-sdk-v0.10.0-snapshot",
+      "ndk": "28.2.13676358",
+      "android_platform": 29,
+      "plugin_path": "/home/pes/work/process2-android-inflight-plugin/plugin-output/librexgpu-shift-natived.so",
+      "plugin_sha256": "16f004e5fb45fff2830e461525683f9082937a659a83852e36fa4bb9f67cc87a",
+      "plugin_build_id": "1dd0bd4b627668829e5a5794ad65535117e2c289",
+      "runtime_path": "/home/pes/work/process2-android-sdk-v0.10.0-snapshot/out/android-arm64/librexruntimed.so",
+      "runtime_sha256": "f30281a1c7c88e74eac7ee2d722d43d8594c77916623c6f4b82ab1621a8edac1",
+      "runtime_build_id": "4d6f44bf8e1fc3f891acb94a79cd80995497721e",
+      "needed_runtime": "librexruntimed.so",
+      "compiler_warning": "One pre-existing Android SDK inline-assembly warning about the FPCR operand width; link succeeded.",
+      "device_factory_smoke": {
+        "result": "passed",
+        "device": "Redmi Note 8 Pro (begonia)",
+        "test_build_id": "f834944f57dcd7627aac203e6932c9129bbb13ef",
+        "test_sha256": "3bf30b84f514390393e4aa186b0b34a780b7a5e6653b2898af205b5b05f1c7fa",
+        "plugin_loaded": true,
+        "temporary_test_files_removed": true,
+        "retail_app_pid_after_test": 31012,
+        "retail_app_top_resumed_after_test": true,
+        "apk_installed_or_restarted": false
+      }
+    },
+    "android_arm64_renderer_check": {
+      "result": "passed",
+      "device": "Redmi Note 8 Pro (begonia)",
+      "gpu": "Mali-G76 MC4",
+      "vulkan_api": "1.1.131",
+      "ndk": "28.2.13676358",
+      "android_platform": 29,
+      "test_build_id": "2fd6f438f3972cb936bc876430b215b304379181",
+      "test_sha256": "4f862a0a27df9bc09265222cc5d84069758a4f5232dbcda0a5031e28d93e5e81",
+      "validation_layer_available": false,
+      "result_text": "synthetic offscreen Vulkan 1.1 AutoIndex point and rectangle-list draws, 4x-to-1x depth/stencil SAMPLE_ZERO preservation, 4:1 anisotropy sampler, captured sample-zero Copy/Convert, and per-draw occlusion checks passed on Mali-G76 MC4"
+    },
+    "per_draw_visibility_query_regression": {
+      "result": "passed on host and Redmi Note 8 Pro",
+      "query_type": "Vulkan 1.1 non-precise occlusion query",
+      "cases": [
+        "colored synthetic source draw reports at least one passing sample",
+        "color-write-mask-disabled draw reports passing samples while source RGB remains black"
+      ],
+      "interpretation_limit": "A passing query proves sample coverage passed raster/depth/stencil tests, not that the shader or color-write mask changed RGB.",
+      "redmi_gpu": "Mali-G76 MC4",
+      "redmi_vulkan_api": "1.1.131",
+      "validation_layer_available": false
+    },
+    "git_diff_check": "passed"
+  },
+  "linux_x86_64_plugin": {
+    "path": "/home/pes/work/process2-latest-renderer-handover-20261026/linux-source-color-readback-20261026/librexgpu-shift-native.so",
+    "sha256": "b488dfeb5803f031c4027270b3ab20831a379814145ceda7c052ecd12199a70c",
+    "build_id": "93c34470001d02f86d593819f04784431d3ef9a0",
+    "runtime_path": "/home/pes/work/process2-latest-renderer-handover-20261026/linux-source-color-readback-20261026/librexruntime.so",
+    "runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+    "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99"
+  },
+  "android_device": {
+    "updated_readback_apk_built": false,
+    "plugin_installed": false,
+    "core_regression_run_offscreen": true,
+    "redmi_app_state": "The installed retail APK remained top-resumed on the legal disclaimer during a read-only check; no restart or plugin replacement occurred. Temporary offscreen test files were removed after the Vulkan 1.1 test."
+  },
+  "retail_black_frame_400": {
+    "run_directory": "/tmp/nfs-p1-source-color-readback-20261026",
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "plugin_sha256": "b488dfeb5803f031c4027270b3ab20831a379814145ceda7c052ecd12199a70c",
+    "runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+    "selected_submitted_frame": 400,
+    "source": {
+      "format": "VK_FORMAT_R8G8B8A8_UNORM",
+      "samples": 4,
+      "average_resolve": true,
+      "non_black_pixels": 0,
+      "fnv1a64": "E5D4D97753B440E8",
+      "raw_sha256": "f4e8ca8a048fab88780f073776ab2676d5936988e1622b93cb49e1855cfecb65"
+    },
+    "presenter_output": {
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "non_black_pixels": 0,
+      "fnv1a64": "D78AD60E15E72325",
+      "raw_sha256": "e94e580f80b4522e921a3c0cf72c929eed0fb7093da4e372c782eaf83827e991"
+    },
+    "frame_events": {
+      "captured_indexed_draws_submitted": 2,
+      "copy_convert": "accepted source-0/sample-0 Copy/Convert to the 1280x720 presenter target",
+      "black_source_precedes_copy": true
+    },
+    "trace_assessment": {
+      "conclusion": "The source render target remained at black after two renderer-ready indexed draws were submitted; the black presenter output is downstream of that already-black source. The evidence does not distinguish guest-requested clear/no effective color writes from draw state, shader, or rasterization producing no visible RGB.",
+      "per_draw_state_dump_for_frame_400_present": false,
+      "ring_pointer_trace_present": false,
+      "renderer_attachment_initial_value": "The Vulkan render-pass color attachment uses VK_ATTACHMENT_LOAD_OP_CLEAR with RGB=0 (alpha=1); an untouched target therefore reads black. This does not prove a guest-issued clear packet.",
+      "per_draw_visibility_follow_up": "The renderer now supports opt-in per-submitted-draw non-precise occlusion queries selected with SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME. This exact retail frame has not yet been rerun with the query enabled, so no per-draw coverage result is claimed.",
+      "unresolved_startup_draw": "A separate draw #0 near process startup had incomplete raster state valid_mask=0x17038; it is not associated with submitted frame 400.",
+      "related_runs_are_not_frame_equivalent": "Older frame-400 draw dumps belong to different launches and show different draw sequences; they cannot supply missing state for this black run."
+    }
+  },
+  "latest_plugin_retail_visibility_attempt": {
+    "run_directory": "/home/pes/work/nfs-p1-draw-visibility-20261026",
+    "owner": "Process 1 isolated Linux retail run; Process 2 only read its outputs",
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "plugin_sha256": "414ce5a95ad946c59117eb37250a4c20b717edda93b92cc4d16c05a73e2a7667",
+    "runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+    "selected_presenter_frame": 400,
+    "duration_seconds": 193.929,
+    "process_exit_code": -7,
+    "environment": {
+      "SHIFT_NATIVE_VULKAN_DUMP_DRAW_FRAME": "400",
+      "SHIFT_NATIVE_VULKAN_READBACK_FRAME": "400",
+      "source_readback_requested": true,
+      "presenter_readback_requested": true
+    },
+    "renderer_log_last_progress": "shift-native: installed emulator-free Vulkan frontend; waiting for guest PM4",
+    "draw_query_events": 0,
+    "readback_files_written": false,
+    "window_capture_exit_code": 1,
+    "conclusion": "The run ended before any guest PM4 or Vulkan draw submission/query event appeared. It provides no new evidence about frame-400 rasterization, color writes, or retail parity; do not attribute the failure to the Vulkan renderer.",
+    "phone_app": {
+      "action": "read-only ADB recheck; no restart or input",
+      "top_resumed": true,
+      "screen": "legal disclaimer",
+      "screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af"
+    }
+  },
+  "limits": [
+    "The homogeneous 4x source dump is an average resolve and therefore is not a byte-for-byte representation of sample zero consumed by the current guest Copy/Convert shader; the log reports the resolve mode explicitly.",
+    "The mixed 4x-to-1x dump reads the final single-sample image after the existing resolve and 1x draws.",
+    "This retail frame-400 source/output measurement is not retail parity evidence: its source and presenter output are black, and no exact-frame per-draw state, occlusion, or pixel-write trace was captured.",
+    "The full Linux plugin live-ring CTest suite was not rebuilt because an external ReXGlue SDK host configuration failed; the plugin itself, factory smoke, resolve-capability test, and native Vulkan CTest passed."
+  ]
+}

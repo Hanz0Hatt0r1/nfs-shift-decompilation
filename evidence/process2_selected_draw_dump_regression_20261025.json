@@ -1,0 +1,44 @@
+{
+  "schema": "shift.process2.selected_draw_dump_regression.v1",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "tree_head": "c534eb00af5d80dfd0fdbdcace809309a5fae711",
+    "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "compiler": "Clang 22.1.8",
+    "vulkan_sdk": "1.4.357"
+  },
+  "regression": {
+    "test": "rexgpu_shift_native_live_ring_selected_draw_dump_check",
+    "result": "passed with VK_LAYER_KHRONOS_validation",
+    "assertions": [
+      "selected-frame raw vertex/index dump matches decoded fixture buffers",
+      "selected-frame raw texture dump matches captured fixture bytes",
+      "live ReXGlue PM4 ring consumed three successive MMIO batches and submitted each fixture through Vulkan 1.1"
+    ],
+    "texture_dump": {
+      "path": "/home/pes/work/process2-p2-selected-draw-dump-clang-build-20261026/live-ring-texture-dump.frame1.draw0.texture0.rgba8",
+      "bytes": 1048576,
+      "fixture": "generated white RGBA8 texture; synthetic test input, not a retail capture"
+    }
+  },
+  "plugin_ctest": {
+    "result": "5/5 passed",
+    "tests": [
+      "rexgpu_shift_native_factory_check",
+      "rexgpu_shift_native_live_ring_check",
+      "rexgpu_shift_native_live_ring_selected_draw_dump_check",
+      "rexgpu_shift_native_live_ring_readback_check",
+      "rexgpu_vulkan_resolve_capability_check"
+    ]
+  },
+  "host_plugin": {
+    "path": "/home/pes/work/process2-current-p2-validated-linux-plugin-20261025/librexgpu-shift-native.so",
+    "sha256": "1c462ac883e1c37ed9502e5202ba03d9d1c5bc845bac1e283cbbbcc9b8052686",
+    "elf_build_id": "d5a69288d8809b3c0061fe620481540a85bd11b6",
+    "ldd_r": "clean"
+  },
+  "scope": [
+    "The selected-draw fixture is synthetic and proves capture-dump plumbing only.",
+    "It is not retail image parity or proof that the Android language selector or cutscenes render correctly."
+  ]
+}

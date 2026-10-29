@@ -1,0 +1,121 @@
+{
+  "schema": "shift.process2.disclaimer_draw_isolation.v1",
+  "date": "2026-10-26",
+  "task": "Trace the thin purple strips on the retail safety disclaimer to their captured Vulkan draws and texture input.",
+  "process2": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "renderer_source_commit": "99cdd93a92a580d562ca3f0c4c88e2e4a9d3b537",
+    "branch_head_at_recording": "a44355489d3ac22f5389a3654da3021da23cf29d",
+    "linux_plugin_sha256": "e2679a4ca54178a312af3f6cc7cc2ba0eb8dd562a8e730a32131068d46736bf4",
+    "linux_plugin_build_id": "173c8c62e2dea1cf2b5a8161003e6e63e294fb8d"
+  },
+  "retail_replay": {
+    "xex": {
+      "path": "/home/pes/work/process2-linux-retail-root-20261024/game/default.xex",
+      "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+    },
+    "host": {
+      "path": "/tmp/nfs-p1-retail-frontier-p2-isolated-20261026/bin/nfs_shift",
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "runtime": {
+      "path": "/tmp/nfs-p1-shm-runtime-clang-20261025/librexruntime.so",
+      "sha256": "d0516220e6e3db828d4d016a517f5f870705628fa7016409067b7e6c94f4c740"
+    },
+    "p2_plugin_loaded": "/home/pes/work/process2-renderer-handover-pipeline-cache/librexgpu-shift-native-linux-x86_64.so",
+    "target_submit": 907,
+    "captured_draws": 14,
+    "source_capture": "Selected geometry, decoded RGBA8 textures, translated shader output, and Vulkan readback from the exact-XEX Linux retail replay."
+  },
+  "linux_readback": {
+    "extent": [1280, 720],
+    "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "raw_bytes": 3686400,
+    "raw_sha256": "fdcb5b836e746d33cce50f849e42c69fcc4c11108e29e2cb75cf85e5aaf84fa3",
+    "raw_fnv1a64": "0xB5283D1610DE1B4B",
+    "nonblack_rgb_pixels": 17875,
+    "raw_file": "process2_linux_disclaimer_frame907_readback_20261026.bin.gz",
+    "decoded_png": "process2_linux_disclaimer_frame907_readback_20261026.png",
+    "decoded_png_sha256": "91df7c78ea5f9d5267b6e066804be2d600bbebe6db2f0eda8c086b4b6dfff299",
+    "window_png": "process2_linux_disclaimer_frame907_window_20261026.png",
+    "window_png_extent": [879, 579],
+    "window_png_sha256": "5fe66dc058ea08a2ccc0633f3eeba387af2dc8e8f4c718cc5b73dd71c19cc4dc"
+  },
+  "strip_draws": {
+    "draw_ids": [5058, 5059, 5060, 5061],
+    "topology": "triangle list, auto-indexed six vertices",
+    "blend_control": "0x07060706",
+    "vertex_shader_fnv1a64": "0x430FD4298488C2B4",
+    "pixel_shader_fnv1a64": "0x40FFB3724AB31C41",
+    "texture": {
+      "guest_address": "0x0A24B000",
+      "xenos_format": 20,
+      "format_name": "DXT4/5",
+      "extent": [512, 8],
+      "captured_source_bytes": 65536,
+      "decoded_format": "RGBA8_UNORM",
+      "decoded_bytes": 16384,
+      "decoded_sha256": "43c9836efa8500630ab1cb7a304c1a8740e7e7e44a74ff1932ce0986270a3dab",
+      "decoded_fnv1a64": "0x9D00A6374FED1230",
+      "decoded_file": "process2_disclaimer_frame907_draw5058_rgba8_20261026.bin"
+    },
+    "draw_geometry": [
+      {
+        "draw_id": 5058,
+        "ndc_x": [-0.8, 0.0],
+        "ndc_y": [-0.523611, -0.501389],
+        "vertices_file": "process2_disclaimer_frame907_draw5058_vertices_20261026.bin",
+        "vertices_sha256": "57d648ab205a2bd22cd58572026aec8e4bdca090c2e6e534e375571b36a80a6b"
+      },
+      {
+        "draw_id": 5059,
+        "ndc_x": [0.0, 0.8],
+        "ndc_y": [-0.523611, -0.501389],
+        "vertices_file": "process2_disclaimer_frame907_draw5059_vertices_20261026.bin",
+        "vertices_sha256": "9a57da9e77528b323c587c96596bf33374af76662bf837d16c6d0e1a8d23e36f"
+      },
+      {
+        "draw_id": 5060,
+        "ndc_x": [-0.8, 0.0],
+        "ndc_y": [0.459722, 0.481944],
+        "vertices_file": "process2_disclaimer_frame907_draw5060_vertices_20261026.bin",
+        "vertices_sha256": "247e1ea0865676f1790a19306e28e09170f4187a6eaee1825d03ba8397d2555e"
+      },
+      {
+        "draw_id": 5061,
+        "ndc_x": [0.0, 0.8],
+        "ndc_y": [0.459722, 0.481944],
+        "vertices_file": "process2_disclaimer_frame907_draw5061_vertices_20261026.bin",
+        "vertices_sha256": "de27e6b8ad5596f561981d134ecfbd5351c083b9d0e2eb4d760c49f319ea415e"
+      }
+    ]
+  },
+  "redmi_note_8_pro": {
+    "model": "Redmi Note 8 Pro",
+    "gpu": "Mali-G76 MC4",
+    "app_id": "com.hanz0hatt0r.nfsshift",
+    "pid": 24808,
+    "activity_resumed": true,
+    "screenshot": "process2_redmi_disclaimer_live_20261026.png",
+    "screenshot_sha256": "fac0d770d73e8045f7c1f69aa3b93320a93650062cf7ed03ffa709d3d5a3a9af",
+    "mapped_renderer_sha256": null,
+    "mapped_renderer_note": "The running app remained active. Android denied shell access to its process maps, so the DSO mapped in this process was not verified."
+  },
+  "same_output_comparison": {
+    "method": "Crop the centered 1920x1080 16:9 viewport from the 2340x1080 phone screenshot, bilinear-resize to 1280x720, and compare RGB pixels with the Linux Vulkan readback.",
+    "exact_rgb_pixels": 893861,
+    "total_rgb_pixels": 921600,
+    "mean_absolute_channel_difference": 0.3788049768518518,
+    "scope_limit": "This compares the phone screen with the P2 Linux Vulkan output of the same disclaimer; it is not an independent Xenos/retail reference or proof of full retail parity."
+  },
+  "conclusion": {
+    "established": "The four strips are emitted by retail draws 5058-5061, which sample the same captured 512x8 Xenos format-20 texture at 0x0A24B000. The Linux Vulkan readback and current Redmi display both contain the strips and readable disclaimer text.",
+    "not_established": "Whether these strip pixels are intended by the retail title or are a shared P2 decode/blend error. No renderer change is justified without an independent reference for this texture and draw state.",
+    "process1_files_modified": false
+  },
+  "artifacts": {
+    "full_run_log_gzip": "process2_linux_disclaimer_frame907_run_20261026.log.gz",
+    "full_run_log_gzip_sha256": "23fe6137922ebefeed85893f03acd15fa8d3fc7ffd2756a81e3ddfc698130374",
+    "raw_readback_gzip_sha256": "26d8053bc44e07bcfa4c27193528cf0dcd295f2faed5cc179e7548366d012527"
+  }
+}

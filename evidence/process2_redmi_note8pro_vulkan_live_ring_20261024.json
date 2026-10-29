@@ -1,0 +1,79 @@
+{
+  "format": "SHIFT.Process2RedmiNote8ProVulkanLiveRing/1",
+  "observed_at": "2026-10-24T16:07:23+03:00",
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:33153",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "activity_foreground": true,
+    "process_id": 25817
+  },
+  "build": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "installed_apk_sha256": "b9942387bbd09648b0c21482a685cde07457a7095a8f3e5d531afcdb6116b045",
+    "plugin_sha256": "13e89a3c2912d0df91b2730d398ea293769f4f632b2e4c5edc3873e12a39e75a",
+    "android_abi": "arm64-v8a",
+    "game_default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "runtime_log": {
+    "device_path": "files/nfs_shift/user/logs/nfs_shift_004.log",
+    "compressed_repo_path": "process2_redmi_note8pro_vulkan_live_ring_20261024.log.gz",
+    "first_entry": "2026-10-24T15:53:46.597+03:00",
+    "last_entry": "2026-10-24T15:55:29.799+03:00",
+    "bytes": 249529,
+    "sha256_uncompressed": "def330ded7ca099d40c4fb3e97f99eb43dad74769460e651a1048566db7bd7b4"
+  },
+  "live_vulkan_stream": {
+    "successful_frame_submissions": 527,
+    "accepted_source0_sample0_copy_convert": 527,
+    "indexed_draw_packet_counts_per_frame": {
+      "one": 328,
+      "two": 168,
+      "three": 31
+    },
+    "refresh_failures_logged": 0,
+    "last_successful_submission": "2026-10-24T15:55:29.440+03:00",
+    "readback": {
+      "only_captured_frame": 4,
+      "non_black_pixels": 53098,
+      "fnv1a64": "915336228EB84E49",
+      "image": "process2_redmi_note8pro_vulkan_frame4_pixels_decoded_20261024.png"
+    }
+  },
+  "late_retail_draw_samples": {
+    "sampled_draw_ids": [110, 111, 112, 113, 114, 115, 116, 117],
+    "topology": "three-index AutoIndex rectangle list",
+    "raster": "1280x720, 4x MSAA, color base tiles 0, depth base tiles 720",
+    "vertex_shader": {
+      "bytes": 108,
+      "fnv1a64": "539EA9E08AA83F0C"
+    },
+    "pixel_shader": {
+      "bytes": 36,
+      "fnv1a64": "438C2AF84C78A133"
+    },
+    "texture": "unused",
+    "constants": "none",
+    "pixel_result": "the translated pixel shader forwards interpolator 0; all captured values for its color attribute are zero, so these sampled draws write zero color",
+    "normalized_vertex_payload_fnv1a64": "C6201A9B785F89C7"
+  },
+  "guest_asset_open_failures": [
+    "d:\\pakfiles\\dir\\audio.bff",
+    "d:\\characters\\drivers2.lod",
+    "d:\\tracks\\cameraconfig.xml",
+    "d:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+    "d:\\tracks\\_data\\static\\scenes\\menu_background.xml"
+  ],
+  "current_device_screen": {
+    "captured_at": "2026-10-24T16:07:23+03:00",
+    "sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+    "matches_saved_post_splash_black_screenshot": true,
+    "screenshot": "process2_redmi_note8pro_vulkan_post_splash_black_20261024.png"
+  },
+  "conclusion": "The emulator-free plugin continues to submit the observed retail draws and Copy/Convert operations to the Vulkan presenter, and the first title-logo frame has an earlier positive readback. This run does not show a menu or race image. Its sampled late draws explicitly write zero color; the runtime log ends after failed menu-scene asset opens. This does not prove those open failures are the sole cause, and does not establish full retail graphics support.",
+  "ownership_boundary": "No Process 1 runtime, VFS, P-code, or scheduler source was changed."
+}

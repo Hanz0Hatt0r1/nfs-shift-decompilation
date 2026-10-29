@@ -231,6 +231,16 @@ The recompilation path and the native vertical-slice path are complementary:
 
 Neither path is currently a complete playable game.
 
+### Xbox retail PM4 to Vulkan frontend (Process 2)
+
+The separate `shift-native` ReXGlue plugin consumes the Xbox guest PM4 ring and submits captured draws to the project-owned Vulkan 1.1 renderer. It is built without mapping `rexgpu-xenos`; the renderer core remains free of XCB/Wayland surface calls. The 2026-10-23 live run captured 100 `DRAW_INDX_2` packets (96 one-index AutoIndex point-list and four three-index AutoIndex rectangle-list). The plugin submitted 24 point draws and one rectangle draw at each of two guest swaps; it rejected the other rectangle variant because its captured state is `mode=6/color=0`. A debug magenta fragment override produced rasterized pixels ([diagnostic readback](evidence/process2_xbox_live_vulkan_magenta_raster_diagnostic_20261023.png)), while the captured retail pixel shader produced black readback ([native shader output](evidence/process2_xbox_live_vulkan_output_readback_black_20261023.png)). The live frontend therefore submits original retail draws, but visible game output and scene parity remain unverified. See the [live ring evidence](evidence/process2_xbox_live_guest_ring_20261023.json).
+
+The 2026-10-24 Android rebuild on Redmi Note 8 Pro now dispatches the guest source-0/VBlank callback at 60 Hz. Its runtime log records two guest swaps, two Vulkan frame submissions, and a fully black readback and screenshot; no additional PM4 batches appeared during the next 170 seconds. VBlank delivery is therefore confirmed, while visible retail output and progress beyond those startup batches remain unverified. See the [VBlank probe](evidence/process2_redmi_note8pro_vblank_probe_20261024.json).
+
+The 2026-10-26 plugin-only ARM64 build was installed on the Redmi Note 8 Pro and loaded by the retail game using the existing runtime DSO. The live Vulkan output advanced through the original loading screen, SHIFT logo, and safety disclaimer; the plugin log records 641 captured indexed-draw submissions and 641 Copy/Convert presentations. This confirmed those startup frames only, not retail parity; see the [Android plugin build and live-run evidence](evidence/process2_android_prebuilt_runtime_plugin_20261026.json).
+
+A fresh launch on 2026-10-27 showed the language-selector labels and the legal disclaimer with two horizontal rules. The screen remained unchanged while the renderer logged 737 submissions of 13 draw packets, about 0.56 seconds apart over 6 minutes 54 seconds. One 14-draw group failed closed because its captured format/Copy state is unsupported; the evidence does not establish that this caused the game to remain on the disclaimer. This run did not reach a visible Bink frame. The isolated retail Bink replay and earlier slow live Bink output are recorded separately; see the [startup-to-video blocker evidence](evidence/process2_redmi_disclaimer_to_bink_blocker_20261027.json) and the [target-layout guard verification](evidence/process2_multitarget_guard_20261027.json).
+
 ## Validation
 
 The repository records reproducible evidence instead of treating local success as proof.

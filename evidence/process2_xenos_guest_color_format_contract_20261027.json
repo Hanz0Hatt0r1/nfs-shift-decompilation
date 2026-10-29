@@ -1,0 +1,78 @@
+{
+  "schema": "shift.process2.xenos_guest_color_format_contract.v1",
+  "date": "2026-10-27",
+  "retail_capture": {
+    "evidence": "process2_redmi_transition_copy_chain_20261026.json",
+    "mode6_source_color_info": "0x000C0000",
+    "raw_xenos_color_format": 12,
+    "renderer_mapping": "CapturedColorTargetFormat::Rgb10A2Float / VK_FORMAT_R16G16B16A16_SFLOAT",
+    "renderer_gap": "Raw guest formats 3 and 12 share the same Vulkan representation; Vulkan format alone loses guest format identity. Both use the supported 32bpp EDRAM sample layout."
+  },
+  "format_contract": {
+    "decoder_supported_guest_formats": [0, 1, 2, 3, 6, 12],
+    "format12_edram_bytes_per_sample": 4,
+    "true_64bpp_guest_formats": [5, 7, 15],
+    "true_64bpp_addressing": "rejected",
+    "reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h",
+    "reference_notes": "Xenia identifies format 12 as 2_10_10_10_FLOAT_AS_16_16_16_16 and lists only formats 5, 7, and 15 as 64bpp. Its EDRAM shader notes that the physical storage details of true 64bpp targets remain unknown."
+  },
+  "implementation": {
+    "changes": [
+      "Preserve raw RB_COLOR_INFO.COLOR_FORMAT in CapturedRasterState.",
+      "Include the raw guest format in renderer target-layout comparisons and diagnostics.",
+      "Map captured 16_16_FLOAT and format 12 samples with the supported 32bpp EDRAM address rule.",
+      "Keep true 64bpp guest formats fail-closed in the EDRAM address helper."
+    ],
+    "regressions": [
+      "Format-12 4x-MSAA sample offsets, tile advance, tile-row pitch, and 2048-tile wrap.",
+      "Reject a true 64bpp format code in the address helper.",
+      "Reject a renderer frame that merges raw formats 3 and 12 because their Vulkan attachment formats match."
+    ]
+  },
+  "validation": {
+    "linux": {
+      "status": "passed",
+      "build": "cmake --build /home/pes/work/process2-coherency-wait-linux-20261027 --parallel 4",
+      "ctest": "VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation /usr/bin/ctest --test-dir /home/pes/work/process2-coherency-wait-linux-20261027 --output-on-failure",
+      "result": "4/4 passed",
+      "draw_input_check_sha256": "124cf6e2925894228a02347af35fbaea26a57bb72a400b446b92077e4316d1a9",
+      "renderer_check_sha256": "672b9e9f15dd7877124133b7eb6f9c16209756faf8a98fb9eb85c97932e19f6a"
+    },
+    "android_arm64": {
+      "status": "passed",
+      "abi": "arm64-v8a",
+      "api": 26,
+      "ndk": "28.2.13676358",
+      "device": "Redmi Note 8 Pro / Mali-G76 MC4 / Vulkan 1.1.131",
+      "checks": {
+        "draw_input_check": "passed on device",
+        "renderer_check": "synthetic offscreen Vulkan 1.1 check passed on device",
+        "vulkan_validation_layer": "not available"
+      },
+      "draw_input_check_sha256": "6629640700f33fa33a47addee79b9df93f52c13e3a2152960d3d24e7156df2a7",
+      "renderer_check_sha256": "c845bf0ae3d98ae3f8fc9a2d126a64144904430d90eb6ff45138297226599be5",
+      "game_process_after_check": 6382,
+      "device_game_state": "No game input was sent. The APK was not modified or restarted. Temporary checker and shader files were removed."
+    },
+    "rexglue_plugin": {
+      "status": "built",
+      "target": "rexgpu-shift-native",
+      "sdk": "ReXGlue 0.10.0.0-dev.unknown",
+      "compiler": "Clang 22.1.8",
+      "abi": "linux-amd64",
+      "runtime": "Prebuilt librexruntime.so from the same SDK checkout",
+      "disabled_optional_sdl_modules": ["DBus", "IBus"],
+      "sha256": "65ca916a121885bcda695537ab20a0b5f189330b839d1ef7176674c35798a0a6"
+    },
+    "github_ci": {
+      "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+      "status": "all reported checks passed or were skipped",
+      "skipped": ["retail-startup-regression"]
+    }
+  },
+  "limits": [
+    "This preserves format identity and checks sample-address calculation; it does not allocate or populate an EDRAM backing store.",
+    "Ordered mode-6 Copy/Convert operations still do not execute between target groups.",
+    "No retail transition or video frame parity is claimed."
+  ]
+}

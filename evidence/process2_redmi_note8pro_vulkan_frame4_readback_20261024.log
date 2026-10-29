@@ -1,0 +1,2190 @@
+[2026-10-24 14:57:11.649] [info] [core] [t17654] Vulkan instance API version 1.3.0. Enabled layers and extensions:
+[2026-10-24 14:57:11.649] [info] [core] [t17654] * VK_KHR_surface
+[2026-10-24 14:57:11.649] [info] [core] [t17654] * VK_KHR_android_surface
+[2026-10-24 14:57:11.649] [warning] [core] [t17654] Available Vulkan physical devices (use the 'vulkan_device' configuration variable to force a specific device):
+[2026-10-24 14:57:11.649] [warning] [core] [t17654] * 0: Mali-G76 MC4
+[2026-10-24 14:57:11.650] [info] [core] [t17654] Vulkan device 'Mali-G76 MC4': API 1.1.131, vendor 0x13B5, device 0x72110000, driver version 0x6800000
+[2026-10-24 14:57:11.650] [info] [core] [t17654] Enabled Vulkan device extensions:
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * VK_KHR_driver_properties
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * VK_KHR_swapchain
+[2026-10-24 14:57:11.650] [info] [core] [t17654] Vulkan device properties and enabled features:
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * driverID: ArmProprietary
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * driverName: Mali-G76 MC4
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * driverInfo: v1.r26p0-01eac0.66a08f2668d757b36371f0062427ea04
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * conformanceVersion: 1.2.2.0
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxImageDimension2D: 16383
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxImageDimension3D: 16383
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxImageDimensionCube: 16383
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxImageArrayLayers: 1024
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxStorageBufferRange: 268435456
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxSamplerAllocationCount: 4294967295
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxPerStageDescriptorSamplers: 128
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxPerStageDescriptorStorageBuffers: 35
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxPerStageDescriptorSampledImages: 256
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxPerStageResources: 365
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxVertexOutputComponents: 128
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxTessellationEvaluationOutputComponents: 128
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxGeometryInputComponents: 64
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxGeometryOutputComponents: 128
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxFragmentInputComponents: 128
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxFragmentCombinedOutputResources: 64
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxSamplerAnisotropy: 16
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxViewportDimensions[0]: 16383
+[2026-10-24 14:57:11.650] [info] [core] [t17654] * maxViewportDimensions[1]: 16383
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * minUniformBufferOffsetAlignment: 16
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * minStorageBufferOffsetAlignment: 64
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * maxFramebufferWidth: 16383
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * maxFramebufferHeight: 16383
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * framebufferColorSampleCounts: { 1 | 4 | 8 }
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * framebufferDepthSampleCounts: { 1 | 4 | 8 }
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * framebufferStencilSampleCounts: { 1 | 4 | 8 }
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * framebufferNoAttachmentsSampleCounts: { 1 | 4 | 8 | 16 }
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * sampledImageColorSampleCounts: { 1 | 4 | 8 }
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * sampledImageIntegerSampleCounts: { 1 | 4 | 8 }
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * sampledImageDepthSampleCounts: { 1 | 4 | 8 }
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * sampledImageStencilSampleCounts: { 1 | 4 | 8 }
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * standardSampleLocations: 1
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * optimalBufferCopyOffsetAlignment: 64
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * optimalBufferCopyRowPitchAlignment: 64
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * nonCoherentAtomSize: 64
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * geometryShader
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * constantAlphaColorBlendFactors
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * imageViewFormatReinterpretation
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * imageViewFormatSwizzle
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * pointPolygons
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * separateStencilMaskRef
+[2026-10-24 14:57:11.651] [info] [core] [t17654] * shaderSampleRateInterpolationFunctions
+[2026-10-24 14:57:12.374] [info] [core] [t17654] VulkanPresenter: Created 1080x2205 swapchain with format 37, color space 0, presentation mode 1
+[2026-10-24 14:57:12.382] [info] [sys] [t17654] Guest memory arena mapped: virtual base 0x0000000100000000, physical base 0x0000000200000000
+[2026-10-24 14:57:12.655] [info] [core] [t17654] shift-native: guest vblank worker started
+[2026-10-24 14:57:12.655] [info] [core] [t17654] shift-native: installed emulator-free Vulkan frontend; waiting for guest PM4
+[2026-10-24 14:57:12.672] [info] [core] [t17654] Function table initialized for module: code=821A0000-83073F54, image=82000000-83270000
+[2026-10-24 14:57:12.773] [warning] [core] [t17654] SDL GameControllerDB: file 'gamecontrollerdb.txt' does not exist.
+[2026-10-24 14:57:12.773] [info] [core] [t17654] SDL input driver initialized successfully
+[2026-10-24 14:57:13.130] [info] [core] [t17654] VulkanPresenter: Created 1080x2340 swapchain with format 37, color space 0, presentation mode 1
+[2026-10-24 14:57:13.135] [info] [core] [t17654] Initializing shader storage for title 454108B4...
+[2026-10-24 14:57:13.285] [warning] [krnl] [t17750] IoDismountVolumeByFileHandle(0xf800003c) - stub
+[2026-10-24 14:57:13.285] [warning] [krnl] [t17750] IoDismountVolumeByFileHandle(0xf800003c) - stub
+[2026-10-24 14:57:13.287] [warning] [krnl] [t17750] [NtCreateFile] FAILED: path='d:\devmodeconfig.xml' -> 0xc000000f
+[2026-10-24 14:57:13.662] [info] [core] [t17750] shift-native: guest GPU interrupt callback set to 823B37B8
+[2026-10-24 14:57:13.663] [info] [core] [t17750] shift-native: guest PM4 ring at 09752580, 32768 bytes
+[2026-10-24 14:57:13.663] [info] [core] [t17750] shift-native: RPTR writeback enabled guest=17AF403C, block_log2=6, physical_valid=true, translated=0x217af403c, initial=00000000
+[2026-10-24 14:57:13.672] [info] [core] [t17747] shift-native: dispatched guest vblank callback 1 at 60.000 Hz
+[2026-10-24 14:57:13.679] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #0 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95D00E4 swap_counter=0 guest_value=A95CFFFC->A95D00E4
+[2026-10-24 14:57:13.679] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #1 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000003 swap_counter=0 guest_value=00000001->00000003
+[2026-10-24 14:57:13.680] [info] [core] [t17746] shift-native: RPTR writeback #0 guest=17AF403C, translated=0x217af403c, value=00000019, memory=00000000->00000019
+[2026-10-24 14:57:13.681] [warning] [fs] [t17750] VFS: 'ShaderDumpxe:\CompareBackEnds' -> [no device]
+[2026-10-24 14:57:13.689] [info] [core] [t17747] shift-native: dispatched guest vblank callback 2 at 60.000 Hz
+[2026-10-24 14:57:13.705] [info] [core] [t17747] shift-native: dispatched guest vblank callback 3 at 60.000 Hz
+[2026-10-24 14:57:14.828] [info] [core] [t17746] shift-native: resolved captured retail draw #0 (startup sample) elapsed_ms=0
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x95dc07c descriptor={0x95dc07f,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=0 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+}
+
+[2026-10-24 14:57:14.847] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:14.847] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #2 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95D0870 swap_counter=0 guest_value=A95D00E4->A95D0870
+[2026-10-24 14:57:14.847] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #3 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000005 swap_counter=0 guest_value=00000003->00000005
+[2026-10-24 14:57:14.847] [info] [core] [t17746] shift-native: RPTR writeback #1 guest=17AF403C, translated=0x217af403c, value=0000001F, memory=00000019->0000001F
+[2026-10-24 14:57:14.848] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #4 initiator=80000003 guest=17AF4040 endian=0 packet_value=DEADBEEF swap_counter=0 guest_value=00000000->00000000
+[2026-10-24 14:57:15.040] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:15.041] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #5 initiator=80000003 guest=17AF4044 endian=0 packet_value=DEADBEEF swap_counter=1 guest_value=00000000->01000000
+[2026-10-24 14:57:15.041] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #6 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95D09DC swap_counter=1 guest_value=A95D0870->A95D09DC
+[2026-10-24 14:57:15.041] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #7 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000007 swap_counter=1 guest_value=00000005->00000007
+[2026-10-24 14:57:15.041] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #8 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95D0D7C swap_counter=1 guest_value=A95D09DC->A95D0D7C
+[2026-10-24 14:57:15.041] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #9 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000009 swap_counter=1 guest_value=00000007->00000009
+[2026-10-24 14:57:15.041] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #10 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95D3218 swap_counter=1 guest_value=A95D0D7C->A95D3218
+[2026-10-24 14:57:15.041] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #11 initiator=00000003 guest=17AF4000 endian=2 packet_value=0000000B swap_counter=1 guest_value=00000009->0000000B
+[2026-10-24 14:57:15.041] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #12 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95D326C swap_counter=1 guest_value=A95D3218->A95D326C
+[2026-10-24 14:57:15.041] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #13 initiator=00000003 guest=17AF4000 endian=2 packet_value=0000000D swap_counter=1 guest_value=0000000B->0000000D
+[2026-10-24 14:57:15.042] [info] [core] [t17746] shift-native: resolved captured retail draw #1 (startup sample) elapsed_ms=214
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x95e8278 descriptor={0x95e827b,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=0 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+}
+
+[2026-10-24 14:57:15.042] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:15.042] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #14 initiator=00000003 guest=17AF4004 endian=2 packet_value=A95DC96C swap_counter=1 guest_value=A95D326C->A95DC96C
+[2026-10-24 14:57:15.042] [info] [core] [t17746] shift-native: EVENT_WRITE_SHD #15 initiator=00000003 guest=17AF4000 endian=2 packet_value=0000000F swap_counter=1 guest_value=0000000D->0000000F
+[2026-10-24 14:57:15.110] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:15.111] [info] [core] [t17746] shift-native: RPTR writeback #2 guest=17AF403C, translated=0x217af403c, value=00000049, memory=0000001F->00000049
+[2026-10-24 14:57:15.112] [info] [core] [t17746] shift-native: resolved captured retail draw #2 (startup sample) elapsed_ms=284
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x95f43f8 descriptor={0x95f43fb,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=0 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+}
+
+[2026-10-24 14:57:15.112] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:15.134] [warning] [fs] [t17750] VFS: 'render\shaders' -> [no device]
+[2026-10-24 14:57:15.135] [error] [fs] [t17750] ResolvePath(render\shaders) failed - device not found
+[2026-10-24 14:57:15.135] [warning] [krnl] [t17750] [NtCreateFile] FAILED: path='render\shaders\cache\' -> 0xc000000f
+[2026-10-24 14:57:15.135] [warning] [fs] [t17750] VFS: 'render\shaders' -> [no device]
+[2026-10-24 14:57:15.135] [error] [fs] [t17750] ResolvePath(render\shaders) failed - device not found
+[2026-10-24 14:57:15.135] [warning] [krnl] [t17750] [NtCreateFile] FAILED: path='render\shaders\cache\' -> 0xc000000f
+[2026-10-24 14:57:15.190] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:15.190] [info] [core] [t17746] shift-native: RPTR writeback #3 guest=17AF403C, translated=0x217af403c, value=00000055, memory=00000049->00000055
+[2026-10-24 14:57:15.398] [info] [core] [t17746] shift-native: RPTR writeback #4 guest=17AF403C, translated=0x217af403c, value=00000058, memory=00000055->00000058
+[2026-10-24 14:57:15.399] [info] [core] [t17746] shift-native: resolved captured retail draw #3 (startup sample) (Vulkan readback target frame 4) elapsed_ms=571
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x9600538 descriptor={0x960053b,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=0 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+}
+
+[2026-10-24 14:57:15.603] [info] [core] [t17746] shift-native: resolved captured retail draw #4 (startup sample) (Vulkan readback target frame 4) elapsed_ms=759
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture fetch=0 guest=0x9d57000 descriptor={0x8800d8fe,0x9d57086,0x1fe3ff,0x1280c14,0x3,0xa10} extent=1024x256 format=6 byte_length=1048576 rgba8_bytes=1048576 rgba8_fnv1a=0x1fb4ad3d482be2bb
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3f800000(1)
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+layout(set=1,binding=0) uniform sampler2D shift_sampler_0;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 sampled_0 = texture(shift_sampler_0, r[0].xy);
+  vec4 fetched_0 = vec4(sampled_0.z, sampled_0.y, sampled_0.x, sampled_0.w);
+  r[0].x = fetched_0.x;
+  r[0].y = fetched_0.y;
+  r[0].z = fetched_0.z;
+  r[0].w = fetched_0.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+}
+
+[2026-10-24 14:57:15.628] [info] [core] [t17746] shift-native: resolved captured retail draw #5 (startup sample) (Vulkan readback target frame 4) elapsed_ms=800
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture: unused
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3d70f0f1(0.0588235)
+  c[255]=3f800000(1), 0(0), 0(0), 0(0)
+  pixel boolean constants valid=1 b128=0 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_7 = max(shift_pixel_constants.c[255].xxxx, shift_pixel_constants.c[255].xxxx);
+  r[0].x = alu_7.x;
+  r[0].y = alu_7.y;
+  r[0].z = alu_7.z;
+  r[0].w = alu_7.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+}
+
+[2026-10-24 14:57:15.632] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:15.632] [info] [core] [t17746] shift-native: RPTR writeback #5 guest=17AF403C, translated=0x217af403c, value=0000005B, memory=00000058->0000005B
+[2026-10-24 14:57:15.963] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:16.017] [info] [core] [t17746] shift-native: read back Vulkan guest output 1280x720 as VK_FORMAT_A2B10G10R10_UNORM_PACK32 (Android debug only); non-black pixels 53098, FNV-1a 915336228EB84E49 at submitted frame 4
+[2026-10-24 14:57:16.038] [info] [core] [t17746] shift-native: resolved captured retail draw #6 (startup sample) elapsed_ms=1210
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x960c678 descriptor={0x960c67b,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+}
+
+[2026-10-24 14:57:16.071] [info] [core] [t17746] shift-native: resolved captured retail draw #7 (startup sample) elapsed_ms=1236
+  topology=0 autoindex=0 index_count=6 index_guest=0x975d7b0 index_type=16 index_endian=1 raster=1280x720 pitch=1280 samples=1 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:0,write:0,stencil:0} color_mask=0xf blend=0x7010706
+  shaders: VS=420 bytes FNV-1a=0xd8675fd6d20f2bd6 PS=120 bytes FNV-1a=0x2925cc56719921eb
+  vertex fetch: guest=0x975dfd0 descriptor={0x975dfd3,0x10000032} endian=2 stride=12 payload_bytes=48 attributes=1
+  vertex[0] index=0 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), bf800000(-1), 0(0), 1(1)}
+  vertex[1] index=1 location=0 destination=r0 format=57 offset=0 values={3f800000(1), bf800000(-1), 0(0), 1(1)}
+  vertex[2] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  vertex[3] index=2 location=0 destination=r0 format=57 offset=0 values={bf800000(-1), 3f800000(1), 0(0), 1(1)}
+  normalized_vertex_payload_fnv1a=0x3918da4ef84637a5
+  texture fetch=0 guest=0x9d57000 descriptor={0x8800d8fe,0x9d57086,0x1fe3ff,0x1280c14,0x3,0xa10} extent=1024x256 format=6 byte_length=1048576 rgba8_bytes=1048576 rgba8_fnv1a=0x1fb4ad3d482be2bb
+vertex constants:
+  c[64]=3f47ffff(0.78125), 0(0), 0(0), c3f9ffff(-500)
+  c[65]=0(0), 3fb1c71c(1.38889), 0(0), c3f9ffff(-500)
+  c[66]=0(0), 0(0), 3f8020c5(1.001), bf8020c5(-1.001)
+  c[67]=0(0), 0(0), 3f800000(1), 0(0)
+  c[254]=0(0), 3f800000(1), bf800000(-1), 40800000(4)
+  c[255]=43fa0000(500), 0(0), 0(0), 0(0)
+pixel constants:
+  c[0]=3f800000(1), 3f800000(1), 3f800000(1), 3f800000(1)
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[0].x = fetched_vertex_0.z;
+  r[0].y = fetched_vertex_0.x;
+  r[0].z = fetched_vertex_0.y;
+  vec4 alu_6 = mix(shift_vertex_constants.c[255].xxxx, r[0].yzzz, equal(shift_vertex_constants.c[254].xxyy, vec4(0.0)));
+  r[1].x = alu_6.x;
+  r[1].y = alu_6.y;
+  r[1].z = alu_6.z;
+  r[0].x = trunc(r[0].x);
+  r[0].w = shift_vertex_constants.c[254].w * r[0].x;
+  vec4 alu_9 = mix(vec4(0.0), vec4(1.0), greaterThanEqual(abs(r[0]).xxxx, shift_vertex_constants.c[254].xxxx));
+  r[1].w = alu_9.w;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_10 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[64].wwww);
+  r[5].x = alu_10.x;
+  r[5].y = alu_10.y;
+  r[5].z = alu_10.z;
+  r[5].w = alu_10.w;
+  vec4 alu_11 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[66].wwww);
+  r[4].x = alu_11.x;
+  r[4].y = alu_11.y;
+  r[4].z = alu_11.z;
+  r[4].w = alu_11.w;
+  vec4 alu_12 = (shift_vertex_constants.c[3 + a0].zwxy * shift_vertex_constants.c[67].wwww);
+  r[3].x = alu_12.x;
+  r[3].y = alu_12.y;
+  r[3].z = alu_12.z;
+  r[3].w = alu_12.w;
+  vec4 alu_13 = (shift_vertex_constants.c[3 + a0].wzxy * shift_vertex_constants.c[65].wwww);
+  r[2].x = alu_13.x;
+  r[2].y = alu_13.y;
+  r[2].z = alu_13.z;
+  r[2].w = alu_13.w;
+  vec4 alu_14 = fma(shift_vertex_constants.c[2 + a0].zwxy, shift_vertex_constants.c[65].zzzz, r[2].yxzw);
+  r[2].x = alu_14.x;
+  r[2].y = alu_14.y;
+  r[2].z = alu_14.z;
+  r[2].w = alu_14.w;
+  vec4 alu_15 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[67].zzzz, r[3].yxwz);
+  r[3].x = alu_15.x;
+  r[3].y = alu_15.y;
+  r[3].z = alu_15.z;
+  r[3].w = alu_15.w;
+  vec4 alu_16 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[66].zzzz, r[4].yxwz);
+  r[4].x = alu_16.x;
+  r[4].y = alu_16.y;
+  r[4].z = alu_16.z;
+  r[4].w = alu_16.w;
+  vec4 alu_17 = fma(shift_vertex_constants.c[2 + a0].wzyx, shift_vertex_constants.c[64].zzzz, r[5].yxwz);
+  r[5].x = alu_17.x;
+  r[5].y = alu_17.y;
+  r[5].z = alu_17.z;
+  r[5].w = alu_17.w;
+  vec4 alu_18 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[64].yyyy, r[5].yxwz);
+  r[5].x = alu_18.x;
+  r[5].y = alu_18.y;
+  r[5].z = alu_18.z;
+  r[5].w = alu_18.w;
+  vec4 alu_19 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[66].yyyy, r[4].yxwz);
+  r[4].x = alu_19.x;
+  r[4].y = alu_19.y;
+  r[4].z = alu_19.z;
+  r[4].w = alu_19.w;
+  vec4 alu_20 = fma(shift_vertex_constants.c[1 + a0].zwxy, shift_vertex_constants.c[67].yyyy, r[3].yxwz);
+  r[3].x = alu_20.x;
+  r[3].y = alu_20.y;
+  r[3].z = alu_20.z;
+  r[3].w = alu_20.w;
+  vec4 alu_21 = fma(shift_vertex_constants.c[1 + a0].wzxy, shift_vertex_constants.c[65].yyyy, r[2].yxzw);
+  r[2].x = alu_21.x;
+  r[2].y = alu_21.y;
+  r[2].z = alu_21.z;
+  r[2].w = alu_21.w;
+  vec4 alu_22 = fma(shift_vertex_constants.c[0 + a0].zwxy, shift_vertex_constants.c[65].xxxx, r[2].yxzw);
+  r[2].x = alu_22.x;
+  r[2].y = alu_22.y;
+  r[2].z = alu_22.z;
+  r[2].w = alu_22.w;
+  vec4 alu_23 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[67].xxxx, r[3].yxwz);
+  r[3].x = alu_23.x;
+  r[3].y = alu_23.y;
+  r[3].z = alu_23.z;
+  r[3].w = alu_23.w;
+  vec4 alu_24 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[66].xxxx, r[4].yxwz);
+  r[4].x = alu_24.x;
+  r[4].y = alu_24.y;
+  r[4].z = alu_24.z;
+  r[4].w = alu_24.w;
+  vec4 alu_25 = fma(shift_vertex_constants.c[0 + a0].wzyx, shift_vertex_constants.c[64].xxxx, r[5].yxwz);
+  r[5].x = alu_25.x;
+  r[5].y = alu_25.y;
+  r[5].z = alu_25.z;
+  r[5].w = alu_25.w;
+  vec4 alu_26 = vec4(dot(r[5].wzyx, r[1].xyzw));
+  gl_Position.x = alu_26.x;
+  vec4 alu_27 = vec4(dot(r[4].wzyx, r[1].xyzw));
+  gl_Position.z = alu_27.z;
+  vec4 alu_28 = vec4(dot(r[3].wzyx, r[1].xyzw));
+  gl_Position.w = alu_28.w;
+  vec4 alu_29 = vec4(dot(r[2].zwxy, r[1].xyzw));
+  r[0].x = alu_29.x;
+  gl_Position.y = shift_vertex_constants.c[254].z * r[0].x;
+  a0 = clamp(int(floor(r[0].w + 0.5)), -256, 255);
+  vec4 alu_32 = vec4(dot(r[0].zyyy.xy, shift_vertex_constants.c[68 + a0].yxxx.xy) + shift_vertex_constants.c[68].wwww.x);
+  shift_interpolator0.x = alu_32.x;
+  vec4 alu_33 = vec4(dot(r[0].yzzz.xy, shift_vertex_constants.c[69 + a0].xyyy.xy) + shift_vertex_constants.c[69].wwww.x);
+  shift_interpolator0.y = alu_33.y;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+layout(set=1,binding=0) uniform sampler2D shift_sampler_0;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 sampled_0 = texture(shift_sampler_0, r[0].xy);
+  vec4 fetched_0 = vec4(sampled_0.z, sampled_0.y, sampled_0.x, sampled_0.w);
+  r[0].x = fetched_0.x;
+  r[0].y = fetched_0.y;
+  r[0].z = fetched_0.z;
+  r[0].w = fetched_0.w;
+  vec4 alu_8 = (r[0].xyzw * shift_pixel_constants.c[0].xyzw);
+  shift_color0.x = alu_8.x;
+  shift_color0.y = alu_8.y;
+  shift_color0.z = alu_8.z;
+  shift_color0.w = alu_8.w;
+}
+
+[2026-10-24 14:57:16.073] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:16.404] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:16.432] [info] [core] [t17746] shift-native: RPTR writeback #6 guest=17AF403C, translated=0x217af403c, value=0000006D, memory=0000005B->0000006D
+[2026-10-24 14:57:16.489] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:16.847] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:16.874] [info] [core] [t17746] shift-native: RPTR writeback #7 guest=17AF403C, translated=0x217af403c, value=00000079, memory=0000006D->00000079
+[2026-10-24 14:57:16.948] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:17.326] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:17.382] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:17.758] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:17.865] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:18.192] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:18.272] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:18.632] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:18.702] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:18.873] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:18.977] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:19.277] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:19.375] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:19.617] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:19.716] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:20.063] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:20.164] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:20.533] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:20.632] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:20.819] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:20.920] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:21.195] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:21.234] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:21.379] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:21.450] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:21.797] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:21.902] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:22.272] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:22.376] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:22.696] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:22.809] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:23.090] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:23.135] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:23.282] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:23.341] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:23.492] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:23.537] [warning] [krnl] [t17750] [NtCreateFile] FAILED: path='d:\pakfiles\dir\audio.bff' -> 0xc000000f
+[2026-10-24 14:57:24.527] [warning] [krnl] [t17750] [NtCreateFile] FAILED: path='d:\characters\drivers2.lod' -> 0xc000000f
+[2026-10-24 14:57:26.194] [warning] [krnl] [t17750] [NtCreateFile] FAILED: path='d:\tracks\cameraconfig.xml' -> 0xc000000f
+[2026-10-24 14:57:35.152] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:35.536] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:35.630] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:35.916] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:36.005] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:36.187] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:36.287] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:36.637] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:36.746] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:37.131] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:37.171] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:37.492] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:37.558] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:37.897] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:37.966] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:37.995] [info] [apu] [t17750] audio endpoint 'System audio playback device': 6 ch, 48000 Hz, format 0x8120; submitting 6 ch
+[2026-10-24 14:57:38.142] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:38.608] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:38.949] [info] [core] [t17746] shift-native: submitted 3 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:39.088] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:39.202] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:39.205] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:39.317] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:39.319] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:39.427] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:39.429] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:39.543] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:39.544] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:39.633] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:39.636] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:39.746] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:39.749] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:39.868] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:39.873] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:39.990] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:39.992] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:40.078] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:40.079] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:40.163] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:40.165] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:40.287] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:40.289] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:40.373] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:40.374] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:40.427] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:40.430] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:40.536] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:40.539] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:40.652] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:40.653] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:40.757] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:40.759] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:40.869] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:41.966] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:42.083] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:42.216] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:42.343] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:42.345] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:42.450] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:42.452] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:42.556] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:42.589] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:42.668] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:42.674] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:42.774] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:42.778] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:42.882] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:42.889] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:42.998] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:43.002] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:43.116] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:43.121] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:43.231] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:43.235] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:43.342] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:43.347] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:43.456] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:43.460] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:43.566] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:43.570] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:43.675] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:43.679] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:43.759] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:43.762] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:43.865] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:43.869] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:43.933] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:43.935] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:44.017] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:44.023] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:44.092] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:44.096] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:44.182] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:44.187] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:44.275] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:44.278] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:44.380] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:44.385] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:44.506] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:44.508] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:44.621] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:44.626] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:44.732] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:44.736] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:44.838] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:44.841] [info] [core] [t17746] shift-native: resolved captured retail draw #136 (late sample #0) elapsed_ms=30012
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x9725538 descriptor={0x972553b,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+}
+
+[2026-10-24 14:57:44.843] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:44.920] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:44.922] [info] [core] [t17746] shift-native: resolved captured retail draw #137 (late sample #1) elapsed_ms=30094
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x97344b8 descriptor={0x97344bb,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+}
+
+[2026-10-24 14:57:44.924] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:45.027] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:45.030] [info] [core] [t17746] shift-native: resolved captured retail draw #138 (late sample #2) elapsed_ms=30201
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x9743438 descriptor={0x974343b,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+}
+
+[2026-10-24 14:57:45.032] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:45.105] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:45.107] [info] [core] [t17746] shift-native: resolved captured retail draw #139 (late sample #3) elapsed_ms=30279
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x95dc038 descriptor={0x95dc03b,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+}
+
+[2026-10-24 14:57:45.109] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:45.173] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:45.176] [info] [core] [t17746] shift-native: resolved captured retail draw #140 (late sample #4) elapsed_ms=30347
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x95eafb8 descriptor={0x95eafbb,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+}
+
+[2026-10-24 14:57:45.178] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:45.288] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:45.291] [info] [core] [t17746] shift-native: resolved captured retail draw #141 (late sample #5) elapsed_ms=30463
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x95f9f38 descriptor={0x95f9f3b,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+}
+
+[2026-10-24 14:57:45.293] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:45.387] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:45.391] [info] [core] [t17746] shift-native: resolved captured retail draw #142 (late sample #6) elapsed_ms=30562
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x9608eb8 descriptor={0x9608ebb,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+}
+
+[2026-10-24 14:57:45.392] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:45.518] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:45.521] [info] [core] [t17746] shift-native: resolved captured retail draw #143 (late sample #7) elapsed_ms=30692
+  topology=2 autoindex=1 index_count=3 index_guest=0x0 index_type=0 index_endian=0 raster=1280x720 pitch=640 samples=4 color_base_tiles=0 depth_base_tiles=720 color_format=1 scissor=[0,0,1280,720] depth={test:1,write:1,stencil:1} color_mask=0xf blend=0x10001
+  shaders: VS=108 bytes FNV-1a=0x539ea9e08aa83f0c PS=36 bytes FNV-1a=0x438c2af84c78a133
+  vertex fetch: guest=0x9617e38 descriptor={0x9617e3b,0x10000056} endian=2 stride=28 payload_bytes=84 attributes=2
+  vertex[0] index=0 location=0 destination=r1 format=57 offset=0 values={bf000000(-0.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[0] index=0 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[1] index=1 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), bf000000(-0.5), 3f800000(1), 1(1)}
+  vertex[1] index=1 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  vertex[2] index=2 location=0 destination=r1 format=57 offset=0 values={441fe000(639.5), 43b3c000(359.5), 3f800000(1), 1(1)}
+  vertex[2] index=2 location=1 destination=r0 format=38 offset=12 values={0(0), 0(0), 0(0), 0(0)}
+  normalized_vertex_payload_fnv1a=0xc6201a9b785f89c7
+  texture: unused
+vertex constants: none
+pixel constants: none
+  pixel boolean constants valid=1 b128=1 b129=0
+  translated vertex GLSL:
+#version 450
+layout(location=0) in vec3 shift_vertex_input_0;
+layout(location=1) in vec4 shift_vertex_input_1;
+layout(location=0) out vec4 shift_interpolator0;
+layout(set=0,binding=14,std140) uniform ShiftVertexConstants { vec4 c[256]; } shift_vertex_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0].x=float(gl_VertexIndex);
+  gl_Position=vec4(0.0);
+  gl_PointSize=1.0;
+  shift_interpolator0=vec4(0.0);
+  vec4 fetched_vertex_0 = vec4(shift_vertex_input_0, 1.0);
+  r[1].x = fetched_vertex_0.x;
+  r[1].y = fetched_vertex_0.y;
+  r[1].z = fetched_vertex_0.z;
+  r[1].w = 1.0;
+  vec4 fetched_vertex_1 = shift_vertex_input_1;
+  r[0].x = fetched_vertex_1.x;
+  r[0].y = fetched_vertex_1.y;
+  r[0].z = fetched_vertex_1.z;
+  r[0].w = fetched_vertex_1.w;
+  vec4 alu_5 = max(r[0].xyzw, r[0].xyzw);
+  shift_interpolator0.x = alu_5.x;
+  shift_interpolator0.y = alu_5.y;
+  shift_interpolator0.z = alu_5.z;
+  shift_interpolator0.w = alu_5.w;
+  vec4 alu_6 = max(r[1].xyzw, r[1].xyzw);
+  gl_Position.x = alu_6.x;
+  gl_Position.y = alu_6.y;
+  gl_Position.z = alu_6.z;
+  gl_Position.w = alu_6.w;
+}
+  translated pixel GLSL:
+#version 450
+layout(location=0) in vec4 shift_interpolator0;
+layout(location=0) out vec4 shift_color0;
+layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;
+void main() {
+  vec4 r[64];
+  for (int i=0; i<64; ++i) r[i]=vec4(0.0);
+  int a0=0;
+  r[0]=shift_interpolator0;
+  shift_color0=vec4(0.0);
+  vec4 alu_1 = max(r[0].xyzw, r[0].xyzw);
+  shift_color0.x = alu_1.x;
+  shift_color0.y = alu_1.y;
+  shift_color0.z = alu_1.z;
+  shift_color0.w = alu_1.w;
+}
+
+[2026-10-24 14:57:45.523] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:45.640] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:45.644] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:45.709] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:45.714] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:45.832] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:45.836] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:45.954] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:45.957] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:46.066] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:46.069] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:46.152] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:46.157] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:46.250] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:46.253] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:46.353] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:46.358] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:46.465] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:46.469] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:46.560] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:46.564] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:46.671] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:46.676] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:46.760] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:46.762] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:46.824] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:46.828] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:46.932] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:46.935] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:47.001] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:47.006] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:47.111] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:47.115] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:47.179] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:47.183] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:47.253] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:47.258] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:47.339] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:47.343] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:47.448] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:47.450] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:47.555] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:47.560] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:47.670] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:47.674] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:47.746] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:47.751] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:47.857] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:47.860] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:47.927] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:47.932] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:48.013] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:48.023] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:48.140] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:48.145] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:48.250] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:48.254] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:48.361] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:48.365] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:48.488] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:48.492] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:48.615] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:48.617] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:48.719] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:48.723] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:48.842] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:48.847] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:48.959] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:48.964] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:49.072] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:49.076] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:49.141] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:49.146] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:49.259] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:49.261] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:49.339] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:49.343] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:49.451] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:49.456] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:49.565] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:49.569] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:49.678] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:49.682] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:49.764] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:49.769] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:49.880] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:49.882] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:49.994] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:49.999] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:50.111] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:50.115] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:50.225] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:50.229] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:50.338] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:50.342] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:50.453] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:50.455] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:50.530] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:50.533] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:50.606] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:50.610] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:50.721] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:50.725] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:50.829] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:50.833] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:50.937] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:50.941] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:51.050] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:51.052] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:51.126] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:51.130] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:51.247] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:51.251] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:51.372] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:51.376] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:51.487] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:51.491] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:51.601] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:51.604] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:51.709] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:51.713] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:51.790] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:51.794] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:51.898] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:51.902] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:52.012] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:52.017] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:52.086] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:52.091] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:52.198] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:52.202] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:52.306] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:52.308] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:52.390] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:52.394] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:52.501] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:52.506] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:52.593] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:52.597] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:52.702] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:52.707] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:52.814] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:52.818] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:52.929] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:52.933] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:53.038] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:53.040] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:53.104] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:53.108] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:53.209] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:53.213] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:53.319] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:53.323] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:53.428] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:53.432] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:53.536] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:53.540] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:53.645] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:53.650] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:53.763] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:53.767] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:53.871] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:53.875] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:53.982] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:53.985] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:54.102] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:54.106] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:54.217] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:54.222] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:54.325] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:54.327] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:54.393] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:54.394] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:54.503] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:54.507] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:54.622] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:54.626] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:54.737] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:54.741] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:54.854] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:54.858] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:54.967] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:54.972] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:55.043] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:55.045] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:55.147] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:55.152] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:55.260] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:55.265] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:55.381] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:55.385] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:55.500] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:55.512] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:55.600] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:55.604] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:55.689] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:55.694] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:55.788] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:55.792] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:55.899] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:55.901] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:55.965] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:55.969] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:56.071] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:56.076] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:56.191] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:56.196] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:56.315] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:56.319] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:56.438] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:56.443] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:56.558] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:56.562] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:56.647] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:56.652] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:56.763] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:56.768] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:56.893] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:56.898] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:57.014] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:57.019] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:57.135] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:57.140] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:57.250] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:57.254] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:57.332] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:57.336] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:57.452] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:57.456] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:57.564] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:57.566] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:57.665] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:57.668] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:57.732] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:57.736] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:57.809] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:57.813] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:57.919] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:57.924] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:58.008] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:58.010] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:58.129] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:58.131] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:58.236] [info] [core] [t17746] shift-native: submitted 1 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:58.413] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:58.623] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:58.628] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:58.736] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:58.738] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:58.941] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:58.945] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:59.124] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:59.128] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:59.344] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:59.349] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:59.525] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:59.530] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:59.743] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:59.745] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:59.862] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:59.866] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:57:59.976] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:57:59.980] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:00.077] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:00.081] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:00.291] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:00.295] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:00.475] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:00.477] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:00.582] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:00.586] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:00.795] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:00.800] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:00.985] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:00.989] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:01.109] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:01.112] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:01.300] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:01.302] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:01.433] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:01.466] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:01.674] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:01.678] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:01.794] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:01.798] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:01.932] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:01.936] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:02.108] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:02.113] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:02.240] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:02.242] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:02.430] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:02.433] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:02.620] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:02.627] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:02.795] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:02.799] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:02.972] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:02.977] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:03.157] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:03.162] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:03.291] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:03.296] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:03.495] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:03.500] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:03.685] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:03.690] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:03.795] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:03.800] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:03.912] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:03.938] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:04.074] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:04.079] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:04.269] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:04.274] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:04.381] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:04.385] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:04.575] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:04.579] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:04.774] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:04.778] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:04.968] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:04.972] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:05.162] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:05.166] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:05.265] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:05.299] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:05.501] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:05.506] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:05.634] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:05.636] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:05.811] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:05.816] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:05.950] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:05.953] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:06.127] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:06.131] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:06.317] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:06.321] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:06.508] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:06.512] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:06.622] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:06.626] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:06.825] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:06.829] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:06.938] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:06.942] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:07.060] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:07.066] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:07.209] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:07.229] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:07.438] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:07.445] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:07.654] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:07.658] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:07.854] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:07.859] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:07.983] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:07.987] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:08.177] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:08.181] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:08.366] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:08.370] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:08.579] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:08.582] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:08.717] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:08.721] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:08.844] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:08.848] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:08.989] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:08.993] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:09.153] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:09.155] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:09.339] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:09.343] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:09.537] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:09.541] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:09.727] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:09.731] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:09.917] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:09.921] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:10.111] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:10.116] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:10.246] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:10.250] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:10.410] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:10.414] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:10.563] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:10.567] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:10.674] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:10.678] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:10.781] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:10.845] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:11.015] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:11.020] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:11.128] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:11.186] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:11.385] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:11.390] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:11.570] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:11.577] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:11.720] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:11.724] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:11.917] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:11.921] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:12.113] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:12.117] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:12.251] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:12.255] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:12.463] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:12.467] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:12.598] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:12.611] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:12.817] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:12.822] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:13.026] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:13.030] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:13.222] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:13.226] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:13.384] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:13.388] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:13.586] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:13.621] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:13.801] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:13.805] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:13.908] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:13.912] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:14.098] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:14.103] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:14.201] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:14.205] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:14.340] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:14.345] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:14.451] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:14.455] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:14.617] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:14.621] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:14.811] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:14.815] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:15.002] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:15.006] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:15.108] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:15.113] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:15.282] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:15.286] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:15.419] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:15.424] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:15.583] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:15.588] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:15.776] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:15.778] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:15.910] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:15.915] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:16.050] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:16.054] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:16.245] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:16.247] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:16.358] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:16.374] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:16.524] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:16.527] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:16.638] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:16.642] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:16.830] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:16.834] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:16.953] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:16.959] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:17.104] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:17.108] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:17.300] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:17.304] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:17.461] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:17.467] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:17.622] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:17.626] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:17.819] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:17.825] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:17.985] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:18.000] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:18.194] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:18.197] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:18.369] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:18.370] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:18.504] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:18.506] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:18.685] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:18.690] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:18.875] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:18.879] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:18.990] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:19.038] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:19.170] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:19.173] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:19.300] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:19.304] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:19.465] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:19.466] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:19.614] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:19.616] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:19.753] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:19.828] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:20.025] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:20.029] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:20.208] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:20.212] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:20.401] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:20.405] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:20.510] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:20.515] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:20.644] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:20.649] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:20.837] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:20.842] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:21.031] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:21.035] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:21.220] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:21.224] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:21.389] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:21.395] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:21.541] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:21.545] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:21.668] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:21.670] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:21.760] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:21.761] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:21.926] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:21.930] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:22.127] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:22.131] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:22.328] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:22.333] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true
+[2026-10-24 14:58:22.430] [info] [core] [t17746] shift-native: submitted 2 captured indexed draw packets to the Vulkan presenter at 1280x720 (frontbuffer 0975E000)
+[2026-10-24 14:58:22.436] [info] [core] [t17746] shift-native: accepted captured source-0/sample-0 Copy/Convert destination 0975E000 1280x720 format 6 R/B swap true

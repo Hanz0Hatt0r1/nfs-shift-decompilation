@@ -1,0 +1,104 @@
+{
+  "schema": "shift.process2.ordered_14draw_copy38_replay.v1",
+  "date": "2026-10-28",
+  "branch": "work/process2-xbox-live-ring-20261023",
+  "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+  "p1_capture_reference": {
+    "directory": "/home/pes/work/nfs-shift-p1-input-bink-trigger-pair-20261028",
+    "native_renderer_log": "runs/shift-native-r1/bin/logs/nfs_shift_001.1.log",
+    "native_renderer_log_sha256": "5b864b83c3bb7694965ba1aac0427c8f3666c8ba13119e091f9dba3b577082d0",
+    "operation_snapshot_line": 18760,
+    "operation_snapshot_timestamp_local": "2026-10-28 06:37:40.503",
+    "operation_snapshot_line_sha256": "7f52825dac546d50acb859365842c49bdafba8046f47f6a7fa5dc80d67807cd8",
+    "capture_identity": {
+      "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+      "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+      "native_plugin_sha256": "d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90"
+    },
+    "operation_sequence": {
+      "draw_packets": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      "copy_packet": 38,
+      "order": "14 indexed Draw packets 0..13, followed by Copy/Convert packet 38",
+      "draw_0_and_1": "surface 0x0A020280, depth base 0x2D0, 640 pitch, 4x; draw 1 is depth-only",
+      "draw_2_to_10_and_12_to_13": "surface 0x14000500, depth base 0x2D0, 1280 pitch, 1x, depth control 0x700772",
+      "draw_11": "depth-only 4x pass",
+      "copy_38": "source registers 0x14000500/0/0x2D0/0x6, 1280x720, destination frontbuffer 0x0975E000, format 6/0"
+    },
+    "cross_run_limit": "This records a matching operation signature. P1 did not record a selected presenter frame or draw-ordinal shader dump for this exact occurrence, so it does not identify P2's raw shader bytes with this P1 instance."
+  },
+  "p2_replay": {
+    "directory": "/dev/shm/nfs-shift-p2-14draw-ordinal2-20261028",
+    "run_metadata_sha256": "7ec71c1e32c8a89de0669e3a01ae6cb602a9fbbd2ae32f1c2c7f833d37d9ddc3",
+    "run_metadata": {
+      "duration_seconds": 153.168,
+      "backend": "shift-native",
+      "guest_memory_modified_by_probe": false,
+      "event_capture_status": "partial_log_recovery",
+      "gdb_exit": 1,
+      "gdb_exit_detail": "After the bounded run deadline, GDB reported an empty command at trace script line 1167; the ordered-operation, selected-shader, and submit log records were retained."
+    },
+    "capture_identity": {
+      "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+      "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+      "plugin_sha256": "d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90",
+      "plugin_build_id": "0fb71ebd09a498fc0515de313289b39ccfc22300",
+      "plugin_source_commit": "ec657d411c25d91a03e7a5991c0dc41f50e1af43",
+      "plugin_sdk": "ReXGlue SDK PR #2 resolve-capable provider",
+      "gpu_emulation": "disabled; shift-native backend"
+    },
+    "renderer_log": {
+      "path": "bin/logs/nfs_shift_001.2.log",
+      "sha256": "48ef02527dec16a6302173a8662f2ceff979207846811f31f7c1bd315a08b4f9",
+      "ordered_operation_snapshot_line": 22486,
+      "ordered_operation_snapshot_timestamp": "2026-10-28 12:29:13.624",
+      "ordered_operation_snapshot_line_sha256": "c82db7afa60ecb56c9c38419289f145b9b13da06f1626b63bdf4e2e2ae0787f6",
+      "ordered_operation_count": 15,
+      "operation_sequence": {
+        "draw_packets": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+        "copy_packet": 38,
+        "order": "14 indexed Draw packets 0..13, followed by Copy/Convert packet 38"
+      },
+      "selected_shader_state_line": 22287,
+      "selected_shader_state_line_sha256": "81a66fe25a1ce7d7fbeb43f7149b3c0f32358eba4b3457353d1e064dc51f42f4",
+      "selected_presenter_frame": 622,
+      "selected_draw_ordinal": 2,
+      "selected_target": "1280x720, pitch 1280, 1x, color base 0, depth base 0x2D0, guest color format 1",
+      "successful_submit_line": 22490,
+      "successful_submit_timestamp": "2026-10-28 12:29:13.649",
+      "successful_submit_line_sha256": "ce6e87b4039150e9bffc2215c3a601fdd58cab40a21539662844680d0a320c92",
+      "submitted_draw_count": 14,
+      "frontbuffer_guest_address": "0x0975E000"
+    },
+    "selected_shader_pair": {
+      "raw_vs_path": "draw2.frame622.packet2.vs.bin",
+      "raw_vs_bytes": 156,
+      "raw_vs_sha256": "dbc9eb77834533aeb682e46686e4144d6274fcc6d270c8a47e8cd2d260564ac8",
+      "tracked_vs_fixture": "native_vulkan/tests/fixtures/retail_draw10_packet10.vert.bin",
+      "raw_ps_path": "draw2.frame622.packet2.ps.bin",
+      "raw_ps_bytes": 60,
+      "raw_ps_sha256": "8f000cb30f9159fc79b5417493f30bbef923fbdaf2f48ee66ae8070657d11fdf",
+      "tracked_ps_fixture": "native_vulkan/tests/fixtures/retail_draw10_packet10.frag.bin",
+      "fixture_relation": "Both raw shader hashes equal the tracked retail draw10 fixture hashes; the existing regression translates this exact byte pair and validates its Vulkan 1.1 SPIR-V."
+    }
+  },
+  "validation": {
+    "native_vulkan_ctest": "passed 4/4 with VK_LAYER_KHRONOS_validation",
+    "rexglue_plugin_ctest": "passed 8/8 with VK_LAYER_KHRONOS_validation",
+    "pr_2161_ci_for_source_commit_816ea4d8": "Linux native, Vulkan smoke, Python, capture producer, and Android ARM64 checks passed; retail-startup-regression was skipped"
+  },
+  "result": {
+    "ordered_retail_operation_stream_submitted": true,
+    "retail_image_readback_captured": false,
+    "intermediate_pixel_correctness_established": false,
+    "retail_pixel_parity_established": false,
+    "android_device_execution": "not run; adb reported no attached device"
+  },
+  "limitations": [
+    "P1 and P2 runs have matching XEX, host, runtime, plugin, operation order, and relevant target/copy fields, but the P1 snapshot lacks a selected frame/ordinal shader dump; binary-to-that-exact-P1-instance attribution is not established.",
+    "The P2 renderer reports a successful presenter submit for the 14-draw sequence and Copy/Convert operation, but this run did not request an image readback. No intermediate image or retail pixel parity is claimed.",
+    "The bounded GDB run ended with partial event-log recovery and exit code 1 after the trace script's empty-command error; this does not invalidate the retained renderer operation and submit records, but the run is not a clean end-to-end trace.",
+    "No Android device was attached for this replay."
+  ]
+}

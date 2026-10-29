@@ -1,0 +1,47 @@
+{
+  "schema": "shift.process2.pipeline_cache_handoff.v1",
+  "date": "2026-10-25",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "base_commit": "4eff10f145a37dda5907e29bf1e30dfefc3764e1",
+    "source_revision": "commit containing this record",
+    "change": "Bounded cache of compatible VkPipeline objects, keyed by SPIR-V, vertex layout, raster state, texture binding indices, and render-pass compatibility."
+  },
+  "artifacts": {
+    "linux_plugin": {
+      "path": "/home/pes/work/process2-renderer-handover-pipeline-cache/librexgpu-shift-native-linux-x86_64.so",
+      "architecture": "x86_64",
+      "sha256": "e2679a4ca54178a312af3f6cc7cc2ba0eb8dd562a8e730a32131068d46736bf4",
+      "build_id": "173c8c62e2dea1cf2b5a8161003e6e63e294fb8d",
+      "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99"
+    },
+    "android_renderer_core": {
+      "path": "/home/pes/work/process2-renderer-handover-pipeline-cache/libshift_xbox_live_vulkan_renderer-arm64.a",
+      "architecture": "AArch64",
+      "sha256": "e877fdd6a70d0e95fda96670dd7fb44739360fd043c2622b696c3582b18f148d",
+      "scope": "renderer static library only; no Android plugin or APK was produced from this cache change"
+    }
+  },
+  "checks": {
+    "native_vulkan_ctest": {
+      "result": "passed",
+      "tests": "4/4",
+      "validation": "VK_LAYER_KHRONOS_validation enabled via VK_INSTANCE_LAYERS"
+    },
+    "rexglue_plugin_ctest": {
+      "result": "passed",
+      "tests": "5/5",
+      "validation": "VK_LAYER_KHRONOS_validation enabled via VK_INSTANCE_LAYERS"
+    },
+    "renderer_regression": "Repeated identical draws produced identical readback with the cached pipelines. Updating an R8 video plane produced the same readback as an uncached submission and differed from the previous plane output."
+  },
+  "limitations": [
+    "The pipeline-cache regression uses synthetic draw input, not a retail capture.",
+    "No retail performance measurement or full-scene parity claim is made.",
+    "No Android APK was rebuilt or installed; the live phone app and window were left untouched."
+  ],
+  "handoff": {
+    "process1_thread_id": "01a15b2f-a82e-7c10-9683-31115e86146b",
+    "message_sent": true
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "schema": "shift.process2.android_apk_build_followup.v1",
+  "date": "2026-10-25",
+  "source": {
+    "process2_commit": "a25411bf6fefb6310829ac4c3027e370183b4c4e",
+    "app_source": "/home/pes/work/nfsshift-rex",
+    "sdk": "/home/pes/work/rexglue-sdk-v0.10.0-android",
+    "sdk_provider_capabilities": {
+      "geometry_shader": true,
+      "depth_stencil_resolve": false
+    }
+  },
+  "build": {
+    "command": "./gradlew --no-daemon :app:assembleDebug -PREXSDK_DIR=/home/pes/work/rexglue-sdk-v0.10.0-android -PSHIFT_NATIVE_PLUGIN_DIR=/home/pes/work/nfs-shift-xbox-live-ring-20261023/native_vulkan/rexglue_plugin",
+    "result": "BUILD SUCCESSFUL",
+    "duration": "25m 37s",
+    "abi": "arm64-v8a",
+    "ndk": "28.2.13676358",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "minimum_android_api": 29,
+    "target_android_api": 33,
+    "apk_artifact": "/home/pes/work/process2-android-apk-20261024/app-process2-native-vulkan-r8-candidate-20261025.apk",
+    "apk_size_bytes": 188540831,
+    "apk_sha256": "9d583f43d4cc94ceff1bf269b1f7df2b7a59a0e13773a4f8b1049221d64ba127",
+    "signature": "Android Debug certificate, APK Signature Scheme v2 verified"
+  },
+  "packaged_renderer": {
+    "entries": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "entry_contents_identical": true,
+    "packaged_sha256_after_strip": "12ef6dea242e63e76c40bff7f021501f1dc1ff6d86acb57f9d87e509f2ee2d54",
+    "elf_build_id": "15887af43c7be2f3390c5c20c1d312783c703101",
+    "sdk_plugin_build_id": "15887af43c7be2f3390c5c20c1d312783c703101",
+    "loader_alias": "librexgpu-xenosd.so contains the Process 2 Vulkan renderer plugin bytes; no Xenos renderer was substituted."
+  },
+  "device": {
+    "install_performed": false,
+    "reason": "The existing NFS Shift session was active and displaying the original EA intro cutscene; it was left running.",
+    "last_observed_process_id": 6314,
+    "screen_file": "process2_redmi_active_intro_during_apk_build_20261025.png",
+    "screen_sha256": "99b2c25429f7fc5ce1bf97075a9ba6100e0aa79fc19ed1719e4dbba2fe6da942",
+    "live_performance_or_cutscene_completion": "not measured with this APK"
+  },
+  "limitations": [
+    "This full APK uses the existing v0.10.0 Android provider, whose factory exposes geometry shader but not the optional depth/stencil-resolve capability. The candidate therefore does not remove the known language-selector/depth-resolve limitation.",
+    "The APK is built and signed but has not been installed or exercised in the game; the separate offscreen Mali renderer test is the device-side evidence for R8 Vulkan support."
+  ]
+}

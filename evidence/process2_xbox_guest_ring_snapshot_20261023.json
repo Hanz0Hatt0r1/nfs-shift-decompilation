@@ -1,0 +1,41 @@
+{
+  "format": "SHIFT.Process2XboxGuestRingSnapshotEvidence/1",
+  "input": {
+    "resource": "ring.bin",
+    "byte_length": 19784,
+    "sha256": "8797c590bda56ab0cd76837832c1eea6519a161a60c54f6a0f2f32396cba7379",
+    "storage": "private diagnostic capture under /tmp/process2-xbox-resource-capture; raw stream is not committed"
+  },
+  "method": {
+    "implementation": "native_vulkan/src/xbox_guest_ring.cpp:snapshot_guest_ring_batch",
+    "ring_storage": "synthetic zero-filled 32768-byte power-of-two ring with the exact captured stream copied at offset 0",
+    "read_pointer_dwords": 0,
+    "write_pointer_dwords": 4946,
+    "live_guest_ring": false
+  },
+  "result": {
+    "copied_bytes": 19784,
+    "framed_packets": 247,
+    "register_write_packets": 162,
+    "decoded_register_writes": 4436,
+    "draw_indx_count": 4,
+    "draw_index_counts": [6, 6, 6, 60],
+    "next_read_pointer_dwords": 4946,
+    "packet_bytes_preserved": true
+  },
+  "validation": {
+    "host_check": "/tmp/process2_full_guest_ring_check",
+    "assertions": [
+      "snapshot_guest_ring_batch accepted the full capture as one committed ring span",
+      "all 247 packets were framed",
+      "all 162 type-0 register-write packets decoded to 4,436 raw writes without applying state",
+      "all four DRAW_INDX packets reached the bounded decoder with index counts 6, 6, 6, and 60",
+      "the read pointer advanced to the supplied write pointer"
+    ]
+  },
+  "limitations": [
+    "the ring capacity and head/tail placement are test-harness values; no live ReXGlue pointers were observed",
+    "this validates ring transport and framing only, not register/shader/resource state tracking or Vulkan submission",
+    "the raw capture remains private and is not available to CI"
+  ]
+}

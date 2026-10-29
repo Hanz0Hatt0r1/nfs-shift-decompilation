@@ -1,0 +1,136 @@
+{
+  "schema": "shift.process2.redmi_bink_r8_resource_cache.v1",
+  "observed_at_local": "2026-10-25",
+  "change": {
+    "scope": "Process 2 native Vulkan renderer and ReXGlue Vulkan plugin only",
+    "texture_format": "VK_FORMAT_R8_UNORM",
+    "cache_key": ["draw slot", "fetch constant index", "width", "height"],
+    "budget_bytes": 16777216,
+    "eviction_after_unused_submitted_frames": 120,
+    "per_submission": [
+      "copy current captured R8 plane bytes into a persistent upload mapping",
+      "flush the mapped allocation when host-coherent memory is unavailable",
+      "transition the reused image from shader-read to transfer destination before upload"
+    ],
+    "fallbacks": [
+      "RGBA8 remains on the existing per-submit allocation path",
+      "R8 allocations that exceed the remaining cache budget use the existing per-submit path"
+    ]
+  },
+  "regression": {
+    "host_native_vulkan_ctest": {
+      "result": "passed",
+      "passed": 4,
+      "total": 4,
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "validation_errors": 0,
+      "checks": [
+        "cached repeated frame output matches the original output",
+        "updated R8 plane output matches fresh allocation output",
+        "updated R8 plane output differs from the previous content"
+      ]
+    },
+    "host_process2_plugin_ctest": {
+      "result": "passed",
+      "passed": 4,
+      "total": 4,
+      "validation_layer": "VK_LAYER_KHRONOS_validation"
+    },
+    "android_arm64_build": {
+      "renderer": "passed",
+      "plugin_translation_unit": "passed",
+      "resolve_enabled_sdk_plugin_link": "blocked by existing ReXGlue SDK runtime build errors",
+      "errors": [
+        "fiber_posix.cpp: Android NDK does not declare getcontext, makecontext, or swapcontext",
+        "memory_posix.cpp: GetAndroidApiLevel is not declared"
+      ]
+    },
+    "redmi_note_8_pro_offscreen": {
+      "result": "passed",
+      "device": "Redmi Note 8 Pro (begonia)",
+      "gpu": "Mali-G76 MC4",
+      "test": "synthetic offscreen Vulkan 1.1 renderer regression",
+      "validation_layer": "unavailable on device",
+      "retail_game_pid_after_test": 6314,
+      "retail_game_activity_remained_resumed": true
+    }
+  },
+  "android_apk_candidate": {
+    "result": "BUILD SUCCESSFUL",
+    "process2_commit": "299073e8c8575e8391a3c511687bf22a7f455e84",
+    "sdk": "/home/pes/work/rexglue-sdk-v0.10.0-android",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "abi": "arm64-v8a",
+    "apk_path": "/home/pes/work/process2-android-apk-20261024/app-process2-native-vulkan-r8-cache-20261025.apk",
+    "apk_bytes": 193529223,
+    "apk_sha256": "0e574c0a7a92a2cf07a87c245aebe8b657dcd7ad392ffa6ecb651b1877e0b40a",
+    "signature_scheme_v2_verified": true,
+    "signer_certificate_sha256": "3afdd6578b97e0cac26c2eb429932a701e72919b80334b509f4d59310fa64e48",
+    "packaged_plugin": {
+      "paths": [
+        "lib/arm64-v8a/librexgpu-shift-natived.so",
+        "lib/arm64-v8a/librexgpu-xenosd.so"
+      ],
+      "both_paths_byte_identical": true,
+      "sha256": "24e0a2c4e604f759a736dbc2b0a7b451493c5a22406df758c0fd28748f558011",
+      "elf_build_id": "281ccb2021bdfab5603c4918af608a3dd5e75828",
+      "contains_r8_cache_code": true
+    },
+    "device_state": {
+      "candidate_installed": true,
+      "retail_game_pid": 22527,
+      "retail_game_activity_remained_resumed": true
+    },
+    "provider_limit": "SDK v0.10.0 provider has no optional depth/stencil resolve capability."
+  },
+  "captured_retail_bink_draw_2614_ab": {
+    "input_contract": "Retail presenter frame 400 draw #2614 from Franchise_Ident.bik",
+    "vertex_shader_sha256": "6513c3af8972e760ebf88201197fc65bcabf87a6ccdab3c27aed57a5b658269f",
+    "pixel_shader_sha256": "77a4e4ea038010370ef61f327d49ee4230375c2eeee278032a3d23566188129b",
+    "geometry_shader_sha256": "c3bfd622a80f01d038d6b250e2fd2e666704f40f0b1350ddb1025f864acc61b0",
+    "r8_plane_sha256": [
+      "228cff2ce890f70ddfa4456231a75c2640c875ee25c46409779cf821d6136e2a",
+      "a81bcb8aca6abfc5ea1a79d915c851923ddc0a20b985f8b3a360067f053408d5",
+      "f1953394e4d76212565e5dbf7e08f03b3fe196e88160d4648be497c9a6ac56b3"
+    ],
+    "method": "Same current renderer/library and captured inputs; baseline passes no texture cache, candidate passes CapturedVulkanTextureCache. Each process performs one first submit, two warmups, then eight timed steady replays.",
+    "redmi_note_8_pro": {
+      "gpu": "Mali-G76 MC4",
+      "vulkan_api": "1.1",
+      "validation_layer": "unavailable",
+      "uncached_steady_mean_ms": [11.8982, 11.0721, 10.6469],
+      "cached_steady_mean_ms": [10.5003, 10.1269, 10.1569],
+      "uncached_mean_ms": 11.20573,
+      "cached_mean_ms": 10.26137,
+      "steady_mean_reduction_percent": 8.4,
+      "thread_cpu_sample_ms": {
+        "uncached_wall": 10.6469,
+        "uncached_cpu": 2.04465,
+        "cached_wall": 10.1569,
+        "cached_cpu": 1.62098,
+        "renderer_thread_cpu_reduction_percent": 20.7
+      },
+      "readback_fnv1a64_each_run": "0x1e43a3a8c1c044eb",
+      "readback_sha256_each_run": "8295d56ab66664365991ad06a6fb1f018dc3db37ba07afccdad91b2555f41ca1",
+      "nonblack_rgb_pixels_each_run": 921528,
+      "retail_game_pid_after_test": 6314,
+      "retail_game_activity_remained_resumed": true
+    },
+    "gtx_950_host": {
+      "validation_layer": "VK_LAYER_KHRONOS_validation",
+      "validation_errors": 0,
+      "uncached_steady_mean_ms": 4.08506,
+      "cached_steady_mean_ms": 2.13211,
+      "steady_mean_reduction_percent": 47.8,
+      "readback_fnv1a64_each_run": "0x1bc7fd7fb67e62c3",
+      "nonblack_rgb_pixels_each_run": 921528
+    },
+    "scope_limit": "This proves output-equivalent rendering and measures one captured retail draw offscreen. It bypasses guest Bink decode, live mixed-sample frames, Copy/Convert, and game frame scheduling; it does not imply a 10.2% full-game or cutscene playback speedup."
+  },
+  "limits": [
+    "The synthetic device regression and the separate retail Bink draw replay validate different inputs and scopes.",
+    "The installed game uses the current plugin build and completed an after-change retail Bink playback sample, recorded separately in process2_redmi_cutscene_cache_live_20261025.json.",
+    "The two-frame playback estimate is not a full-game frame-rate measurement, and the language-menu transition did not complete in the observed session.",
+    "The cache removes recurring R8 image and upload-buffer allocation; other per-submit Vulkan and guest video costs remain."
+  ]
+}
