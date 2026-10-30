@@ -1,0 +1,2 @@
+format	plan_id	callee_entry	parameter_index	caller_entry	caller_call_site	caller_parameter_index	argument_node_id	status
+REVENGINSTR.GhidraCallerArgumentParameterRoot/1	direct-intermediate	006382b0	0	008868c0	008868c9	0	0	direct_parameter_root
