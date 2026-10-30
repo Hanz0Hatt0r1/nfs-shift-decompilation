@@ -568,6 +568,39 @@ bool captured_xenos_edram_layouts_are_tile_disjoint(
     uint32_t* overlap_tile,
     std::string* error);
 
+// The physical EDRAM tile footprint of a captured layout. Two layouts with the
+// same base tiles, pitch tiles and tile rows, and the same formats and sample
+// count, describe the same hardware surface even when their decoded pixel
+// extents differ slightly: EDRAM addressing is tile-granular, and a resolve may
+// cover a margin the last draw did not (a 320x243 draw and a 320x248 resolve
+// over the same rows both span 4x16 tiles). Comparing pixel extents instead
+// rejects such a resolve even though it reads exactly the tiles the draw wrote.
+struct CapturedEdramTileFootprint {
+    uint32_t pitch_tiles = 0;
+    uint32_t tile_rows = 0;
+    uint32_t total_tiles = 0;
+};
+
+bool captured_xenos_edram_tile_footprint(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    CapturedEdramTileFootprint* output,
+    std::string* error);
+
+// Xenos EDRAM is a fixed 10 MiB store of 2,048 tiles, each 80x16 32bpp samples
+// (xenos.h kEdramTileWidthSamples / kEdramTileHeightSamples / kEdramTileCount).
+// A layout whose tile footprint exceeds that store cannot exist on the console,
+// so a decoded render-target footprint larger than 2,048 tiles means the
+// registers were interpreted with the wrong extent (for example a 4x MSAA
+// surface whose height was scaled as well as its pitch, which double-applies the
+// sample expansion). Reporting it as a decode failure keeps the diagnosis at the
+// decode site instead of surfacing much later as an inexplicable cache miss.
+bool captured_xenos_edram_layout_fits_store(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    uint32_t* required_tiles,
+    std::string* error);
+
 // Checks only framebuffer effects represented by the captured raster state.
 bool captured_draw_has_no_framebuffer_effects(
     const CapturedRasterState& raster) noexcept;

@@ -1,5 +1,6 @@
 #include "shift_xbox_draw_input.hpp"
 
+#include <sstream>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -1713,6 +1714,12 @@ bool decode_captured_raster_state(
         ((registers.clip_control >> 16) & 1u) != 0;
     output->viewport_transform_control = registers.viewport_transform_control;
     output->clip_disabled_window_coordinates = output->clip_disabled;
+    // NOTE: no EDRAM-capacity rejection here. A 1280x720 surface at 4x MSAA is
+    // genuinely 2560x1440 physical samples (14.7 MiB), which does not fit the
+    // 10 MiB EDRAM store - that is exactly why the Xbox 360 uses predicated
+    // tiling, rendering such surfaces in horizontal strips. Decoding the full
+    // physical extent is therefore correct and must not fail; see
+    // captured_xenos_edram_layout_fits_store for where the limit does matter.
     if (error) {
         error->clear();
     }
@@ -2127,6 +2134,92 @@ bool captured_xenos_edram_alias_tiles(
         output->push_back({tile, source_tiles[tile].x, source_tiles[tile].y,
                            destination_tiles[tile].x,
                            destination_tiles[tile].y});
+    }
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_xenos_edram_tile_footprint(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    CapturedEdramTileFootprint* output,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    if (!output || !raster.width || !raster.height || !raster.surface_pitch ||
+        (raster.sample_count != 1 && raster.sample_count != 2 &&
+         raster.sample_count != 4)) {
+        return fail("invalid captured Xenos EDRAM target layout", error);
+    }
+    const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+    const uint32_t sample_height = raster.sample_count / sample_width;
+    if (raster.width % sample_width || raster.height % sample_height) {
+        return fail("captured Xenos EDRAM extent is not sample aligned", error);
+    }
+    // Only the pitch participates in the sample widening for tile addressing
+    // (xenos.h GetSurfacePitchTiles); the height contributes whole tile rows.
+    const uint64_t pitch_samples =
+        static_cast<uint64_t>(raster.surface_pitch) * sample_width;
+    const uint64_t pitch_tiles =
+        (pitch_samples + kTileWidthSamples - 1u) / kTileWidthSamples;
+    const uint64_t tile_rows =
+        (static_cast<uint64_t>(raster.height) + kTileHeightSamples - 1u) /
+        kTileHeightSamples;
+    output->pitch_tiles = static_cast<uint32_t>(pitch_tiles);
+    output->tile_rows = static_cast<uint32_t>(tile_rows);
+    output->total_tiles = static_cast<uint32_t>(pitch_tiles * tile_rows);
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_xenos_edram_layout_fits_store(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    uint32_t* required_tiles,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    constexpr uint32_t kTileCount = 2048;
+    if (!raster.width || !raster.height || !raster.surface_pitch ||
+        (raster.sample_count != 1 && raster.sample_count != 2 &&
+         raster.sample_count != 4)) {
+        return fail("invalid captured Xenos EDRAM target layout", error);
+    }
+    // Same sample geometry the address mapping uses: 4x is 2x2 within a pixel,
+    // so both axes carry two samples, while 2x is horizontal only.
+    const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+    const uint32_t sample_height = raster.sample_count / sample_width;
+    if (raster.width % sample_width || raster.height % sample_height) {
+        return fail("captured Xenos EDRAM extent is not sample aligned", error);
+    }
+    const bool color_64bpp = !depth_target &&
+        (raster.guest_color_format == 5u ||
+         raster.guest_color_format == 7u ||
+         raster.guest_color_format == 15u);
+    if (color_64bpp) {
+        return fail("captured 64bpp Xenos EDRAM color addressing is unsupported",
+                    error);
+    }
+    // xenos.h GetSurfacePitchTiles: the pitch is widened by 4x MSAA, then
+    // doubled again for 64bpp; the height contributes whole tile rows.
+    const uint64_t pitch_samples =
+        static_cast<uint64_t>(raster.surface_pitch) * sample_width;
+    const uint64_t pitch_tiles =
+        (pitch_samples + kTileWidthSamples - 1u) / kTileWidthSamples;
+    const uint64_t tile_rows =
+        (static_cast<uint64_t>(raster.height) + kTileHeightSamples - 1u) /
+        kTileHeightSamples;
+    const uint64_t tiles = pitch_tiles * tile_rows;
+    if (required_tiles) *required_tiles = static_cast<uint32_t>(tiles);
+    if (tiles > kTileCount) {
+        std::ostringstream message;
+        message << "captured Xenos EDRAM layout needs " << tiles
+                << " tiles but the store holds only " << kTileCount
+                << " (extent=" << raster.width << 'x' << raster.height
+                << ", pitch=" << raster.surface_pitch
+                << ", samples=" << raster.sample_count << ')';
+        if (error) *error = message.str();
+        return false;
     }
     if (error) error->clear();
     return true;

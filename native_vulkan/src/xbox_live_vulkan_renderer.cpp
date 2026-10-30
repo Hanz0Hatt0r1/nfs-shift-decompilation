@@ -203,12 +203,36 @@ uint32_t edram_storage_guest_color_format(uint32_t guest_color_format) {
   return guest_color_format == 12u ? 3u : guest_color_format;
 }
 
+// Rounds a captured target extent up to whole EDRAM tiles (80x16 samples per
+// tile). The hardware surface is tile-granular, so a 320x243 draw and a
+// 320x248 resolve over the same rows are the same 4x16-tile surface. Using the
+// rounded extent for both the cache key and the allocated image makes those two
+// descriptions share one target instead of missing each other, and keeps the
+// image large enough for either caller.
+CapturedRasterState edram_tile_granular_layout(const CapturedRasterState& raster) {
+  CapturedEdramTileFootprint footprint{};
+  if (!captured_xenos_edram_tile_footprint(raster, false, &footprint, nullptr)) {
+    return raster;
+  }
+  constexpr uint32_t kTileWidthSamples = 80;
+  constexpr uint32_t kTileHeightSamples = 16;
+  const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+  CapturedRasterState rounded = raster;
+  // The physical extent is expressed in samples along both axes, matching how
+  // the layout was decoded, so restore the sample factor after rounding.
+  rounded.width = footprint.pitch_tiles * kTileWidthSamples;
+  rounded.height = footprint.tile_rows * kTileHeightSamples;
+  (void)sample_width;
+  return rounded;
+}
+
 EdramTargetKey make_edram_target_key(const CapturedRasterState& raster,
                                     VkFormat color_format) {
+  const CapturedRasterState granular = edram_tile_granular_layout(raster);
   return {{{raster.color_base_tiles,
             raster.depth_base_tiles,
-            raster.width,
-            raster.height,
+            granular.width,
+            granular.height,
             raster.surface_pitch,
             edram_storage_guest_color_format(raster.guest_color_format),
             static_cast<uint32_t>(color_format),
@@ -1353,6 +1377,12 @@ bool acquire_edram_target(
                 error);
   }
 
+  // The key is tile-granular, so the backing image must be allocated at the
+  // same rounded extent: otherwise a caller whose extent is slightly larger
+  // than the first claimant's would key to this entry and then render outside
+  // the image. Rendering stays per-caller because every pass uses its own
+  // raster.width/height for the viewport and scissor.
+  const CapturedRasterState granular = edram_tile_granular_layout(raster);
   const EdramTargetKey key = make_edram_target_key(raster, color_format);
   auto found = cache->edram_targets.find(key);
   if (found == cache->edram_targets.end()) {
@@ -1361,7 +1391,7 @@ bool acquire_edram_target(
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     if (!create_render_attachment(
-            memory_properties, device, raster.width, raster.height,
+            memory_properties, device, granular.width, granular.height,
             color_format, color_usage, VK_IMAGE_ASPECT_COLOR_BIT, samples,
             &created.color, error)) {
       destroy_image_resource(device, created.color);
@@ -1370,7 +1400,7 @@ bool acquire_edram_target(
     created.estimated_bytes = created.color.allocation_size;
     if (needs_depth) {
       if (!create_render_attachment(
-              memory_properties, device, raster.width, raster.height,
+              memory_properties, device, granular.width, granular.height,
               VK_FORMAT_D24_UNORM_S8_UINT,
               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
               VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
@@ -1408,7 +1438,7 @@ bool acquire_edram_target(
   } else if (needs_depth && found->second.depth.image == VK_NULL_HANDLE) {
     ImageResource depth{};
     if (!create_render_attachment(
-            memory_properties, device, raster.width, raster.height,
+            memory_properties, device, granular.width, granular.height,
             VK_FORMAT_D24_UNORM_S8_UINT,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
@@ -5642,16 +5672,39 @@ bool submit_captured_vulkan_operation_stream(
     // addressing is byte-identical for both. Comparing the raw register code
     // therefore rejected a draw/copy pair whose formats resolve to one
     // identical storage layout. Normalise through the storage format first.
-    const auto same_target_layout = [](const CapturedRasterState& a,
+    // Two descriptions cover the same hardware surface when they select the
+    // same EDRAM tiles with the same formats and sample count. Comparing pixel
+    // extents as well is too strict: EDRAM addressing is tile-granular, so a
+    // 320x243 draw and a 320x248 resolve over the same rows touch exactly the
+    // same 4x16 tiles, and rejecting that resolve discards a surface the draw
+    // genuinely produced. Pixel extents are still compared when the two
+    // descriptions do not land on identical tile footprints, so a real layout
+    // conflict is not masked.
+    const auto same_edram_tile_footprint = [](const CapturedRasterState& a,
+                                              const CapturedRasterState& b) {
+        CapturedEdramTileFootprint left{};
+        CapturedEdramTileFootprint right{};
+        if (!captured_xenos_edram_tile_footprint(a, false, &left, nullptr) ||
+            !captured_xenos_edram_tile_footprint(b, false, &right, nullptr)) {
+            return false;
+        }
+        return left.pitch_tiles == right.pitch_tiles &&
+            left.tile_rows == right.tile_rows;
+    };
+    const auto same_target_layout = [&](const CapturedRasterState& a,
                                        const CapturedRasterState& b) {
-        return a.color_base_tiles == b.color_base_tiles &&
+        const bool same_identity =
+            a.color_base_tiles == b.color_base_tiles &&
             edram_storage_guest_color_format(a.guest_color_format) ==
                 edram_storage_guest_color_format(b.guest_color_format) &&
-            a.depth_base_tiles == b.depth_base_tiles && a.width == b.width &&
-            a.height == b.height && a.color_format == b.color_format &&
+            a.depth_base_tiles == b.depth_base_tiles &&
+            a.color_format == b.color_format &&
             a.depth_format == b.depth_format &&
             a.sample_count == b.sample_count &&
             a.surface_pitch == b.surface_pitch;
+        if (!same_identity) return false;
+        if (a.width == b.width && a.height == b.height) return true;
+        return same_edram_tile_footprint(a, b);
     };
     // The retail transition packet 24 -> 25 keeps the gamma EDRAM target and
     // extent, changes 4x/pitch-640 to 1x/pitch-1280, then copies the resulting
@@ -5878,10 +5931,26 @@ bool submit_captured_vulkan_operation_stream(
     uint32_t preflight_color_source_draw = std::numeric_limits<uint32_t>::max();
     uint32_t preflight_layout_draw = std::numeric_limits<uint32_t>::max();
     uint32_t preflight_layout_packet = std::numeric_limits<uint32_t>::max();
+    // Second, independent diagnostic hatch: an unserviceable Copy/Convert
+    // currently costs the whole frame. Dropping just that copy still presents
+    // every draw ahead of it, which answers whether the copy is what holds the
+    // guest back. Strict by default so real failures are not hidden.
+    bool tolerate_missing_copy_source = false;
+    if (const char* raw =
+            std::getenv("SHIFT_NATIVE_VULKAN_TOLERATE_MISSING_COPY_SOURCE");
+        raw && *raw && std::strcmp(raw, "0") != 0) {
+        tolerate_missing_copy_source = true;
+    }
     std::vector<CapturedRasterState> preflight_targets;
     bool found_presenter_copy = false;
+    // Operations the tolerance hatch decided to leave out. Consumed by the
+    // replay below so a skipped packet is not executed as a fullscreen
+    // substitute.
+    std::vector<bool> skipped_operations(operations.size(), false);
+    bool skip_operation = false;
     for (size_t i = 0; i < operations.size(); ++i) {
         const CapturedVulkanOperation& operation = operations[i];
+        skip_operation = false;
         if (operation.type == CapturedVulkanOperation::Type::Draw) {
             const CapturedRasterState& draw_raster =
                 draws[operation.draw_index].raster;
@@ -6058,6 +6127,10 @@ bool submit_captured_vulkan_operation_stream(
                             << (texture_cache_state->edram_targets.find(source_key) !=
                                 texture_cache_state->edram_targets.end());
                 }
+                if (tolerate_missing_copy_source) {
+                    skipped_operations[i] = true;
+                    continue;
+                }
                 return fail(message.str(), error);
             }
             bool known_layout = false;
@@ -6190,6 +6263,7 @@ bool submit_captured_vulkan_operation_stream(
     for (size_t operation_index = 0; operation_index < operations.size();
          ++operation_index) {
         const CapturedVulkanOperation& operation = operations[operation_index];
+        if (skipped_operations[operation_index]) continue;
         if (operation.type == CapturedVulkanOperation::Type::Draw) {
             const CapturedVulkanDraw& draw = draws[operation.draw_index];
             if (!stage_draws.empty() &&
