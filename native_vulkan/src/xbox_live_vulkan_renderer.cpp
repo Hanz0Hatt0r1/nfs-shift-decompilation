@@ -6058,12 +6058,21 @@ bool submit_captured_vulkan_operation_stream(
                     // the guest does, which is why this class survived every
                     // narrower fix. The layouts are still given independent
                     // Vulkan images, so nothing is silently shared.
+                    // Symmetric: an uninformative overlap is uninformative from
+                    // either side. Checking only the previous layout left the
+                    // class alive whenever the *next* layout was the strip, which
+                    // is what happened once the copy-source hatch changed which
+                    // layout came first.
                     CapturedEdramTileFootprint previous_footprint{};
-                    const bool previous_wraps_store =
-                        captured_xenos_edram_tile_footprint(
-                            previous, false, &previous_footprint, nullptr) &&
-                        previous_footprint.total_tiles > 2048u;
-                    if (!disjoint && previous_wraps_store) {
+                    CapturedEdramTileFootprint draw_footprint{};
+                    const bool any_layout_wraps_store =
+                        (captured_xenos_edram_tile_footprint(
+                             previous, false, &previous_footprint, nullptr) &&
+                         previous_footprint.total_tiles > 2048u) ||
+                        (captured_xenos_edram_tile_footprint(
+                             draw_raster, false, &draw_footprint, nullptr) &&
+                         draw_footprint.total_tiles > 2048u);
+                    if (!disjoint && any_layout_wraps_store) {
                         disjoint = true;
                     }
                     bool drained_subset = false;
