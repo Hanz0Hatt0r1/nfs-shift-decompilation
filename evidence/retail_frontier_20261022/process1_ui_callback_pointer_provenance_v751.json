@@ -1,0 +1,118 @@
+{
+  "format": "SHIFT.P1.UiGateCallbackProvenance/1",
+  "run": "v751",
+  "date": "2026-10-22",
+  "execution_kind": "Original retail PE32 loaded in the Linux P-code guest runtime; not a native Windows/Wine game launch.",
+  "inputs": {
+    "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "runtime_sha256": "0a310cf6be5b4934d021cdf56cbc8f2cd6e5b66278700708c29935076117124c",
+    "module_manifest": "function-call-stack-v659-missing-005a0ef0/module-manifest-v659-005a0ef0.json",
+    "module_manifest_sha256": "6977898b7ff79edfb84f9b6f6d9e5ff98d8e073d17d88f345e8a1edb77e73a0e",
+    "game_data": "pcode-game-data-v661",
+    "log_sha256": "62f52c07c6ed48e6d8e3e7f3e8d599495213eb4aae9b90c8130c7e4e0e964b61"
+  },
+  "configuration": {
+    "frames_requested": 120,
+    "trace_environment": {
+      "SHIFT_TRACE_GUEST_PROVENANCE": "0x00be250c,0x00be2548",
+      "SHIFT_TRACE_UI_STATE_GATE": "1"
+    }
+  },
+  "outcome": {
+    "status": "host-frame-loop",
+    "blocker": null,
+    "exit_code": 0,
+    "frames_rendered": 120,
+    "dispatches": 815617,
+    "unique_functions": 3930,
+    "worker_waiting_count": 2,
+    "retail_rendering_proven": false
+  },
+  "ui_gate": {
+    "calls": 594,
+    "parent_ecx": "0x00be2500",
+    "state_word_values": [
+      "0x00000000"
+    ],
+    "callback_object_values": [
+      "0x00000000"
+    ],
+    "return_values": [
+      "0x00000000"
+    ],
+    "wait_helper_calls": 594,
+    "wait_helper_return_values": [
+      "0x00be2300"
+    ],
+    "wait_helper_flag_values": [
+      "0x00"
+    ],
+    "wait_helper_flag_last_writer": {
+      "sequence": 2378122,
+      "dispatch_count": 462653,
+      "function": "0x0050c820",
+      "ecx_entry": "0x00be2500",
+      "caller_function": "0x004eb550",
+      "call_return_address": "0x004eb559",
+      "caller_return_address": "0x00545cd5",
+      "thread_id": "0x001576bc",
+      "write_address": "0x00be250c",
+      "write_size": 1,
+      "word_value": "0x00000000"
+    },
+    "callback_pointer_last_writer": {
+      "sequence": 2378372,
+      "dispatch_count": 462710,
+      "function": "0x004eb550",
+      "ecx_entry": "0x00be2500",
+      "caller_function": "0x0050d030",
+      "call_return_address": "0x00545cd5",
+      "write_address": "0x00be2548",
+      "write_size": 4,
+      "word_value": "0x00000000"
+    }
+  },
+  "extended_horizon_v752": {
+    "runtime_sha256": "0a310cf6be5b4934d021cdf56cbc8f2cd6e5b66278700708c29935076117124c",
+    "log_sha256": "80d77f3c9853c6c90d9bad28f0d8226be14b9dd88721f621ae35a6e728ba3699",
+    "frames_requested": 360,
+    "frames_rendered": 360,
+    "status": "host-frame-loop",
+    "blocker": null,
+    "gate_calls": 1123,
+    "gate_state_word_values": [
+      "0x00000000"
+    ],
+    "gate_callback_object_values": [
+      "0x00000000"
+    ],
+    "gate_return_values": [
+      "0x00000000"
+    ],
+    "wait_helper_calls": 1123,
+    "wait_helper_return_values": [
+      "0x00be2300"
+    ],
+    "wait_helper_flag_values": [
+      "0x00"
+    ],
+    "callback_pointer_last_writer": {
+      "sequence": 2378372,
+      "dispatch_count": 462710,
+      "function": "0x004eb550",
+      "ecx_entry": "0x00be2500",
+      "caller_function": "0x0050d030",
+      "call_return_address": "0x00545cd5",
+      "write_address": "0x00be2548",
+      "write_size": 4,
+      "word_value": "0x00000000"
+    },
+    "clear_requests": 1125,
+    "clear_submissions": 360,
+    "present_requests": 1123,
+    "present_submissions": 360,
+    "guest_draw_translation": false,
+    "guest_main_thread_function": "0x00401610",
+    "worker_waiting_count": 4
+  }
+}

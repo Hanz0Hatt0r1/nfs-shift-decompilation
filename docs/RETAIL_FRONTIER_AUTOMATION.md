@@ -821,3 +821,178 @@ v215/v217/v218/v219/v240 replays establish the bounded retail-requested Vulkan
 clear and queue-present milestone; v240 also narrows the pending UI consumer
 path. The separate milestones still to measure are first retail draw, frontend
 and offline race.
+
+## 2026-10-22 — v751 UI callback gate provenance
+
+The v751 controlled P-code replay requested 120 host frames and completed the
+host-frame loop without a runtime blocker. Across 594 calls to `0x0050CEB0`,
+the state word at `parent+0x34`, callback pointer at `parent+0x48`, and gate
+return were all zero. The last traced writer to the callback pointer in every
+gate event was constructor `0x004EB550`, which wrote zero; the helper byte at
+`parent+0x0c` remained zero from base initializer `0x0050C820`, so
+`0x0050C880` returned zero and the gate skipped its wait loop. This explains
+the observed state but does not prove that no registration/setter path exists
+in other UI states. Retail draw translation, frontend readiness, and race
+entry remain unproven. See the [v751 provenance report](../evidence/retail_frontier_20261022/process1_ui_callback_pointer_provenance_v751.md)
+and its [machine-readable evidence](../evidence/retail_frontier_20261022/process1_ui_callback_pointer_provenance_v751.json).
+The v752 360-frame replay extended this observation to 1,123 gate calls; the
+same constructor remained the last observed writer, and no guest draw
+translation appeared. A v753 360-frame targeted trace selected the nested
+candidate `0x00852760` and all four D3D9 Draw/DrawUP imports; none were reached
+in that bounded replay. This is not a proof of unreachability in other UI
+states. See the [v753 evidence](../evidence/retail_frontier_20261022/process1_ui_gate_nested_draw_candidate_v753.md)
+and [machine-readable trace](../evidence/retail_frontier_20261022/process1_ui_gate_nested_draw_candidate_v753.json).
+
+A byte-level Process 1 analysis then established a conditional retail path from
+the UI rendering method `0x00852760` through nested methods `0x00850F10`,
+`0x00851730`, and `0x008521F0` to D3D9 `DrawIndexedPrimitive`. The evidence
+resolves the concrete adapter vtable and traces the created device pointer
+through adapter `0x0084FD60` to the underlying device's COM slot. This proves
+that the original PE contains the draw path; it does not prove that the P-code
+replay entered it. In the v753 run, neither `0x00852760` nor the selected
+Draw* imports were observed. A v755 replay then selected forwarding adapter
+`0x0084FD60` and all four Draw* imports. Its full, untruncated trace contained
+zero events over 360 host frames; this remains a bounded negative observation
+and does not contradict the static path or prove unreachability in another UI
+state. A second v756 trace also selected all three nested methods
+`0x00850F10`, `0x00851730`, and `0x008521F0`; it observed none of them, the
+parent, the adapter, or the Draw* imports during its 360-frame interval. This
+narrows only the observed frontier for that run. The Vulkan bridge still
+reports `guest_draw_translation=false`. See the
+[full static analysis](../evidence/retail_frontier_20261022/process1_nested_draw_static_00852760.md),
+[v755 report](../evidence/retail_frontier_20261022/process1_drawindexed_forwarder_v755.md),
+its [machine-readable trace](../evidence/retail_frontier_20261022/process1_drawindexed_forwarder_v755.json),
+the [v756 report](../evidence/retail_frontier_20261022/process1_nested_draw_v756.md),
+and [machine-readable trace](../evidence/retail_frontier_20261022/process1_nested_draw_v756.json).
+
+## 2026-10-22 — Process 1 adapter state sync and `+4` save/restore
+
+Process 1's byte-level report classifies adapter helper `0x0084F000` as a
+state/cache synchronizer. Its twelve indirect calls update D3D9 device state
+and bindings; the helper itself contains no Draw* call and does not read or
+write `BYTE[adapter+4]`. The caller `0x0084FD60` gates the helper with that
+byte, then forwards `DrawIndexedPrimitive` independently. A separate adapter
+vtable pair at `+0xF0/+0xF4` saves `+4` into `+5`, clears `+4` while the state
+block is active, then restores `+4` from `+5`. The source of a nonzero `+5`
+value remains unproven, so this does not yet explain an active draw path.
+The bounded v755 trace had no events for the forwarder or Draw* imports and
+did not select `0x0084F000` directly. See the [full helper report](../evidence/retail_frontier_20261022/process1_adapter_state_sync_0084f000.md).
+
+The v757 controlled replay then selected adapter Begin/EndStateBlock methods
+`0x0084FBC0`/`0x0084FBF0`, forwarder `0x0084FD60`, and corresponding D3D9
+Begin/EndStateBlock and DrawIndexedPrimitive imports. It completed 360 host
+frames with zero selected events and `guest_draw_translation=false`; the log
+was not truncated and validation errors were zero. The main-thread stop PC
+differed from v756, so this is another bounded observation, not proof of
+unreachability or a launch. See the [v757 report](../evidence/retail_frontier_20261022/process1_stateblock_adapter_v757.md)
+and [machine-readable record](../evidence/retail_frontier_20261022/process1_stateblock_adapter_v757.json).
+
+Process 1's subsequent byte-level audit confirms the exact wrapper ABI and
+field flow: Begin saves old `adapter+4` into `+5`, clears `+4`, and calls the
+underlying device; End copies `+5` back to `+4` before calling the device.
+The constructor initializes `+4` to zero, and this bounded class audit found
+no independent nonzero source for `+5` or ordered external Begin→End caller.
+The v757 trace now independently shows no Begin/End adapter calls in its tested
+interval. See the [full EndStateBlock audit](../evidence/retail_frontier_20261022/process1_adapter_endstateblock_0084fbf0.md).
+
+A full executable-section scan for incoming adapter BeginStateBlock dispatch
+found no callsite that could be tied to the primary adapter vptr with the
+required one-argument ABI. The plausible `+0xF0` windows inspected either had
+the wrong ABI or lacked proof that their receiver was this adapter; the scan
+also found no bounded local nonzero write to `BYTE[adapter+4]`. This is a
+bounded static negative result, not proof of whole-program unreachability. The
+v757 replay independently had no selected Begin/End/forwarder events. The next
+bounded provenance target is getter `0x0082E110` and its immediate consumers.
+See the [full caller audit](../evidence/retail_frontier_20261022/process1_adapter_beginstateblock_callsite_0084fbc0.md).
+
+The `0x0082E110` audit found 187 exact direct callers. None of their bounded
+immediate windows accesses a literal vtable `+0xF0` slot. A verified
+initialized-wrapper path returns the primary adapter, but inspected consumers
+use `+0xE4` or pass that pointer to helper `0x0084D1A0`, whose local path uses
+`+0x5C` and then resource-object slots `+0x4C/+0x50/+0x08`. This does not close
+global BeginStateBlock reachability: aliases outside the immediate windows and
+computed or later dispatches remain unresolved. No new replay was run. The next
+bounded target is `0x0084D1A0`. See the
+[full getter-consumer report](../evidence/retail_frontier_20261022/process1_wrapper_adapter_getter_0082e110.md).
+
+The bounded v798 worker trace observed four original state words set to `2`
+by `0x00649CB0`, and two subsequent `0x006550F0` predicates returned `1`
+with those checked state bits set. A separate v801 import trace observed four
+`CreateThread` results, four successful `ResumeThread` returns, and a completed
+120-frame host loop. This means the older v520 “resumed but bit 2 clear” symptom
+did not recur on those observed objects; it does not establish complete worker
+lifecycle correctness, frontend readiness, or race entry. An earlier low-memory
+read at `0x75` came from ECX-relative trace sampling on `Sleep(1)` with `ECX=1`
+and was instrumentation-induced. See the [v798–v801 worker evidence](../evidence/retail_frontier_20261022/process1_worker_scheduler_v798_v801.md).
+
+The follow-up v802 selected the complete `0x006B0F60` wait-path helpers and
+Win32 `Sleep` import. One worker returned from `Sleep(1)` and then entered
+three post-wait helpers; the last helper had no paired return before the
+120-frame bound. This does not prove a hang, worker exit, frontend readiness,
+or race entry. See the [v802 worker trace](../evidence/retail_frontier_20261022/process1_worker_wait_v802.md).
+
+v803/v804 repeated the worker trace at 360 frames and selected Win32 wait/event
+imports. The worker set event `0x60014`, passed through `Sleep(1)`, then entered
+`WaitForSingleObjectEx(0x60018, INFINITE, TRUE)` with no return observed before
+the probe ended. No `SetEvent(0x60018)` occurred in the selected v804 trace.
+This localizes the bounded wait but does not prove a permanent hang or identify
+who should signal it. See the [v803–v804 worker wait evidence](../evidence/retail_frontier_20261022/process1_worker_wait_v803_v804.md).
+
+v805 selected event creation as well: worker 65538 created handle `0x60018`
+with all-zero `CreateEventW` arguments, then waited on that handle with
+`WaitForSingleObjectEx(..., INFINITE, TRUE)`. No `SetEvent(0x60018)` appeared
+in the bounded run. This identifies the observed wait object, not the intended
+signal producer or proof of a scheduler defect. See the [v805 event evidence](../evidence/retail_frontier_20261022/process1_worker_event_creation_v805.md).
+
+v806 extended the same original-PE run to 600 frames with the same runtime,
+module manifest, and selected synchronization imports. It reached 2,420,968
+P-code dispatches across 4,738 unique functions, rendered 600 host frames,
+reported zero Vulkan validation errors, and ended with two waiting workers;
+the main-thread snapshot was in `0x005093A0`. Worker 65538 still had no return
+from `WaitForSingleObjectEx(0x60018, INFINITE, TRUE)`, and none of the 19
+selected `SetEvent` calls targeted `0x60018`. This is stronger evidence that
+the wait persisted through this 600-frame interval, but it still does not
+prove a permanent hang or an incorrect scheduler/event implementation. The
+runtime's clear/present submissions and diagnostic `guest_draw_translation`
+field do not prove retail rendering or game readiness. See the [v806 wait
+evidence](../evidence/retail_frontier_20261022/process1_worker_wait_v806.md).
+
+v807 repeated 600 frames with event-owner and queue-insertion tracing. Worker
+`0x00010002` again waited on `0x60018`, stored at `+0x40` of owner
+`0x27f7cd00`; the sampled `+0xc0` flags were `0xf`, and `+0xb4/+0xb8` were
+zero. No selected `SetEvent` targeted `0x60018`, and no retained
+`0x00650350` queue-insertion call used that owner. The same trace observed
+queue insertion and event signals on separate owners `0x27f7c290` and
+`0x27f7c780` for handles `0x6000c` and `0x60010`. This narrows the observation
+to an unsignaled owner queue while showing activity on other worker queues.
+The v808 retail-code review identifies `+0xb4/+0xb8` as the queue head/tail:
+`0x00650290` appends nodes and `0x00650230` clears both fields. Therefore the
+queue was empty when the worker entered its wait at dispatch 412,840; the
+bounded trace gives no evidence of a lost wake or a scheduler defect. v808
+sampled the same owner fields and found no `0x00650350` enqueue for it during
+120 frames. These runs do not rule out other producers outside the selected
+trace or establish that this worker should have received work. v807 reached
+600 frames with 2,421,409 dispatches, 4,738 unique functions, zero validation
+errors, four waiting workers and no guest draw translation. See the [v807
+owner trace](../evidence/retail_frontier_20261022/process1_worker_event_owner_v807.md)
+and [v808 queue-field evidence](../evidence/retail_frontier_20261022/process1_worker_queue_head_tail_v808.md).
+
+A static follow-up to the UI readiness traces checked the original bytes in
+`0x005093A0`. Its ordinary `owner+0x2D=1` store is skipped after any item-loop
+iteration; an item in state 5 calls virtual slot `+0x10` and clears a local
+condition that bypasses the alternate completion branch. The function also
+has a separate `0x0042C9CC` branch that can write the readiness byte when
+`owner+0xAD` is nonzero, so list occupancy alone is not a global explanation.
+The v789–v796 observations are separate runs and do not prove which branch or
+item status caused v796's zero byte. No guest state was changed; the next
+useful trace is the same owner's list/status sequence and the state-5 callback
+target/return. See the [static original-byte analysis](../evidence/retail_frontier_20261022/process1_ui_readiness_list_gate_static.md).
+
+The v809/v810 follow-up identifies the observed state-5 virtual target as
+`0x004D1F10`. v810 sampled its input `item+0x11C`: the recurring value 2
+returns 5 under the original callback bytes. Exact-address write provenance
+for item `0x27DFAD78` attributes that value to `0x00D8CB90` writing 2 at
+`item+0x11C` through an embedded subobject. This establishes why the callback
+repeats 5 for that sampled state; it does not establish what event should
+advance the field. The bounded v810 trace did not prove a retail-rendered menu
+or race. See the [v810 item-state trace](../evidence/retail_frontier_20261022/process1_ui_item_state_011c_v810.md).

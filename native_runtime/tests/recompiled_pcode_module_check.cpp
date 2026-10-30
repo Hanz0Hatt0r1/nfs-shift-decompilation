@@ -606,7 +606,8 @@ void write_system_parameters_info_pe32_fixture(
     bool reg_open_key_ex_w_import = false,
     bool register_device_notification_w_import = false,
     bool unregister_device_notification_import = false,
-    bool direct_input8_create_import = false) {
+    bool direct_input8_create_import = false,
+    bool message_pump_imports = false) {
     if (static_cast<unsigned>(find_window_w_import) +
             static_cast<unsigned>(reg_open_key_ex_w_import) +
             static_cast<unsigned>(register_device_notification_w_import) +
@@ -660,7 +661,7 @@ void write_system_parameters_info_pe32_fixture(
 
     write_u32(bytes, 0x400, 0x2200);
     write_u32(bytes, 0x40c, 0x2080);
-    write_u32(bytes, 0x410, 0x2060);
+    write_u32(bytes, 0x410, message_pump_imports ? 0x2300 : 0x2060);
     write_u32(bytes, 0x600, 0x2090);
     write_u32(bytes, 0x604, 0x20b0);
     write_u32(bytes, 0x608, 0x20d0);
@@ -713,6 +714,32 @@ void write_system_parameters_info_pe32_fixture(
     std::copy_n("CreateWindowExW", 16, bytes.begin() + 0x5a2);
     std::copy_n("ClipCursor", 11, bytes.begin() + 0x5d2);
     std::copy_n("ShowWindow", 11, bytes.begin() + 0x5e2);
+    if (message_pump_imports) {
+        const std::array<std::pair<const char*, uint32_t>, 4> extra_imports =
+            {{{"GetMessageW", 0x2240},
+              {"TranslateMessage", 0x2260},
+              {"DispatchMessageW", 0x2280},
+              {"DefWindowProcW", 0x22a0}}};
+        for (size_t index = 0; index < extra_imports.size(); ++index) {
+            const size_t thunk_offset = 0x620 + index * sizeof(uint32_t);
+            const size_t iat_offset =
+                0x700 + (8 + index) * sizeof(uint32_t);
+            const size_t name_offset = 0x640 + index * 0x20;
+            write_u32(bytes, thunk_offset, extra_imports[index].second);
+            write_u32(bytes, iat_offset, extra_imports[index].second);
+            write_u16(bytes, name_offset, 0);
+            const char* name = extra_imports[index].first;
+            std::copy_n(name, std::char_traits<char>::length(name) + 1,
+                        bytes.begin() + name_offset + 2);
+        }
+        constexpr std::array<uint32_t, 8> base_import_names = {
+            0x2090, 0x20b0, 0x20d0, 0x20f0,
+            0x2170, 0x21a0, 0x21d0, 0x21e0};
+        for (size_t index = 0; index < 8; ++index) {
+            write_u32(bytes, 0x700 + index * sizeof(uint32_t),
+                      base_import_names[index]);
+        }
+    }
 
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     require(static_cast<bool>(file),
@@ -810,16 +837,21 @@ void write_d3d9_pe32_fixture(const std::string& path) {
     write_u32(bytes, 0x64c, 0x23a0);
     write_u32(bytes, 0x650, 0x23c6);
     write_u32(bytes, 0x654, 0x2330);
+    write_u32(bytes, 0x658, 0x22c0);
     write_u32(bytes, 0x660, 0x22a0);
     write_u32(bytes, 0x664, 0x2300);
     write_u32(bytes, 0x668, 0x2360);
     write_u32(bytes, 0x66c, 0x23a0);
     write_u32(bytes, 0x670, 0x23c6);
     write_u32(bytes, 0x674, 0x2330);
+    write_u32(bytes, 0x678, 0x22c0);
     std::copy_n("d3dx9_41.dll", 13, bytes.begin() + 0x680);
     const char create_effect_name[] = "D3DXCreateEffect";
     std::copy_n(create_effect_name, sizeof(create_effect_name),
                 bytes.begin() + 0x6a2);
+    const char create_texture_name[] = "D3DXCreateTexture";
+    std::copy_n(create_texture_name, sizeof(create_texture_name),
+                bytes.begin() + 0x6c2);
     const char effect_compiler_name[] =
         "D3DXCreateEffectCompilerFromFileA";
     std::copy_n(effect_compiler_name, sizeof(effect_compiler_name),
@@ -1208,6 +1240,11 @@ int main(int argc, char** argv) {
              ("shift-runtime-directinput8create-" + std::to_string(getpid()) +
               ".exe"))
                 .string();
+        const std::string message_pump_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-user32-messagepump-" + std::to_string(getpid()) +
+              ".exe"))
+                .string();
         const std::string wsa_startup_fixture_path =
             (std::filesystem::temp_directory_path() /
              ("shift-runtime-wsastartup-" + std::to_string(getpid()) +
@@ -1233,7 +1270,8 @@ int main(int argc, char** argv) {
                            false, false, false, false, true);
         write_pe32_fixture(stack_walk64_fixture_path, false, false, false,
                            false, false, false, false, false, true);
-        write_system_parameters_info_pe32_fixture(argv[7]);
+        write_system_parameters_info_pe32_fixture(
+            argv[7], false, false, false, false, false, true);
         write_system_parameters_info_pe32_fixture(find_window_w_fixture_path,
                                                    true);
         write_system_parameters_info_pe32_fixture(
@@ -1245,6 +1283,9 @@ int main(int argc, char** argv) {
             true);
         write_system_parameters_info_pe32_fixture(
             direct_input8_create_fixture_path, false, false, false, false,
+            true);
+        write_system_parameters_info_pe32_fixture(
+            message_pump_fixture_path, false, false, false, false, false,
             true);
         write_wsa_startup_pe32_fixture(wsa_startup_fixture_path);
         write_d3d9_pe32_fixture(argv[8]);
@@ -2409,13 +2450,17 @@ int main(int argc, char** argv) {
 
         require(setenv("SHIFT_TRACE_UI_STATE_GATE", "1", 1) == 0,
                 "could not enable UI state gate trace fixture");
-        require(setenv("SHIFT_TRACE_GUEST_PROVENANCE", "0x00be250c", 1) == 0,
-                "could not enable helper flag provenance fixture");
+        require(setenv("SHIFT_TRACE_GUEST_PROVENANCE",
+                       "0x00be250c,0x00be2548", 1) == 0,
+                "could not enable UI state provenance fixture");
         {
             shift::runtime::RecompiledPcodeModule gate_trace_module(argv[1]);
             write_guest_u32(gate_trace_module, "register", 4, 0x00be2500);
             require(gate_trace_module.call(0x0050c7f0) == 0,
                     "helper flag writer fixture failed: " +
+                        gate_trace_module.last_error());
+            require(gate_trace_module.call(0x0050c7d0) == 0,
+                    "callback pointer writer fixture failed: " +
                         gate_trace_module.last_error());
             require(gate_trace_module.call(0x0050c7e0) == 0,
                     "adjacent helper byte writer fixture failed: " +
@@ -2430,6 +2475,7 @@ int main(int argc, char** argv) {
                     "UI state gate trace missed the gate/helper calls");
             const auto& helper = snapshot.ui_state_gate_trace.back();
             const auto& writer = helper.helper_flag_last_writer;
+            const auto& gate = snapshot.ui_state_gate_trace.front();
             require(helper.function == 0x0050c880,
                     "UI helper trace captured the wrong function");
             require(helper.has_helper_flag_byte &&
@@ -2446,6 +2492,21 @@ int main(int argc, char** argv) {
                         writer.write_size == 1 &&
                         writer.word_value == 0x00000001,
                     "UI helper trace reported the wrong byte write");
+            require(gate.function == 0x0050ceb0 &&
+                        gate.has_gate_callback_object &&
+                        gate.gate_callback_object == 0x00be2600,
+                    "UI gate trace missed the callback pointer value");
+            require(gate.has_gate_callback_pointer_last_writer,
+                    "UI gate trace missed the callback pointer's last writer");
+            const auto& callback_writer =
+                gate.gate_callback_pointer_last_writer;
+            require(callback_writer.function == 0x0050c7d0 &&
+                        callback_writer.has_ecx_entry &&
+                        callback_writer.ecx_entry == 0x00be2500 &&
+                        callback_writer.write_address == 0x00be2548 &&
+                        callback_writer.write_size == 4 &&
+                        callback_writer.word_value == 0x00be2600,
+                    "UI gate trace reported the wrong callback pointer writer");
         }
         require(unsetenv("SHIFT_TRACE_GUEST_PROVENANCE") == 0,
                 "could not disable helper flag provenance fixture");
@@ -2685,7 +2746,7 @@ int main(int argc, char** argv) {
         shift::runtime::RecompiledPcodeModule user32_module(argv[1]);
         const auto user32_image = user32_module.load_pe32_image(argv[7]);
         require(user32_image.import_module_count == 2 &&
-                    user32_image.import_function_count == 9,
+                    user32_image.import_function_count == 13,
                 "USER32/GDI32 fixture imports were not parsed");
         shift::runtime::RecompiledPcodeModule find_window_w_module(argv[1]);
         const auto find_window_w_image =
@@ -2818,24 +2879,27 @@ int main(int argc, char** argv) {
                     read_guest_u32(direct_input8_create_module, "ram",
                                    direct_input8_output_address) == 0,
                 "DirectInput8Create did not report the missing headless input provider");
+        const uint32_t user32_iat = user32_image.image_base + 0x2300;
         const uint32_t system_parameters_info = read_guest_u32(
-            user32_module, "ram", user32_image.image_base + 0x2060);
+            user32_module, "ram", user32_iat);
         const uint32_t peek_message_w = read_guest_u32(
-            user32_module, "ram", user32_image.image_base + 0x2064);
+            user32_module, "ram", user32_iat + 4);
         const uint32_t get_desktop_window = read_guest_u32(
-            user32_module, "ram", user32_image.image_base + 0x2068);
+            user32_module, "ram", user32_iat + 8);
         const uint32_t load_icon_w = read_guest_u32(
-            user32_module, "ram", user32_image.image_base + 0x206c);
+            user32_module, "ram", user32_iat + 12);
         const uint32_t get_stock_object = read_guest_u32(
             user32_module, "ram", user32_image.image_base + 0x2120);
         const uint32_t register_class_ex = read_guest_u32(
-            user32_module, "ram", user32_image.image_base + 0x2070);
+            user32_module, "ram", user32_iat + 16);
         const uint32_t create_window_ex = read_guest_u32(
-            user32_module, "ram", user32_image.image_base + 0x2074);
+            user32_module, "ram", user32_iat + 20);
         const uint32_t clip_cursor = read_guest_u32(
-            user32_module, "ram", user32_image.image_base + 0x2078);
+            user32_module, "ram", user32_iat + 24);
         const uint32_t show_window = read_guest_u32(
-            user32_module, "ram", user32_image.image_base + 0x207c);
+            user32_module, "ram", user32_iat + 28);
+        const uint32_t user32_def_window_proc =
+            read_guest_u32(user32_module, "ram", user32_iat + 44);
         const uint32_t desktop_window =
             invoke_import(user32_module, get_desktop_window, {});
         require(desktop_window != 0 &&
@@ -2861,7 +2925,7 @@ int main(int argc, char** argv) {
         constexpr uint32_t window_title_address = 0x00033920;
         write_guest_u32(user32_module, "ram", window_class_address, 48);
         write_guest_u32(user32_module, "ram", window_class_address + 8,
-                        user32_image.image_base + 0x1000);
+                        user32_def_window_proc);
         write_guest_u32(user32_module, "ram", window_class_address + 20,
                         user32_image.image_base);
         write_guest_u32(user32_module, "ram", window_class_address + 32,
@@ -2900,6 +2964,33 @@ int main(int argc, char** argv) {
                     invoke_import(user32_module, show_window, {window, 0}) == 1 &&
                     invoke_import(user32_module, show_window, {window, 5}) == 0,
                 "ShowWindow did not return and update guest visibility state");
+        const uint32_t find_window_iat =
+            find_window_w_image.image_base + 0x2060;
+        const uint32_t rejecting_window_proc =
+            read_guest_u32(find_window_w_module, "ram", find_window_iat);
+        const uint32_t rejecting_register_class = read_guest_u32(
+            find_window_w_module, "ram", find_window_iat + 16);
+        const uint32_t rejecting_create_window = read_guest_u32(
+            find_window_w_module, "ram", find_window_iat + 20);
+        constexpr uint32_t rejecting_window_class_address = 0x00033b40;
+        write_guest_u32(find_window_w_module, "ram",
+                        rejecting_window_class_address, 48);
+        write_guest_u32(find_window_w_module, "ram",
+                        rejecting_window_class_address + 8,
+                        rejecting_window_proc);
+        write_guest_u32(find_window_w_module, "ram",
+                        rejecting_window_class_address + 40,
+                        find_window_class_name_address);
+        require(invoke_import(find_window_w_module,
+                              rejecting_register_class,
+                              {rejecting_window_class_address}) == 1,
+                "CreateWindowExW rejection fixture could not register its WndProc");
+        require(invoke_import(
+                    find_window_w_module, rejecting_create_window,
+                    {0, find_window_class_name_address,
+                     find_window_title_address, 0, 0, 0, 640, 480, 0, 0,
+                     find_window_w_image.image_base, 0}) == 0,
+                "CreateWindowExW ignored a WndProc rejection of WM_NCCREATE");
         constexpr uint32_t peek_message_output = 0x00032f00;
         std::array<uint8_t, 28> initial_message{};
         initial_message.fill(0xa5);
@@ -2916,6 +3007,136 @@ int main(int argc, char** argv) {
                         message_after_peek.data() + 16) &&
                     message_after_peek == initial_message,
                 "PeekMessageW modified MSG when no queued message existed");
+
+        shift::runtime::RecompiledPcodeModule message_pump_module(argv[1]);
+        const auto message_pump_image =
+            message_pump_module.load_pe32_image(message_pump_fixture_path);
+        require(message_pump_image.import_module_count == 2 &&
+                    message_pump_image.import_function_count == 13,
+                "Win32 message-pump fixture imports were not parsed");
+        const uint32_t message_pump_iat =
+            message_pump_image.image_base + 0x2300;
+        const uint32_t message_peek =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 4);
+        const uint32_t register_class =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 16);
+        const uint32_t create_window =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 20);
+        const uint32_t show_window_import =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 28);
+        const uint32_t get_message =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 32);
+        const uint32_t translate_message =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 36);
+        const uint32_t dispatch_message =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 40);
+        const uint32_t def_window_proc =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 44);
+        constexpr uint32_t message_class_address = 0x00034000;
+        constexpr uint32_t message_class_name_address = 0x00034100;
+        constexpr uint32_t message_window_title_address = 0x00034120;
+        constexpr uint32_t message_output_address = 0x00034200;
+        write_guest_u32(message_pump_module, "ram", message_class_address, 48);
+        write_guest_u32(message_pump_module, "ram", message_class_address + 8,
+                        def_window_proc);
+        write_guest_u32(message_pump_module, "ram", message_class_address + 40,
+                        message_class_name_address);
+        const std::array<uint8_t, 4> message_class_name = {'M', 0, 0, 0};
+        const std::array<uint8_t, 2> message_window_title = {0, 0};
+        write_guest_bytes(message_pump_module, message_class_name_address,
+                          message_class_name.data(),
+                          message_class_name.size());
+        write_guest_bytes(message_pump_module,
+                          message_window_title_address,
+                          message_window_title.data(),
+                          message_window_title.size());
+        require(invoke_import(message_pump_module, register_class,
+                              {message_class_address}) == 1,
+                "message-pump fixture could not register its guest WndProc");
+        const std::vector<uint32_t> message_create_arguments = {
+            0, message_class_name_address, message_window_title_address,
+            0x90000000, 0, 0, 640, 480, 0, 0,
+            message_pump_image.image_base, 0};
+        const uint32_t message_window = invoke_import(
+            message_pump_module, create_window, message_create_arguments);
+        require(message_window == 0x00030008 &&
+                    message_pump_module.post_guest_key_event(
+                        'A', 0x1e, false, true, false, false, 17, 29) &&
+                    invoke_import(message_pump_module, show_window,
+                                  {message_window, 5}) == 1,
+                "WS_VISIBLE CreateWindowExW did not show its guest HWND");
+        const auto message_contents = [&](uint32_t address) {
+            std::array<uint32_t, 7> words{};
+            auto* bytes = reinterpret_cast<uint8_t*>(words.data());
+            require(message_pump_module.read_guest("ram", address, 16,
+                                                   bytes) &&
+                        message_pump_module.read_guest(
+                            "ram", address + 16, sizeof(words) - 16,
+                            bytes + 16),
+                    "could not read guest MSG fixture");
+            return words;
+        };
+        require(invoke_import(message_pump_module, message_peek,
+                              {message_output_address, message_window,
+                               0, 0, 0}) == 1 &&
+                    message_contents(message_output_address)[1] == 0x0100,
+                "PeekMessageW did not observe the queued WM_KEYDOWN");
+        require(invoke_import(message_pump_module, message_peek,
+                              {message_output_address, message_window,
+                               0, 0, 0}) == 1,
+                "PM_NOREMOVE unexpectedly removed the queued key message");
+        require(invoke_import(message_pump_module, get_message,
+                              {message_output_address, message_window,
+                               0, 0}) == 1,
+                "GetMessageW did not remove the queued key message");
+        const auto key_down_message = message_contents(message_output_address);
+        require(key_down_message[0] == message_window &&
+                    key_down_message[1] == 0x0100 &&
+                    key_down_message[2] == 'A' &&
+                    key_down_message[3] == 0x001e0001 &&
+                    key_down_message[5] == 17 && key_down_message[6] == 29,
+                "guest WM_KEYDOWN fields did not match the posted key event");
+        require(invoke_import(message_pump_module, translate_message,
+                              {message_output_address}) == 1,
+                "TranslateMessage did not enqueue the matching WM_CHAR");
+        require(invoke_import(message_pump_module, dispatch_message,
+                              {message_output_address}) == 0,
+                "DispatchMessageW did not invoke the guest window procedure");
+        require(invoke_import(message_pump_module, message_peek,
+                              {message_output_address, message_window,
+                               0x0102, 0x0102, 1}) == 1,
+                "PeekMessageW did not return the translated WM_CHAR");
+        const auto character_message =
+            message_contents(message_output_address);
+        require(character_message[1] == 0x0102 &&
+                    character_message[2] == 'a' &&
+                    invoke_import(message_pump_module, translate_message,
+                                  {message_output_address}) == 0 &&
+                    invoke_import(message_pump_module, dispatch_message,
+                                  {message_output_address}) == 0,
+                "translated WM_CHAR did not preserve message-pump semantics");
+        std::array<uint8_t, 28> empty_queue_message{};
+        empty_queue_message.fill(0x5a);
+        write_guest_bytes(message_pump_module, message_output_address,
+                          empty_queue_message.data(),
+                          empty_queue_message.size());
+        require(invoke_import(message_pump_module, message_peek,
+                              {message_output_address, message_window,
+                               0, 0, 0}) == 0 &&
+                    message_contents(message_output_address) ==
+                        std::array<uint32_t, 7>{
+                            0x5a5a5a5a, 0x5a5a5a5a, 0x5a5a5a5a,
+                            0x5a5a5a5a, 0x5a5a5a5a, 0x5a5a5a5a,
+                            0x5a5a5a5a},
+                "empty PeekMessageW modified the caller's MSG");
+        require(message_pump_module.post_guest_key_event(
+                    'A', 0x1e, false, false, false, false, 17, 29) &&
+                    invoke_import(message_pump_module, message_peek,
+                                  {message_output_address, message_window,
+                                   0x0101, 0x0101, 1}) == 1 &&
+                    (message_contents(message_output_address)[3] &
+                     0xc0000000) == 0xc0000000,
+                "guest WM_KEYUP transition bits or range filtering failed");
         constexpr uint32_t system_parameters_buffer = 0x00033000;
         const std::array<std::array<uint32_t, 2>, 5> accessibility_apis =
             {{{0x0032, 0x0033}, {0x0034, 0x0035}, {0x0036, 0x0037},
@@ -2978,7 +3199,7 @@ int main(int argc, char** argv) {
         shift::runtime::RecompiledPcodeModule d3d9_module(argv[1]);
         const auto d3d9_image = d3d9_module.load_pe32_image(argv[8]);
         require(d3d9_image.import_module_count == 3 &&
-                    d3d9_image.import_function_count == 11,
+                    d3d9_image.import_function_count == 12,
                 "D3D9 fixture imports were not parsed");
         const uint32_t direct3d_create9 = read_guest_u32(
             d3d9_module, "ram", d3d9_image.image_base + 0x2060);
@@ -3190,6 +3411,8 @@ int main(int argc, char** argv) {
             d3d9_provider_module.load_pe32_image(argv[8]);
         const uint32_t provider_create9 = read_guest_u32(
             d3d9_provider_module, "ram", provider_image.image_base + 0x2060);
+        const uint32_t provider_d3dx_create_texture = read_guest_u32(
+            d3d9_provider_module, "ram", provider_image.image_base + 0x2278);
         const uint32_t provider_d3dx_create_effect = read_guest_u32(
             d3d9_provider_module, "ram", provider_image.image_base + 0x2260);
         const uint32_t provider_d3dx_effect_compiler_from_file =
@@ -3445,6 +3668,170 @@ int main(int argc, char** argv) {
                                       managed_texture_vtable + 2 * 4),
                                   {managed_texture}) == 0,
                 "managed texture unlock or release failed");
+        constexpr uint32_t dxt3_format = 0x33545844;
+        constexpr uint32_t dxt3_texture_output_address = 0x00405400;
+        constexpr uint32_t dxt3_texture_desc_address = 0x00405420;
+        constexpr uint32_t dxt3_texture_locked_rect_address = 0x00405440;
+        constexpr uint32_t dxt3_device_wrapper_address = 0x00405500;
+        write_guest_u32(d3d9_provider_module, "ram",
+                        dxt3_device_wrapper_address, 0x00405520);
+        write_guest_u32(d3d9_provider_module, "ram",
+                        dxt3_device_wrapper_address + 8, created_device);
+        require(invoke_import(
+                    d3d9_provider_module, provider_d3dx_create_texture,
+                    {dxt3_device_wrapper_address, 512, 512, 1, 0,
+                     dxt3_format, 1,
+                     dxt3_texture_output_address}) == 0,
+                "D3DXCreateTexture rejected the captured managed DXT3 texture");
+        const uint32_t dxt3_texture = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture_output_address);
+        const uint32_t dxt3_texture_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture);
+        const uint32_t dxt3_texture_get_level_desc = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture_vtable + 17 * 4);
+        const uint32_t dxt3_texture_lock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture_vtable + 19 * 4);
+        const uint32_t dxt3_texture_unlock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture_vtable + 20 * 4);
+        require(dxt3_texture != 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_texture_get_level_desc,
+                                  {dxt3_texture, 0,
+                                   dxt3_texture_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_desc_address) == dxt3_format &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_desc_address + 24) == 512 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_desc_address + 28) == 512 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_texture_lock_rect,
+                                  {dxt3_texture, 0,
+                                   dxt3_texture_locked_rect_address, 0,
+                                   0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_locked_rect_address) == 2048,
+                "managed DXT3 level description or block pitch was incorrect");
+        const uint32_t dxt3_texture_pixels = read_guest_u32(
+            d3d9_provider_module, "ram",
+            dxt3_texture_locked_rect_address + 4);
+        const std::array<uint8_t, 1> dxt3_last_byte = {0x5a};
+        std::array<uint8_t, 1> dxt3_last_byte_read{};
+        require(d3d9_provider_module.write_guest(
+                    "ram", static_cast<uint64_t>(dxt3_texture_pixels) +
+                               512 * 512 - 1,
+                    dxt3_last_byte.size(), dxt3_last_byte.data()) &&
+                    d3d9_provider_module.read_guest(
+                        "ram", static_cast<uint64_t>(dxt3_texture_pixels) +
+                                   512 * 512 - 1,
+                        dxt3_last_byte_read.size(),
+                        dxt3_last_byte_read.data()) &&
+                    dxt3_last_byte_read == dxt3_last_byte &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_texture_unlock_rect,
+                                  {dxt3_texture, 0}) == 0,
+                "managed DXT3 block storage did not cover the full level");
+        constexpr uint32_t dxt3_rect_address = 0x00405460;
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address, 2);
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address + 4, 0);
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address + 8, 6);
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address + 12, 4);
+        require(invoke_import(d3d9_provider_module,
+                              dxt3_texture_lock_rect,
+                              {dxt3_texture, 0,
+                               dxt3_texture_locked_rect_address,
+                               dxt3_rect_address, 0}) == 0x8876086c,
+                "managed DXT3 LockRect accepted a non-block-aligned region");
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address, 4);
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address + 4, 4);
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address + 8, 8);
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address + 12, 8);
+        require(invoke_import(d3d9_provider_module,
+                              dxt3_texture_lock_rect,
+                              {dxt3_texture, 0,
+                               dxt3_texture_locked_rect_address,
+                               dxt3_rect_address, 0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_locked_rect_address) == 2048 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_locked_rect_address + 4) ==
+                        dxt3_texture_pixels + 2048 + 16 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_texture_unlock_rect,
+                                  {dxt3_texture, 0}) == 0,
+                "managed DXT3 subrect did not address the correct block");
+        require(invoke_import(
+                    d3d9_provider_module,
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_vtable + 2 * 4),
+                    {dxt3_texture}) == 0,
+                "managed DXT3 texture release failed");
+
+        constexpr uint32_t dxt3_mip_texture_output_address = 0x00405480;
+        constexpr uint32_t dxt3_mip_texture_locked_rect_address = 0x004054a0;
+        require(invoke_import(
+                    d3d9_provider_module, create_texture,
+                    {created_device, 7, 5, 1, 0, dxt3_format, 1,
+                     dxt3_mip_texture_output_address, 0}) == 0x8876086a &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_mip_texture_output_address) == 0,
+                "CreateTexture accepted DXT3 dimensions not divisible by 4");
+        require(invoke_import(
+                    d3d9_provider_module, create_texture,
+                    {created_device, 8, 8, 2, 0, dxt3_format, 1,
+                     dxt3_mip_texture_output_address, 0}) == 0,
+                "CreateTexture rejected managed DXT3 mip levels");
+        const uint32_t dxt3_mip_texture = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_mip_texture_output_address);
+        const uint32_t dxt3_mip_texture_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_mip_texture);
+        const uint32_t dxt3_mip_texture_get_level_desc = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_mip_texture_vtable + 17 * 4);
+        const uint32_t dxt3_mip_texture_lock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_mip_texture_vtable + 19 * 4);
+        const uint32_t dxt3_mip_texture_unlock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_mip_texture_vtable + 20 * 4);
+        require(invoke_import(d3d9_provider_module,
+                              dxt3_mip_texture_get_level_desc,
+                              {dxt3_mip_texture, 1,
+                               dxt3_texture_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_desc_address + 24) == 4 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_desc_address + 28) == 4 &&
+                    invoke_import(d3d9_provider_module,
+                              dxt3_mip_texture_lock_rect,
+                              {dxt3_mip_texture, 0,
+                               dxt3_mip_texture_locked_rect_address, 0, 0}) ==
+                    0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_mip_texture_locked_rect_address) == 32,
+                "managed DXT3 base mip pitch was incorrect");
+        const uint32_t dxt3_mip_base = read_guest_u32(
+            d3d9_provider_module, "ram",
+            dxt3_mip_texture_locked_rect_address + 4);
+        require(invoke_import(d3d9_provider_module,
+                              dxt3_mip_texture_unlock_rect,
+                              {dxt3_mip_texture, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_mip_texture_lock_rect,
+                                  {dxt3_mip_texture, 1,
+                                   dxt3_mip_texture_locked_rect_address, 0,
+                                   0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_mip_texture_locked_rect_address) == 16 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_mip_texture_locked_rect_address + 4) ==
+                        dxt3_mip_base + 64 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_mip_texture_unlock_rect,
+                                  {dxt3_mip_texture, 1}) == 0 &&
+                    invoke_import(
+                        d3d9_provider_module,
+                        read_guest_u32(d3d9_provider_module, "ram",
+                                       dxt3_mip_texture_vtable + 2 * 4),
+                        {dxt3_mip_texture}) == 0,
+                "managed DXT3 mip offset or pitch was incorrect");
         constexpr uint32_t vertex_buffer_output_address = 0x00405190;
         require(invoke_import(
                     d3d9_provider_module, create_vertex_buffer,

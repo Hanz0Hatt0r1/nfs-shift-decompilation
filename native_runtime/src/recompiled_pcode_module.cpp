@@ -143,6 +143,7 @@ constexpr uint32_t kEFail = 0x80004005;
 constexpr uint32_t kENoInterface = 0x80004002;
 constexpr uint32_t kEOutOfMemory = 0x8007000e;
 constexpr uint32_t kD3dFormatA8R8G8B8 = 21;
+constexpr uint32_t kD3dFormatDxt3 = 0x33545844;
 constexpr uint32_t kD3dUsageRenderTarget = 1;
 constexpr uint32_t kD3dPoolDefault = 0;
 constexpr uint32_t kD3dPoolManaged = 1;
@@ -162,6 +163,37 @@ constexpr size_t kWindowsMaxPath = 260;
 constexpr uint32_t kGuestAlreadyFiberError = 1280;
 constexpr size_t kMaximumGuestFileReadBytes = 64 * 1024 * 1024;
 constexpr uint32_t kGuestAllocationTraceThreshold = 16 * 1024 * 1024;
+
+struct D3d9TextureLevelLayout {
+    uint64_t pitch = 0;
+    uint64_t size = 0;
+};
+
+bool d3d9_texture_level_layout(uint32_t width, uint32_t height,
+                               uint32_t format,
+                               D3d9TextureLevelLayout& layout) {
+    if (width == 0 || height == 0) return false;
+    if (format == kD3dFormatDxt3) {
+        const uint64_t block_columns =
+            (static_cast<uint64_t>(width) + 3) / 4;
+        const uint64_t block_rows =
+            (static_cast<uint64_t>(height) + 3) / 4;
+        layout.pitch = block_columns * 16;
+        if (block_rows != 0 &&
+            layout.pitch > UINT64_MAX / block_rows) {
+            return false;
+        }
+        layout.size = layout.pitch * block_rows;
+        return true;
+    }
+    const uint32_t bytes_per_pixel =
+        format == kD3dFormatA8R8G8B8 ? 4 : format == 25 ? 2 : 0;
+    if (bytes_per_pixel == 0) return false;
+    layout.pitch = static_cast<uint64_t>(width) * bytes_per_pixel;
+    if (height != 0 && layout.pitch > UINT64_MAX / height) return false;
+    layout.size = layout.pitch * height;
+    return true;
+}
 constexpr size_t kGuestAllocationObjectTraceSize = 0x130;
 constexpr size_t kGuestAllocationObjectLinkLimit = 12;
 constexpr size_t kGuestAllocationObjectChainLinkLimit = 64;
@@ -500,6 +532,17 @@ struct RecompiledPcodeModule::Impl {
     struct GuestEvent {
         bool manual_reset = false;
         bool signaled = false;
+    };
+    struct GuestWindowMessage {
+        uint32_t window = 0;
+        uint32_t message = 0;
+        uint32_t wparam = 0;
+        uint32_t lparam = 0;
+        uint32_t time = 0;
+        int32_t x = 0;
+        int32_t y = 0;
+        uint32_t translated_character = 0;
+        uint32_t thread_id = 0;
     };
     struct GuestObjectLinkSnapshot {
         uint32_t address = 0;
@@ -1786,6 +1829,13 @@ struct RecompiledPcodeModule::Impl {
             if (name == "USER32.dll!ClipCursor") return clip_cursor();
             if (name == "USER32.dll!ShowWindow") return show_window();
             if (name == "USER32.dll!PeekMessageW") return peek_message_w();
+            if (name == "USER32.dll!GetMessageW") return get_message_w();
+            if (name == "USER32.dll!TranslateMessage")
+                return translate_message();
+            if (name == "USER32.dll!DispatchMessageW")
+                return dispatch_message_w();
+            if (name == "USER32.dll!DefWindowProcW")
+                return def_window_proc_w();
             if (name == "USER32.dll!SystemParametersInfoA")
                 return system_parameters_info_a();
             if (name == "GDI32.dll!CreateDCA") return create_dca();
@@ -2303,10 +2353,62 @@ struct RecompiledPcodeModule::Impl {
                         }
                     }
                     uint32_t callback_vtable = 0;
+                    const uint64_t callback_pointer_address =
+                        static_cast<uint64_t>(entry_registers.ecx) + 0x48;
                     event.has_gate_callback_object =
                         read_guest_diagnostic_u32(
-                            static_cast<uint64_t>(entry_registers.ecx) + 0x48,
+                            callback_pointer_address,
                             event.gate_callback_object);
+                    if (callback_pointer_address <= UINT32_MAX) {
+                        const GuestWriteProvenance* last_writer = nullptr;
+                        const auto target_last_writer =
+                            guest_target_last_writers.find(
+                                static_cast<uint32_t>(callback_pointer_address));
+                        if (target_last_writer !=
+                            guest_target_last_writers.end()) {
+                            last_writer = &target_last_writer->second;
+                        } else if (guest_write_provenance_all()) {
+                            const auto word_writer = guest_last_writers.find(
+                                static_cast<uint32_t>(callback_pointer_address) &
+                                ~UINT32_C(3));
+                            if (word_writer != guest_last_writers.end() &&
+                                word_writer->second.write_address <=
+                                    callback_pointer_address &&
+                                callback_pointer_address <
+                                    static_cast<uint64_t>(
+                                        word_writer->second.write_address) +
+                                        word_writer->second.write_size) {
+                                last_writer = &word_writer->second;
+                            }
+                        }
+                        if (last_writer != nullptr) {
+                            const auto& provenance = *last_writer;
+                            auto& trace =
+                                event.gate_callback_pointer_last_writer;
+                            event.has_gate_callback_pointer_last_writer = true;
+                            trace.sequence = provenance.sequence;
+                            trace.dispatch_count = provenance.dispatch_count;
+                            trace.function = provenance.writer_function;
+                            trace.ecx_entry = provenance.writer_ecx;
+                            trace.has_ecx_entry = provenance.has_writer_ecx;
+                            trace.caller_function =
+                                provenance.writer_caller_function;
+                            trace.has_caller_function =
+                                provenance.has_writer_caller_function;
+                            trace.call_return_address =
+                                provenance.writer_call_return_address;
+                            trace.has_call_return_address =
+                                provenance.has_writer_call_return_address;
+                            trace.caller_return_address =
+                                provenance.writer_caller_return_address;
+                            trace.has_caller_return_address =
+                                provenance.has_writer_caller_return_address;
+                            trace.thread_id = provenance.thread_id;
+                            trace.write_address = provenance.write_address;
+                            trace.write_size = provenance.write_size;
+                            trace.word_value = provenance.word_value;
+                        }
+                    }
                     event.has_callback_target =
                         event.has_gate_callback_object &&
                         event.gate_callback_object != 0 &&
@@ -6829,27 +6931,39 @@ struct RecompiledPcodeModule::Impl {
             backend_owned = true;
         } else if (usage == 0 && pool == kD3dPoolManaged && width != 0 &&
                    height != 0 && levels != 0) {
-            const uint32_t bytes_per_pixel =
-                format == kD3dFormatA8R8G8B8 ? 4 : format == 25 ? 2 : 0;
+            const bool supported_format =
+                format == kD3dFormatA8R8G8B8 || format == 25 ||
+                format == kD3dFormatDxt3;
             uint32_t full_mip_count = 1;
             for (uint32_t dimension = std::max(width, height); dimension > 1;
                  dimension >>= 1) {
                 ++full_mip_count;
             }
-            if (bytes_per_pixel == 0 || levels > full_mip_count ||
+            if (!supported_format || levels > full_mip_count ||
                 (format == kD3dFormatA8R8G8B8 && levels != 1) ||
-                width > UINT32_MAX / bytes_per_pixel) {
+                (format == kD3dFormatDxt3 &&
+                 ((width & 3u) != 0 || (height & 3u) != 0))) {
                 error = "unsupported D3D9 managed texture description";
                 free_guest_heap_address(object_address);
                 free_guest_heap_address(vtable_address);
                 return false;
             }
-            pitch = width * bytes_per_pixel;
             uint64_t total_size = 0;
             for (uint32_t level = 0; level < levels; ++level) {
-                const uint64_t level_width = std::max(1u, width >> level);
-                const uint64_t level_height = std::max(1u, height >> level);
-                total_size += level_width * level_height * bytes_per_pixel;
+                const uint32_t level_width = std::max(1u, width >> level);
+                const uint32_t level_height = std::max(1u, height >> level);
+                D3d9TextureLevelLayout layout;
+                if (!d3d9_texture_level_layout(level_width, level_height,
+                                               format, layout) ||
+                    layout.pitch > UINT32_MAX ||
+                    layout.size > 64ull * 1024 * 1024 - total_size) {
+                    error = "D3D9 managed texture exceeds the allocation limit";
+                    free_guest_heap_address(object_address);
+                    free_guest_heap_address(vtable_address);
+                    return false;
+                }
+                if (level == 0) pitch = static_cast<uint32_t>(layout.pitch);
+                total_size += layout.size;
             }
             if (total_size == 0 || total_size > 64ull * 1024 * 1024) {
                 error = "D3D9 managed texture exceeds the allocation limit";
@@ -6928,13 +7042,16 @@ struct RecompiledPcodeModule::Impl {
             return -1;
         }
         if (shared_handle_address != 0 || width == 0 || height == 0 ||
-            levels != 1)
+            levels == 0)
             return return_kernel32_dword(kD3dErrNotAvailable, api, 36);
         const bool managed_texture =
-            usage == 0 && format == kD3dFormatA8R8G8B8 && pool == 1;
+            usage == 0 && pool == kD3dPoolManaged &&
+            ((format == kD3dFormatA8R8G8B8 && levels == 1) ||
+             format == kD3dFormatDxt3);
         const bool render_target =
             usage == kD3dUsageRenderTarget &&
-            format == kD3dFormatA8R8G8B8 && pool == kD3dPoolDefault;
+            format == kD3dFormatA8R8G8B8 && pool == kD3dPoolDefault &&
+            levels == 1;
         if (!managed_texture && !render_target)
             return return_kernel32_dword(kD3dErrNotAvailable, api, 36);
         uint32_t texture_address = 0;
@@ -9454,13 +9571,22 @@ struct RecompiledPcodeModule::Impl {
                 guest_d3d9_devices.end()) {
             return return_kernel32_dword(kD3dErrInvalidDevice, api, 32);
         }
-        if (width == 0 || height == 0 || levels != 1 ||
-            usage != kD3dUsageRenderTarget ||
-            format != kD3dFormatA8R8G8B8 || pool != kD3dPoolDefault) {
+        if (width == 0 || height == 0 || levels == 0) {
             return return_kernel32_dword(kD3dErrNotAvailable, api, 32);
         }
-        if (guest_d3d9_adapter_info.create_texture == nullptr ||
-            guest_d3d9_adapter_info.release_texture == nullptr) {
+        const bool managed_dxt3 =
+            usage == 0 && format == kD3dFormatDxt3 &&
+            pool == kD3dPoolManaged;
+        const bool render_target =
+            levels == 1 && usage == kD3dUsageRenderTarget &&
+            format == kD3dFormatA8R8G8B8 &&
+            pool == kD3dPoolDefault;
+        if (!managed_dxt3 && !render_target) {
+            return return_kernel32_dword(kD3dErrNotAvailable, api, 32);
+        }
+        if (render_target &&
+            (guest_d3d9_adapter_info.create_texture == nullptr ||
+             guest_d3d9_adapter_info.release_texture == nullptr)) {
             return return_kernel32_dword(kD3dErrNotAvailable, api, 32);
         }
         uint32_t texture_address = 0;
@@ -10121,27 +10247,50 @@ struct RecompiledPcodeModule::Impl {
         if (left == right || top == bottom)
             return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
         (void)flags;
-        const uint32_t bytes_per_pixel =
-            texture->second.format == kD3dFormatA8R8G8B8
-                ? 4
-                : texture->second.format == 25 ? 2 : 0;
-        if (bytes_per_pixel == 0)
+        D3d9TextureLevelLayout level_layout;
+        if (!d3d9_texture_level_layout(level_width, level_height,
+                                       texture->second.format,
+                                       level_layout) ||
+            level_layout.pitch > UINT32_MAX) {
             return return_kernel32_dword(kD3dErrNotAvailable, api, 20);
+        }
+        const bool block_compressed =
+            texture->second.format == kD3dFormatDxt3;
+        if (block_compressed &&
+            ((left & 3u) != 0 || (top & 3u) != 0 ||
+             ((right & 3u) != 0 && right != level_width) ||
+             ((bottom & 3u) != 0 && bottom != level_height))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
+        }
         uint64_t level_offset = 0;
         for (uint32_t prior_level = 0; prior_level < level; ++prior_level) {
-            level_offset +=
-                static_cast<uint64_t>(
-                    std::max(1u, texture->second.width >> prior_level)) *
-                std::max(1u, texture->second.height >> prior_level) *
-                bytes_per_pixel;
+            D3d9TextureLevelLayout prior_layout;
+            if (!d3d9_texture_level_layout(
+                    std::max(1u, texture->second.width >> prior_level),
+                    std::max(1u, texture->second.height >> prior_level),
+                    texture->second.format, prior_layout) ||
+                prior_layout.size > texture->second.data_size - level_offset) {
+                return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
+            }
+            level_offset += prior_layout.size;
         }
-        const uint32_t level_pitch = level_width * bytes_per_pixel;
-        const uint32_t pixel_address = texture->second.data_address +
-                                       static_cast<uint32_t>(level_offset) +
-                                       top * level_pitch +
-                                       left * bytes_per_pixel;
+        const uint64_t region_offset = block_compressed
+            ? static_cast<uint64_t>(top / 4) * level_layout.pitch +
+                  static_cast<uint64_t>(left / 4) * 16
+            : static_cast<uint64_t>(top) * level_layout.pitch +
+                  static_cast<uint64_t>(left) *
+                      (texture->second.format == kD3dFormatA8R8G8B8 ? 4 : 2);
+        if (level_offset > texture->second.data_size ||
+            region_offset >= level_layout.size ||
+            region_offset > texture->second.data_size - level_offset ||
+            texture->second.data_address > UINT32_MAX - level_offset -
+                                               region_offset) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
+        }
+        const uint32_t pixel_address = static_cast<uint32_t>(
+            texture->second.data_address + level_offset + region_offset);
         if (!write_guest_u32("ram", locked_rect_address,
-                             level_pitch) ||
+                             static_cast<uint32_t>(level_layout.pitch)) ||
             !write_guest_u32("ram", locked_rect_address + 4,
                              pixel_address))
             return -1;
@@ -11519,7 +11668,7 @@ struct RecompiledPcodeModule::Impl {
         }
         if (first_name_character[0] == 0 && first_name_character[1] == 0)
             return return_kernel32_dword(0, api, 4);
-        // ponytail: return an opaque atom until guest window classes map to the host.
+        guest_synthetic_window_proc = window_proc;
         return return_kernel32_dword(1, api, 4);
     }
 
@@ -11648,12 +11797,12 @@ struct RecompiledPcodeModule::Impl {
 
     int create_window_ex_w() {
         constexpr const char* api = "USER32.dll!CreateWindowExW";
-        uint32_t class_name = 0;
-        uint32_t window_name = 0;
-        if (!read_stack_argument(1, class_name, api) ||
-            !read_stack_argument(2, window_name, api)) {
-            return -1;
+        std::array<uint32_t, 12> arguments{};
+        for (size_t index = 0; index < arguments.size(); ++index) {
+            if (!read_stack_argument(index, arguments[index], api)) return -1;
         }
+        const uint32_t class_name = arguments[1];
+        const uint32_t window_name = arguments[2];
         const auto has_text = [this](uint32_t address) {
             if (address == 0 || !valid_guest_pointer(address, 2)) return false;
             std::array<uint8_t, 2> first_character{};
@@ -11661,12 +11810,112 @@ struct RecompiledPcodeModule::Impl {
                               first_character.data()) &&
                    (first_character[0] != 0 || first_character[1] != 0);
         };
-        if (class_name == 0 ||
+        if (class_name == 0 || guest_synthetic_window_proc == 0 ||
             (class_name > 0xffff && !has_text(class_name)) ||
             (window_name != 0 && !valid_guest_pointer(window_name, 2))) {
             return return_kernel32_dword(0, api, 12 * sizeof(uint32_t));
         }
-        // ponytail: map this opaque HWND to a host window when guest windowing is wired.
+
+        if (guest_synthetic_window_created) {
+            return return_kernel32_dword(kGuestSyntheticWindowHandle, api,
+                                         12 * sizeof(uint32_t));
+        }
+
+        uint32_t create_struct_address = 0;
+        uint32_t nonclient_calculation_address = 0;
+        if (!allocate_guest_heap(kGuestProcessHeapHandle, 12 * sizeof(uint32_t),
+                                 create_struct_address) ||
+            !allocate_guest_heap(kGuestProcessHeapHandle,
+                                 20 * sizeof(uint32_t),
+                                 nonclient_calculation_address)) {
+            if (create_struct_address != 0)
+                free_guest_heap_address(create_struct_address);
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api, 12 * sizeof(uint32_t));
+        }
+
+        const int32_t x = static_cast<int32_t>(arguments[4]);
+        const int32_t y = static_cast<int32_t>(arguments[5]);
+        const auto dimension = [](uint32_t value, uint32_t fallback) {
+            const int32_t signed_value = static_cast<int32_t>(value);
+            return signed_value > 0
+                       ? static_cast<uint32_t>(std::min(signed_value, 0xffff))
+                       : fallback;
+        };
+        const uint32_t width = dimension(arguments[6], guest_display_width);
+        const uint32_t height = dimension(arguments[7], guest_display_height);
+        const auto edge = [](int32_t origin, uint32_t extent) {
+            const int64_t value = static_cast<int64_t>(origin) + extent;
+            return static_cast<uint32_t>(std::clamp<int64_t>(
+                value, std::numeric_limits<int32_t>::min(),
+                std::numeric_limits<int32_t>::max()));
+        };
+        const std::array<uint32_t, 12> create_struct = {
+            arguments[11], arguments[10], arguments[9], arguments[8],
+            height, width, static_cast<uint32_t>(y), static_cast<uint32_t>(x),
+            arguments[3], window_name, class_name, arguments[0]};
+        const std::array<uint32_t, 20> nonclient_calculation = {
+            static_cast<uint32_t>(x), static_cast<uint32_t>(y), edge(x, width),
+            edge(y, height), 0, 0, 0, 0,
+            static_cast<uint32_t>(x), static_cast<uint32_t>(y), edge(x, width),
+            edge(y, height), nonclient_calculation_address + 52,
+            kGuestSyntheticWindowHandle, 0, static_cast<uint32_t>(x),
+            static_cast<uint32_t>(y), width, height, 0};
+        for (size_t index = 0; index < create_struct.size(); ++index) {
+            if (!write_guest_u32("ram", create_struct_address + index * 4,
+                                 create_struct[index])) {
+                free_guest_heap_address(nonclient_calculation_address);
+                free_guest_heap_address(create_struct_address);
+                return -1;
+            }
+        }
+        for (size_t index = 0; index < nonclient_calculation.size(); ++index) {
+            if (!write_guest_u32("ram",
+                                 nonclient_calculation_address + index * 4,
+                                 nonclient_calculation[index])) {
+                free_guest_heap_address(nonclient_calculation_address);
+                free_guest_heap_address(create_struct_address);
+                return -1;
+            }
+        }
+
+        guest_synthetic_window_created = true;
+        guest_synthetic_window_thread_id = current_guest_thread_id;
+        guest_synthetic_window_x = x;
+        guest_synthetic_window_y = y;
+        guest_synthetic_window_width = width;
+        guest_synthetic_window_height = height;
+
+        uint32_t window_proc_result = 0;
+        const auto dispatch_creation_message =
+            [this, &window_proc_result](uint32_t message, uint32_t wparam,
+                                       uint32_t lparam) {
+                return dispatch_guest_window_proc(
+                    guest_synthetic_window_proc,
+                    {kGuestSyntheticWindowHandle, message, wparam, lparam},
+                    window_proc_result);
+            };
+        const bool creation_messages_dispatched =
+            dispatch_creation_message(0x0081, 0, create_struct_address) &&
+            window_proc_result != 0 &&
+            dispatch_creation_message(0x0083, 1,
+                                      nonclient_calculation_address) &&
+            dispatch_creation_message(0x0001, 0, create_struct_address) &&
+            window_proc_result != UINT32_MAX;
+        free_guest_heap_address(nonclient_calculation_address);
+        free_guest_heap_address(create_struct_address);
+        if (!creation_messages_dispatched) {
+            guest_synthetic_window_created = false;
+            guest_synthetic_window_thread_id = 0;
+            if (error.empty()) guest_last_error = 0;
+            if (!error.empty()) return -1;
+            return return_kernel32_dword(0, api, 12 * sizeof(uint32_t));
+        }
+        if ((arguments[3] & 0x10000000) != 0) {
+            guest_synthetic_window_visible = true;
+            if (!dispatch_guest_window_visibility(true, 1)) return -1;
+        }
+
         return return_kernel32_dword(kGuestSyntheticWindowHandle, api,
                                      12 * sizeof(uint32_t));
     }
@@ -11691,8 +11940,159 @@ struct RecompiledPcodeModule::Impl {
         if (window != kGuestSyntheticWindowHandle)
             return return_kernel32_dword(0, api, 8);
         const uint32_t was_visible = guest_synthetic_window_visible ? 1 : 0;
-        guest_synthetic_window_visible = command != 0;
+        const bool visible = command != 0;
+        guest_synthetic_window_visible = visible;
+        if ((was_visible != 0) != visible &&
+            !dispatch_guest_window_visibility(visible, command))
+            return -1;
         return return_kernel32_dword(was_visible, api, 8);
+    }
+
+    bool dispatch_guest_window_visibility(bool visible, uint32_t command) {
+        uint32_t result = 0;
+        if (!dispatch_guest_window_proc(
+                guest_synthetic_window_proc,
+                {kGuestSyntheticWindowHandle, 0x0018, visible ? 1u : 0u, 0},
+                result)) {
+            return false;
+        }
+        if (!visible) return true;
+
+        uint32_t size_type = 0;
+        if (command == 2 || command == 6 || command == 7 || command == 11)
+            size_type = 1;
+        else if (command == 3)
+            size_type = 2;
+        const uint32_t packed_size =
+            (guest_synthetic_window_height << 16) |
+            (guest_synthetic_window_width & 0xffff);
+        const uint32_t packed_position =
+            (static_cast<uint32_t>(guest_synthetic_window_y) << 16) |
+            (static_cast<uint32_t>(guest_synthetic_window_x) & 0xffff);
+        return dispatch_guest_window_proc(
+                   guest_synthetic_window_proc,
+                   {kGuestSyntheticWindowHandle, 0x0005, size_type,
+                    packed_size},
+                   result) &&
+               dispatch_guest_window_proc(
+                   guest_synthetic_window_proc,
+                   {kGuestSyntheticWindowHandle, 0x0003, 0, packed_position},
+                   result);
+    }
+
+    uint32_t translated_guest_character(uint32_t virtual_key,
+                                        bool shift_down,
+                                        bool caps_locked) const {
+        if (virtual_key >= 'A' && virtual_key <= 'Z') {
+            const bool uppercase = shift_down != caps_locked;
+            return uppercase ? virtual_key : virtual_key + ('a' - 'A');
+        }
+        if (virtual_key >= '0' && virtual_key <= '9') {
+            if (!shift_down) return virtual_key;
+            constexpr char shifted_digits[] = ")!@#$%^&*(";
+            return static_cast<uint32_t>(
+                shifted_digits[virtual_key - '0']);
+        }
+        switch (virtual_key) {
+            case 0x08: return 0x08;  // VK_BACK
+            case 0x09: return 0x09;  // VK_TAB
+            case 0x0d: return 0x0d;  // VK_RETURN
+            case 0x1b: return 0x1b;  // VK_ESCAPE
+            case 0x20: return 0x20;  // VK_SPACE
+            default: return 0;
+        }
+    }
+
+    bool post_guest_key_event(uint32_t virtual_key, uint32_t scan_code,
+                              bool extended, bool key_down,
+                              bool shift_down, bool caps_locked,
+                              int32_t client_x, int32_t client_y) {
+        if (!guest_synthetic_window_created ||
+            !guest_synthetic_window_visible ||
+            guest_synthetic_window_proc == 0) {
+            return false;
+        }
+        if (guest_window_messages.size() >= 1024) {
+            guest_last_error = 8;
+            return false;
+        }
+
+        const bool was_down =
+            guest_pressed_virtual_keys.count(virtual_key) != 0;
+        if (key_down) {
+            guest_pressed_virtual_keys.insert(virtual_key);
+        } else {
+            guest_pressed_virtual_keys.erase(virtual_key);
+        }
+        uint32_t lparam = 1 | ((scan_code & 0xff) << 16);
+        if (extended) lparam |= 1u << 24;
+        if (was_down) lparam |= 1u << 30;
+        if (!key_down) lparam |= 1u << 31;
+
+        const auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                             std::chrono::steady_clock::now().time_since_epoch())
+                             .count();
+        guest_window_messages.push_back({
+            kGuestSyntheticWindowHandle,
+            key_down ? 0x0100u : 0x0101u,
+            virtual_key,
+            lparam,
+            static_cast<uint32_t>(now),
+            client_x,
+            client_y,
+            key_down ? translated_guest_character(
+                           virtual_key, shift_down, caps_locked)
+                     : 0,
+            guest_synthetic_window_thread_id});
+        return true;
+    }
+
+    bool guest_message_matches(const GuestWindowMessage& message,
+                               uint32_t window, uint32_t minimum_message,
+                               uint32_t maximum_message) const {
+        if (message.thread_id != 0 &&
+            message.thread_id != current_guest_thread_id) {
+            return false;
+        }
+        if (message.message != 0x0012 && window != 0 &&
+            message.window != window) {
+            return false;
+        }
+        if (message.message == 0x0012 ||
+            (minimum_message == 0 && maximum_message == 0)) {
+            return true;
+        }
+        return minimum_message <= maximum_message &&
+               message.message >= minimum_message &&
+               message.message <= maximum_message;
+    }
+
+    bool write_guest_message(uint32_t address,
+                            const GuestWindowMessage& message,
+                            const char* api) {
+        if (!valid_guest_pointer(address, 28)) {
+            guest_last_error = 87;
+            return false;
+        }
+        const std::array<uint32_t, 7> words = {
+            message.window, message.message, message.wparam, message.lparam,
+            message.time, static_cast<uint32_t>(message.x),
+            static_cast<uint32_t>(message.y)};
+        const auto* bytes =
+            reinterpret_cast<const uint8_t*>(words.data());
+        if (!write_guest("ram", address, 16, bytes) ||
+            !write_guest("ram", address + 16, sizeof(words) - 16,
+                         bytes + 16)) {
+            error = std::string(api) + " cannot write MSG";
+            return false;
+        }
+        if (message.translated_character != 0) {
+            guest_message_translation_characters[address] =
+                message.translated_character;
+        } else {
+            guest_message_translation_characters.erase(address);
+        }
+        return true;
     }
 
     int peek_message_w() {
@@ -11709,12 +12109,214 @@ struct RecompiledPcodeModule::Impl {
             !read_stack_argument(4, remove_flags, api)) {
             return -1;
         }
-        (void)message_address;
-        (void)window;
-        (void)minimum_message;
-        (void)maximum_message;
-        (void)remove_flags;
-        return return_kernel32_dword(0, api, 5 * sizeof(uint32_t));
+        if (!valid_guest_pointer(message_address, 28) ||
+            (remove_flags & ~3u) != 0) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 5 * sizeof(uint32_t));
+        }
+        const auto message = std::find_if(
+            guest_window_messages.begin(), guest_window_messages.end(),
+            [this, window, minimum_message, maximum_message](
+                const GuestWindowMessage& candidate) {
+                return guest_message_matches(candidate, window,
+                                             minimum_message,
+                                             maximum_message);
+            });
+        if (message == guest_window_messages.end())
+            return return_kernel32_dword(0, api, 5 * sizeof(uint32_t));
+        if (!write_guest_message(message_address, *message, api)) return -1;
+        if ((remove_flags & 1) != 0) guest_window_messages.erase(message);
+        guest_last_error = 0;
+        return return_kernel32_dword(1, api, 5 * sizeof(uint32_t));
+    }
+
+    int get_message_w() {
+        constexpr const char* api = "USER32.dll!GetMessageW";
+        uint32_t message_address = 0;
+        uint32_t window = 0;
+        uint32_t minimum_message = 0;
+        uint32_t maximum_message = 0;
+        if (!read_stack_argument(0, message_address, api) ||
+            !read_stack_argument(1, window, api) ||
+            !read_stack_argument(2, minimum_message, api) ||
+            !read_stack_argument(3, maximum_message, api)) {
+            return -1;
+        }
+        if (!valid_guest_pointer(message_address, 28)) {
+            guest_last_error = 87;
+            return return_kernel32_dword(UINT32_MAX, api, 4 * sizeof(uint32_t));
+        }
+        const auto message = std::find_if(
+            guest_window_messages.begin(), guest_window_messages.end(),
+            [this, window, minimum_message, maximum_message](
+                const GuestWindowMessage& candidate) {
+                return guest_message_matches(candidate, window,
+                                             minimum_message,
+                                             maximum_message);
+            });
+        if (message == guest_window_messages.end()) {
+            error = "GetMessageW would block with no queued guest message";
+            return -1;
+        }
+        const uint32_t return_value = message->message == 0x0012 ? 0 : 1;
+        if (!write_guest_message(message_address, *message, api)) return -1;
+        guest_window_messages.erase(message);
+        guest_last_error = 0;
+        return return_kernel32_dword(return_value, api,
+                                     4 * sizeof(uint32_t));
+    }
+
+    int translate_message() {
+        constexpr const char* api = "USER32.dll!TranslateMessage";
+        uint32_t message_address = 0;
+        if (!read_stack_argument(0, message_address, api)) return -1;
+        uint32_t message_id = 0;
+        if (!valid_guest_pointer(message_address, 28) ||
+            !read_guest_u32("ram", message_address + 4, message_id)) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, sizeof(uint32_t));
+        }
+        const auto character =
+            guest_message_translation_characters.find(message_address);
+        if ((message_id != 0x0100 && message_id != 0x0104) ||
+            character == guest_message_translation_characters.end()) {
+            return return_kernel32_dword(0, api, sizeof(uint32_t));
+        }
+
+        GuestWindowMessage translated{};
+        uint32_t point_x = 0;
+        uint32_t point_y = 0;
+        if (!read_guest_u32("ram", message_address, translated.window) ||
+            !read_guest_u32("ram", message_address + 8, translated.wparam) ||
+            !read_guest_u32("ram", message_address + 12,
+                            translated.lparam) ||
+            !read_guest_u32("ram", message_address + 16, translated.time) ||
+            !read_guest_u32("ram", message_address + 20, point_x) ||
+            !read_guest_u32("ram", message_address + 24, point_y)) {
+            error = std::string(api) + " cannot read MSG";
+            return -1;
+        }
+        translated.x = static_cast<int32_t>(point_x);
+        translated.y = static_cast<int32_t>(point_y);
+        translated.message = 0x0102;  // WM_CHAR
+        translated.wparam = character->second;
+        translated.translated_character = 0;
+        translated.thread_id = current_guest_thread_id;
+        guest_message_translation_characters.erase(character);
+        if (guest_window_messages.size() >= 1024) {
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api, sizeof(uint32_t));
+        }
+        guest_window_messages.push_back(translated);
+        return return_kernel32_dword(1, api, sizeof(uint32_t));
+    }
+
+    bool dispatch_guest_window_proc(uint32_t window_proc,
+                                    const std::array<uint32_t, 4>& arguments,
+                                    uint32_t& result) {
+        uint32_t esp = 0;
+        if (!read_guest_u32("register", kX86EspRegisterOffset, esp) ||
+            esp < kGuestMinimumUserAddress + 20) {
+            error = "DispatchMessageW has no valid guest callback stack";
+            return false;
+        }
+        const uint32_t callback_esp = esp - 20;
+        if (!write_guest_u32("ram", callback_esp, 0)) {
+            error = "DispatchMessageW cannot prepare callback return slot";
+            return false;
+        }
+        for (size_t index = 0; index < arguments.size(); ++index) {
+            if (!write_guest_u32("ram", callback_esp + 4 + index * 4,
+                                 arguments[index])) {
+                error = "DispatchMessageW cannot prepare callback arguments";
+                return false;
+            }
+        }
+
+        const auto saved_registers = registers;
+        const std::string saved_error = error;
+        error.clear();
+        if (!write_guest_u32("register", kX86EspRegisterOffset,
+                             callback_esp)) {
+            registers = saved_registers;
+            error = "DispatchMessageW cannot enter guest window procedure";
+            return false;
+        }
+        const int dispatch_result = dispatch(window_proc);
+        const std::string callback_error = error;
+        const bool read_result =
+            dispatch_result == 0 &&
+            read_guest_u32("register", kX86EaxRegisterOffset, result);
+        registers = saved_registers;
+        if (!read_result || !callback_error.empty()) {
+            error = callback_error.empty()
+                        ? "DispatchMessageW guest window procedure failed"
+                        : callback_error;
+            return false;
+        }
+        error = saved_error;
+        return true;
+    }
+
+    int dispatch_message_w() {
+        constexpr const char* api = "USER32.dll!DispatchMessageW";
+        uint32_t message_address = 0;
+        if (!read_stack_argument(0, message_address, api)) return -1;
+        if (!valid_guest_pointer(message_address, 28)) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, sizeof(uint32_t));
+        }
+        std::array<uint32_t, 7> message{};
+        auto* message_bytes = reinterpret_cast<uint8_t*>(message.data());
+        if (!read_guest("ram", message_address, 16, message_bytes) ||
+            !read_guest("ram", message_address + 16,
+                        sizeof(message) - 16, message_bytes + 16)) {
+            error = std::string(api) + " cannot read MSG";
+            return -1;
+        }
+        if (message[0] != kGuestSyntheticWindowHandle ||
+            guest_synthetic_window_proc == 0) {
+            return return_kernel32_dword(0, api, sizeof(uint32_t));
+        }
+        uint32_t result = 0;
+        if (!dispatch_guest_window_proc(
+                guest_synthetic_window_proc,
+                {message[0], message[1], message[2], message[3]}, result)) {
+            return -1;
+        }
+        return return_kernel32_dword(result, api, sizeof(uint32_t));
+    }
+
+    int def_window_proc_w() {
+        constexpr const char* api = "USER32.dll!DefWindowProcW";
+        uint32_t window = 0;
+        uint32_t message = 0;
+        uint32_t wparam = 0;
+        uint32_t lparam = 0;
+        if (!read_stack_argument(0, window, api) ||
+            !read_stack_argument(1, message, api) ||
+            !read_stack_argument(2, wparam, api) ||
+            !read_stack_argument(3, lparam, api)) {
+            return -1;
+        }
+        (void)lparam;
+        if (window != kGuestSyntheticWindowHandle)
+            return return_kernel32_dword(0, api, 4 * sizeof(uint32_t));
+        uint32_t result = 0;
+        switch (message) {
+            case 0x0081:  // WM_NCCREATE
+            case 0x0011:  // WM_QUERYENDSESSION
+            case 0x0086:  // WM_NCACTIVATE
+                result = 1;
+                break;
+            case 0x0012:  // WM_QUIT is a thread message, not dispatched.
+                result = 0;
+                break;
+            default:
+                (void)wparam;
+                break;
+        }
+        return return_kernel32_dword(result, api, 4 * sizeof(uint32_t));
     }
 
     int system_parameters_info_a() {
@@ -14271,6 +14873,17 @@ struct RecompiledPcodeModule::Impl {
     std::string d3d9_create_device_rejection;
     // ponytail: guest visibility stays headless until HWNDs map to the host window.
     bool guest_synthetic_window_visible = false;
+    bool guest_synthetic_window_created = false;
+    uint32_t guest_synthetic_window_proc = 0;
+    uint32_t guest_synthetic_window_thread_id = 0;
+    int32_t guest_synthetic_window_x = 0;
+    int32_t guest_synthetic_window_y = 0;
+    uint32_t guest_synthetic_window_width = 1024;
+    uint32_t guest_synthetic_window_height = 768;
+    std::deque<GuestWindowMessage> guest_window_messages;
+    std::unordered_map<uint32_t, uint32_t>
+        guest_message_translation_characters;
+    std::unordered_set<uint32_t> guest_pressed_virtual_keys;
     RecompiledGuestD3d9AdapterInfo guest_d3d9_adapter_info;
     uint32_t guest_display_width = 1024;
     uint32_t guest_display_height = 768;
@@ -14414,6 +15027,14 @@ bool RecompiledPcodeModule::set_guest_display_mode(
     uint32_t width, uint32_t height, uint32_t refresh_rate,
     uint32_t format) {
     return impl_->set_guest_display_mode(width, height, refresh_rate, format);
+}
+
+bool RecompiledPcodeModule::post_guest_key_event(
+    uint32_t virtual_key, uint32_t scan_code, bool extended, bool key_down,
+    bool shift_down, bool caps_locked, int32_t client_x, int32_t client_y) {
+    return impl_->post_guest_key_event(virtual_key, scan_code, extended,
+                                       key_down, shift_down, caps_locked,
+                                       client_x, client_y);
 }
 
 bool RecompiledPcodeModule::set_guest_d3d9_adapter_info(

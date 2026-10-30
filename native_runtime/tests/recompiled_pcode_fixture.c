@@ -237,6 +237,13 @@ int rvi_0050c7f0(RviPcodeContext *ctx) {
     return 0;
 }
 
+int rvi_0050c7d0(RviPcodeContext *ctx) {
+    const uint32_t callback_object = UINT32_C(0x00be2600);
+    return ctx->write(ctx->opaque, "ram", UINT64_C(0x00be2548),
+                      sizeof(callback_object),
+                      (const uint8_t *)&callback_object);
+}
+
 int rvi_0050c7e0(RviPcodeContext *ctx) {
     const uint8_t neighbor = 0;
     return ctx->write(ctx->opaque, "ram", UINT64_C(0x00be250d), 1,

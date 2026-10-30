@@ -12,8 +12,21 @@ The 2026-10-20 evidence records the return block for FUN_0050f010 at
 from the frozen 2026-10-17 export. Lowerable function counts therefore
 cannot be treated as proof of complete CFG/function coverage.
 
-After **correcting the function body in Ghidra and re-exporting**, run the
-streaming audit before rebuilding all 41,538 functions:
+The runtime follow-up v811 resolves this specific execution gap when the
+verified v659 module manifest is loaded: its 249-instruction
+`rvi_0050f010` override includes the exact epilogue and the live retail P-code
+trace observed EAX=1, preserved ESI/EDI/EBP, and ESP advancing by the single
+return address. The focused full-function export also passes the verified-byte
+audit against the pinned PE. See
+[`process1_cinit_register_stack_v811.md`](../evidence/retail_frontier_20261022/process1_cinit_register_stack_v811.md).
+The old frozen monolithic export still fails the gate; that is an export
+completeness limitation, not a reproduced v659 runtime blocker. The replay
+does not establish full behavioral parity or game readiness.
+
+When replacing the frozen export with a canonical monolithic corpus, correct
+the function body in Ghidra and re-export it, then run the streaming audit
+before rebuilding all 41,538 functions. The runtime override above does not
+rewrite or certify the frozen base corpus:
 
 ```bash
 python3 tools/ghidra/audit_pcode_corpus.py \

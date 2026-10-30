@@ -1,0 +1,18 @@
+{
+  "behavioral_parity_proven": false,
+  "counters": {
+    "functions": 1,
+    "instructions": 249,
+    "required_instructions": 5,
+    "rows": 1
+  },
+  "format": "SHIFT.PcodeCorpusAudit/1",
+  "input": {
+    "corpus_sha256": "9e841d38b317848b9ed83e9ce54511a72751c73627822bd80dcb3feda665e88a",
+    "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "requirements_sha256": "370678d3205e75a0977dad36563dbdbe282cbd555c18067860ba003aee88df21"
+  },
+  "problem_samples": [],
+  "status": "passed",
+  "warning_samples": []
+}
