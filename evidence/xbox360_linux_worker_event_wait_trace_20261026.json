@@ -1,0 +1,108 @@
+{
+  "schema": "shift.xbox360.linux-worker-event-wait-trace.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "termination": "GDB quit at the first retail software-queue wait; no clean title shutdown is claimed.",
+    "binaries": {
+      "host": {
+        "path_outside_git": "/tmp/nfs-shift-p1-worker-event-20261026/bin/nfs_shift",
+        "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+      },
+      "rexglue_runtime": {
+        "path_outside_git": "/tmp/nfs-shift-p1-p2-write-trace-20261026/bin/librexruntime.so",
+        "sha256": "2b0d46856da000cecafb46581ddff50da99f549ff335bee9ba489238eed24059"
+      },
+      "gpu_plugin": {
+        "path_outside_git": "/home/pes/work/process2-memory-write-trace-linux-output-20261026/librexgpu-shift-native.so",
+        "source_commit": "61df66de0",
+        "sha256": "28ad43593d5c5e58920f00a09779b3388e5a9d380a63019c62d1bfdef143a481",
+        "build_id": "319df66e1087310121eff259e91432afa03572e1"
+      },
+      "mapped_libraries": {
+        "path_outside_git": "/tmp/nfs-shift-p1-worker-event-20261026/mapped-libraries.txt",
+        "sha256": "2c07f346c259aa23811537600ff76566568e6a3c56b3634a6fcd6006c4febb4f"
+      }
+    },
+    "gdb_script": {
+      "path": "tools/xbox360/trace_linux_worker_event.gdb",
+      "sha256": "918766c07a5085ecf779d7c5fe3c28cc9ea52f6b01567ef39ced9f14e5cfdddc"
+    },
+    "gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-worker-event-20261026/gdb-event-set.log",
+      "bytes": 9091,
+      "sha256": "fd82045de10917d48f13463b14c4de253232bb8c4f6ba485f1050565760c4bfc"
+    },
+    "mapped_hashes_verified_in_inferior": true,
+    "breakpoints": {
+      "worker_entry": {"resolved": true, "hits": 2},
+      "xevent_set": {"resolved": true, "all_hits": 12, "worker_event_hits": 0},
+      "xevent_pulse": {"resolved": true, "worker_event_hits": 0},
+      "ke_wait_for_single_object": {"resolved": true, "worker_event_hits": 3},
+      "producer_823a4758_hits": 0,
+      "registered_callback_82649b68_hits": 0,
+      "first_queue_wait_hits": 1
+    }
+  },
+  "worker_events": [
+    {
+      "worker_function": "0x823B8AC8",
+      "gdb_thread": 24,
+      "worker_guest_object": "0xB7368BE0",
+      "event_guest_address": "0xB7368C00",
+      "event_host_alias": "0x1B7368C00",
+      "header_raw": "00000000",
+      "signal_state_raw": "00000000",
+      "wait_reason": 3,
+      "processor_mode": 1,
+      "alertable": false,
+      "timeout_pointer_present": true,
+      "timeout_raw_hex": "0xfffffffffffb6c20",
+      "timeout_signed_100ns_ticks": -300000,
+      "relative_timeout_ms_before_guest_clock_scaling": 30
+    },
+    {
+      "worker_function": "0x823B8AC8",
+      "gdb_thread": 25,
+      "worker_guest_object": "0xB7368C30",
+      "event_guest_address": "0xB7368C50",
+      "event_host_alias": "0x1B7368C50",
+      "header_raw": "00000000",
+      "signal_state_raw": "00000000",
+      "wait_reason": 3,
+      "processor_mode": 1,
+      "alertable": false,
+      "timeout_pointer_present": false,
+      "timeout": "infinite"
+    }
+  ],
+  "first_retail_queue_wait": {
+    "function": "0x823B34A0",
+    "guest_object": "0xB7365F00",
+    "head": 3,
+    "tail": 21,
+    "predicate_byte": "0x14"
+  },
+  "interpretation": {
+    "supported": [
+      "The exact XEX, P1 host, P1 runtime, and P2 diagnostic plugin hashes are recorded; the runtime and plugin hashes were re-read from the inferior's mapped files.",
+      "Both guest workers entered 0x823B8AC8 before the first software-queue wait and called KeWaitForSingleObject on their object+32 events.",
+      "The XEvent::Set and XEvent::Pulse breakpoints resolved. No call targeting either worker event was observed before the first queue wait; the two guest event header/signal-state samples were zero at worker entry.",
+      "Worker 24 supplied a relative timeout of -300000 100ns ticks (30ms before guest clock scaling); worker 25 waited indefinitely.",
+      "The producer 0x823A4758 and registered callback 0x82649B68 were not entered before the queue wait, where head=3, tail=21, and predicate byte=0x14."
+    ],
+    "not_proven": [
+      "Which component should signal either worker event, or whether another signaling mechanism bypasses XEvent::Set/Pulse.",
+      "That either worker owns the queue predicate or should set its completion bit.",
+      "The cause of the GPU wait, main-menu entry, offline-race entry, or sustained playable output."
+    ],
+    "next_p1_step": "Trace the producer of these two worker-event signals and correlate it with source-1 dispatch. Preserve the guest events, queue state, and predicate; do not synthesize a wakeup."
+  }
+}

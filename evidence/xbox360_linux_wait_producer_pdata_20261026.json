@@ -1,0 +1,79 @@
+{
+  "schema": "shift.xbox360.linux-wait-producer-pdata.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "analysis_image": {
+    "path": "/home/pes/ghidra_projects/research_inputs/nfs_shift_xbox360_live_20261024.elf",
+    "sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c",
+    "format": "ELF32 big-endian PowerPC live-memory image",
+    "ghidra_project": "nfs_shift_xbox360_live_20261024_retail"
+  },
+  "decoder_reference": {
+    "file": "src/codegen/phase_register.cpp",
+    "record_type": "IMAGE_CE_RUNTIME_FUNCTION",
+    "layout": [
+      "BeginAddress: u32 big-endian",
+      "Data: u32 big-endian; PrologLength bits 0..7, FunctionLength bits 8..29, ThirtyTwoBit bit 30, ExceptionFlag bit 31"
+    ]
+  },
+  "observations": {
+    "code_address": "0x823A4758",
+    "code_bytes": "7D8802A64833515D9421FF507C7E1B78",
+    "ghidra_function_defined_at_code_address": false,
+    "big_endian_begin_address_occurrences_in_image": 1,
+    "pdata_record_address": "0x82159D50",
+    "pdata_records": [
+      {
+        "address": "0x82159D48",
+        "begin_address": "0x823A4640",
+        "data": "0x40004503",
+        "prolog_length": 3,
+        "function_length_dwords": 69,
+        "thirty_two_bit": true,
+        "exception_flag": false
+      },
+      {
+        "address": "0x82159D50",
+        "begin_address": "0x823A4758",
+        "data": "0x40006B03",
+        "prolog_length": 3,
+        "function_length_dwords": 107,
+        "thirty_two_bit": true,
+        "exception_flag": false
+      },
+      {
+        "address": "0x82159D58",
+        "begin_address": "0x823A4908",
+        "data": "0x40007203",
+        "prolog_length": 3,
+        "function_length_dwords": 114,
+        "thirty_two_bit": true,
+        "exception_flag": false
+      }
+    ],
+    "ghidra_reference_manager_incoming_references_to_code_address": 0
+  },
+  "interpretation": {
+    "supported": [
+      "The live image contains code bytes at 0x823A4758 matching the observed PPC prologue.",
+      "The 8-byte records at 0x82159D48 match the XEX loader's IMAGE_CE_RUNTIME_FUNCTION PDATA layout and decode to the listed function starts and packed lengths.",
+      "The occurrence of 0x823A4758 at 0x82159D50 is PDATA function metadata, not evidence of a call or callback-table dispatch."
+    ],
+    "not_proven": [
+      "Which runtime path invokes 0x823A4758, or whether that invocation is indirect.",
+      "Why the producer and registered callback remain unobserved before the first retail queue wait.",
+      "Main-menu entry or offline race progress."
+    ]
+  },
+  "next_p1_step": "Trace the actual runtime event/scheduler path that can invoke 0x823A4758 independently of its PDATA entry and GPU WAIT_REG_MEM operand; preserve retail queue and predicate semantics.",
+  "limitations": [
+    "The query used the existing analyzed live-ELF Ghidra project; the code address was not defined as a function in that database.",
+    "The live-memory ELF has no section names; classification as PDATA is based on the record layout matching the active XEX loader decoder.",
+    "Zero Ghidra references to the code address do not rule out runtime or computed dispatch.",
+    "No retail process was restarted or modified for this static query."
+  ]
+}

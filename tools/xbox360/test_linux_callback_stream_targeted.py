@@ -17,10 +17,11 @@ stream = evidence["runs"]["retail_stream_emission"]
 assert stream["runtime_sha256_mapped"] == (
     "127181adbfb99b65e9d1a8f1d6aed12308e1cf320b86067588ad421f17eda68e"
 )
-assert stream["observed"]["r6_callback_value"].lower() == "0xffffffff823a4758"
+assert stream["observed"]["r6_guest_value"].lower() == "0xffffffff823a4758"
 assert stream["observed"]["guest_lr"] == "0x823A4A40"
 words = stream["observed"]["output_prefix_words_big_endian"]
 assert words[4] == words[23] == "823a4758"
+assert stream["observed"]["value_word_indexes"] == [4, 23]
 assert stream["renderer_sha256_mapped"] != (
     "dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1"
 )
@@ -48,11 +49,22 @@ assert correlated["stream_emission"]["guest_stream_address"] == "0xA95D05D0"
 stream_words = correlated["stream_emission"]["captured_first_32_dwords_big_endian"]
 assert len(stream_words) == 32
 assert stream_words[4] == stream_words[23] == "823a4758"
+wait_packet = correlated["stream_emission"]["decoded_packet_context"]
+assert wait_packet["header_dword_index"] == 20
+assert stream_words[20:25] == wait_packet["dwords_big_endian"] == [
+    "c0043c00", "00000013", "1b964012", "823a4758", "ffffffff"
+]
+assert wait_packet["operation"] == "WAIT_REG_MEM"
+assert wait_packet["reference_operand"] == "0x823A4758"
+assert wait_packet["reference_is_data_not_control_flow_target"] is True
 observed = correlated["observed"]
 assert observed["ring_wake_events"] == observed["ring_snapshot_events"] == observed["ring_complete_events"]
 assert observed["ring_complete_events"] > 0
 assert observed["producer_0x823A4758_breakpoint_hits"] == 0
 assert observed["registered_callback_0x82649B68_breakpoint_hits"] == 0
 assert any("particular GPU ring snapshots" in item for item in correlated["interpretation"]["not_proven"])
+assert "not evidence of a guest indirect call" in " ".join(
+    evidence["interpretation"]["not_proven"]
+)
 
 print("retail callback stream and current-pair frontier evidence are internally consistent")

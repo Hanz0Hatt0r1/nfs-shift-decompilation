@@ -1,0 +1,101 @@
+{
+  "schema": "shift.xbox360.linux-exact-runtime-interactive-300s.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "p1_runtime_sha256": "6c56ca970160d9e3e6e28155c48ee11556763f206f6a49b78fdad2ca3f02ebb2",
+    "p2_plugin_sha256": "771201891a6ae28c0745f57beccf9c6474ce175c7bb3f5edadcce4c457a8a12b",
+    "mapped_hashes_verified_in_inferior": true
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "duration_seconds": 300.558,
+    "termination": "The harness sent SIGINT at 300 seconds; the host exited 0. It remained live through the final capture.",
+    "guest_memory_modified_by_probe": false,
+    "controller": {
+      "device": "Linux uinput Xbox 360 pad, VID:PID 045e:028e",
+      "pulses": [
+        {"at_seconds": 18, "button": "A", "duration_ms": 800},
+        {"at_seconds": 42, "button": "A", "duration_ms": 800},
+        {"at_seconds": 180, "button": "Start", "duration_ms": 800},
+        {"at_seconds": 205, "button": "A", "duration_ms": 800},
+        {"at_seconds": 240, "button": "Start", "duration_ms": 800},
+        {"at_seconds": 270, "button": "A", "duration_ms": 800}
+      ],
+      "same_run_xam_or_retail_consumption_traced": false
+    },
+    "runner": {
+      "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-20261027-detached/runner-long.py",
+      "sha256": "6a060b51401b713052e5f3b994736b7f125eb4cbd4d54bb8da1d9847fc82305e"
+    },
+    "runner_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-20261027-detached/runner-long.log",
+      "sha256": "c25be43fb27de9319e3838431dded8928a91ff50225da0c251dcc67579e05529"
+    },
+    "summary": {
+      "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-20261027-detached/run-long-summary.json",
+      "sha256": "c3c0fb84133eedb094265a34d635b04fba0d960cbf7dbdfa5873f6cc4e36a776"
+    },
+    "runtime_logs": [
+      {
+        "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-20261027-detached/bin/logs/nfs_shift_001.2.log",
+        "sha256": "bed6c595fdd9cf254fcdf781fff02276a9b9b0063061ca9f4b4be421d6e7a6c4"
+      },
+      {
+        "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-20261027-detached/bin/logs/nfs_shift_001.1.log",
+        "sha256": "35c5afb003c43ff8a1fa7b8299cc32aad5db8ad4f4add27e6cc35cea1d04998e"
+      },
+      {
+        "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-20261027-detached/bin/logs/nfs_shift_001.log",
+        "sha256": "142623de4064f28a48839ea1967b03d65841df1b61a411b1db37f3a49de01f84"
+      }
+    ],
+    "captures": [
+      {
+        "at_seconds": 80.190,
+        "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-20261027-detached/captures/long-t080.png",
+        "sha256": "256d3d327618c31b9381185f0075490199a5c66c67869eb4300180c60c75be5b",
+        "observation": "Driving-safety warning card over a dark viewport."
+      },
+      {
+        "at_seconds": 215.142,
+        "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-20261027-detached/captures/long-t215.png",
+        "sha256": "456d0d5be954f156a9949b8e8bb24973c1299a0816789f7e83669d83dbf546d7",
+        "observation": "The same driving-safety warning card remained visible."
+      },
+      {
+        "at_seconds": 300.113,
+        "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-20261027-detached/captures/long-t300.png",
+        "sha256": "23edcb14ee06e1eabfd841a8b58f2245628b982b801511c263ef467dcdff035f",
+        "observation": "The driving-safety warning card was still visible; no main-menu UI or race scene appeared."
+      }
+    ]
+  },
+  "runtime_observations": {
+    "guest_faults_recorded": 0,
+    "renderer_frame_refresh_failures": 1,
+    "renderer_error_owner": "Process 2 Vulkan renderer",
+    "causal_link_between_renderer_failure_and_frontend_stall_proven": false,
+    "missing_menu_background_xml_opens_are_not_treated_as_fatal": true
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail XEX, host, P1 runtime, and P2 plugin hashes were verified from the running process mappings.",
+      "The title remained live for 300 seconds and displayed the retail driving-safety warning at the final target-window capture.",
+      "The harness emitted six A/Start pulses, but this run did not trace XAM return values or the retail action consumer.",
+      "No retail main menu or offline race was visible in the PID-scoped target-window captures."
+    ],
+    "not_proven": [
+      "That the emitted A/Start pulses were consumed by the retail frontend.",
+      "That the single renderer refresh failure caused the safety-card/black-frame sequence.",
+      "That GPU work or dispatch counts represent menu or gameplay progress.",
+      "A P1 scheduler/input defect, clean title shutdown, Vulkan 1.1-only compatibility, or Android ARM64 execution."
+    ],
+    "next_step": "Keep retail input, event, queue, and Bink semantics unchanged. The current evidence does not identify a P1 fix; continue with a same-run retail scene/action-state trace around the warning-card transition. Keep Vulkan target-layout investigation in Process 2."
+  }
+}

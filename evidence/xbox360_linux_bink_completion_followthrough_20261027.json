@@ -1,0 +1,121 @@
+{
+  "schema": "shift.xbox360.linux-bink-completion-followthrough.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40c9a0c2c58",
+    "movie_asset": {
+      "path_relative_to_game_root": "Movies/Franchise_Ident.bik",
+      "sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+      "declared_frame_count": 281
+    }
+  },
+  "binaries": {
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "p1_runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+    "p2_linux_plugin": {
+      "source_commit": "ab3c08bd6fc365cf847b7ce71db55d8decda56f8",
+      "sha256": "abc7bf5df779be7dce4fdae719c05c89a35ad8ce222f95b3337478f24bddc402"
+    }
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "gdb_timer_seconds": 60,
+    "termination": "GDB timer interrupted the debugger, detached, then sent SIGINT to the title. The runtime log says Title terminated; hard-exiting process. Clean title shutdown was not observed.",
+    "gdb_instrumented": true,
+    "guest_memory_modified_by_probe": false,
+    "controller_input_sent": false,
+    "mapped_libraries_verified": {
+      "capture_path_outside_git": "/tmp/nfs-shift-p1-bink-completion-followthrough-20261027/mapped-libraries-final.txt",
+      "capture_sha256": "f27f06799a20c227dcde66618756b627538faf78a5e27ef0005327a2ae64ae49",
+      "runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+      "plugin_sha256": "abc7bf5df779be7dce4fdae719c05c89a35ad8ce222f95b3337478f24bddc402"
+    },
+    "trace_script": {
+      "path": "tools/xbox360/trace_linux_bink_completion_followthrough_20261027.gdb",
+      "sha256": "c80f8823c8f27371df0a6f968d556719cf36cf8ca79d96c6ca5adecdc8a21eef"
+    },
+    "raw_gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-bink-completion-followthrough-20261027/gdb-final.log",
+      "sha256": "88de563697d747d04b8cad7e55cbfdf4b1b009b5446316fcc7742479516935a7"
+    },
+    "runner_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-bink-completion-followthrough-20261027/runner-final.log",
+      "sha256": "76cf08ee6a5e48fd28bbab1cc2d7497706774b67acf618d7c490b5e9c5423f5b"
+    },
+    "runtime_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-bink-completion-followthrough-20261027/bin/logs/nfs_shift_004.log",
+      "sha256": "90a3d590677b47044b59fa508803b3670e569e5b85cdeed4a873b77e7dd7b339",
+      "guest_faults": 0,
+      "frame_refresh_failures": 1,
+      "termination_record": "Title terminated; hard-exiting process."
+    }
+  },
+  "bink_completion": {
+    "guest_bink_object": "0xE6795040",
+    "frame_target": 281,
+    "target_observation": {
+      "function": "0x82679510",
+      "gdb_hit": 286,
+      "elapsed_seconds": 35.511,
+      "progress": 281,
+      "target": 281,
+      "fields_236_248_276_820": [0, 1, 4, 0],
+      "caller_lr": "0x82679C84"
+    },
+    "scene_update": {
+      "function": "0x82DDC6F0",
+      "guest_object": "0x831E6184",
+      "child_update_function": "0x82E2C5A8",
+      "scene_return_value": 1,
+      "object_plus_356_before_return": 285,
+      "object_plus_356_after_return": 286,
+      "c5a8_return_value": 1
+    },
+    "following_child_completion": {
+      "function": "0x82E2CD10",
+      "guest_object": "0x831E628C",
+      "entry_progress": 281,
+      "entry_target": 281,
+      "entry_object_plus_12": 1,
+      "return_value": 0,
+      "bink_fields_after_return": {
+        "plus_8_target": 0,
+        "plus_12_progress": 0,
+        "plus_236": 0,
+        "plus_248": 0,
+        "plus_276": 0,
+        "plus_820": 0
+      }
+    },
+    "hit_counts_at_stop": {
+      "manager_0x82679C50": 286,
+      "post_wrapper_0x82679510": 286,
+      "scene_update_0x82DDC6F0": 286,
+      "child_update_0x82E2C5A8": 286,
+      "child_completion_0x82E2CD10": 2041
+    }
+  },
+  "static_call_chain": {
+    "scene_to_child": "0x82DDC6F0 calls 0x82E2C5A8 and increments object+356 when the child update returns nonzero.",
+    "child_to_bink": "0x82E2C5A8 calls 0x82E2CD10 before dispatching the active child.",
+    "completion_cleanup": "When the nested child vtable update reports completion, 0x82E2CD10 calls 0x82E2CBC0 and returns zero."
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail Bink guest object reached the retail frame target 281 in the post-wrapper update.",
+      "At that target, the original child-update function returned one and the original scene-update function returned one; object+356 advanced from 285 to 286.",
+      "The following 0x82E2CD10 completion path returned zero, and the observed Bink fields were zero at its return.",
+      "This read-only trace supports normal retail Bink child completion and scene-update follow-through; it does not identify the next frontend state."
+    ],
+    "not_proven": [
+      "That 281 means 281 decoded or visibly presented video frames.",
+      "Which child or frontend state followed this completion, a visible main menu, or offline-race entry.",
+      "That controller input was consumed; no input was sent in this run.",
+      "That the one renderer frame-refresh failure caused the later black viewport or any frontend stall.",
+      "Clean title shutdown, Vulkan 1.1-only compatibility, or Android ARM64 execution."
+    ],
+    "next_step": "Pair P2's per-PM4 interrupt diagnostics with a P1 guest trace of the task completion counter and queue predicate, then trace frontend input follow-through after Bink completion. Preserve retail event and queue semantics."
+  }
+}

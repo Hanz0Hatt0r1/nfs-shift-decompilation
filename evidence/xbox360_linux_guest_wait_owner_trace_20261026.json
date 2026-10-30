@@ -1,0 +1,140 @@
+{
+  "schema": "shift.xbox360.linux-guest-wait-owner-trace.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "mapped_hashes_verified_in_inferior": true,
+    "termination": "GDB detached after the read-only snapshot and sent SIGINT. The runtime logged Window closing followed by Title terminated; hard-exiting process. No clean shutdown is claimed.",
+    "binaries": {
+      "host": {
+        "path_outside_git": "/tmp/nfs-shift-p1-p2-write-trace-20261026/bin/nfs_shift",
+        "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+      },
+      "rexglue_runtime": {
+        "path_outside_git": "/tmp/nfs-shift-p1-p2-write-trace-20261026/bin/librexruntime.so",
+        "sha256": "2b0d46856da000cecafb46581ddff50da99f549ff335bee9ba489238eed24059"
+      },
+      "gpu_plugin": {
+        "path_outside_git": "/home/pes/work/process2-memory-write-trace-linux-output-20261026/librexgpu-shift-native.so",
+        "source_commit": "61df66de0",
+        "sha256": "28ad43593d5c5e58920f00a09779b3388e5a9d380a63019c62d1bfdef143a481",
+        "build_id": "319df66e1087310121eff259e91432afa03572e1"
+      },
+      "mapped_libraries": {
+        "path_outside_git": "/tmp/nfs-shift-p1-p2-write-trace-20261026/mapped-libraries.txt",
+        "sha256": "2c07f346c259aa23811537600ff76566568e6a3c56b3634a6fcd6006c4febb4f"
+      }
+    },
+    "gdb_script": {
+      "path": "tools/xbox360/trace_linux_wait_ring_root.gdb",
+      "sha256": "912ee867ef051b99b9968067a6b27914252288035ed774390951f55105927a47"
+    },
+    "gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-p2-write-trace-20261026/gdb.log",
+      "bytes": 3257,
+      "sha256": "a2fb3aaaa6d3e5ab65baa5d6d1021cd92c4ce78a16df75f2190e5f3e58ae3bca"
+    },
+    "runtime_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-p2-write-trace-20261026/bin/logs/nfs_shift_005.log",
+      "sha256": "854933bcac7aee7570537904ba8dc2938b56949cfb40684c1090661412298cda",
+      "coher_status_host_waits_entered": 4,
+      "coher_status_host_waits_completed": 4,
+      "target_waits_entered": 1,
+      "target_waits_completed": 0,
+      "memory_write_candidate_packet_logs_before_wait": 0,
+      "pm4_event_write_packet_logs_before_wait": 0
+    }
+  },
+  "wait": {
+    "source_guest_address": "0x095D0120",
+    "source_depth": 1,
+    "byte_offset": "0x49C",
+    "packet": "c0043c00000000131b96400600000001ffffffff00000100",
+    "opcode": "PM4_WAIT_REG_MEM",
+    "wait_info": "0x00000013",
+    "guest_physical_word": "0x1B964004",
+    "poll_address_field": "0x1B964006",
+    "reference": "0x00000001",
+    "mask": "0xFFFFFFFF",
+    "endian_mode": 2,
+    "compare": "equal",
+    "physical_host_alias": "0x21B964004",
+    "context_guest_address": "0xFB963000",
+    "context_vE_host_alias": "0x1FB963004",
+    "physical_word_sample": "00000000",
+    "context_vE_word_sample": "00000000"
+  },
+  "ring_root_capture": {
+    "guest_address": "0x095D0120",
+    "capture_bytes": 2048,
+    "capture_stopped_at_guest_wait": true,
+    "physical_host_alias": "0x2095D0120",
+    "vA_guest_virtual_alias": "0xA95D0120",
+    "vA_host_alias": "0x1A95D0120",
+    "aliases_equal": true,
+    "physical_capture": {
+      "path_outside_git": "/tmp/nfs-shift-p1-p2-write-trace-20261026/ring_root_physical.bin",
+      "sha256": "b682414ecc1ac594334f72b8699b2f440abc0a1892731962d6e8713db72e3f01"
+    },
+    "vA_capture": {
+      "path_outside_git": "/tmp/nfs-shift-p1-p2-write-trace-20261026/ring_root_vA.bin",
+      "sha256": "b682414ecc1ac594334f72b8699b2f440abc0a1892731962d6e8713db72e3f01"
+    },
+    "nested_indirect_buffers_before_wait": [
+      {
+        "source_offset": "0x448",
+        "guest_address": "0x0975B660",
+        "dword_count": 74,
+        "bytes": 296,
+        "sha256": "515d445533bd11926618e9d1cbd5a4f7eaf51930dd27b7935b1efecf24845d7b",
+        "type3_opcode_counts": {"0x2B": 2, "0x3B": 1}
+      },
+      {
+        "source_offset": "0x454",
+        "guest_address": "0x0975C3A0",
+        "dword_count": 13,
+        "bytes": 52,
+        "sha256": "7faaea1a5e85dd8155e2ec67f1c3c63ba1bf57e1d52165c44f254b6099f684a9",
+        "packet_framing_asserted": false
+      },
+      {
+        "source_offset": "0x460",
+        "guest_address": "0x0975CFE0",
+        "dword_count": 48,
+        "bytes": 192,
+        "sha256": "4f2445f960ffe0265688c12b9081c0cdb17e8c0a4c8191cbfecb6bfd6bb8dbfc",
+        "type3_opcode_counts": {"0x36": 24}
+      }
+    ],
+    "later_packets_in_same_capture": [
+      {"byte_offset": "0x518", "opcode": "PM4_INTERRUPT", "raw_header": "c0005400"},
+      {"byte_offset": "0x700", "opcode": "PM4_EVENT_WRITE", "raw_header": "c0004600"},
+      {"byte_offset": "0x75C", "opcode": "PM4_EVENT_WRITE_SHD", "destination": "0x17AF4006"},
+      {"byte_offset": "0x76C", "opcode": "PM4_EVENT_WRITE_SHD", "destination": "0x17AF4002"}
+    ]
+  },
+  "interpretation": {
+    "supported": [
+      "The live process mapped the supplied diagnostic P2 plugin and the current P1 ReXGlue runtime with the recorded hashes.",
+      "The exact outer guest buffer was read through physical and vA aliases; both 2 KiB samples were byte-identical and contain the decoded wait packet at byte offset 0x49C.",
+      "The captured wait expects 1 at guest physical word 0x1B964004; both sampled host aliases read zero, and no completion log appeared.",
+      "Four captured COHER_STATUS_HOST waits completed before the target guest-memory wait.",
+      "The three nested buffers listed above are referenced before the wait; their hashes match prior exact-XEX shader/draw captures.",
+      "The later PM4_INTERRUPT at 0x518 and PM4_EVENT_WRITE at 0x700 occur after the blocking wait in the same outer buffer, so those packets cannot satisfy this earlier wait before command processing resumes.",
+      "The instrumented plugin emitted no direct PM4 memory-write candidate packet log before the wait in this run."
+    ],
+    "not_proven": [
+      "Whether a preceding draw/raster side effect, an earlier GPU submission, another CPU producer, or device/DMA visibility should write the expected word.",
+      "That the current wait alone causes the retail software-queue predicate or frontend stall.",
+      "A main-menu entry, offline race, sustained visible output, clean title shutdown, ARM64 run, Android run, or Vulkan 1.1 compatibility."
+    ],
+    "next_p1_step": "Keep the guest wait and predicate unchanged. Correlate this exact pre-wait work with the guest writer/visibility path and P1 dispatch state; the retail Linux build is not playable yet."
+  }
+}

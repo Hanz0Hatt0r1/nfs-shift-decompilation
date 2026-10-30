@@ -1,0 +1,156 @@
+{
+  "schema": "shift.xbox360.linux-xthread-resume-execute-crosscheck.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host": {
+      "path": "/tmp/nfs-shift-p1-source1-context-20261026/bin/nfs_shift",
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "rexglue_runtime": {
+      "path": "/tmp/nfs-shift-p1-source1-context-20261026/bin/librexruntime.so",
+      "sha256": "2b0d46856da000cecafb46581ddff50da99f549ff335bee9ba489238eed24059",
+      "staged_via_ld_library_path": true,
+      "mapped_hash_verified_in_inferior": false
+    }
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+      "--user_data_root=/tmp/nfs-shift-p1-source1-context-20261026/user",
+      "--cache_root=/tmp/nfs-shift-p1-source1-context-20261026/cache",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation",
+      "--fullscreen=false"
+    ],
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "termination": "GDB stopped and killed the inferior at the first retail software-queue wait; clean title shutdown was not observed.",
+    "gdb_trace": {
+      "script_path": "/tmp/nfs-shift-p1-source1-context-20261026/thread_resume.gdb",
+      "script_sha256": "95caed1bdb2860818d5d8e6470870259cc524924ca82acf6254c89b1e21f5b9a",
+      "log_path": "/tmp/nfs-shift-p1-source1-context-20261026/thread_resume.log",
+      "log_sha256": "3e60211662850f988c3f39e7b4a5639c2cc29a93c940e36b019044c1b06b6e0c",
+      "resume_to_execute_pairs_observed": [
+        {
+          "guest_thread_id": 6,
+          "guest_start_address": "0x826EFD00",
+          "creation_flags": "0x00000001",
+          "resume_call_observed": true,
+          "execute_entry_observed": true,
+          "xapi_startup": "0x00000000"
+        },
+        {
+          "guest_thread_id": 7,
+          "guest_start_address": "0x826DDB98",
+          "creation_flags": "0x00000001",
+          "resume_call_observed": true,
+          "execute_entry_observed": true,
+          "xapi_startup": "0x82706AE0"
+        },
+        {
+          "guest_thread_id": 8,
+          "guest_start_address": "0x826DDB98",
+          "creation_flags": "0x00000001",
+          "resume_call_observed": true,
+          "execute_entry_observed": true,
+          "xapi_startup": "0x82706AE0"
+        },
+        {
+          "guest_thread_id": 9,
+          "guest_start_address": "0x826DDB98",
+          "creation_flags": "0x00000001",
+          "resume_call_observed": true,
+          "execute_entry_observed": true,
+          "xapi_startup": "0x82706AE0"
+        },
+        {
+          "guest_thread_id": 10,
+          "guest_start_address": "0x826DDB98",
+          "creation_flags": "0x00000001",
+          "resume_call_observed": true,
+          "execute_entry_observed": true,
+          "xapi_startup": "0x82706AE0"
+        },
+        {
+          "guest_thread_id": 11,
+          "guest_start_address": "0x826DDB98",
+          "creation_flags": "0x00000001",
+          "resume_call_observed": true,
+          "execute_entry_observed": true,
+          "xapi_startup": "0x82706AE0"
+        },
+        {
+          "guest_thread_id": 12,
+          "guest_start_address": "0x826DDB98",
+          "creation_flags": "0x00000001",
+          "resume_call_observed": true,
+          "execute_entry_observed": true,
+          "xapi_startup": "0x82706AE0"
+        },
+        {
+          "guest_thread_id": 13,
+          "guest_start_address": "0x826DDB98",
+          "creation_flags": "0x00000001",
+          "resume_call_observed": true,
+          "execute_entry_observed": true,
+          "xapi_startup": "0x82706AE0"
+        }
+      ],
+      "unsuspended_worker_threads": [
+        {
+          "guest_thread_id": 14,
+          "guest_start_address": "0x823B8AC8",
+          "creation_flags": "0x00000000",
+          "execute_entry_observed": true
+        },
+        {
+          "guest_thread_id": 15,
+          "guest_start_address": "0x823B8AC8",
+          "creation_flags": "0x00000000",
+          "execute_entry_observed": true
+        }
+      ],
+      "first_software_queue_wait": {
+        "function": "0x823B34A0",
+        "gdb_thread": 15,
+        "guest_thread_id": 6,
+        "queue_head": 3,
+        "target": 13,
+        "queue_tail": 21,
+        "predicate_byte": "0x14",
+        "completion_mask": "0x02",
+        "completion_mask_set": false
+      }
+    },
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-p1-source1-context-20261026/bin/logs/nfs_shift_005.log",
+      "sha256": "0cccb9c01f5242e213f28d39b5f7b0327f1ac54c1124a1180e1c17d989f4e7a0",
+      "low_processor_count_warning_observed": true
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "Eight guest threads entered XThread::Resume with creation flag 0x1, and each matching guest thread id/start-address pair entered XThread::Execute before the retail wait.",
+      "Two threads without the create-suspended flag entered XThread::Execute at retail worker entry 0x823B8AC8 before the wait.",
+      "The main guest thread still reached retail wait 0x823B34A0 with predicate 0x14 and completion mask 0x02 clear."
+    ],
+    "not_proven": [
+      "The exact return value from each XThread::Resume call; the probe logs entry and matching later execution, not the method return register.",
+      "That either 0x823B8AC8 worker consumed the GPU event or should set this predicate bit, or why bit 0x02 remains clear.",
+      "The GPU command/event owner, menu/race entry, or sustained visible output."
+    ],
+    "next_step": "Keep the resumed-thread path intact and trace the worker event wait/wakeup and GPU source-1 callback path; do not synthesize the retail completion bit."
+  },
+  "limitations": [
+    "The probe observes the exact-XEX startup only until the first retail queue wait and uses GDB breakpoints.",
+    "Runtime DSO file hash is recorded from the staged path but was not independently re-read from /proc/<pid>/maps during this run.",
+    "The host reported fewer than six processor cores; affinity scheduling was therefore not verified by this run.",
+    "The trace does not show that the worker-side event should set completion mask 0x02."
+  ]
+}

@@ -1,0 +1,356 @@
+{
+  "schema": "shift.xbox360.linux-retail-wait-reg-mem-observation.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host": {
+      "path": "/tmp/nfs-shift-fixed-runtime-run-20261026/bin/nfs_shift",
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "rexglue_runtime": {
+      "path": "/home/pes/work/rexglue-sdk-retail-thread-resume-20261026/out/linux-amd64/RelWithDebInfo/librexruntimerd.so",
+      "sha256": "2b0d46856da000cecafb46581ddff50da99f549ff335bee9ba489238eed24059",
+      "mapped_hash_verified_in_inferior": false
+    },
+    "gpu_plugin": {
+      "path": "/home/pes/work/process2-p1-latest-renderer-handoff-20261026/librexgpu-shift-native.so",
+      "sha256": "1ab1cf6a435ba1e7c069ee2c284246de1cfa04393db5411940abc00bc7e7579b",
+      "source_commit": "6277bda6dc6a9bf3a6dcda92a2d9725417500f78",
+      "configured_through_ld_library_path": true,
+      "mapped_hash_verified_in_inferior": false
+    }
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "duration_seconds": 30,
+    "termination": "Harness sent SIGINT to the GDB run while the title was still live; no clean title shutdown was observed.",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+      "--user_data_root=/tmp/nfs-shift-ring-submit-trace-20261026/bin/user",
+      "--cache_root=/tmp/nfs-shift-ring-submit-trace-20261026/bin/cache",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation",
+      "--fullscreen=false"
+    ],
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-fixed-runtime-run-20261026/bin/logs/nfs_shift_037.log",
+      "sha256": "95d608ffd2625137b87bb893319281bfa56aaef2287d168bd4f3fab002e828c7"
+    },
+    "gdb_trace": {
+      "script_path": "/tmp/nfs-shift-ring-submit-trace-20261026/trace_latest_wait_all_aliases.gdb",
+      "script_sha256": "62fb7eb2505f7ee0cbeae9b36c47e68a00238a69395a8e89faa08a633287cb77",
+      "log_path": "/tmp/nfs-shift-ring-submit-trace-20261026/latest-wait-all-aliases-gdb.log",
+      "log_sha256": "a3c83ec0a16a0176e655db3be725fcfef4f68af9eef3d4d9b4ecdddf556eca54",
+      "target_wait_decode_guest_poll_address": "0x1B964006",
+      "target_wait_guest_physical_word": "0x1B964004",
+      "source1_callback_hits": 0,
+      "wait_entry_time": "2026-10-26T14:38:20.438",
+      "gdb_interrupt_time": "2026-10-26T14:38:48.506",
+      "host_alias_watchpoints": [
+        {
+          "alias": "physical",
+          "host_address": "0x21B964004",
+          "initial_bytes": "00000000"
+        },
+        {
+          "alias": "vA0000000",
+          "host_address": "0x1BB964004",
+          "initial_bytes": "00000000"
+        },
+        {
+          "alias": "vC0000000",
+          "host_address": "0x1DB964004",
+          "initial_bytes": "00000000"
+        },
+        {
+          "alias": "vE0000000_with_host_offset_0x1000",
+          "host_address": "0x1FB965004",
+          "initial_bytes": "00000000"
+        }
+      ],
+      "hardware_write_watchpoints_armed": 4,
+      "writes_observed_through_watched_aliases": 0
+    },
+    "renderer_wait": {
+      "control": "0x13",
+      "compare": "equal",
+      "reference": "0x00000001",
+      "mask": "0xFFFFFFFF",
+      "endian_mode": 2,
+      "poll_interval": "0x00000100",
+      "entry_log_count": 1,
+      "completion_log_count": 0,
+      "ring_snapshot": {
+        "rptr": 28,
+        "wptr": 73,
+        "snapshot_ok": true,
+        "expand_ok": true,
+        "packet_count": 1751
+      },
+      "guest_physical_word": "0x1B964004",
+      "poll_address": "0x1B964006"
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The selected run reached the captured memory WAIT_REG_MEM and logged entry for guest physical word 0x1B964004, expecting 1 with a full mask.",
+      "No completion log appeared before the 30-second GDB run was interrupted.",
+      "The word was zero through the physical host mapping and all three ReXGlue physical-memory virtual windows when the watchpoints were armed.",
+      "Four hardware write watchpoints on those aliases observed no writes during the remaining bounded interval.",
+      "No source-1 callback was observed during this trace."
+    ],
+    "not_proven": [
+      "That the guest word was not written by a device/DMA path or through an unobserved alias.",
+      "Which retail producer or renderer operation owns the expected value 1.",
+      "That this wait alone explains the retail software queue predicate or frontend stall.",
+      "Main-menu entry, an offline race, or sustained visible output."
+    ],
+    "next_p1_step": "Trace the exact writer/producer for guest physical word 0x1B964004 and its address aliases; preserve the WAIT_REG_MEM condition and retail queue semantics until its owner is identified."
+  },
+  "limitations": [
+    "The GDB run is intrusive and bounded; write watchpoints cover the physical host mapping and ReXGlue virtual windows A0000000, C0000000, and E0000000 (including its 0x1000 host offset), not device/DMA writes or any unobserved alias.",
+    "The shared-library file hashes were recorded from the configured paths but were not re-read from /proc/<pid>/maps in this run.",
+    "No input was sent and no window capture or menu/race state was recorded."
+  ],
+  "follow_up_run": {
+    "platform": "Linux AMD64",
+    "duration_seconds": 25,
+    "termination": "GDB timeout sent SIGINT while the title was blocked in the GPU worker; no clean shutdown was observed.",
+    "binaries": {
+      "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "rexglue_runtime": {
+        "path": "/home/pes/work/rexglue-sdk-retail-thread-resume-20261026/out/linux-amd64/RelWithDebInfo/librexruntimerd.so",
+        "sha256": "2b0d46856da000cecafb46581ddff50da99f549ff335bee9ba489238eed24059",
+        "mapped_inode": "12770869",
+        "mapping_verified": true
+      },
+      "gpu_plugin": {
+        "path": "/home/pes/work/process2-p1-latest-renderer-handoff-20261026/librexgpu-shift-native.so",
+        "sha256": "879b711ef16109a52b26df838ce2562e09d53d7c6daf89a102159abdd309c91b",
+        "mapped_inode": "12784382",
+        "mapping_verified": true,
+        "source_commit": "6277bda6dc6a9bf3a6dcda92a2d9725417500f78",
+        "diagnostic_worktree_changes_loaded": true
+      }
+    },
+    "logs": {
+      "runtime": {
+        "path": "/tmp/nfs-shift-fixed-runtime-run-20261026/bin/logs/nfs_shift_038.log",
+        "sha256": "f420c81dd5988bfa7ca69e92f23add180156c97f741e7fffedff93b0cb3c62f4"
+      },
+      "gdb": {
+        "script_path": "/tmp/nfs-shift-ring-submit-trace-20261026/capture_current_wait_buffers.gdb",
+        "script_sha256": "627a8e0411b30f21f847b1510dd8ffae933251d07766adade52307b7a503ede7",
+        "path": "/tmp/nfs-shift-ring-submit-trace-20261026/capture-current-wait-buffers.log",
+        "sha256": "75bf314a21957b6f3ab47c8e122dbcb44d5023c1299002f587e638aab35174d2"
+      }
+    },
+    "guest_memory_written_by_probe": false,
+    "captured_buffers": {
+      "outer_indirect_buffer": {
+        "guest_address": "0x095D0120",
+        "bytes": 1916,
+        "sha256": "0314df2bd6d5142ec11417cffdb6b192bf4b046d22418528772f476ca3cc2580"
+      },
+      "ring": {
+        "guest_address": "0x09752580",
+        "bytes": 32768,
+        "sha256": "0f0db290fb340ea95d646f9304c49ca7393ffc38cdec3dc25310212927b1d111"
+      },
+      "rptr_writeback": {
+        "guest_address": "0x17AF403C",
+        "raw_big_endian": "00000019",
+        "value": 25,
+        "sha256": "282a163f3e6f52ab35cf838079369bce33cf5a1f151d2822846095a6d07e1ae2"
+      },
+      "nested_indirect_buffers": [
+        {
+          "guest_address": "0x0975B660",
+          "bytes": 296,
+          "dword_count": 74,
+          "sha256": "515d445533bd11926618e9d1cbd5a4f7eaf51930dd27b7935b1efecf24845d7b",
+          "path_outside_git": "/tmp/nfs-shift-ring-submit-trace-20261026/nested_0975B660_followup.bin"
+        },
+        {
+          "guest_address": "0x0975C3A0",
+          "bytes": 52,
+          "dword_count": 13,
+          "sha256": "7faaea1a5e85dd8155e2ec67f1c3c63ba1bf57e1d52165c44f254b6099f684a9",
+          "path_outside_git": "/tmp/nfs-shift-ring-submit-trace-20261026/nested_0975C3A0_followup.bin"
+        },
+        {
+          "guest_address": "0x0975CFE0",
+          "bytes": 192,
+          "dword_count": 48,
+          "sha256": "4f2445f960ffe0265688c12b9081c0cdb17e8c0a4c8191cbfecb6bfd6bb8dbfc",
+          "path_outside_git": "/tmp/nfs-shift-ring-submit-trace-20261026/nested_0975CFE0_followup.bin"
+        }
+      ]
+    },
+    "packet_order": {
+      "outer_ib_opcode_counts": {
+        "0x2B": 3,
+        "0x36": 2,
+        "0x3B": 3,
+        "0x3C": 9,
+        "0x3F": 3,
+        "0x46": 1,
+        "0x54": 1,
+        "0x58": 2,
+        "0x60": 2,
+        "0x61": 1,
+        "0x62": 1,
+        "0x63": 1
+      },
+      "nested_indirect_buffers_before_wait": [
+        {
+          "outer_dword_index": 274,
+          "guest_address": "0x0975B660",
+          "dword_count": 74
+        },
+        {
+          "outer_dword_index": 277,
+          "guest_address": "0x0975C3A0",
+          "dword_count": 13
+        },
+        {
+          "outer_dword_index": 280,
+          "guest_address": "0x0975CFE0",
+          "dword_count": 48
+        }
+      ],
+      "blocking_memory_wait": {
+        "opcode": "0x3C",
+        "outer_dword_index": 295,
+        "outer_byte_offset": "0x49C",
+        "raw_words": [
+          "c0043c00",
+          "00000013",
+          "1b964006",
+          "00000001",
+          "ffffffff",
+          "00000100"
+        ],
+        "guest_physical_word": "0x1B964004",
+        "reference": "0x00000001",
+        "mask": "0xFFFFFFFF",
+        "renderer_log_source": "0x095D0120",
+        "nesting_depth": 1,
+        "source_byte_offset": 1180
+      },
+      "subsequent_interrupt": {
+        "opcode": "0x54",
+        "outer_dword_index": 326,
+        "outer_byte_offset": "0x518",
+        "raw_words": [
+          "c0005400",
+          "00000004"
+        ]
+      },
+      "subsequent_event_write": {
+        "opcode": "0x46",
+        "outer_dword_index": 448,
+        "outer_byte_offset": "0x700",
+        "raw_words": [
+          "c0004600",
+          "00000006"
+        ]
+      },
+      "subsequent_event_write_shd": [
+        {
+          "outer_dword_index": 471,
+          "outer_byte_offset": "0x75C",
+          "destination": "0x17AF4006"
+        },
+        {
+          "outer_dword_index": 475,
+          "outer_byte_offset": "0x76C",
+          "destination": "0x17AF4002"
+        }
+      ],
+      "unsupported_register_waits_before_memory_wait": [
+        {
+          "source": "0x095DC040",
+          "source_byte_offset": 20,
+          "control": "0x03",
+          "poll_address": "0x00000A31",
+          "reference": "0x00000000",
+          "mask": "0x80000000",
+          "interval": "0x00000008"
+        },
+        {
+          "source": "0x095DC100",
+          "source_byte_offset": 20,
+          "control": "0x03",
+          "poll_address": "0x00000A31",
+          "reference": "0x00000000",
+          "mask": "0x80000000",
+          "interval": "0x00000008"
+        },
+        {
+          "source": "0x095D0120",
+          "source_byte_offset": 84,
+          "control": "0x03",
+          "poll_address": "0x00000A31",
+          "reference": "0x00000000",
+          "mask": "0x80000000",
+          "interval": "0x00000008"
+        },
+        {
+          "source": "0x095D0120",
+          "source_byte_offset": 128,
+          "control": "0x03",
+          "poll_address": "0x00000A31",
+          "reference": "0x00000000",
+          "mask": "0x80000000",
+          "interval": "0x00000008"
+        }
+      ],
+      "pm4_event_write_observations_before_stall": 0,
+      "nested_buffer_packet_observations": {
+        "0975B660": {
+          "opcode_counts": {
+            "0x2B": 2,
+            "0x3B": 1
+          },
+          "opcode_0x2B_meaning": "PM4_IM_LOAD_IMMEDIATE; sequencer instruction memory load"
+        },
+        "0975C3A0": {
+          "parsed_as_pm4": false,
+          "note": "13 dwords preserved as referenced nested payload; packet framing not asserted"
+        },
+        "0975CFE0": {
+          "opcode_counts": {
+            "0x36": 24
+          },
+          "opcode_0x36_meaning": "PM4_DRAW_INDX_2"
+        }
+      }
+    },
+    "interpretation": {
+      "supported": [
+        "The exact current diagnostic renderer/runtime pair was mapped in the inferior and hash-identified by matching mapped path/inode to the current file.",
+        "The captured outer IB places the blocking memory WAIT_REG_MEM at byte 0x49C before PM4_INTERRUPT at 0x518 and PM4_EVENT_WRITE at 0x700.",
+        "No PM4_EVENT_WRITE diagnostic appeared before the worker stalled at the memory wait; the later opcode 0x46 cannot be the writer that satisfies this same earlier wait.",
+        "Four unsupported register-space WAIT_REG_MEM packets with control 0x03 precede the memory wait and were logged with source/depth/offset.",
+        "The nested indirect buffers precede the blocking wait, so their shader/draw side effects remain a possible writer path not resolved by this packet-order capture.",
+        "Same-run raw captures identify two sequencer instruction-memory load packets in nested IB 0x0975B660 and 24 indexed draw packets in nested IB 0x0975CFE0 before the wait."
+      ],
+      "not_proven": [
+        "Whether one of the preceding nested draws writes the expected value through shader memory export or another GPU side effect.",
+        "Whether a CPU or prior-ring submission owns the target word.",
+        "That the renderer wait alone explains the retail queue predicate or frontend stall.",
+        "Main-menu entry, offline race, or sustained visible output.",
+        "Whether the loaded shader programs export to memory, and whether one of those draws targets 0x1B964004."
+      ],
+      "next_p1_step": "Identify the owner/writer of 0x1B964004 among pre-wait nested GPU effects, prior ring work, guest CPU aliases, or device-side writes; preserve the wait and guest semantics."
+    }
+  }
+}

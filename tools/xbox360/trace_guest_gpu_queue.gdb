@@ -15,6 +15,8 @@ set print thread-events off
 set breakpoint pending off
 
 set $interrupt_hits = 0
+set $source1_hits = 0
+set $last_source1_record = -1
 set $last_source0_state = -1
 break sub_823B37B8
 commands
@@ -33,7 +35,7 @@ mapped = {}
 try:
     with open("/proc/%d/maps" % pid, encoding="utf-8") as maps:
         for line in maps:
-            if "librexgpu-shift-native.so" not in line:
+            if "librexgpu-shift-native" not in line:
                 continue
             fields = line.rstrip().split(None, 5)
             if len(fields) == 6:
@@ -72,6 +74,28 @@ except OSError as error:
   else
     if $interrupt_hits == 1 || $interrupt_hits % 64 == 0
       printf "interrupt_callback hit=%d source=%u gdb_thread=%d ctx=%p base=%p r4=%#llx r13=%#llx lr=%#llx\n", $interrupt_hits, $source, $_thread, (void*)$rdi, (void*)$rsi, *(unsigned long long*)($rdi+32), *(unsigned long long*)($rdi+104), *(unsigned long long*)($rdi+256)
+    end
+    if $source == 1
+      set $source1_hits = $source1_hits + 1
+      set $object = *(unsigned int*)($ctx+32)
+      set $record_ptr = 0
+      set $callback_target = 0
+      set $callback_argument = 0
+      if $object != 0
+        set $record_raw = *(unsigned int*)($base+$object+0x2a94)
+        set $record_ptr = (($record_raw & 0xff)<<24) | (($record_raw & 0xff00)<<8) | (($record_raw & 0xff0000)>>8) | (($record_raw & 0xff000000)>>24)
+        if $record_ptr != 0
+          set $target_raw = *(unsigned int*)($base+$record_ptr+0x10)
+          set $callback_target = (($target_raw & 0xff)<<24) | (($target_raw & 0xff00)<<8) | (($target_raw & 0xff0000)>>8) | (($target_raw & 0xff000000)>>24)
+          set $argument_raw = *(unsigned int*)($base+$record_ptr+0x14)
+          set $callback_argument = (($argument_raw & 0xff)<<24) | (($argument_raw & 0xff00)<<8) | (($argument_raw & 0xff0000)>>8) | (($argument_raw & 0xff000000)>>24)
+        end
+      end
+      set $source1_record = (((unsigned long long)$callback_target) << 32) | $callback_argument
+      if $source1_hits <= 8 || $source1_record != $last_source1_record || $source1_hits % 64 == 0
+        printf "source1_callback_record hit=%d object=%#x record=%#x target=%#x argument=%#x lr=%#llx\n", $source1_hits, $object, $record_ptr, $callback_target, $callback_argument, *(unsigned long long*)($ctx+256)
+        set $last_source1_record = $source1_record
+      end
     end
   end
   continue
@@ -141,6 +165,9 @@ set $wait_hits = 0
 set $last_wait_head = -1
 set $last_wait_tail = -1
 set $last_wait_predicate = -1
+set $last_wait_record_ptr = -1
+set $last_wait_callback_target = -1
+set $last_wait_callback_argument = -1
 break sub_823B34A0
 commands
   silent
@@ -159,11 +186,24 @@ commands
   set $tail_raw = *(unsigned int*)($base+$object+0x2a9c)
   set $tail = (($tail_raw & 0xff)<<24) | (($tail_raw & 0xff00)<<8) | (($tail_raw & 0xff0000)>>8) | (($tail_raw & 0xff000000)>>24)
   set $predicate = *(unsigned char*)($base+$object+0x2abd)
-  if $wait_hits == 1 || $head != $last_wait_head || $tail != $last_wait_tail || $predicate != $last_wait_predicate || $wait_hits % 128 == 0
-    printf "ring_wait hit=%d gdb_thread=%d object=%#x head_ptr=%#x head=%u tail=%u predicate=%#x arg4=%#llx arg5=%#llx arg6=%#llx lr=%#llx\n", $wait_hits, $_thread, $object, $head_ptr, $head, $tail, $predicate, *(unsigned long long*)($rdi+32), *(unsigned long long*)($rdi+40), *(unsigned long long*)($rdi+48), *(unsigned long long*)($rdi+256)
+  set $record_raw = *(unsigned int*)($base+$object+0x2a94)
+  set $record_ptr = (($record_raw & 0xff)<<24) | (($record_raw & 0xff00)<<8) | (($record_raw & 0xff0000)>>8) | (($record_raw & 0xff000000)>>24)
+  set $callback_target = 0
+  set $callback_argument = 0
+  if $record_ptr != 0
+    set $target_raw = *(unsigned int*)($base+$record_ptr+0x10)
+    set $callback_target = (($target_raw & 0xff)<<24) | (($target_raw & 0xff00)<<8) | (($target_raw & 0xff0000)>>8) | (($target_raw & 0xff000000)>>24)
+    set $argument_raw = *(unsigned int*)($base+$record_ptr+0x14)
+    set $callback_argument = (($argument_raw & 0xff)<<24) | (($argument_raw & 0xff00)<<8) | (($argument_raw & 0xff0000)>>8) | (($argument_raw & 0xff000000)>>24)
+  end
+  if $wait_hits == 1 || $head != $last_wait_head || $tail != $last_wait_tail || $predicate != $last_wait_predicate || $record_ptr != $last_wait_record_ptr || $callback_target != $last_wait_callback_target || $callback_argument != $last_wait_callback_argument || $wait_hits % 128 == 0
+    printf "ring_wait hit=%d gdb_thread=%d object=%#x head_ptr=%#x head=%u tail=%u predicate=%#x interrupt_record=%#x callback_target=%#x callback_argument=%#x arg4=%#llx arg5=%#llx arg6=%#llx lr=%#llx\n", $wait_hits, $_thread, $object, $head_ptr, $head, $tail, $predicate, $record_ptr, $callback_target, $callback_argument, *(unsigned long long*)($rdi+32), *(unsigned long long*)($rdi+40), *(unsigned long long*)($rdi+48), *(unsigned long long*)($rdi+256)
     set $last_wait_head = $head
     set $last_wait_tail = $tail
     set $last_wait_predicate = $predicate
+    set $last_wait_record_ptr = $record_ptr
+    set $last_wait_callback_target = $callback_target
+    set $last_wait_callback_argument = $callback_argument
   end
   continue
 end

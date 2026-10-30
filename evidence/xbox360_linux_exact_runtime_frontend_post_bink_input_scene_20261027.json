@@ -1,0 +1,143 @@
+{
+  "schema": "shift.xbox360.linux-exact-runtime-frontend-post-bink-input-scene.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "movie": {
+      "guest_object": "0xE6795040",
+      "frame_target": 281
+    }
+  },
+  "binaries": {
+    "p1_host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "p1_runtime_sha256": "4d0fb82223695d3e2b76bbc6d6c9a93bad525a4c051a8a2eb585b5422d2373bc",
+    "p2_linux_plugin_sha256": "771201891a6ae28c0745f57beccf9c6474ce175c7bb3f5edadcce4c457a8a12b",
+    "inferior_mapped_hashes_verified": true
+  },
+  "run": {
+    "platform": "Linux x86_64, Clang 20 Release",
+    "duration_seconds": 91.725,
+    "termination": "GDB detached and sent SIGINT to the live title after the bounded input sequence.",
+    "guest_memory_modified_by_probe": false,
+    "controller": {
+      "device": "Linux uinput Xbox 360 pad, VID:PID 045e:028e",
+      "retail_controller_object": "0xBCAEB260",
+      "controller_update_ready_seconds": 27.262,
+      "pulses": [
+        {"button": "Start", "down_seconds": 59.406, "up_seconds": 62.406},
+        {"button": "A", "down_seconds": 65.406, "up_seconds": 68.408},
+        {"button": "Start", "down_seconds": 71.406, "up_seconds": 74.406}
+      ],
+      "all_pulses_after_bink_target": true,
+      "retail_controller_masks": {
+        "Start_current_mask": "0x0010",
+        "Start_previous_mask": "0x0000",
+        "Start_button_bytes_observed": ["0x80", "0xC0"],
+        "A_current_mask_observed": false,
+        "A_button_byte_change_observed": false
+      },
+      "retail_action_predicates": {
+        "Start_samples": 18,
+        "Start_true_samples": 18,
+        "A_samples": 0
+      }
+    },
+    "frontend": {
+      "bink_target_reached_seconds": 57.657,
+      "bink_progress": "281/281",
+      "scene_update": {
+        "function": "sub_82DDC6F0",
+        "scene_guest_object": "0x831E6184",
+        "entry_seconds": 57.641,
+        "return_seconds": 57.659,
+        "result": 1,
+        "counter_before": 197,
+        "counter_after": 198,
+        "child_word_264": "0xBB9CC130"
+      },
+      "child_calls": {
+        "sub_82E2C5A8": {"entries": 1, "returns": 1, "last_result": 1},
+        "sub_82E2CD10": {"entries": 126, "returns": 2, "last_result": 0}
+      },
+      "main_menu_observed": false,
+      "race_observed": false
+    },
+    "final_threads": {
+      "retail_main": {
+        "thread_name": "Core 0/0: Main",
+        "top_frame": "sub_823B3850",
+        "caller_frames": ["sub_823A0760", "sub_8264F868"]
+      },
+      "graphics_worker": {
+        "thread_name": "SHIFT Native GP",
+        "top_frames": [
+          "shift::xbox::normalize_captured_buffer_bytes",
+          "ShiftNativeGraphicsSystem::PrepareCapturedDrawResources",
+          "ShiftNativeGraphicsSystem::RingWorkerLoop"
+        ]
+      }
+    },
+    "gdb_trace": {
+      "path": "tools/xbox360/trace_linux_exact_runtime_frontend_after_bink_20261027.gdb",
+      "sha256": "f8454d3a634e97a036409ff722754bc9013ffd6348a201a7ec84d90b71d292bc",
+      "runner_path": "tools/xbox360/capture_linux_exact_runtime_controller_pipeline_20261027.py",
+      "runner_sha256": "f18a76a9ccbe56d79e8edb3e54780a38ca888b9728b3ff855e764962d06606a0",
+      "gdb_log_path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-frontend-thread-snapshot-lwsync-20261027/gdb.log",
+      "gdb_log_sha256": "9c9efdd8436789c4c82f854326a2d616e5dbeefe33a6e0ccd6d7ac10fab3e832",
+      "runner_log_path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-frontend-thread-snapshot-lwsync-20261027/runner.log",
+      "runner_log_sha256": "dd3804c86a3d80f504e0d933a8bb6fa818e8edb2b5cb283e56c5d6073fdf7cb"
+    }
+  },
+  "retail_wait_static_crosscheck": {
+    "function": "sub_823B3850",
+    "manager_guest_object_at_entry": "0xB7365F00",
+    "counter_field_offset": 11012,
+    "loop_address": "0x823B38AC",
+    "condition": "load manager+11012; branch back while signed value is nonzero",
+    "generated_source_path_outside_git": "/home/pes/work/nfsshift-rex-lwsync-20261027/generated/default/nfs_shift_recomp.167.cpp",
+    "generated_source_sha256": "f9e350e9160d15985b049a4c4183cbcafbec7b7919531b5cd3a4a4633fa728ea",
+    "live_counter_read_in_this_capture": false,
+    "related_live_counter_evidence": "evidence/xbox360_linux_exact_runtime_ppc_fence_followthrough_20261027.json"
+  },
+  "retail_code_dump_and_ghidra": {
+    "original_xex_direct_import": "unsupported: Ghidra reported no load spec for XEX",
+    "loaded_code_dump_path_outside_git": "/home/pes/ghidra_projects/NeedForSpeedShift_Xbox360_Retail_20261027/sub_823B3850.bin",
+    "loaded_code_dump_sha256": "7ccde429da432bc3c1ca151bab9735e4cfa368704b452e2b4d4f6b79b5ae7789",
+    "loaded_code_dump_bytes": 256,
+    "loaded_guest_address": "0x823B3850",
+    "ppc_big_endian_prologue_matches_retail_disassembly": true,
+    "capture_script": {
+      "path": "tools/xbox360/trace_linux_exact_runtime_dump_retail_wait_code_20261027.gdb",
+      "sha256": "ff80d57aa3f5a712ceb94cb995671e64b8ac84457f71105fbb462896b22bf860"
+    },
+    "ghidra_raw_import": {
+      "project": "NeedForSpeedShift_RetailWaitCode_20261027",
+      "processor": "PowerPC:BE:32:default",
+      "analysis_job_exit_code": 0,
+      "analysis_reported_success": true,
+      "decompilation_job_exit_code": 0,
+      "functions_exported": 0,
+      "limitation": "Raw binary import succeeded, but auto-analysis created no function, so the export script produced no decompiled functions."
+    },
+    "capture_logs": {
+      "gdb_log_sha256": "0b6265e063b386a7f23c0acef2c149e5bbd90a9ea91dddfb031309d8c5d29dd6",
+      "runner_log_sha256": "a08d7c588626dffc12dd7a888542b68c2b47c0200b4a9e4358731d55bd3d1161"
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact XEX reached the original Bink frame target and ran the original scene update/callback path.",
+      "Start reached the retail digital predicate and returned true after Bink completed.",
+      "At the final debugger snapshot the retail main thread remained in sub_823B3850.",
+      "The loaded PPC bytes at 0x823B3850 match the retail disassembly prologue and the generated wait-loop body reads manager+11012 and loops while nonzero."
+    ],
+    "not_proven": [
+      "Whether A was absent from the guest controller because host input polling stopped or because the retail frontend stopped querying it.",
+      "The live value of manager+11012 in this capture; the related PPC-fence capture observed counter underflow in the same host/runtime build.",
+      "A menu transition, main menu rendering, race entry, or clean title shutdown."
+    ],
+    "next_p1_step": "Trace the live manager+11012 value and its writer/worker transitions while sub_823B3850 is active; keep the retail wait predicate and counter semantics unchanged until the underflow source is mapped."
+  }
+}

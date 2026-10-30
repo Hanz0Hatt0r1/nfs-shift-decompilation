@@ -1,0 +1,153 @@
+{
+  "schema": "shift.xbox360.linux-interrupt-dispatch-static.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "live_memory_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "static_observations": {
+    "interrupt_dispatcher": {
+      "function": "0x823B37B8",
+      "source_1_path": {
+        "source_test": "0x823B37C8: cmpwi r3,1",
+        "context_pointer_load": "0x823B37D0: lwz r11,10900(r4)",
+        "callback_load": "0x823B37D4: lwz r10,16(r11)",
+        "callback_data_load": "0x823B37E0: lwz r3,20(r11)",
+        "indirect_call": "0x823B37E8: bctrl",
+        "call_condition": "source == 1 and the callback slot at context+0x10 is nonzero"
+      },
+      "source_0_path": {
+        "source_test": "0x823B3824: cmpwi r3,0",
+        "gate_load": "0x823B3830: lwz r11,0x6544(0x7FC80000)",
+        "gate_mask": "0x823B3834: clrlwi. r11,r11,31",
+        "consumer_call": "0x823B3840: bl 0x823A4640",
+        "call_condition": "source == 0 and low bit of 0x7FC86544 is set"
+      },
+      "direct_branches_to_823A4758": [],
+      "direct_branch_scan": {
+        "tool": "llvm-objdump -d --no-show-raw-insn",
+        "scope": "entire exact live-memory-derived ELF disassembly",
+        "branch_mnemonics": ["b", "bl"],
+        "matches": 0
+      }
+    },
+    "deferred_queue_producer": {
+      "function": "0x823A4758",
+      "indirect_callback_slot_load": "0x823A4830: lwz r9,16540(r31)",
+      "indirect_call": "0x823A4868: bctrl",
+      "call_condition": "object+0x409C callback slot is nonzero",
+      "registered_callback_at_first_wait": "0x82649B68",
+      "invocation_hits_before_first_wait": 0
+    }
+  },
+  "retail_stream_callback_link": {
+    "stream_builder": "0x823B3598",
+    "context_pointer_load": "0x823B35E4: lwz r10,10900(r11)",
+    "builder_inputs": {
+      "callback_target_register": "r6",
+      "callback_argument_register": "r7",
+      "captured_callback_target": "0x823A4758",
+      "captured_callback_argument": "0x00000208"
+    },
+    "callback_record_dwords": {
+      "target_append": "0x823B362C: stwu r28,4(r29)",
+      "argument_append": "0x823B3634: stwu r27,4(r9)",
+      "captured_stream_words": ["0001057c", "823a4758", "00000208"]
+    },
+    "waits_for_callback_record": [
+      {
+        "context_field_offset": "0x14",
+        "poll_address_construction": "0x823B3678: addi r9,r10,20",
+        "packet_address_field": "0x1B964016",
+        "guest_physical_word": "0x1B964014",
+        "reference_operand": "0x00000208",
+        "packet_payload_store": "0x823B36FC: stwu r27,4(r4)"
+      },
+      {
+        "context_field_offset": "0x10",
+        "poll_address_construction": "0x823B36AC: addi r9,r10,16",
+        "packet_address_field": "0x1B964012",
+        "guest_physical_word": "0x1B964010",
+        "reference_operand": "0x823A4758",
+        "packet_payload_store": "0x823B371C: stwu r28,4(r4)"
+      }
+    ],
+    "interrupt_dispatch_match": {
+      "target_load": "0x823B37D4: lwz r10,16(r11)",
+      "argument_load": "0x823B37E0: lwz r3,20(r11)",
+      "indirect_call": "0x823B37E8: bctrl",
+      "source_condition": "source == 1"
+    },
+    "ordering_in_captured_outer_ib": {
+      "third_memory_wait_dword_index": 20,
+      "source_1_interrupt_dword_index": 326,
+      "same_execution_run_proven": false
+    }
+  },
+  "retail_interrupt_context_reference_scan": {
+    "owner_pointer_field_offset": "0x2A94",
+    "allocation_and_initialization": {
+      "allocate_32_bytes": "0x823B3C04: li r3,32; call allocator",
+      "store_pointer": "0x823B3C08: stw r3,10900(r31)",
+      "zero_32_bytes": "0x823B3C2C: memset(context,0,32)",
+      "clear_pointer_on_teardown": "0x823B3B28: stw r29,10900(r31)"
+    },
+    "identified_guest_cpu_writes_through_context": [
+      {
+        "function": "0x823A4640",
+        "context_pointer_load": "0x823A46C0: lwz r11,10900(r31)",
+        "store": "0x823A46C4: stw r9,4(r11)",
+        "context_field_offset_written": "0x04"
+      },
+      {
+        "function": "0x823A4758",
+        "context_pointer_load": "0x823A48DC: lwz r11,10900(r31)",
+        "store": "0x823A48E4: stw r10,4(r11)",
+        "context_field_offset_written": "0x04"
+      }
+    ],
+    "target_argument_field_accesses": {
+      "stream_builder_waits": [
+        "0x823B3678: addi r9,r10,20",
+        "0x823B36AC: addi r9,r10,16"
+      ],
+      "source1_callback_reads": [
+        "0x823B37D4: lwz r10,16(r11)",
+        "0x823B37E0: lwz r3,20(r11)"
+      ],
+      "direct_guest_cpu_store_to_offsets_0x10_or_0x14_identified": false
+    },
+    "scope_and_limits": "Raw llvm-objdump review of the exact live-memory-derived ELF. The inspected initialization, deferred-consumer/producer, stream-builder, and interrupt-handler paths allocate/zero the 32-byte record, write context+0x04, or read/wait on context+0x10/+0x14. This does not exclude a writer through a different alias, a bulk memory operation, GPU/device DMA, or an unexamined function."
+  },
+  "runtime_crosscheck": {
+    "evidence_file": "xbox360_linux_current_p2_renderer_frontend_wait_20261026.json",
+    "source_0_callback_hits": 99,
+    "source_1_callback_hits": 0,
+    "deferred_consumer_hits": 98,
+    "producer_0x823A4758_hits": 0,
+    "retail_wait_target": 13,
+    "retail_queue_head": 0,
+    "retail_queue_tail": 21,
+    "predicate_byte": "0x14",
+    "completion_mask": "0x02",
+    "completion_mask_set": false
+  },
+  "interpretation": {
+    "supported": [
+      "The known source-0 callback path reaches the deferred-queue consumer directly; it does not call 0x823A4758.",
+      "The source-1 path uses a callback pointer held in its context; no source-1 callback ran before the sampled retail wait.",
+      "The stream builder appends callback target 0x823A4758 and argument 0x208, then emits memory waits for those values at context offsets +0x14 and +0x10.",
+      "The source-1 interrupt callback loads the same context offsets as argument and indirect target, then executes bctrl; this is the retail indirect path that can invoke 0x823A4758 after the callback slot is populated.",
+      "The value 0x823A4758 remains WAIT_REG_MEM data, not a control transfer by the packet itself; the later source-1 callback supplies the control transfer."
+    ],
+    "not_proven": [
+      "Which prior GPU/CPU operation writes the callback record fields at context+0x14 and context+0x10 in a live run.",
+      "That the captured outer IB reached these exact waits and the later interrupt in the same execution run.",
+      "That this callback is the only condition required to complete the separate retail software-queue predicate.",
+      "A defect in P1 guest scheduling, ReXGlue interrupt dispatch, or P2 GPU execution."
+    ],
+    "next_p1_probe": "On a fresh exact-XEX run, sample object+0x2A94 and its +0x10/+0x14 fields plus physical aliases before the waits; correlate source-1 interrupt entry, bctrl target, and r3 argument. Keep queue and predicate state unchanged."
+  }
+}

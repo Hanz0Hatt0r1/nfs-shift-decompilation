@@ -1,0 +1,85 @@
+{
+  "schema": "shift.xbox360.linux-release-runtime-rebuild-frontier.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "build": {
+    "source_worktree": "/home/pes/work/rexglue-sdk-retail-thread-resume-20261026",
+    "source_commit": "26cb90f67fd7df711ee6cd4338ef8402f0bfdefa",
+    "configuration": "linux-amd64 Release",
+    "target": "librexruntime.so",
+    "command": "cmake --build out/build/linux-amd64 --config Release --target librexruntime.so -j 2",
+    "exit_code": 0,
+    "runtime_sha256": "f43d094797bf30c2e552b244c6ec50e4e69bb0b11fee409e07a812ba74158f78",
+    "runtime_build_id": "6dcf8537149594cf86f574a61bcbedc96c837448"
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "termination": "GDB quit at the first retail software-queue wait; clean title shutdown and main-menu entry are not claimed.",
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_sha256": "f43d094797bf30c2e552b244c6ec50e4e69bb0b11fee409e07a812ba74158f78",
+    "gpu_plugin_sha256": "28ad43593d5c5e58920f00a09779b3388e5a9d380a63019c62d1bfdef143a481",
+    "mapped_libraries": {
+      "path_outside_git": "/tmp/nfs-shift-p1-runtime-rebuild-20261026/mapped-libraries.txt",
+      "sha256": "3a73c594ccceda82e5400a2289fc98abf7eea57d1608bedd758e5d31f2ff9959"
+    },
+    "gdb_script": {
+      "path": "tools/xbox360/trace_linux_runtime_rebuild_frontier.gdb",
+      "sha256": "13771946b301a0eaf2cc73cc558fde4306f5f9bee9136777e767dedcde1d746f"
+    },
+    "gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-runtime-rebuild-20261026/runtime-rebuild.log",
+      "bytes": 2569,
+      "sha256": "4e3e44b3217525d1b5b00e37af35217d015a71bdb2ae34467eaf2be404e3766a"
+    },
+    "mapped_hashes_verified_in_inferior": true,
+    "breakpoints": {
+      "worker_entry_hits": 2,
+      "worker_event_wait_hits": 2,
+      "producer_823a4758_hits": 0,
+      "registered_callback_82649b68_hits": 0,
+      "first_queue_wait_hits": 1
+    }
+  },
+  "worker_events": [
+    {
+      "worker_function": "0x823B8AC8",
+      "gdb_thread": 24,
+      "worker_guest_object": "0xB7368BE0",
+      "event_guest_address": "0xB7368C00",
+      "timeout_signed_100ns_ticks": -300000
+    },
+    {
+      "worker_function": "0x823B8AC8",
+      "gdb_thread": 25,
+      "worker_guest_object": "0xB7368C30",
+      "event_guest_address": "0xB7368C50",
+      "timeout": "infinite"
+    }
+  ],
+  "first_retail_queue_wait": {
+    "function": "0x823B34A0",
+    "guest_object": "0xB7365F00",
+    "head": 3,
+    "tail": 21,
+    "predicate_byte": "0x14"
+  },
+  "interpretation": {
+    "supported": [
+      "The rebuilt P1 runtime was loaded into the inferior with the exact host, XEX, and same-hash P2 diagnostic plugin recorded above.",
+      "Both retail workers entered and waited on their object+32 event before the same first queue frontier observed in the earlier trace.",
+      "This run reproduces the queue stall with the rebuilt runtime; it does not establish a P1 scheduler defect or identify the missing GPU-side writer."
+    ],
+    "not_proven": [
+      "Main-menu entry, offline-race entry, sustained playable output, or clean title shutdown.",
+      "Which component owns the worker events or whether another signaling path bypasses XEvent::Set/Pulse.",
+      "The source or mechanism that should make the GPU wait complete."
+    ],
+    "next_step": "Keep guest event, queue, and predicate state intact; resume at the GPU wait/source-1 dispatch frontier when new P2 evidence identifies a concrete P1 handoff to verify."
+  }
+}

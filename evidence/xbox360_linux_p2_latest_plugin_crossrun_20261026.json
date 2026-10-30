@@ -1,0 +1,147 @@
+{
+  "schema": "shift.xbox360.linux-p2-plugin-p1-runtime-crossrun.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "p1_runtime": {
+      "sha256": "f43d094797bf30c2e552b244c6ec50e4e69bb0b11fee409e07a812ba74158f78",
+      "build_id": "6dcf8537149594cf86f574a61bcbedc96c837448"
+    },
+    "p2_linux_plugin": {
+      "path_outside_git": "/home/pes/work/rexglue-sdk-rexui-vulkan-20261023/out/linux-amd64/librexgpu-shift-native.so",
+      "sha256": "3b1afafad8e4fc7fc7e35e6bb81ab8e337156b108a5c7e4de49d0869787b3fb0",
+      "build_id": "91a7af2bf30e785952d3cf2009008ead6c4e108b",
+      "sdk_worktree_head_observed": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+      "process2_trace_fix_commit_reported": "9a4c9c4f3"
+    }
+  },
+  "abi_check": {
+    "ldd_r_runtime_resolved_to_p1_build": true,
+    "unresolved_dynamic_symbols_observed": 0,
+    "gpu_plugin_loader_accepted_plugin": true,
+    "loader_log": "shift-native: installed emulator-free Vulkan frontend; waiting for guest PM4",
+    "duplicate_cvar_registration_warnings": 15,
+    "limitations": [
+      "Dynamic symbol resolution and the plugin's version gate passed; this is not a complete C++ ABI equivalence test between SDK trees.",
+      "The duplicate cvar registration warnings show that the cross-tree pairing still needs caution."
+    ]
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "termination": "A bounded GDB capture stopped at the first retail software-queue wait. A separate four-second continuation was interrupted with SIGINT; no clean title shutdown is claimed.",
+    "mapped_hashes_verified_in_inferior": true,
+    "first_frontier_script": {
+      "path": "tools/xbox360/trace_linux_p2_latest_plugin_crossrun.gdb",
+      "sha256": "f64fb6af853cc565e20b623f68d619a1a20c3c49e42e4c2579fc10273f772d2e"
+    },
+    "gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-p2latest-plugin-20261026/runtime-rebuild-queue-state.log",
+      "bytes": 2791,
+      "sha256": "b9d09d93acc560f8e8a15af7d87b3fcb541134e890ee1827dc87f6d683c99d5a"
+    },
+    "mapped_libraries": {
+      "path_outside_git": "/tmp/nfs-shift-p1-p2latest-plugin-20261026/mapped-libraries-queue-state.txt",
+      "sha256": "e7b3c3b0b01fa385a883a5d8b1404b114fc05c0511a2ed90151a59dc17329563"
+    },
+    "plugin_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-p2latest-plugin-20261026/bin/logs/nfs_shift_001.log",
+      "bytes": 26259,
+      "sha256": "ceb7529394fc2b93420c0501fc1df96bc2d541aa5dc308ed02c600b63c64c10d"
+    },
+    "worker_queue_entry": [
+      {
+        "worker_function": "0x823B8AC8",
+        "worker_guest_object": "0xB7368BE0",
+        "event_guest_address": "0xB7368C00",
+        "queue_head": 0,
+        "queue_tail": 0,
+        "timeout_signed_100ns_ticks": -300000
+      },
+      {
+        "worker_function": "0x823B8AC8",
+        "worker_guest_object": "0xB7368C30",
+        "event_guest_address": "0xB7368C50",
+        "queue_head": 0,
+        "queue_tail": 0,
+        "timeout": "infinite"
+      }
+    ],
+    "first_retail_queue_wait": {
+      "function": "0x823B34A0",
+      "guest_object": "0xB7365F00",
+      "head": 3,
+      "tail": 21,
+      "predicate_byte": "0x14"
+    },
+    "renderer_ring_observations": {
+      "snapshots": [
+        {"rptr": 0, "wptr": 25, "packets": 73},
+        {"rptr": 25, "wptr": 31, "packets": 153}
+      ],
+      "event_write_shd": [
+        {
+          "guest_address": "0x17AF4004",
+          "packet_value": "0xA95D00E4",
+          "prior_guest_value": "0xA95CFFFC"
+        },
+        {
+          "guest_address": "0x17AF4000",
+          "packet_value": "0x00000003",
+          "prior_guest_value": "0x00000001"
+        }
+      ],
+      "wait_reg_mem_lines_observed_in_bounded_linux_log": 0
+    },
+    "continuation": {
+      "script": {
+        "path": "tools/xbox360/trace_linux_p2_crossrun_after_wait.gdb",
+        "sha256": "66f2eff2dbbecd9c74c2a61d3f2e0b8835770536367caf737239adfcc32a5d91"
+      },
+      "timeout_seconds": 4,
+      "gdb_log": {
+        "path_outside_git": "/tmp/nfs-shift-p1-p2latest-plugin-20261026/continued.log",
+        "bytes": 1678,
+        "sha256": "6bc757796debe43146a8e0ed62dc6a2a44b97530baccd6ca68a7dfb9c412042f"
+      },
+      "termination": "SIGINT stopped GDB while the inferior was in SDL_SendPendingPenProximity; the GDB-owned game process was not left running."
+    }
+  },
+  "process2_android_reference": {
+    "evidence_path_outside_git": "/home/pes/work/nfs-shift-xbox-live-ring-20261023/evidence/process2_redmi_wait_reg_mem_trace_default_on_20261026.json",
+    "evidence_sha256": "4d2f719d73125d4d906aec53318720762b1fc92246dd5b3eb838e209bb6f9da1",
+    "reported_source_commit": "9a4c9c4f3",
+    "device": "Redmi Note 8 Pro / Mali-G76 MC4",
+    "screen": "black viewport at startup wait",
+    "wait": {
+      "guest_address": "0x1B964004",
+      "reference": "0x00000001",
+      "mask": "0xFFFFFFFF",
+      "source_indirect_buffer": "0x095D0120",
+      "byte_offset": 1180
+    },
+    "not_proven": [
+      "The two Linux EVENT_WRITE_SHD targets above are not the Android wait address.",
+      "These Android and Linux observations are separate runs; the bounded Linux capture does not establish whether a later Linux batch reaches the same WAIT_REG_MEM."
+    ]
+  },
+  "interpretation": {
+    "supported": [
+      "The newly supplied P2 Linux plugin loaded with the rebuilt P1 runtime, passed the runtime's plugin-version gate, and ran the exact retail XEX through initial PM4 submissions.",
+      "Both worker-local queues were empty (head/tail 0/0) when the workers first waited; the main software queue reached the same 3/21, predicate 0x14 frontier.",
+      "The Linux plugin log records writes to 0x17AF4004 and 0x17AF4000; Process 2's separate Android evidence reaches WAIT_REG_MEM at 0x1B964004."
+    ],
+    "not_proven": [
+      "That the Linux run reached or executed the Android WAIT_REG_MEM packet.",
+      "That either observed EVENT_WRITE_SHD should signal the worker events or complete the guest queue predicate.",
+      "Main-menu entry, offline-race entry, sustained playable output, or clean title shutdown."
+    ],
+    "next_p1_step": "No P1 event, scheduler, or guest predicate change is justified by this trace. Resume P1 work when a source-1 or guest callback handoff is observed past the unchanged GPU wait."
+  }
+}

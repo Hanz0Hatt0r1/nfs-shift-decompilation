@@ -1,0 +1,195 @@
+{
+  "schema": "shift.xbox360.linux-retail-input-interrupt-followthrough.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "host": {
+      "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/nfs_shift",
+      "sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a"
+    },
+    "p1_runtime": {
+      "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/librexruntime.so",
+      "sha256": "f43d094797bf30c2e552b244c6ec50e4e69bb0b11fee409e07a812ba74158f78"
+    },
+    "p2_plugin": {
+      "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/librexgpu-shift-native.so",
+      "sha256": "f1404a4f57fb073f12cc0b34da4f74a3e75d8d6f2ffb49e62708c9a1b09bb6b6",
+      "source_state": "local P2 scratch-writeback build; not claimed merged"
+    }
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "duration_seconds": 60.121,
+    "termination": "Harness sent SIGINT to the inferior after 60 seconds; GDB reported exit code 0.",
+    "guest_memory_modified_by_probe": false,
+    "gdb_instrumentation": "Read-only hardware-independent function entry breakpoints with auto-continue; intrusive timing may affect scheduling.",
+    "gdb_script": {
+      "path": "/tmp/nfs-shift-retail-input-interrupt-probe-20261026/trace.gdb",
+      "sha256": "9a0eb2101ecc7e782b5141835148dafc9188e10dd6cca8dfa5567021364d1fc2"
+    },
+    "gdb_log": {
+      "path": "/tmp/nfs-shift-retail-input-interrupt-probe-20261026/gdb.log",
+      "sha256": "6b872ff72a30cf5e1c527ed36809ed21160addba7fe0264a97837665482588c8",
+      "retained_in_git": false
+    },
+    "controller": {
+      "device": "Linux uinput Microsoft X-Box 360 pad, VID:PID 045e:028e",
+      "pulses": [
+        {
+          "at_seconds": 8,
+          "button": "A",
+          "xinput_mask": "0x1000",
+          "duration_ms": 650
+        },
+        {
+          "at_seconds": 16,
+          "button": "Start",
+          "xinput_mask": "0x0010",
+          "duration_ms": 650
+        },
+        {
+          "at_seconds": 24,
+          "button": "A",
+          "xinput_mask": "0x1000",
+          "duration_ms": 650
+        },
+        {
+          "at_seconds": 32,
+          "button": "Start",
+          "xinput_mask": "0x0010",
+          "duration_ms": 650
+        },
+        {
+          "at_seconds": 40,
+          "button": "A",
+          "xinput_mask": "0x1000",
+          "duration_ms": 650
+        },
+        {
+          "at_seconds": 48,
+          "button": "Start",
+          "xinput_mask": "0x0010",
+          "duration_ms": 650
+        },
+        {
+          "at_seconds": 56,
+          "button": "A",
+          "xinput_mask": "0x1000",
+          "duration_ms": 650
+        }
+      ],
+      "retail_input_wrapper_logged_milestones": [
+        1,
+        2,
+        3,
+        4,
+        500,
+        1000
+      ],
+      "non_neutral_controller_update_samples": [
+        {
+          "guest_object": "0xBCAEB260",
+          "buttons": "0x1000",
+          "previous": "0x00000000",
+          "changed": "0x1000",
+          "logged_samples": 6
+        },
+        {
+          "guest_object": "0xBCAEB260",
+          "buttons": "0x0010",
+          "previous": "0x00000000",
+          "changed": "0x0010",
+          "logged_samples": 8
+        }
+      ],
+      "candidate_button_dispatcher": {
+        "function": "0x8230D398",
+        "hits": 0,
+        "limit": "Only this previously identified candidate was observed; other UI action paths are not excluded."
+      }
+    },
+    "interrupt_path": {
+      "dispatcher": "0x823B37B8",
+      "source1_interrupt_hits": 1125,
+      "registered_interrupt_record": "0xFB963000",
+      "deferred_producer": {
+        "function": "0x823A4758",
+        "hits": 890
+      },
+      "registered_callback": {
+        "function": "0x82649B68",
+        "hits": 890
+      },
+      "observed_source1_callback_target_arguments": {
+        "0x823A4758(0x00000008)": 554,
+        "0x823A4758(0x00000208)": 336,
+        "0x823B8C60(0xC9678780)": 235
+      }
+    },
+    "window_captures": [
+      {
+        "elapsed_seconds": 15.002,
+        "path": "/tmp/nfs-shift-retail-input-interrupt-probe-20261026/captures/t015.png",
+        "sha256": "6ef6f970aa399fc9bb9344414be3f85578d662e8da7e79637b1a4163740dbeb2",
+        "observation": "Retail SHIFT loading logo."
+      },
+      {
+        "elapsed_seconds": 25.018,
+        "path": "/tmp/nfs-shift-retail-input-interrupt-probe-20261026/captures/t025.png",
+        "sha256": "16ac7053369cc6b7a405150d303555052fd7e9580ee4ed98a6588e19365deb0a",
+        "observation": "Retail wheel footage."
+      },
+      {
+        "elapsed_seconds": 35.036,
+        "path": "/tmp/nfs-shift-retail-input-interrupt-probe-20261026/captures/t035.png",
+        "sha256": "ee78d6d27a42058c7dc9f1025869352025b3a5267cb334fa130271dff9982f4b",
+        "observation": "EA logo footage."
+      },
+      {
+        "elapsed_seconds": 55.008,
+        "path": "/tmp/nfs-shift-retail-input-interrupt-probe-20261026/captures/t055.png",
+        "sha256": "2d438bdcd21d5af61b7590490f7bf8215b3ca5405d0c2a4346f0a767160d05ba",
+        "observation": "Retail safety disclaimer card; main-menu UI not visible."
+      }
+    ],
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/logs/nfs_shift_007.log",
+      "sha256": "3949a710ef296714aea86cdebd419748d7dfff77dc774db7bbd501f6fd104743",
+      "retained_in_git": false
+    }
+  },
+  "gpu_frontier": {
+    "captured_wait": {
+      "guest_word": "0x1B964004",
+      "reference": "0x00000001",
+      "completed": true,
+      "polls": 0
+    },
+    "menu_background_xml_open_failures": 4,
+    "unresolved_captured_draw_entries": 16,
+    "representative_unresolved_state": "surface=0x14020500 color=0xC0000 depth=0x400 mode=0x6",
+    "owner": "P2 Vulkan renderer",
+    "causal_link_to_blank_or_safety_card_output_proven": false
+  },
+  "interpretation": {
+    "observed": [
+      "The exact retail title's Linux controller update observed A mask 0x1000 and Start mask 0x0010.",
+      "The source-1 retail callback path invoked 0x823A4758 and 0x82649B68 repeatedly in the same run.",
+      "The captured stream's WAIT_REG_MEM at 0x1B964004 completed after the local P2 scratch writeback build was loaded.",
+      "The visible sequence advanced through loading/logo footage and the safety disclaimer during the bounded run.",
+      "The renderer log contained 16 unresolved draw-state entries in a later refresh."
+    ],
+    "not_proven": [
+      "That the A/Start button states reached a frontend action handler; candidate 0x8230D398 had no hits and other consumers were not exhaustively traced.",
+      "That the title reached the retail main menu or an offline race.",
+      "That missing menu_background.xml requests caused the blank/disclaimer output.",
+      "That the local P2 scratch-writeback change is merged or production-ready.",
+      "Linux ARM64, Vulkan 1.1, or Android compatibility."
+    ],
+    "next_p1_step": "Keep the bounded input observation as known-good host delivery; continue only if a specific guest input/scheduler mismatch appears. The current unsupported draw states are a P2 renderer frontier."
+  }
+}

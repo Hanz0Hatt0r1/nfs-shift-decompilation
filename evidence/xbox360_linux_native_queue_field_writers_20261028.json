@@ -1,0 +1,134 @@
+{
+  "schema": "shift.xbox360.linux-native-queue-field-writers.v1",
+  "date": "2026-10-28",
+  "capture_root": "/home/pes/work/nfs-shift-p1-queue-field-writers-20261028",
+  "run": {
+    "backend": "shift-native",
+    "utc_start": "2026-10-28T10:18:08.223Z",
+    "utc_end": "2026-10-28T10:20:26.253Z",
+    "duration_seconds": 138.03,
+    "requested_duration_seconds": 135,
+    "gdb_exit": 0,
+    "event_capture_status": "gdb_json_finalizer",
+    "bink_frames": "281/281",
+    "scene_gate_reached": false,
+    "guest_memory_modified_by_probe": false
+  },
+  "identity": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "sdk_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6",
+    "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+    "native_plugin_sha256": "d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90",
+    "native_plugin_build_id": "0fb71ebd09a498fc0515de313289b39ccfc22300",
+    "native_plugin_source_commit": "ec657d411c25d91a03e7a5991c0dc41f50e1af43",
+    "provider_source_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99"
+  },
+  "queue_saturation_trigger": {
+    "function": "sub_823B34A0",
+    "thread": "Core 0/0: Main",
+    "call": 248,
+    "elapsed_seconds": 58.485,
+    "manager": "0xB7365F00",
+    "head_pointer": "0xB7AF4000",
+    "head": 3229,
+    "head_hex": "0x00000C9D",
+    "tail": 3265,
+    "tail_hex": "0x00000CC1",
+    "observed_depth": 36,
+    "wait_target_r30": 3263,
+    "predicate_byte": "0x14",
+    "completion_mask": "0x02",
+    "completion_mask_set": false
+  },
+  "writer_watchpoints": {
+    "armed_at_queue_saturation": true,
+    "addresses": {
+      "software_head": "0xB7AF4000",
+      "software_tail": "0xB736899C",
+      "completion_predicate": "0xB73689BD"
+    },
+    "initial_values": {
+      "software_head": "0x00000C9D",
+      "software_tail": "0x00000CC1",
+      "completion_predicate": "0x14"
+    },
+    "write_events": 0,
+    "coverage_seconds_from_trigger_to_capture_stop": 79.545,
+    "manager_counter_watch_preserved": true,
+    "worker_plus_72_watch_disabled_to_free_hardware_slot": true
+  },
+  "bounded_stop": {
+    "main_thread_guest_function": "sub_823A0310",
+    "guest_stack": [
+      "sub_823A0310",
+      "sub_823B34A0",
+      "sub_823A4E48",
+      "sub_823A5610",
+      "sub_8264F868",
+      "sub_82FD4968",
+      "sub_82FC1880",
+      "sub_82D30380"
+    ],
+    "software_gpu_queue": {
+      "manager": "0xB7365F00",
+      "head_pointer": "0xB7AF4000",
+      "head": 3229,
+      "tail": 3265,
+      "predicate_byte": "0x14",
+      "manager_11008": 0,
+      "manager_11012_unsigned": 4294967118,
+      "manager_11012_hex": "0xFFFFFF4E",
+      "manager_11012_signed": -178
+    },
+    "matches_saturation_entry": true,
+    "main_wait_entries": 189,
+    "main_wait_returns": 188,
+    "pending_main_wait_call": 248
+  },
+  "activity_while_software_queue_fields_were_unchanged": {
+    "source1_guest_callback_entries_total": 890,
+    "source1_guest_callback_entries_after_trigger": 706,
+    "callback_registered_mask": "0x04",
+    "manager_callback_flags_after_trigger": [
+      0
+    ],
+    "manager_counter_decrements_after_trigger": 177,
+    "manager_counter_after_range": [
+      "0xFFFFFFFF",
+      "0xFFFFFF4E"
+    ],
+    "native_ring_trace_records_total": 1604,
+    "native_source1_pm4_interrupt_records": 1601,
+    "queue_head_tail_predicate_writes_after_trigger": 0
+  },
+  "artifacts": {
+    "capture_metadata_sha256": "7f07b8bceb04b5e37acdef4d0c8d683ad84b8cdf5960f6550c8bcda54f0f81ac",
+    "run_metadata_sha256": "c454ddfdc443e63b132c460234dd135020bae645f1d7aa0ccf77747c67a26c2e",
+    "events_sha256": "64d604877ce80542909a2afa492aae68cdec13fa895c6fae5a1a6159bc4951ee",
+    "gdb_log_sha256": "e775a201731c9efabee980a1058761dfe1b3c3a21f87cc9359607ef8a0571ec6",
+    "runner_log_sha256": "b2712d28d038c72d599c45bab41ff160200d925f1ec8d24a72c3d8a95c2a2c59",
+    "renderer_log_sha256": [
+      "6013719c2cc1a79c538dc3275490589e56805763aef1f076dca703a00937058e",
+      "1bb4127c5a0ad03e5962fef835ac3292c8e724dc7932822c3c151e347c1828a4"
+    ],
+    "join_input_archive_path": "evidence/xbox360_linux_native_queue_field_writers_source1_join_inputs_20261028.jsonl.gz",
+    "join_input_archive_sha256": "e9d0734174c5f4be2de5a5a24acb0c20287592a48d8bec1055b9bda3625eeec1",
+    "join_input_archive_records": 2491
+  },
+  "interpretation": {
+    "software_queue_cursor_and_predicate_stationary_after_saturation": true,
+    "pm4_and_guest_callback_activity_continued": true,
+    "callback_to_queue_write_causality_proven": false,
+    "first_gpu_backend_divergence_fully_explained": false,
+    "runtime_semantics_changed": false,
+    "renderer_changed_by_p1": false,
+    "next_step": "Watch the ReXGlue virtual A, physical, virtual C, and virtual E aliases for the software head; snapshot queue cursors and predicate on every source-1 callback. The paired replay showed head movement despite a silent virtual-A watchpoint.",
+    "later_paired_capture_shows_watch_alias_gap": true,
+    "later_pair_head_at_watch_arm": 3255,
+    "later_pair_head_at_stop": 3259,
+    "later_pair_watchpoint_write_events": 0,
+    "head_stationary_in_general_not_proven": true
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "schema": "shift.xbox360.linux-current-p2-frontend-followthrough.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "sources": {
+    "p1": {
+      "commit": "7335383bf55d30bbca32a843445d6d333a26a368",
+      "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253"
+    },
+    "p2": {
+      "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+      "branch": "work/process2-xbox-live-ring-20261023",
+      "commit": "e7a474578efe7bee4e37d71fe58df875993c3e4f",
+      "pull_request": 2161,
+      "pull_request_state": "OPEN",
+      "plugin_sha256": "78545a8fa2c77c5fb37a03d2aac166fc340d869a158741aad02247b2df745451",
+      "plugin_build_id": "23cd262462199cb6724058ec68e0116b94f42848",
+      "linux_dynamic_resolution_clean": true
+    }
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "duration_seconds": 112,
+    "termination": "Harness sent SIGINT after the final capture; host exited 0. Clean title shutdown was not observed.",
+    "gdb_instrumented": false,
+    "mapped_binary_hashes_verified": true,
+    "guest_memory_modified_by_probe": false,
+    "renderer_plugin_claimed_merged": false,
+    "controller": {
+      "device": "Linux uinput Xbox 360 pad, VID:PID 045e:028e",
+      "pulse_duration_ms": 650,
+      "pulses": [
+        {"at_seconds": 58, "button": "A", "mask": "0x1000"},
+        {"at_seconds": 70, "button": "Start", "mask": "0x0010"},
+        {"at_seconds": 80, "button": "A", "mask": "0x1000"},
+        {"at_seconds": 92, "button": "Start", "mask": "0x0010"},
+        {"at_seconds": 102, "button": "A", "mask": "0x1000"}
+      ],
+      "guest_observation_proven": false
+    },
+    "target_window_captures": [
+      {
+        "elapsed_seconds": 55,
+        "path_outside_git": "/home/pes/work/nfs-shift-p1-current-p2-20261027/before-A.png",
+        "sha256": "9608f2b632fd10e28f487e24a8bd4614bf16b32511df400bee12ac8aada2dcff",
+        "observation": "Retail driving-safety disclaimer visible."
+      },
+      {
+        "elapsed_seconds": 68,
+        "path_outside_git": "/home/pes/work/nfs-shift-p1-current-p2-20261027/after-A.png",
+        "sha256": "e36b4d271f1e9d53f66899ea5107faa5ac1026125773fb161a719496787bd406",
+        "observation": "Disclaimer text gone; mostly black frame with thin horizontal lines."
+      },
+      {
+        "elapsed_seconds": 90,
+        "path_outside_git": "/home/pes/work/nfs-shift-p1-current-p2-20261027/after-start-a.png",
+        "sha256": "d6addae8fbab3ab4f9fb1c0aa136770d63b3a8fff3353d2b45f1ac4016e978a0",
+        "observation": "Mostly black frame; no main-menu UI visible."
+      },
+      {
+        "elapsed_seconds": 112,
+        "path_outside_git": "/home/pes/work/nfs-shift-p1-current-p2-20261027/final.png",
+        "sha256": "0dec47780ef3f6dd01656686b574bbd85ba47a760c259484a64e4d7c75443328",
+        "observation": "Same mostly black frame; no main-menu UI visible."
+      }
+    ],
+    "renderer_logs": {
+      "rotated": {
+        "path_outside_git": "/home/pes/work/nfs-shift-p1-current-p2-20261027/bin/logs/nfs_shift_001.1.log",
+        "sha256": "17fd806b36f8f4e0763b01e3c9fb24c5df28e2f67848d562e00438aa59ee000c"
+      },
+      "primary": {
+        "path_outside_git": "/home/pes/work/nfs-shift-p1-current-p2-20261027/bin/logs/nfs_shift_001.log",
+        "sha256": "8d8be48f922bcdfbada12c2bbec710d5d3b0451126ad706a20edb4199a67525f"
+      },
+      "run_summary": {
+        "path_outside_git": "/home/pes/work/nfs-shift-p1-current-p2-20261027/run-summary.json",
+        "sha256": "7e58a6f9e6466ac5266c30e92eda5cf35601c72893cff3d43cb27406e15030a4"
+      },
+      "captured_wait_reg_mem": [
+        {"guest": "0x1B964004", "reference": "0x00000001", "mask": "0xFFFFFFFF", "endian": 2, "compare": 3, "source": "0x095D0120", "byte_offset": "0x1180", "polls": 0},
+        {"guest": "0x1B964000", "reference": "0x00000004", "mask": "0xFFFFFFFF", "endian": 2, "compare": 3, "source": "0x095D0120", "byte_offset": "0x1232", "polls": 0},
+        {"guest": "0x1B964014", "reference": "0x00000208", "mask": "0xFFFFFFFF", "endian": 2, "compare": 3, "source": "0x095D0120", "byte_offset": "0x1256", "polls": 0},
+        {"guest": "0x1B964010", "reference": "0x823A4758", "mask": "0xFFFFFFFF", "endian": 2, "compare": 3, "source": "0x095D0120", "byte_offset": "0x1280", "polls": 0},
+        {"guest": "0x1B964000", "reference": "0x00000000", "mask": "0xFFFFFFFF", "endian": 2, "compare": 3, "source": "0x095D0120", "byte_offset": "0x1320", "polls": 0},
+        {"guest": "0x1B964004", "reference": "0x00000000", "mask": "0xFFFFFFFF", "endian": 2, "compare": 3, "source": "0x095D0120", "byte_offset": "0x1352", "polls": 0}
+      ],
+      "unsupported_wait_forms": 2,
+      "coher_status_host_completion_log_records": 25405,
+      "indexed_draw_submission_log_records": 1834,
+      "missing_menu_background_xml_opens": 4,
+      "mixed_copy_convert_extent_refresh_failures": 1,
+      "guest_fault_log_entries": 0
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The current exact retail XEX ran with P1 host/runtime hashes and a Linux DSO built from the open P2 PR #2161 head commit.",
+      "All six captured WAIT_REG_MEM commands in this command buffer completed with polls=0, including the wait at guest 0x1B964004.",
+      "The safety disclaimer was visible before A and absent by the next capture; later captures remained mostly black with no visible main menu.",
+      "Four missing menu_background.xml opens occurred while later renderer submission log records continued; the missing file is not proven causal."
+    ],
+    "not_proven": [
+      "That the guest sampled or consumed any scheduled A/Start pulse in this run.",
+      "Retail main-menu entry, offline-race entry, or correct fully visible rendering.",
+      "That the one mixed Copy/Convert extent failure or missing XML caused the black frame.",
+      "Clean title shutdown, merged status of the P2 plugin branch, or game progress from renderer submission counts."
+    ],
+    "next_p1_step": "Keep retail wait/input semantics unchanged. Trace a confirmed retail frontend-state transition from the disclaimer using the current P1 runtime; investigate renderer translation only in Process 2."
+  }
+}

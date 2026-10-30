@@ -1,0 +1,138 @@
+{
+  "schema": "shift.xbox360.linux-retail-controller-pipeline.v1",
+  "captured_on": "2026-10-26",
+  "retail_image": {
+    "path": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data/default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4"
+  },
+  "runtime": {
+    "platform": "Linux AMD64",
+    "host_executable": {
+      "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/nfs_shift",
+      "sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a"
+    },
+    "rexglue_runtime": {
+      "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/librexruntime.so",
+      "sha256": "f43d094797bf30c2e552b244c6ec50e4e69bb0b11fee409e07a812ba74158f78"
+    },
+    "gpu_plugin": {
+      "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/librexgpu-shift-native.so",
+      "sha256": "f1404a4f57fb073f12cc0b34da4f74e3a75d8d6f2ffb49e62708c9a1b09bb6b6",
+      "source_state": "Local Process 2 scratch build; not claimed merged."
+    }
+  },
+  "run": {
+    "duration_seconds": 62.87,
+    "termination": "The GDB timer sent SIGINT at 60 seconds while the game remained live; GDB detached and exited with code 0.",
+    "guest_memory_modified_by_probe": false,
+    "instrumentation": "Read-only GDB breakpoints in the retail generated functions and the SHA-identified ReXGlue runtime. Breakpoint stops can perturb scheduling.",
+    "gdb_script": {
+      "path": "tools/xbox360/trace_linux_retail_controller_pipeline.gdb",
+      "sha256": "9af04ff80521dccd00f020cc846d177fe8d4a4d5c8308bbe11a449b2661c186e"
+    },
+    "runner_script": {
+      "path": "tools/xbox360/capture_linux_retail_controller_pipeline.py",
+      "sha256": "5ac35265545bb33e096e9e33683afdad89ab6a79f9ab3f325d507d18b3e341d2"
+    },
+    "gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-controller-pipeline-r4-20261026/gdb.log",
+      "sha256": "d34b2d86cc22dcd909b8597dea982cf990b578ee0f9e4c5d642af04404631b5a"
+    },
+    "runner_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-controller-pipeline-r4-20261026/runner.log",
+      "sha256": "1bae4930df91d543f4a8fb3bdc7dac4baecd0ae025eb553f43dcdd3dfbbd2c6e"
+    },
+    "runtime_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/logs/nfs_shift_014.log",
+      "sha256": "d60a54683ccc45fc2b07fc3940b88c380a2c30176dfc2014ae9f959788e2e36f",
+      "guest_fault_logged": false,
+      "renderer_observation": "One Vulkan frame refresh reported an unsupported target format or Copy/Convert source extent; this local P2 plugin result is not attributed to retail input."
+    }
+  },
+  "controller": {
+    "device": "Linux uinput Xbox 360 pad, VID:PID 045e:028e",
+    "physical_controller_filter": "SDL_GAMECONTROLLER_IGNORE_DEVICES=0x045e/0x0b12",
+    "pulses": [
+      {"at_seconds": 8, "button": "A", "xinput_mask": "0x1000", "duration_ms": 650},
+      {"at_seconds": 16, "button": "Start", "xinput_mask": "0x0010", "duration_ms": 650},
+      {"at_seconds": 24, "button": "A", "xinput_mask": "0x1000", "duration_ms": 650},
+      {"at_seconds": 32, "button": "Start", "xinput_mask": "0x0010", "duration_ms": 650},
+      {"at_seconds": 40, "button": "A", "xinput_mask": "0x1000", "duration_ms": 650},
+      {"at_seconds": 48, "button": "Start", "xinput_mask": "0x0010", "duration_ms": 650}
+    ]
+  },
+  "retail_input_path": {
+    "runtime_breakpoints": {
+      "xam_entry": "rex::kernel::xam::XamInputGetState_entry at runtime offset 0x4A3060",
+      "host_get_state": "rex::input::InputSystem::GetState at runtime offset 0x305DA0",
+      "xam_entry_hits": 1628,
+      "host_get_state_hits": 1628,
+      "host_user0_return_samples": 101,
+      "sampled_masks_unfiltered_by_status": {
+        "0x0000": 94,
+        "0x0010": 2,
+        "0x1000": 5
+      },
+      "successful_non_neutral_transitions": [
+        {"packet": 3, "status": "0x00000000", "buttons": "0x0010", "time_seconds": 13.914},
+        {"packet": 5, "status": "0x00000000", "buttons": "0x1000", "time_seconds": 21.651}
+      ],
+      "successful_release_samples": [
+        {"packet": 4, "status": "0x00000000", "buttons": "0x0000", "time_seconds": 14.392},
+        {"packet": 6, "status": "0x00000000", "buttons": "0x0000", "time_seconds": 22.313}
+      ]
+    },
+    "retail_controller_object": "0xBCAEB260",
+    "retail_update_functions": {
+      "sub_82308E60_hits": 1628,
+      "sub_8230CD00_hits": 1628,
+      "observed_non_neutral_states": [
+        {
+          "function": "0x8230CD00",
+          "time_seconds": 13.664,
+          "current": "0x0010",
+          "previous": "0x0000",
+          "edge": "0x0010"
+        },
+        {
+          "function": "0x82308E60",
+          "time_seconds": 13.750,
+          "current": "0x0010",
+          "previous": "0x0000",
+          "edge": "0x0010"
+        },
+        {
+          "function": "0x8230CD00",
+          "time_seconds": 21.617,
+          "current": "0x1000",
+          "previous": "0x0000",
+          "edge": "0x1000"
+        },
+        {
+          "function": "0x82308E60",
+          "time_seconds": 21.650,
+          "current": "0x1000",
+          "previous": "0x0000",
+          "edge": "0x1000"
+        }
+      ],
+      "candidate_dispatcher_hits": 0,
+      "candidate_raw_mask_getter_hits": 0
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail XEX called XamInputGetState and reached the ReXGlue InputSystem::GetState implementation repeatedly in the same run.",
+      "Successful user-0 samples returned the Start and A masks, and the same masks were present on retail controller object 0xBCAEB260 in the original update/edge-tracking functions.",
+      "This run does not show a Linux host-input delivery failure before the retail controller edge-tracking path."
+    ],
+    "not_proven": [
+      "That every scheduled pulse was sampled or consumed by an active frontend action handler.",
+      "A retail main-menu transition, offline-race entry, visible gameplay, or correct rendering; this run captured no pixels.",
+      "That candidate functions 0x8230D398 and 0x828B22B8 are the only paths for frontend actions.",
+      "Any causal relationship between the logged Vulkan refresh failure and the retail frontend state."
+    ],
+    "next_p1_step": "Treat host input delivery and the retail edge-update entry as verified for this run. Do not change XAM input semantics; pursue another P1 mismatch only when a concrete guest-side discrepancy is captured."
+  }
+}

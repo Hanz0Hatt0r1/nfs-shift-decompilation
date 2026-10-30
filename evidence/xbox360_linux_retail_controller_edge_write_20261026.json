@@ -1,0 +1,114 @@
+{
+  "schema": "shift.xbox360.linux-retail-controller-edge-write.v1",
+  "captured_on": "2026-10-26",
+  "retail_image": {
+    "path": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data/default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4"
+  },
+  "runtime": {
+    "platform": "Linux AMD64",
+    "host_executable": {
+      "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/nfs_shift",
+      "sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a"
+    },
+    "rexglue_runtime": {
+      "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/librexruntime.so",
+      "sha256": "f43d094797bf30c2e552b244c6ec50e4e69bb0b11fee409e07a812ba74158f78"
+    },
+    "gpu_plugin": {
+      "path": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/librexgpu-shift-native.so",
+      "sha256": "f1404a4f57fb073f12cc0b34da4f74a3e75d8d6f2ffb49e62708c9a1b09bb6b6",
+      "source_state": "Local Process 2 scratch build; not claimed merged."
+    }
+  },
+  "run": {
+    "duration_seconds": 60.865,
+    "termination": "The harness sent SIGINT at 60 seconds while the guest remained live; GDB detached and exited with code 0.",
+    "guest_memory_modified_by_probe": false,
+    "instrumentation": "Read-only GDB entry breakpoints and x86 hardware write watchpoints on two retail guest edge bytes. Breakpoint stops can perturb scheduling.",
+    "gdb_script": {
+      "path": "tools/xbox360/trace_linux_retail_controller_edge_watch.gdb",
+      "sha256": "e295b538c5acfc09e43dc76d392fa82ba7b064d0ff5161df31f07c9652f486ae"
+    },
+    "runner_script": {
+      "path": "tools/xbox360/capture_linux_retail_controller_edge_watch.py",
+      "sha256": "9834d21aa814bfdcb7f5cd8ac7efc3462db4885fa1f59112857652291c928262"
+    },
+    "gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-controller-edge-watch-20261026/gdb.log",
+      "sha256": "b3eb08c470650f25957f5bf91515869d2a89b1cb5e632ef4c72866f14a0005b0"
+    },
+    "runner_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-controller-edge-watch-20261026/runner.log",
+      "sha256": "dbd418b053c78f004f64b0322b75f3a49c2ed69c631f81b9f466da9e6661fabf"
+    },
+    "runtime_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-p2-scratch-linux-20261026/bin/logs/nfs_shift_015.log",
+      "sha256": "29bb689dbc2a64ea05e4d5225bb19312b77aa4511bc67add9d629b4f896686e8",
+      "guest_fault_logged": false
+    }
+  },
+  "controller": {
+    "device": "Linux uinput Xbox 360 pad, VID:PID 045e:028e",
+    "pulses": [
+      {"at_seconds": 16, "button": "Start", "duration_ms": 650},
+      {"at_seconds": 24, "button": "A", "duration_ms": 650},
+      {"at_seconds": 32, "button": "Start", "duration_ms": 650},
+      {"at_seconds": 40, "button": "A", "duration_ms": 650},
+      {"at_seconds": 48, "button": "Start", "duration_ms": 650}
+    ]
+  },
+  "retail_edge_path": {
+    "controller_object": "0xBCAEB260",
+    "retail_update_function": "0x8230CD00",
+    "caller_chain": ["0x8230CD00", "0x82308E60", "0x822FA1B0", "0x826C5ED8", "0x822D6EA8"],
+    "function_hits": {
+      "sub_82308E60": 1764,
+      "sub_8230CD00": 1764,
+      "sub_8230D398": 0
+    },
+    "xam_input_get_state_entries": 1764,
+    "host_input_get_state_calls": 1764,
+    "host_input_return_samples": 0,
+    "edge_byte_writes": [
+      {
+        "button": "Start",
+        "input_mask": "0x0010",
+        "guest_address": "0xBCAEB2EC",
+        "object_offset": 140,
+        "old_value": "0x00",
+        "new_value": "0x80",
+        "input_down_seconds": 16.001,
+        "gdb_elapsed_seconds": 15.339
+      },
+      {
+        "button": "A",
+        "input_mask": "0x1000",
+        "guest_address": "0xBCAEB2F4",
+        "object_offset": 148,
+        "old_value": "0x00",
+        "new_value": "0x80",
+        "input_down_seconds": 24.000,
+        "gdb_elapsed_seconds": 23.300
+      }
+    ],
+    "write_instruction": "Host JIT PC 0x55555814bad4 (sub_8230CD00+468)",
+    "watchpoint_backtrace": ["sub_8230CD00", "sub_82308E60", "sub_822FA1B0", "sub_826C5ED8", "sub_822D6EA8"]
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail XEX wrote the Start and A rising-edge bytes in the original sub_8230CD00 function after the matching masks reached controller object 0xBCAEB260.",
+      "The writes followed the retail caller chain sub_82308E60 -> sub_822FA1B0 -> sub_826C5ED8 -> sub_822D6EA8.",
+      "This run provides no evidence for changing Linux input translation or the retail edge accumulator."
+    ],
+    "not_proven": [
+      "The GDB host-input return hook produced no samples in this run; do not interpret that as absence of input. A separate same-build trace recorded successful non-neutral user-0 samples.",
+      "That the written edge bytes reached a frontend action handler, or that any scheduled pulse changed frontend state.",
+      "A retail main-menu transition, offline-race entry, visible gameplay, or correct rendering; this run captured no pixels.",
+      "That sub_8230D398 is the only frontend action dispatcher.",
+      "Natural guest shutdown; the still-live process was interrupted by the harness."
+    ],
+    "next_p1_step": "Trace the caller's post-edge child-state/action path or capture a concrete guest-side discrepancy before changing input semantics."
+  }
+}

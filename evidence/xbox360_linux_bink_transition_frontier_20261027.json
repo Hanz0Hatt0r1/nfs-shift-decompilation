@@ -1,0 +1,153 @@
+{
+  "schema": "shift.xbox360.linux-bink-transition-frontier.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "movie_asset": {
+      "path_relative_to_game_root": "Movies/Franchise_Ident.bik",
+      "sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+      "declared_frame_count": 281,
+      "retail_frame_target": "0x00000119"
+    }
+  },
+  "binaries": {
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime": {
+      "sha256": "f049d64a46ab04e8d5fcb71800c92d86a5cc6a5fbd38a6b1bf1a623c86398a80",
+      "sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99"
+    },
+    "p2_linux_plugin": {
+      "source_commit": "ab3c08bd6fc365cf847b7ce71db55d8decda56f8",
+      "sha256": "abc7bf5df779be7dce4fdae719c05c89a35ad8ce222f95b3337478f24bddc402",
+      "handoff_manifest_sha256": "da9fbd1c379de00124123d0eadfffce4694d9ef779a3815ccc0864dc6e9b5b13"
+    }
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "runner_elapsed_seconds": 148.902,
+    "gdb_timer_seconds": 140,
+    "termination": "GDB interrupted after its bounded window, detached, then sent SIGINT to the still-live title. Runtime log records Title terminated; hard-exiting process. Clean title shutdown was not observed.",
+    "gdb_instrumented": true,
+    "instrumented_guest_functions": [
+      "0x82679C50",
+      "0x82678FD0",
+      "0x82679510"
+    ],
+    "guest_memory_modified_by_probe": false,
+    "controller": {
+      "device": "Linux uinput Xbox 360 pad, VID:PID 045e:028e",
+      "pulse_duration_ms": 500,
+      "pulses": [
+        {"at_seconds": 55, "button": "A", "mask": "0x1000"},
+        {"at_seconds": 70, "button": "Start", "mask": "0x0010"},
+        {"at_seconds": 85, "button": "A", "mask": "0x1000"},
+        {"at_seconds": 100, "button": "Start", "mask": "0x0010"},
+        {"at_seconds": 115, "button": "A", "mask": "0x1000"}
+      ],
+      "guest_consumption_verified": false
+    },
+    "trace_script": {
+      "path": "tools/xbox360/trace_linux_bink_transition_frontier_20261027.gdb",
+      "sha256": "9b19b94acec454b667f42a2e35af018f322cc7eb6a0d931b0dc21f1022489dd8"
+    },
+    "raw_gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-bink-transition-20261027/gdb.log",
+      "sha256": "647e4231f53631201c384096e50419170ef477b6e54a93fbc5bc7052d5a946a2"
+    },
+    "runner_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-bink-transition-20261027/runner.log",
+      "sha256": "689600be241be6aace1bf7afdbd9b0fbe42efb2e9bcfac52ed801af1c1e4b0b9"
+    },
+    "renderer_logs": [
+      {
+        "path_outside_git": "/tmp/nfs-shift-p2-depth-resolve-target-frame707-20261027/bin/logs/nfs_shift_002.1.log",
+        "sha256": "4eef206695ad1efba028f087e4dbf68fb275854a41400a608e17ae853e07978a",
+        "frame_refresh_failures": 1,
+        "guest_faults": 0
+      },
+      {
+        "path_outside_git": "/tmp/nfs-shift-p2-depth-resolve-target-frame707-20261027/bin/logs/nfs_shift_002.log",
+        "sha256": "3f07c282758fbe5d01059d0f5636c37faedb348c50d52733024c0a955c4e05ed",
+        "frame_refresh_failures": 0,
+        "guest_faults": 0,
+        "termination_record": "Title terminated; hard-exiting process."
+      }
+    ]
+  },
+  "bink_frontier": {
+    "guest_wrapper_object": "0xBF2537D0",
+    "guest_bink_object": "0xE6795040",
+    "frame_target": 281,
+    "first_observation": {
+      "path": "sub_82678FD0",
+      "hit": 1,
+      "progress": 1,
+      "caller_lr": "0x82679C7C"
+    },
+    "last_observation": {
+      "path": "sub_82679510",
+      "hit": 220,
+      "progress": 281,
+      "target": 281,
+      "caller_lr": "0x82679C84"
+    },
+    "gdb_hit_counts": {
+      "manager_0x82679C50": 220,
+      "video_wrapper_0x82678FD0": 219,
+      "post_wrapper_update_0x82679510": 220
+    },
+    "outer_manager_caller_lr": "0x82E2CB80",
+    "post_target_calls_observed": 0,
+    "completion_fields_at_last_observation": {
+      "bink_plus_8_frame_target": 281,
+      "bink_plus_12_progress": 281,
+      "bink_plus_236": 0,
+      "bink_plus_248": 1,
+      "bink_plus_276": 4,
+      "bink_plus_820": 0
+    }
+  },
+  "static_call_chain": {
+    "wrapper_parent": {
+      "function": "0x82679C50",
+      "calls": "0x82678FD0",
+      "then_calls": "0x82679510"
+    },
+    "nested_dispatch": {
+      "function": "0x82E2CB50",
+      "indirect_vtable_slot_offset": 8,
+      "guest_return_address": "0x82E2CB80",
+      "resolved_runtime_target": "0x82679C50"
+    },
+    "parent_update": {
+      "function": "0x82E2C5A8",
+      "calls": "0x82E2CB50",
+      "guest_return_address": "0x82E2C60C",
+      "then_returns": 1
+    },
+    "scene_object_update": {
+      "function": "0x82DDC6F0",
+      "calls": "0x82E2C5A8",
+      "guest_return_address": "0x82DDC91C",
+      "on_success_increments": "object+356"
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail Bink guest object reached its retail frame target: field +12 equaled field +8 (281 / 0x119) in the post-wrapper update.",
+      "The live wrapper call site is the indirect virtual call at 0x82E2CB80 inside 0x82E2CB50, reached by 0x82E2C5A8 from the scene-object update 0x82DDC6F0.",
+      "No further instrumented Bink manager, video-wrapper, or post-wrapper calls were observed after the target observation through the bounded stop.",
+      "The probe read guest memory and sent ordinary uinput controller events; it did not write guest state."
+    ],
+    "not_proven": [
+      "That the target counter means 281 decoded or visibly presented video frames.",
+      "Which next child or frontend state followed Bink completion; 0x82E2C5A8 and 0x82DDC6F0 return values and scene state were not instrumented in this run.",
+      "That any scheduled A/Start pulse was consumed by the guest.",
+      "A visible main menu, offline race, clean title shutdown, Vulkan 1.1-only compatibility, or Android ARM64 execution.",
+      "That the one renderer refresh failure caused a frontend or scene transition."
+    ],
+    "next_step": "Trace 0x82E2CD10 and 0x82E2C5A8 return values plus object+356 at 0x82DDC6F0 around the target, then identify the next child and frontend-state transition without changing retail semantics."
+  }
+}

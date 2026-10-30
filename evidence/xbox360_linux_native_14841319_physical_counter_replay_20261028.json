@@ -1,0 +1,257 @@
+{
+  "bink": {
+    "elapsed_seconds": 77.511,
+    "progress": 281,
+    "target": 281
+  },
+  "capture_mode": "native-only",
+  "capture_root": "/home/pes/work/nfs-shift-p1-p2-14841319-physical-counter-replay-20261028",
+  "gdb_exit": 0,
+  "identities": {
+    "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "native_plugin_build_id": "ebbb619ab5a5142d3392b62867b88848744492c0",
+    "native_plugin_sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+    "native_plugin_sha256": "f794272592ea955c66f00a11c784a56bc77baa6f2205c83fdad8269fdac5443f",
+    "native_plugin_source_commit": "14841319",
+    "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+    "runtime_sdk_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "input": {
+    "a_mask_observed": false,
+    "action_dispatch_observed": false,
+    "automation_pulses": [
+      {
+        "button": "Start",
+        "down_epoch_ms": 1793186005382,
+        "expected_mask": "0x0010",
+        "index": 0,
+        "up_epoch_ms": 1793186008382
+      },
+      {
+        "button": "A",
+        "down_epoch_ms": 1793186011382,
+        "expected_mask": "0x1000",
+        "index": 1,
+        "up_epoch_ms": 1793186014382
+      },
+      {
+        "button": "Start",
+        "down_epoch_ms": 1793186017383,
+        "expected_mask": "0x0010",
+        "index": 2,
+        "up_epoch_ms": 1793186020384
+      }
+    ],
+    "gate_elapsed_seconds": 117.828,
+    "retail_controller_returns": [
+      {
+        "current": 0,
+        "edge": 0,
+        "edge_bytes": "00000000000000000000000000000000000000000000000000",
+        "elapsed_seconds": 78.596,
+        "method": "sub_82308E60",
+        "previous": 0
+      },
+      {
+        "current": 16,
+        "edge": 16,
+        "edge_bytes": "80000000000000000000000000000000000000000000000000",
+        "elapsed_seconds": 117.223,
+        "method": "sub_82308E60",
+        "previous": 0
+      },
+      {
+        "current": 0,
+        "edge": 0,
+        "edge_bytes": "18000000000000000000000000000000000000000000000000",
+        "elapsed_seconds": 122.077,
+        "method": "sub_82308E60",
+        "previous": 0
+      }
+    ],
+    "start_edge_observed": true,
+    "trigger": "scene_gate",
+    "xam_return_button_mask_histogram": {
+      "0": 28,
+      "16": 8
+    }
+  },
+  "interpretation": "The Native-only run on plugin 14841319 reached the instrumented scene gate and the retail controller edge path observed Start (0x0010). The sequence harness issued Start/A/Start, but XAM returned no A mask (0x1000); after Start, the captured scene children were cleared. The run did not confirm an interactive main menu, action dispatch, or frame-622 geometry/shader dump. The physical guest alias watch attributed 537 software-head writes to ShiftNativeGraphicsSystem::RingWorkerLoop(); 502 advanced by +2 while 35 had other deltas. The same run recorded 12 manager counter increments and 40 decrements, ending at -28. This co-occurrence does not establish which PM4 event or completion caused the cursor changes or counter underflow. No guest runtime state or renderer code was changed.",
+  "native_draw_dump_created": false,
+  "p2_join_inputs": {
+    "guest_callbacks": 377,
+    "malformed_ring_records": 0,
+    "path": "xbox360_linux_native_14841319_source1_join_inputs_20261028.jsonl.gz",
+    "rows": 1471,
+    "sha256": "69c079ee1e818c44fdae55e7941ecd815f8beefbb831c1908bc1b24e1906ae0f",
+    "source1_pm4_interrupts": 1094
+  },
+  "raw_artifact_hashes": {
+    "capture_metadata.json": "d5f28873d85cb2ff71de31f26d65a8b4f3d588fba6c7b941cc4d9b4535e9b68d",
+    "events.json": "c8fcbf3bf45a364d0be54a7226fecedfbde740e98e12e0baf449fdb2ad0111a2",
+    "gdb.log": "a95f601f47850bfbe750649c650143776f7a84e1f8ae3ef5a5a24db9262bb1f0",
+    "nfs_shift_001.1.log": "315457ba2c63d008da0434979d7e339e97dcf1120ca843ccbd897776cfa696ed",
+    "nfs_shift_001.log": "769f8ed26737de7925238b3428a140068cf1fcd9897e423f82c47b3db2a5da0b"
+  },
+  "renderer": {
+    "dump_files_created": false,
+    "p2_ring_trace_malformed_records": 0,
+    "p2_ring_trace_status": "records_captured",
+    "requested": true,
+    "ring_trace_logs": [
+      {
+        "path": "bin/logs/nfs_shift_001.1.log",
+        "sha256": "315457ba2c63d008da0434979d7e339e97dcf1120ca843ccbd897776cfa696ed",
+        "size_bytes": 5242788
+      },
+      {
+        "path": "bin/logs/nfs_shift_001.log",
+        "sha256": "769f8ed26737de7925238b3428a140068cf1fcd9897e423f82c47b3db2a5da0b",
+        "size_bytes": 2182469
+      }
+    ],
+    "selected_frame": 622
+  },
+  "requested_duration_seconds": 135,
+  "requested_native_draw_frame": 622,
+  "run_root": "/home/pes/work/nfs-shift-p1-p2-14841319-physical-counter-replay-20261028/runs/shift-native-r1",
+  "runtime_observations": {
+    "manager_counter_delta_histogram": {
+      "-1": 40,
+      "1": 12
+    },
+    "manager_counter_final_signed": -28,
+    "manager_counter_writes": 52,
+    "retail_queue_wait_entries": 297,
+    "retail_queue_wait_returns": 211,
+    "scene_state_348_final": 0,
+    "scene_update_count_356_final": 0,
+    "software_head_aliases": [
+      "physical"
+    ],
+    "software_head_first_write": {
+      "after": 2491,
+      "before": 2489,
+      "elapsed_seconds": 78.555,
+      "guest_address": 3081715712,
+      "host_address": 8987295744,
+      "host_symbol": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 26867 in section .text of /home/pes/work/nfs-shift-p1-p2-14841319-physical-counter-replay-20261028/runs/shift-native-r1/bin/librexgpu-shift-native.so",
+      "memory_alias": "physical",
+      "thread_name": "SHIFT Native GP"
+    },
+    "software_head_last_write": {
+      "after": 3333,
+      "before": 3331,
+      "elapsed_seconds": 133.471,
+      "host_symbol": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 26867 in section .text of /home/pes/work/nfs-shift-p1-p2-14841319-physical-counter-replay-20261028/runs/shift-native-r1/bin/librexgpu-shift-native.so",
+      "thread_name": "SHIFT Native GP"
+    },
+    "software_head_write_delta_histogram": {
+      "-18": 1,
+      "-4": 10,
+      "-6": 19,
+      "-8": 2,
+      "2": 502,
+      "20": 1,
+      "4": 2
+    },
+    "software_head_write_events": 537,
+    "source1_guest_callbacks": 377,
+    "source1_pm4_interrupts": 1094,
+    "worker_completion_events": 81,
+    "worker_dequeues": 82,
+    "worker_enqueues": 151
+  },
+  "scene_gate": [
+    {
+      "child_words_264": [
+        3147612464,
+        3082874832,
+        3082874880,
+        1
+      ],
+      "elapsed_seconds": 116.315,
+      "state_348": 1,
+      "trace_sequence": 4062,
+      "update_count_356": 1
+    }
+  ],
+  "scene_gate_reached": true,
+  "scene_states": [
+    {
+      "child_words_264": [
+        3147612464,
+        3146350544,
+        3146350592,
+        1
+      ],
+      "elapsed_seconds": 78.625,
+      "state_348": 1,
+      "trace_sequence": 33,
+      "update_count_356": 267
+    },
+    {
+      "child_words_264": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "elapsed_seconds": 78.835,
+      "state_348": 0,
+      "trace_sequence": 82,
+      "update_count_356": 0
+    },
+    {
+      "child_words_264": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "elapsed_seconds": 115.235,
+      "state_348": 1,
+      "trace_sequence": 3994,
+      "update_count_356": 0
+    },
+    {
+      "child_words_264": [
+        3147612464,
+        3082874832,
+        3082874880,
+        1
+      ],
+      "elapsed_seconds": 117.453,
+      "state_348": 1,
+      "trace_sequence": 4135,
+      "update_count_356": 1
+    },
+    {
+      "child_words_264": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "elapsed_seconds": 119.037,
+      "state_348": 1,
+      "trace_sequence": 4242,
+      "update_count_356": 0
+    },
+    {
+      "child_words_264": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "elapsed_seconds": 120.322,
+      "state_348": 0,
+      "trace_sequence": 4329,
+      "update_count_356": 0
+    }
+  ],
+  "schema": "shift.xbox360.linux.process1.native-14841319-physical-counter-replay.v1"
+}

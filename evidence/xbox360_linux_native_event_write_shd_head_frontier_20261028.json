@@ -1,0 +1,889 @@
+{
+  "captured_on": "2026-10-28",
+  "identity": {
+    "linux_host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "native_plugin_build_id": "ebbb619ab5a5142d3392b62867b88848744492c0",
+    "native_plugin_sha256": "f794272592ea955c66f00a11c784a56bc77baa6f2205c83fdad8269fdac5443f",
+    "native_plugin_source_commit": "14841319bedf9ecf16e15270574381e83b021677",
+    "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+    "retail_default_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "rexglue_runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "sdk_provider_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+    "title_id": "454108B4"
+  },
+  "interpretation": {
+    "next": [
+      "Repeat the head-boundary capture with the P2 per-event source/batch/dispatch trace and join callbacks by gpu_dispatch_id.",
+      "Instrument original scene-state field writers and the registered frontend object/callback path on the exact frozen plugin."
+    ],
+    "not_proven": [
+      "Why the separate P2 3381\u21923375 rollback occurred.",
+      "Whether the rollback is timing-dependent or caused by another packet/batch/write path.",
+      "A visible or interactive main menu or a named retail frontend action."
+    ],
+    "supported": [
+      "Clean captures reached Bink 281/281.",
+      "On the clean immediate-input capture, Start 0x0010 and A 0x1000 were returned by XAM and produced controller-object rising edges.",
+      "The sampled scene manager entered state 1 with populated children and then cleared to state 0 with empty children; no frontend gate or confirmed main menu followed.",
+      "The exact 14841319 plugin had a clean 320s run that stopped just below the disputed head value (last packet 3349). A separate partial run crossed value 3381 and remained monotonic through 3971."
+    ]
+  },
+  "method": {
+    "backend": "shift-native only",
+    "guest_memory_modified_by_probe": false,
+    "limitations": [
+      "This probe does not record source IB/base byte offset or the P2 dispatch/batch ID.",
+      "head_before is a sample before a decoder call; continuity with the previous packet value is strong evidence of sequential store visibility, not a complete trace of every possible writer.",
+      "A previous P2 audit recorded a separate 3381\u21923375 head regression; these runs do not disprove that separate capture."
+    ],
+    "packet_probe": "GDB breakpoint at decode_guest_event_write_shd entry; records raw 16-byte packet and samples host alias for guest physical 0x17AF4000 before decoding/storing."
+  },
+  "question": "Reproduce the Native software-head write regression previously observed near 3381 and verify the retail Bink/input/scene frontier under exact runtime identities.",
+  "runs": [
+    {
+      "bink": {
+        "elapsed_seconds": 87.975,
+        "progress": 281,
+        "target": 281,
+        "wall_clock_epoch_ms": 1793188163947
+      },
+      "bink_to_first_button_down_ms": null,
+      "capture_duration_seconds": 136.482,
+      "controller_rising_edges": [],
+      "event_capture_status": "gdb_json_finalizer",
+      "event_write_shd": {
+        "captured_packet_count": 1038,
+        "data_source": "GDB events.json and matching runner.log records",
+        "first": {
+          "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-packet-trace-14841319-20261028/runs/shift-native-r1/bin/librexgpu-shift-native.so",
+          "elapsed_seconds": 33.037,
+          "endian_mode": 2,
+          "guest_address": "0x17af4000",
+          "head_before": 1,
+          "index": 0,
+          "initiator": "0x00000003",
+          "packet_bytes": "c00258000000000317af400200000003",
+          "packet_value": "0x00000003",
+          "packet_words": [
+            "0xc0025800",
+            "0x00000003",
+            "0x17af4002",
+            "0x00000003"
+          ],
+          "thread": 11,
+          "thread_name": "SHIFT Native GP"
+        },
+        "first_boundary_packet_sequence": [],
+        "head_before_matches_previous_packet_count": 1037,
+        "head_before_matches_previous_packet_total": 1037,
+        "last": {
+          "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-packet-trace-14841319-20261028/runs/shift-native-r1/bin/librexgpu-shift-native.so",
+          "elapsed_seconds": 129.302,
+          "endian_mode": 2,
+          "guest_address": "0x17af4000",
+          "head_before": 2075,
+          "index": 1037,
+          "initiator": "0x00000003",
+          "packet_bytes": "c00258000000000317af40020000081d",
+          "packet_value": "0x0000081d",
+          "packet_words": [
+            "0xc0025800",
+            "0x00000003",
+            "0x17af4002",
+            "0x0000081d"
+          ],
+          "thread": 11,
+          "thread_name": "SHIFT Native GP"
+        },
+        "packet_value_delta_histogram": {
+          "2": 1037
+        },
+        "packet_value_regression_count": 0,
+        "sampled_head_before_regression_count": 0,
+        "target_guest_physical": "0x17AF4000"
+      },
+      "final_scene_state": {
+        "child_words_264": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "list_count_36": 1,
+        "object": 2199806340,
+        "state_348": 0,
+        "update_count_356": 0
+      },
+      "first_button_down_epoch_ms": null,
+      "gdb_exit": 0,
+      "host_input_masks": [
+        "0x0000"
+      ],
+      "id": "native_event_packet_135",
+      "input_delay_requested_seconds": 0,
+      "input_gate_observed": false,
+      "input_trigger": "scene_gate",
+      "partial": false,
+      "raw_files": {
+        "events.json": {
+          "bytes": 3144644,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-packet-trace-14841319-20261028/runs/shift-native-r1/events.json",
+          "sha256": "a8a235d27ba43a68cca645a447a121c6302623d83744b04f00afb4981cb9135c"
+        },
+        "gdb.log": {
+          "bytes": 1999053,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-packet-trace-14841319-20261028/runs/shift-native-r1/gdb.log",
+          "sha256": "b790def01973e1aa2343f4a0a273959241808cd1a19eb49b135dae3b0b601ddf"
+        },
+        "run_metadata.json": {
+          "bytes": 4895,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-packet-trace-14841319-20261028/runs/shift-native-r1/run_metadata.json",
+          "sha256": "727b60e36897e82be6ee947057a0235e8ac5b35eceecb6975ca0606554a13800"
+        },
+        "runner.log": {
+          "bytes": 1999636,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-packet-trace-14841319-20261028/runs/shift-native-r1/runner.log",
+          "sha256": "952010dd7d50dbe76defc9d0f5dd81b6172074dc9fac95b84c2355e9b5a846f2"
+        }
+      },
+      "raw_run_root": "/home/pes/work/nfs-shift-p1-native-event-write-packet-trace-14841319-20261028",
+      "scene_states": [
+        {
+          "children": [
+            3147612464,
+            3146350544,
+            3146350592,
+            1
+          ],
+          "elapsed_seconds": 88.637,
+          "state_348": 1,
+          "update_count_356": 155
+        },
+        {
+          "children": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "elapsed_seconds": 88.951,
+          "state_348": 0,
+          "update_count_356": 0
+        }
+      ],
+      "xam_input_masks_observed": [
+        "0x0000"
+      ],
+      "xam_input_return_count": 8
+    },
+    {
+      "bink": {
+        "elapsed_seconds": 75.895,
+        "progress": 281,
+        "target": 281,
+        "wall_clock_epoch_ms": 1793188350077
+      },
+      "bink_to_first_button_down_ms": null,
+      "capture_duration_seconds": 225.327,
+      "controller_rising_edges": [],
+      "event_capture_status": "gdb_json_finalizer",
+      "event_write_shd": {
+        "captured_packet_count": 1280,
+        "data_source": "GDB events.json and matching runner.log records",
+        "first": {
+          "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-head-deep-14841319-20261028/runs/shift-native-r1/bin/librexgpu-shift-native.so",
+          "elapsed_seconds": 20.313,
+          "endian_mode": 2,
+          "guest_address": "0x17af4000",
+          "head_before": 1,
+          "index": 0,
+          "initiator": "0x00000003",
+          "packet_bytes": "c00258000000000317af400200000003",
+          "packet_value": "0x00000003",
+          "packet_words": [
+            "0xc0025800",
+            "0x00000003",
+            "0x17af4002",
+            "0x00000003"
+          ],
+          "thread": 11,
+          "thread_name": "SHIFT Native GP"
+        },
+        "first_boundary_packet_sequence": [],
+        "head_before_matches_previous_packet_count": 1279,
+        "head_before_matches_previous_packet_total": 1279,
+        "last": {
+          "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-head-deep-14841319-20261028/runs/shift-native-r1/bin/librexgpu-shift-native.so",
+          "elapsed_seconds": 218.328,
+          "endian_mode": 2,
+          "guest_address": "0x17af4000",
+          "head_before": 2559,
+          "index": 1279,
+          "initiator": "0x00000003",
+          "packet_bytes": "c00258000000000317af400200000a01",
+          "packet_value": "0x00000a01",
+          "packet_words": [
+            "0xc0025800",
+            "0x00000003",
+            "0x17af4002",
+            "0x00000a01"
+          ],
+          "thread": 11,
+          "thread_name": "SHIFT Native GP"
+        },
+        "packet_value_delta_histogram": {
+          "2": 1279
+        },
+        "packet_value_regression_count": 0,
+        "sampled_head_before_regression_count": 0,
+        "target_guest_physical": "0x17AF4000"
+      },
+      "final_scene_state": {
+        "child_words_264": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "list_count_36": 1,
+        "object": 2199806340,
+        "state_348": 0,
+        "update_count_356": 0
+      },
+      "first_button_down_epoch_ms": null,
+      "gdb_exit": 0,
+      "host_input_masks": [
+        "0x0000"
+      ],
+      "id": "native_event_head_220",
+      "input_delay_requested_seconds": 0,
+      "input_gate_observed": false,
+      "input_trigger": "scene_gate",
+      "partial": false,
+      "raw_files": {
+        "events.json": {
+          "bytes": 4666493,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-14841319-20261028/runs/shift-native-r1/events.json",
+          "sha256": "2e85a40340c0c67c298ebb309cfd9ce514fda017191553acc766d0eb108f89a8"
+        },
+        "gdb.log": {
+          "bytes": 2967712,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-14841319-20261028/runs/shift-native-r1/gdb.log",
+          "sha256": "fab74d2cc7017ea3947524c39e5474e20f4f37cd2d357fe5b31c666c9499eb11"
+        },
+        "run_metadata.json": {
+          "bytes": 5053,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-14841319-20261028/runs/shift-native-r1/run_metadata.json",
+          "sha256": "dc9ade268b222687bc61204588f43756df5895975335edf7669277afe43dffa5"
+        },
+        "runner.log": {
+          "bytes": 2968285,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-14841319-20261028/runs/shift-native-r1/runner.log",
+          "sha256": "1deaa62c2109b75183967b4affec8320da654fd50d0b5fb40c4f6eee3e77e709"
+        }
+      },
+      "raw_run_root": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-14841319-20261028",
+      "scene_states": [
+        {
+          "children": [
+            3147612464,
+            3146350544,
+            3146350592,
+            1
+          ],
+          "elapsed_seconds": 76.414,
+          "state_348": 1,
+          "update_count_356": 156
+        },
+        {
+          "children": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "elapsed_seconds": 76.696,
+          "state_348": 0,
+          "update_count_356": 0
+        }
+      ],
+      "xam_input_masks_observed": [
+        "0x0000"
+      ],
+      "xam_input_return_count": 8
+    },
+    {
+      "bink": {
+        "elapsed_seconds": 98.115,
+        "progress": 281,
+        "target": 281,
+        "wall_clock_epoch_ms": 1793188643591
+      },
+      "bink_to_first_button_down_ms": 1506,
+      "capture_duration_seconds": 326.62,
+      "controller_rising_edges": [
+        {
+          "edge": 16,
+          "elapsed_seconds": 99.766,
+          "kind": "controller_update_events",
+          "method": "sub_8230CD00"
+        },
+        {
+          "edge": 16,
+          "elapsed_seconds": 99.892,
+          "kind": "controller_update_events",
+          "method": "sub_82308E60"
+        },
+        {
+          "edge": 16,
+          "elapsed_seconds": 99.937,
+          "kind": "controller_return_events",
+          "method": "sub_82308E60"
+        }
+      ],
+      "event_capture_status": "gdb_json_finalizer",
+      "event_write_shd": {
+        "captured_packet_count": 1674,
+        "data_source": "GDB events.json and matching runner.log records",
+        "first": {
+          "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r1/bin/librexgpu-shift-native.so",
+          "elapsed_seconds": 20.219,
+          "endian_mode": 2,
+          "guest_address": "0x17af4000",
+          "head_before": 1,
+          "index": 0,
+          "initiator": "0x00000003",
+          "packet_bytes": "c00258000000000317af400200000003",
+          "packet_value": "0x00000003",
+          "packet_words": [
+            "0xc0025800",
+            "0x00000003",
+            "0x17af4002",
+            "0x00000003"
+          ],
+          "thread": 11,
+          "thread_name": "SHIFT Native GP"
+        },
+        "first_boundary_packet_sequence": [],
+        "head_before_matches_previous_packet_count": 1673,
+        "head_before_matches_previous_packet_total": 1673,
+        "last": {
+          "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r1/bin/librexgpu-shift-native.so",
+          "elapsed_seconds": 318.149,
+          "endian_mode": 2,
+          "guest_address": "0x17af4000",
+          "head_before": 3347,
+          "index": 1673,
+          "initiator": "0x00000003",
+          "packet_bytes": "c00258000000000317af400200000d15",
+          "packet_value": "0x00000d15",
+          "packet_words": [
+            "0xc0025800",
+            "0x00000003",
+            "0x17af4002",
+            "0x00000d15"
+          ],
+          "thread": 11,
+          "thread_name": "SHIFT Native GP"
+        },
+        "packet_value_delta_histogram": {
+          "2": 1673
+        },
+        "packet_value_regression_count": 0,
+        "sampled_head_before_regression_count": 0,
+        "target_guest_physical": "0x17AF4000"
+      },
+      "final_scene_state": {
+        "child_words_264": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "list_count_36": 1,
+        "object": 2199806340,
+        "state_348": 0,
+        "update_count_356": 0
+      },
+      "first_button_down_epoch_ms": 1793188645097,
+      "gdb_exit": 0,
+      "host_input_masks": [
+        "0x0000",
+        "0x0010",
+        "0x0000"
+      ],
+      "id": "native_event_head_320_r1",
+      "input_delay_requested_seconds": 3.0,
+      "input_gate_observed": false,
+      "input_trigger": "bink_complete",
+      "partial": false,
+      "raw_files": {
+        "events.json": {
+          "bytes": 5669083,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r1/events.json",
+          "sha256": "55303567b66ccb5475c9044581e18c7a2e251fbfd1f6ec37f2ecca38010331a2"
+        },
+        "gdb.log": {
+          "bytes": 3615775,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r1/gdb.log",
+          "sha256": "19dda9fe7c90d53e1583f5d4031ea57dea394b273961770af0fadc5af8e46f17"
+        },
+        "run_metadata.json": {
+          "bytes": 5632,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r1/run_metadata.json",
+          "sha256": "f5f8ca8cd7c36e8b8d5605bb633500c010456bd4a5569cdb8b71c350ce908f9d"
+        },
+        "runner.log": {
+          "bytes": 3616640,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r1/runner.log",
+          "sha256": "6f8529047a1c9644d5247595710865b08809c6784404134715a886487825c206"
+        }
+      },
+      "raw_run_root": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028",
+      "scene_states": [
+        {
+          "children": [
+            3147612464,
+            3146350544,
+            3146350592,
+            1
+          ],
+          "elapsed_seconds": 98.71,
+          "state_348": 1,
+          "update_count_356": 315
+        },
+        {
+          "children": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "elapsed_seconds": 99.12,
+          "state_348": 0,
+          "update_count_356": 0
+        }
+      ],
+      "xam_input_masks_observed": [
+        "0x0000"
+      ],
+      "xam_input_return_count": 8
+    },
+    {
+      "bink": {
+        "elapsed_seconds": 105.979,
+        "progress": 281,
+        "target": 281,
+        "wall_clock_epoch_ms": 1793188986379
+      },
+      "bink_to_first_button_down_ms": 657,
+      "capture_duration_seconds": 329.172,
+      "controller_rising_edges": [],
+      "event_capture_status": "partial_log_recovery",
+      "event_write_shd": {
+        "captured_packet_count": 1985,
+        "data_source": "runner.log raw WORKER_RING_EVENT_WRITE_SHD records",
+        "first": {
+          "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r2/bin/librexgpu-shift-native.so",
+          "elapsed_seconds": 17.431,
+          "endian_mode": 2,
+          "guest_address": "0x17af4000",
+          "head_before": 1,
+          "index": 0,
+          "initiator": "0x00000003",
+          "packet_bytes": "c00258000000000317af400200000003",
+          "packet_value": "0x00000003",
+          "packet_words": [
+            "0xc0025800",
+            "0x00000003",
+            "0x17af4002",
+            "0x00000003"
+          ],
+          "thread": 11,
+          "thread_name": "SHIFT Native GP"
+        },
+        "first_boundary_packet_sequence": [
+          {
+            "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r2/bin/librexgpu-shift-native.so",
+            "elapsed_seconds": 157.887,
+            "endian_mode": 2,
+            "guest_address": "0x17af4000",
+            "head_before": 3375,
+            "index": 1687,
+            "initiator": "0x00000003",
+            "packet_bytes": "c00258000000000317af400200000d31",
+            "packet_value": "0x00000d31",
+            "packet_words": [
+              "0xc0025800",
+              "0x00000003",
+              "0x17af4002",
+              "0x00000d31"
+            ],
+            "thread": 11,
+            "thread_name": "SHIFT Native GP"
+          },
+          {
+            "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r2/bin/librexgpu-shift-native.so",
+            "elapsed_seconds": 159.038,
+            "endian_mode": 2,
+            "guest_address": "0x17af4000",
+            "head_before": 3377,
+            "index": 1688,
+            "initiator": "0x00000003",
+            "packet_bytes": "c00258000000000317af400200000d33",
+            "packet_value": "0x00000d33",
+            "packet_words": [
+              "0xc0025800",
+              "0x00000003",
+              "0x17af4002",
+              "0x00000d33"
+            ],
+            "thread": 11,
+            "thread_name": "SHIFT Native GP"
+          },
+          {
+            "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r2/bin/librexgpu-shift-native.so",
+            "elapsed_seconds": 159.265,
+            "endian_mode": 2,
+            "guest_address": "0x17af4000",
+            "head_before": 3379,
+            "index": 1689,
+            "initiator": "0x00000003",
+            "packet_bytes": "c00258000000000317af400200000d35",
+            "packet_value": "0x00000d35",
+            "packet_words": [
+              "0xc0025800",
+              "0x00000003",
+              "0x17af4002",
+              "0x00000d35"
+            ],
+            "thread": 11,
+            "thread_name": "SHIFT Native GP"
+          },
+          {
+            "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r2/bin/librexgpu-shift-native.so",
+            "elapsed_seconds": 159.327,
+            "endian_mode": 2,
+            "guest_address": "0x17af4000",
+            "head_before": 3381,
+            "index": 1690,
+            "initiator": "0x00000003",
+            "packet_bytes": "c00258000000000317af400200000d37",
+            "packet_value": "0x00000d37",
+            "packet_words": [
+              "0xc0025800",
+              "0x00000003",
+              "0x17af4002",
+              "0x00000d37"
+            ],
+            "thread": 11,
+            "thread_name": "SHIFT Native GP"
+          },
+          {
+            "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r2/bin/librexgpu-shift-native.so",
+            "elapsed_seconds": 159.383,
+            "endian_mode": 2,
+            "guest_address": "0x17af4000",
+            "head_before": 3383,
+            "index": 1691,
+            "initiator": "0x00000003",
+            "packet_bytes": "c00258000000000317af400200000d39",
+            "packet_value": "0x00000d39",
+            "packet_words": [
+              "0xc0025800",
+              "0x00000003",
+              "0x17af4002",
+              "0x00000d39"
+            ],
+            "thread": 11,
+            "thread_name": "SHIFT Native GP"
+          }
+        ],
+        "head_before_matches_previous_packet_count": 1984,
+        "head_before_matches_previous_packet_total": 1984,
+        "last": {
+          "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r2/bin/librexgpu-shift-native.so",
+          "elapsed_seconds": 317.183,
+          "endian_mode": 2,
+          "guest_address": "0x17af4000",
+          "head_before": 3969,
+          "index": 1984,
+          "initiator": "0x00000003",
+          "packet_bytes": "c00258000000000317af400200000f83",
+          "packet_value": "0x00000f83",
+          "packet_words": [
+            "0xc0025800",
+            "0x00000003",
+            "0x17af4002",
+            "0x00000f83"
+          ],
+          "thread": 11,
+          "thread_name": "SHIFT Native GP"
+        },
+        "packet_value_delta_histogram": {
+          "2": 1984
+        },
+        "packet_value_regression_count": 0,
+        "sampled_head_before_regression_count": 0,
+        "target_guest_physical": "0x17AF4000"
+      },
+      "final_scene_state": null,
+      "first_button_down_epoch_ms": 1793188987036,
+      "gdb_exit": 1,
+      "host_input_masks": [
+        "0x0000",
+        "0x0010",
+        "0x0000"
+      ],
+      "id": "native_event_head_320_r2_partial",
+      "input_delay_requested_seconds": 3.0,
+      "input_gate_observed": false,
+      "input_trigger": "bink_complete",
+      "partial": true,
+      "raw_files": {
+        "events.json": {
+          "bytes": 4178199,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r2/events.json",
+          "sha256": "08e182994340fad55e52790a37860d84bc0a9f69ef34dc2c43075e9f3771ebdf"
+        },
+        "gdb.log": {
+          "bytes": 3782374,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r2/gdb.log",
+          "sha256": "7ef152d1b8bc6017b35b721df4704890fece1765e344f92bd57725aae92620ea"
+        },
+        "run_metadata.json": {
+          "bytes": 5637,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r2/run_metadata.json",
+          "sha256": "34fb94214fc492aa85aaebe456d7d5cfa2a7ef6e37167cec1688573da4ab8651"
+        },
+        "runner.log": {
+          "bytes": 3783211,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028/runs/shift-native-r2/runner.log",
+          "sha256": "2069e9c0768449e02dbe0854f713992eb0ce8e33a0050f37929f07178050c326"
+        }
+      },
+      "raw_run_root": "/home/pes/work/nfs-shift-p1-native-event-write-head-deep-2-14841319-20261028",
+      "scene_states": [
+        {
+          "children": [
+            3147612464,
+            3146350544,
+            3146350592,
+            1
+          ],
+          "elapsed_seconds": 106.437,
+          "state_348": 1,
+          "update_count_356": 457
+        },
+        {
+          "children": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "elapsed_seconds": 106.828,
+          "state_348": 0,
+          "update_count_356": 0
+        }
+      ],
+      "xam_input_masks_observed": [
+        "0x0000",
+        "0x0010"
+      ],
+      "xam_input_return_count": 8
+    },
+    {
+      "bink": {
+        "elapsed_seconds": 87.467,
+        "progress": 281,
+        "target": 281,
+        "wall_clock_epoch_ms": 1793189361368
+      },
+      "bink_to_first_button_down_ms": 703,
+      "capture_duration_seconds": 369.673,
+      "controller_rising_edges": [
+        {
+          "edge": 16,
+          "elapsed_seconds": 88.49,
+          "kind": "controller_update_events",
+          "method": "sub_8230CD00"
+        },
+        {
+          "edge": 16,
+          "elapsed_seconds": 88.718,
+          "kind": "controller_update_events",
+          "method": "sub_82308E60"
+        },
+        {
+          "edge": 4096,
+          "elapsed_seconds": 89.324,
+          "kind": "controller_update_events",
+          "method": "sub_8230CD00"
+        },
+        {
+          "edge": 4096,
+          "elapsed_seconds": 89.441,
+          "kind": "controller_update_events",
+          "method": "sub_82308E60"
+        },
+        {
+          "edge": 16,
+          "elapsed_seconds": 89.159,
+          "kind": "controller_return_events",
+          "method": "sub_82308E60"
+        },
+        {
+          "edge": 4096,
+          "elapsed_seconds": 89.994,
+          "kind": "controller_return_events",
+          "method": "sub_82308E60"
+        }
+      ],
+      "event_capture_status": "gdb_json_finalizer",
+      "event_write_shd": {
+        "captured_packet_count": 1406,
+        "data_source": "GDB events.json and matching runner.log records",
+        "first": {
+          "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-head-clean-immediate-14841319-20261028/runs/shift-native-r1/bin/librexgpu-shift-native.so",
+          "elapsed_seconds": 30.742,
+          "endian_mode": 2,
+          "guest_address": "0x17af4000",
+          "head_before": 1,
+          "index": 0,
+          "initiator": "0x00000003",
+          "packet_bytes": "c00258000000000317af400200000003",
+          "packet_value": "0x00000003",
+          "packet_words": [
+            "0xc0025800",
+            "0x00000003",
+            "0x17af4002",
+            "0x00000003"
+          ],
+          "thread": 11,
+          "thread_name": "SHIFT Native GP"
+        },
+        "first_boundary_packet_sequence": [],
+        "head_before_matches_previous_packet_count": 1405,
+        "head_before_matches_previous_packet_total": 1405,
+        "last": {
+          "caller": "(anonymous namespace)::ShiftNativeGraphicsSystem::RingWorkerLoop() + 15339 in section .text of /home/pes/work/nfs-shift-p1-native-event-write-head-clean-immediate-14841319-20261028/runs/shift-native-r1/bin/librexgpu-shift-native.so",
+          "elapsed_seconds": 355.002,
+          "endian_mode": 2,
+          "guest_address": "0x17af4000",
+          "head_before": 2811,
+          "index": 1405,
+          "initiator": "0x00000003",
+          "packet_bytes": "c00258000000000317af400200000afd",
+          "packet_value": "0x00000afd",
+          "packet_words": [
+            "0xc0025800",
+            "0x00000003",
+            "0x17af4002",
+            "0x00000afd"
+          ],
+          "thread": 11,
+          "thread_name": "SHIFT Native GP"
+        },
+        "packet_value_delta_histogram": {
+          "2": 1405
+        },
+        "packet_value_regression_count": 0,
+        "sampled_head_before_regression_count": 0,
+        "target_guest_physical": "0x17AF4000"
+      },
+      "final_scene_state": {
+        "child_words_264": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "list_count_36": 1,
+        "object": 2199806340,
+        "state_348": 0,
+        "update_count_356": 0
+      },
+      "first_button_down_epoch_ms": 1793189362071,
+      "gdb_exit": 0,
+      "host_input_masks": [
+        "0x0010",
+        "0x1000",
+        "0x0000"
+      ],
+      "id": "native_event_head_immediate_input_360",
+      "input_delay_requested_seconds": 0.0,
+      "input_gate_observed": false,
+      "input_trigger": "bink_complete",
+      "partial": false,
+      "raw_files": {
+        "events.json": {
+          "bytes": 5533560,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-clean-immediate-14841319-20261028/runs/shift-native-r1/events.json",
+          "sha256": "84c03ec0f718077fcd9b7f9b6139a900527fb7566760478ba5d18a0224c41948"
+        },
+        "gdb.log": {
+          "bytes": 3518996,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-clean-immediate-14841319-20261028/runs/shift-native-r1/gdb.log",
+          "sha256": "9bcf083d8775ba32f443ccd8400023046275a2280ca44fa4dfb4ccb7552ab2a3"
+        },
+        "run_metadata.json": {
+          "bytes": 5669,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-clean-immediate-14841319-20261028/runs/shift-native-r1/run_metadata.json",
+          "sha256": "7e84ad8c6f39a6ae65b2213b9835df1a72c0e53d816dd67e7a894ce8dc607557"
+        },
+        "runner.log": {
+          "bytes": 3519826,
+          "path": "/home/pes/work/nfs-shift-p1-native-event-write-head-clean-immediate-14841319-20261028/runs/shift-native-r1/runner.log",
+          "sha256": "2f3bc9dd7d32876f16b515812b534c065bc6ddcd748b65824cb3d5518a18331f"
+        }
+      },
+      "raw_run_root": "/home/pes/work/nfs-shift-p1-native-event-write-head-clean-immediate-14841319-20261028",
+      "scene_states": [
+        {
+          "children": [
+            3147612464,
+            3146350544,
+            3146350592,
+            1
+          ],
+          "elapsed_seconds": 88.583,
+          "state_348": 1,
+          "update_count_356": 159
+        },
+        {
+          "children": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "elapsed_seconds": 88.774,
+          "state_348": 0,
+          "update_count_356": 0
+        }
+      ],
+      "xam_input_masks_observed": [
+        "0x0000",
+        "0x0010",
+        "0x1000"
+      ],
+      "xam_input_return_count": 44
+    }
+  ],
+  "schema": "shift.xbox360.linux-native-event-write-shd-head-frontier.v1",
+  "tests": {
+    "capture_fixes": [
+      "Input trigger scheduling now compares Bink and host input against shared wall-clock epoch timestamps.",
+      "Partial runner-log recovery now preserves raw EVENT_WRITE_SHD packet rows.",
+      "XAM input returns are traced for six seconds after host input transitions, even if the frontend gate is never reached."
+    ],
+    "passed": [
+      "test_capture_linux_gpu_backend_pair_20261028.py",
+      "test_compare_linux_gpu_backend_runs_20261028.py",
+      "Python py_compile for capture/test scripts",
+      "embedded GDB Python block compilation",
+      "git diff --check"
+    ]
+  }
+}
