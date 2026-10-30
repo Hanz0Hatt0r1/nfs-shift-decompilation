@@ -17,6 +17,11 @@
     "version": "0.10.0",
     "platform": "linux-amd64",
     "commit_sha": "f5337cdc947ff6d4c4196737e2c807a48f2a1fc2",
+    "fork_repository": "https://github.com/Hanz0Hatt0r1/rexglue-sdk",
+    "fork_commit": "32afce4",
+    "fork_commit_status": "unverified",
+    "fork_commit_note": "Short id only; see tools/xbox360/build/pins.json sdk.fork_commit_full (null until rev-parse resolves it).",
+    "build_recipe": "tools/xbox360/build/pins.json",
     "integrated": false
   },
   "gates": {
