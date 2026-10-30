@@ -1,0 +1,48 @@
+{
+  "format": "SHIFT.Process2XboxShaderFetchEvidence/1",
+  "inputs": {
+    "vertex_shader_sha256": "d448760823568068b6f70d903fde9a1faca73c6cfaca7cab59fe73713f1712bc",
+    "pixel_shader_sha256": "5fda214bf53b3f88909fa90c014b9c42de0a3278138df24049af918344489f28",
+    "stored_in_repository": false
+  },
+  "decoder": {
+    "implementation": "native_vulkan/src/xbox_draw_input.cpp::decode_captured_shader_fetch_instruction",
+    "input_size_bytes": 12,
+    "byte_order": "big-endian 96-bit shader instruction",
+    "execution_or_translation": false
+  },
+  "vertex_fetch": {
+    "shader_instruction_address": 5,
+    "form": "vfetch_full",
+    "fetch_constant_index": 95,
+    "source_register": 0,
+    "destination_register": 0,
+    "source_swizzle": "0x0",
+    "destination_swizzle": "0xe42",
+    "vertex_format_raw": "0x39",
+    "stride_dwords": 3,
+    "offset_dwords": 0
+  },
+  "pixel_fetch": {
+    "shader_instruction_address": 4,
+    "form": "tfetch2D",
+    "fetch_constant_index": 0,
+    "source_register": 0,
+    "destination_register": 0,
+    "source_swizzle": "0x4",
+    "destination_swizzle": "0x688",
+    "dimension_raw": 1
+  },
+  "checks": {
+    "host_ctest": "passed: shift_xbox_draw_input_check",
+    "android_arm64": "passed on Redmi Note 8 Pro (API 33); binary built for arm64-v8a with Android API 29 minimum",
+    "private_capture_harness": "passed: both fetched descriptor indices match the captured descriptor 95 and descriptor 0 contracts",
+    "diagnostic_cross_check": "fields agree with vfetch_full and tfetch2D disassembly for the hashed captures"
+  },
+  "limits": [
+    "Only vfetch_full and 2D texture-fetch opcodes are recognized; other fetch forms fail closed.",
+    "This decoder parses instruction bits only; it does not read vertex or texture memory.",
+    "No SPIR-V is emitted and no native Vulkan draw is submitted.",
+    "The Xenos plugin remains diagnostic-only and is not part of the product rendering path."
+  ]
+}

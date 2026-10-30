@@ -1,0 +1,81 @@
+{
+  "format": "SHIFT.Process2XboxRasterStateEvidence/1",
+  "capture": {
+    "register_file": "register-file.bin",
+    "sha256": "a0718a1b2044da9698c3f715c4ff319ae7a8d785fb8809c46f090beff9a19225",
+    "byte_length": 81932,
+    "word_byte_order": "little-endian host snapshot",
+    "register_map_reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/register_table.inc",
+    "register_field_reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/registers.h",
+    "raw_registers": {
+      "RB_SURFACE_INFO": "0x14000500",
+      "RB_COLOR_INFO": "0x00010000",
+      "RB_DEPTH_INFO": "0x000002d0",
+      "RB_MODECONTROL": "0x00000004",
+      "RB_DEPTHCONTROL": "0x00700770",
+      "RB_COLOR_MASK": "0x0000000f",
+      "PA_CL_VPORT_XSCALE": "0x44200000",
+      "PA_CL_VPORT_XOFFSET": "0x44200000",
+      "PA_CL_VPORT_YSCALE": "0xc3b40000",
+      "PA_CL_VPORT_YOFFSET": "0x43b40000",
+      "PA_SC_SCREEN_SCISSOR_TL": "0x00000000",
+      "PA_SC_SCREEN_SCISSOR_BR": "0x20002000",
+      "PA_SC_WINDOW_OFFSET": "0x00000000",
+      "PA_SC_WINDOW_SCISSOR_TL": "0x00000000",
+      "PA_SC_WINDOW_SCISSOR_BR": "0x02d00500"
+    }
+  },
+  "decoded": {
+    "implementation": "native_vulkan/src/xbox_draw_input.cpp:decode_captured_raster_state",
+    "target_extent": [1280, 720],
+    "sample_count": 1,
+    "color_target": {
+      "format_code": 1,
+      "format_name": "8_8_8_8_GAMMA",
+      "base_tiles": 0,
+      "write_mask": "0xf"
+    },
+    "depth_target": {
+      "format_code": 0,
+      "format_name": "D24S8",
+      "base_tiles": 720,
+      "depth_test_enabled": false,
+      "depth_write_enabled": false,
+      "stencil_test_enabled": false
+    },
+    "viewport": {
+      "x_scale": 640,
+      "x_offset": 640,
+      "y_scale": -360,
+      "y_offset": 360,
+      "y_flipped": true
+    },
+    "effective_scissor": {
+      "x0": 0,
+      "y0": 0,
+      "x1": 1280,
+      "y1": 720,
+      "has_area": true
+    },
+    "vulkan_format_or_pipeline_created": false,
+    "xenos_emulation": false
+  },
+  "regression": {
+    "fixture": "actual captured register words above",
+    "checks": [
+      "target dimensions, formats, tile bases, and sample count",
+      "viewport Y inversion and depth/stencil/color mask enables",
+      "window and screen scissor intersection",
+      "non-zero uncaptured window offset rejected"
+    ],
+    "host_cmake_build": "passed",
+    "host_ctest": "passed (1/1)",
+    "android_arm64_device": "passed on Redmi Note 8 Pro; temporary executable removed"
+  },
+  "limitations": [
+    "This decoder covers only the observed color/depth target, centered viewport, and non-negative scissor form.",
+    "It does not map the Xbox EDRAM tile bases to a Vulkan image, translate blend state, create a pipeline, or submit the captured draw.",
+    "The register snapshot was collected while the captured PM4_DRAW_INDX was consumed by a diagnostic Xenos plugin; this project-owned decoder does not depend on that plugin.",
+    "The checks establish input interpretation only, not image parity or retail rendering."
+  ]
+}

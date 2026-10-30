@@ -9,9 +9,17 @@ enable_testing()
 add_library(shift_xbox_draw_input STATIC src/xbox_draw_input.cpp)
 target_include_directories(shift_xbox_draw_input PUBLIC include)
 
+add_library(shift_xbox_shader_translate STATIC src/xbox_shader_translate.cpp)
+target_include_directories(shift_xbox_shader_translate PUBLIC include)
+target_link_libraries(shift_xbox_shader_translate PUBLIC shift_xbox_draw_input)
+
 add_executable(shift_xbox_draw_input_check tests/xbox_draw_input_check.cpp)
 target_link_libraries(shift_xbox_draw_input_check PRIVATE shift_xbox_draw_input)
 add_test(NAME shift_xbox_draw_input_check COMMAND shift_xbox_draw_input_check)
+
+add_executable(shift_xbox_shader_translate_check tests/xbox_shader_translate_check.cpp)
+target_link_libraries(shift_xbox_shader_translate_check PRIVATE shift_xbox_shader_translate)
+add_test(NAME shift_xbox_shader_translate_check COMMAND shift_xbox_shader_translate_check)
 
 find_package(Vulkan QUIET)
 

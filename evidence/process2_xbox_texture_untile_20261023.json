@@ -1,0 +1,107 @@
+{
+  "format": "SHIFT.Process2XboxTextureUntileEvidence/1",
+  "capture": {
+    "resource": "texture_descriptor_0.bin",
+    "sha256": "89ee6d3ffcbeeb27a6b76c70699de59e1037f7e387fe7a487b84ed65c11ca4c4",
+    "byte_length": 1048576,
+    "descriptor_words": [
+      "0x8800d8fe",
+      "0x09d57086",
+      "0x001fe3ff",
+      "0x01280c14",
+      "0x00000003",
+      "0x00000a10"
+    ],
+    "decoded": {
+      "guest_address": "0x09d57000",
+      "format": 6,
+      "endian_mode": 2,
+      "channel_signs_xyzw": [3, 3, 3, 0],
+      "clamp_xyz": [6, 6, 0],
+      "dimension": 1,
+      "width": 1024,
+      "height": 256,
+      "pitch": 1024,
+      "tiled": true,
+      "integer_format": false,
+      "border_color": 0,
+      "border_size": false,
+      "swizzle": "0x60a",
+      "filters": {
+        "mag": 1,
+        "min": 1,
+        "mip": 2,
+        "aniso": 0
+      },
+      "mip_min_level": 0,
+      "mip_max_level": 0
+    }
+  },
+  "sampling_contract": {
+    "implementation": "native_vulkan/src/xbox_draw_input.cpp:decode_captured_texture_sampling",
+    "raw_swizzle": "0x60a",
+    "decoded_swizzle_xyzw": ["Z", "Y", "X", "W"],
+    "decoded_signs_xyzw": ["gamma", "gamma", "gamma", "unsigned"],
+    "decoded_clamps_xyz": ["clamp_to_border", "clamp_to_border", "repeat"],
+    "decoded_filters": {
+      "mag": "linear",
+      "min": "linear",
+      "mip": "base_map",
+      "anisotropy": "disabled"
+    },
+    "border_color_code": 0,
+    "border_alpha": "unresolved; no Vulkan border color is selected",
+    "vulkan_view_or_sampler_created": false,
+    "enum_crosscheck": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h",
+    "xenia_runtime_dependency": false
+  },
+  "conversion": {
+    "implementation": "native_vulkan/src/xbox_draw_input.cpp:untile_captured_texture_2d",
+    "address_mapping": "Xenos tiled 2D, 32bpp; cross-checked against the public Xenia Tiled2D mapping",
+    "source_endian_transform": "reverse bytes within each captured 32-bit texel",
+    "output_byte_length": 1048576,
+    "output_sha256": "a23f182b6a3936fe24ee1a149ccb5347a5a8bfbaf06f69a792985056494833b7",
+    "independent_bytewise_reference_match": true
+  },
+  "regression": {
+    "fixture": "captured descriptor with generated texel IDs in a 1 MiB layout-only test resource",
+    "checks": [
+      "every source texel is mapped exactly once",
+      "known offsets across microtile, bank, macro-tile, and texture-edge boundaries",
+      "8-in-32 byte order",
+      "unsupported pitch and truncated input rejection",
+      "captured channel selector, sign, clamp, and filter interpretation",
+      "reserved swizzle and anisotropy value rejection"
+    ],
+    "ctest": "passed"
+  },
+  "linux_vulkan_validation_smoke": {
+    "executor": "shift_vulkan_bundle_execute",
+    "device": "NVIDIA GeForce GTX 950",
+    "vulkan_api_version": "1.1",
+    "validation_enabled": true,
+    "validation_errors": 0,
+    "input": "neutral synthetic BMW bundle",
+    "captured_xbox_draw_submitted": false,
+    "retail_parity_claimed": false
+  },
+  "android_arm64_device_check": {
+    "device": "Redmi Note 8 Pro",
+    "abi": "arm64-v8a",
+    "android_api_level": 33,
+    "xbox_draw_input_check": "passed on device",
+    "vulkan_loader_api": "1.3.0",
+    "vulkan_device": "Mali-G76 MC4",
+    "vulkan_device_api": "1.1.131",
+    "vulkan_1_1_instance_creation": "passed",
+    "native_window_surface_probe": "passed; status=0",
+    "probe_cleanup": "temporary probe package stopped and uninstalled"
+  },
+  "limitations": [
+    "No Vulkan image upload or draw submission is implemented by this conversion.",
+    "Captured texture swizzle and sampler behavior are decoded but not yet applied.",
+    "Xbox shader translation and original-draw visual parity are not verified.",
+    "The device checks validate ARM64 execution, Vulkan 1.1 instance creation, and surface presentation support only; no captured Xbox draw ran on the phone.",
+    "This path translates one bounded captured resource layout; it does not emulate Xenos rendering."
+  ]
+}
