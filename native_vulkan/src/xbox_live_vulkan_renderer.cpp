@@ -6048,6 +6048,24 @@ bool submit_captured_vulkan_operation_stream(
                                 << layout_error;
                         return fail(message.str(), error);
                     }
+                    // A layout that cannot be resident at all - its tile
+                    // footprint exceeds the 2048-tile store - is a predicated
+                    // tiling strip, not a surface. Its bases and extent describe
+                    // the whole virtual surface while the guest actually renders
+                    // one strip at a time, so "these two overlap" carries no
+                    // information: every strip overlaps every other strip by
+                    // construction. Refusing here rejects the frame no matter what
+                    // the guest does, which is why this class survived every
+                    // narrower fix. The layouts are still given independent
+                    // Vulkan images, so nothing is silently shared.
+                    CapturedEdramTileFootprint previous_footprint{};
+                    const bool previous_wraps_store =
+                        captured_xenos_edram_tile_footprint(
+                            previous, false, &previous_footprint, nullptr) &&
+                        previous_footprint.total_tiles > 2048u;
+                    if (!disjoint && previous_wraps_store) {
+                        disjoint = true;
+                    }
                     bool drained_subset = false;
                     if (!disjoint && preflight_active_layout_drained &&
                         captured_xenos_edram_layout_is_tile_subset(
