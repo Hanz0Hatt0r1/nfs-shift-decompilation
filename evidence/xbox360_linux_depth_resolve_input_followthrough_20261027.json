@@ -1,0 +1,131 @@
+{
+  "schema": "shift.xbox360.linux-depth-resolve-input-followthrough.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "p1_commit": "61378b8762d58c56245ac44e818d25ce4faf26dd",
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "p2_runtime_sha256": "f049d64a46ab04e8d5fcb71800c92d86a5cc6a5fbd38a6b1bf1a623c86398a80",
+    "p2_plugin": {
+      "sha256": "abc7bf5df779be7dce4fdae719c05c89a35ad8ce222f95b3337478f24bddc402",
+      "source_commit": "ab3c08bd6fc365cf847b7ce71db55d8decda56f8",
+      "source_state": "Process 2 handoff artifact; not claimed merged"
+    },
+    "dynamic_resolution": {
+      "command": "ldd -r",
+      "runtime_path": "/tmp/nfs-shift-p1-depth-resolve-input-followthrough-20261027/bin/librexruntime.so",
+      "unresolved_symbols": false
+    }
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "duration_seconds": 120.295,
+    "termination": "Harness sent SIGINT after the capture schedule; host returned 0. Clean title shutdown was not established.",
+    "gdb_instrumented": false,
+    "guest_memory_modified_by_probe": false,
+    "binary_files_sha256_verified": true,
+    "runtime_mapping_independently_captured": false,
+    "runner": {
+      "path": "tools/xbox360/capture_linux_depth_resolve_input_followthrough_20261027.py",
+      "sha256": "fd28730b1d0ae7125117d2256a3f240af435adbc608c1966b823b5de25b9feb4"
+    },
+    "run_summary": {
+      "path_outside_git": "/tmp/nfs-shift-p1-depth-resolve-input-followthrough-20261027/run-summary.json",
+      "sha256": "73111d73a4ca0a74cfb6304c0cacb90e2aa8399ebd67fee44914b0d205839692"
+    },
+    "controller": {
+      "device": "Linux uinput Xbox 360 pad, VID:PID 045e:028e",
+      "pulse_duration_ms": 500,
+      "pulses": [
+        {"at_seconds": 52, "button": "A", "xinput_mask": "0x1000"},
+        {"at_seconds": 65, "button": "Start", "xinput_mask": "0x0010"},
+        {"at_seconds": 78, "button": "A", "xinput_mask": "0x1000"},
+        {"at_seconds": 90, "button": "Start", "xinput_mask": "0x0010"},
+        {"at_seconds": 102, "button": "A", "xinput_mask": "0x1000"}
+      ],
+      "guest_consumption_observed": false
+    },
+    "target_window_captures": [
+      {
+        "elapsed_seconds": 45,
+        "path_outside_git": "/tmp/nfs-shift-p1-depth-resolve-input-followthrough-20261027/window-045s-before-first-post-disclaimer-input.png",
+        "sha256": "eaddc3298cb112d76de48b2edb6f25fece011716c75e956d1675217814caa0b5",
+        "observation": "Retail driving-safety disclaimer visible."
+      },
+      {
+        "elapsed_seconds": 55,
+        "path_outside_git": "/tmp/nfs-shift-p1-depth-resolve-input-followthrough-20261027/window-055s-after-A-1.png",
+        "sha256": "e4841f0ffd6812b9005ab7d52dc861e6919621b89dc85b016f6918734f55062d",
+        "observation": "Mostly black frame with thin horizontal lines; disclaimer text absent."
+      },
+      {
+        "elapsed_seconds": 68,
+        "path_outside_git": "/tmp/nfs-shift-p1-depth-resolve-input-followthrough-20261027/window-068s-after-Start-1.png",
+        "sha256": "e33450c6bde6246d2dbb39a7b289705a2dac1bb48ed5f272b6358e8ac39ad7d5",
+        "observation": "Mostly black frame with thin horizontal lines; no menu UI."
+      },
+      {
+        "elapsed_seconds": 80,
+        "path_outside_git": "/tmp/nfs-shift-p1-depth-resolve-input-followthrough-20261027/window-080s-after-A-2.png",
+        "sha256": "cfe5c1a91dfcca4259eef7349b88f9a5bab1975667333a2467ae196714718d42",
+        "observation": "Retail driving-safety disclaimer visible again."
+      },
+      {
+        "elapsed_seconds": 95,
+        "path_outside_git": "/tmp/nfs-shift-p1-depth-resolve-input-followthrough-20261027/window-095s-after-Start-2.png",
+        "sha256": "843b2d40965678307facdb56f36ca102bba39fb6c5a48ed36e18ac14d1aecfb3",
+        "observation": "Mostly black frame with thin horizontal lines; no menu UI."
+      },
+      {
+        "elapsed_seconds": 110,
+        "path_outside_git": "/tmp/nfs-shift-p1-depth-resolve-input-followthrough-20261027/window-110s-after-A-3.png",
+        "sha256": "188a5668de11857744dbf7681867eaa225a2284f56188c716d965e18991671d7",
+        "observation": "Retail driving-safety disclaimer visible again."
+      }
+    ],
+    "renderer_logs": {
+      "primary": {
+        "path_outside_git": "/tmp/nfs-shift-p1-depth-resolve-input-followthrough-20261027/bin/logs/nfs_shift_001.log",
+        "sha256": "cf667d30108476b6ede7d735dfa6e946cbdf1a753cdaa09093c05bfb870d4b75"
+      },
+      "rotated": {
+        "path_outside_git": "/tmp/nfs-shift-p1-depth-resolve-input-followthrough-20261027/bin/logs/nfs_shift_001.1.log",
+        "sha256": "341ffadb5fae5c845f94c1148a95ac1f4e169f31acae940b47d437056d6da722"
+      },
+      "captured_wait_reg_mem_completed": 6,
+      "unsupported_wait_forms": 2,
+      "unresolved_captured_draw_entries": 5,
+      "refresh_failures": 1,
+      "missing_menu_background_xml_opens": 4,
+      "guest_faults": 0
+    }
+  },
+  "comparison": {
+    "source": "refs/pull/2161/head:evidence/process2_linux_depth_resolve_handoff_20261027.json",
+    "source_commit": "ef1d3dc2f1ee7b550fa4176cfa82cf3f43f5d8e6",
+    "source_sha256": "ebb1a8fada88e921b06b00b1b5efee447d0ef95d2560993e33d804659097df46",
+    "inputs": [],
+    "captures": "Disclaimer at 45, 90, and 180 seconds; mostly black at 60, 75, 120, and 150 seconds.",
+    "interpretation": "The no-input run shows a similar recurring disclaimer/black pattern. The current input run therefore does not establish that an A/Start pulse caused a guest state transition."
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail XEX launched with the P2 handoff runtime and plugin files; ldd -r resolved the runtime from the selected binary directory without unresolved symbols.",
+      "All six logged captured WAIT_REG_MEM commands completed with polls=0.",
+      "The target window alternated between the safety disclaimer and mostly black frames during the bounded run, as it did in the referenced no-input run.",
+      "The runtime logs contain two unsupported WAIT_REG_MEM forms, five unresolved captured draw entries, one refresh failure, and four missing menu_background.xml opens; none is proven causal to the displayed frames."
+    ],
+    "not_proven": [
+      "That the guest consumed any uinput pulse in this run.",
+      "A retail main-menu transition, offline-race entry, or playable Linux port.",
+      "That the repeated disclaimer/black visual pattern is a retail state transition rather than an output/rendering artifact.",
+      "That a failed menu_background.xml open, unsupported draw, or refresh failure caused the missing visible frontend.",
+      "Mapped-library hashes during execution or clean title shutdown."
+    ],
+    "next_p1_step": "Keep retail event, queue, and controller semantics unchanged. Trace the guest frontend state and controller edge path in one read-only run to distinguish actual scene transitions from recurring displayed frames; renderer translation stays with Process 2."
+  }
+}

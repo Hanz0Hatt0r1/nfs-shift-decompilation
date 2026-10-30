@@ -1,0 +1,108 @@
+{
+  "schema": "shift.xbox360.linux-retail-wait-stack-latest-p2.v1",
+  "capture_date": "2026-10-25",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b",
+    "p2_source_commit": "e908a6829ee2522c9da6913dead9fbc1ce88c1c6",
+    "gpu_plugin_sha256": "bf7034cc1b9343c7dff4555eda3dcf07a8302da3e04d4e0fd8ce23c3080370e5",
+    "plugin_mapping_verified_from_proc_maps": true
+  },
+  "probe": {
+    "platform": "Linux AMD64",
+    "inferior_pid": 519621,
+    "instrumentation": "GDB launched the title with no breakpoints. A manual SIGINT was used for a one-time stack and read-only guest-memory snapshot. No guest memory was written.",
+    "gdb_log_path_external": "/tmp/nfs-p1-queue-latestp2-20261025/gdb-snapshot.log",
+    "gdb_log_sha256": "30e63a6d5b0a175dc95e84cda79e7aceef8f72150ac5485b8a5a4e784acbd4f1",
+    "runtime_log_path_external": "/tmp/nfs-p1-queue-latestp2-20261025/bin/logs/nfs_shift_002.log",
+    "runtime_log_sha256": "56a53484ba66e3d0aa22ce8ad2559fdb9030192c99b9321ffd7c6aaa34fcf37a"
+  },
+  "retail_queue": {
+    "wait_record_guest_address": "0x7018FA20",
+    "object_guest_address": "0xB7365F00",
+    "head_pointer_field_object_plus": "0x2A90",
+    "head_writeback_guest_address": "0xB7AF4000",
+    "head": 5641,
+    "tail_field_object_plus": "0x2A9C",
+    "tail": 5651,
+    "wait_target_from_guest_r30": "0x1611",
+    "wait_target_decimal": 5649,
+    "wait_lr": "0x823B3560",
+    "predicate_byte_field_object_plus": "0x2ABD",
+    "predicate": "0x04",
+    "tested_completion_mask": "0x02",
+    "guest_virtual_ring_alias": "0xA9752580",
+    "guest_virtual_read_address": "0x1A9757DA4",
+    "decoded_guest_dwords_head_inclusive_tail_exclusive": [
+      "0x0000000B",
+      "0xC0013F00",
+      "0x09624A20",
+      "0x0000005A",
+      "0xC0013F00",
+      "0x0963E380",
+      "0x0000000B",
+      "0xC0013F00",
+      "0x09632340",
+      "0x0000001C"
+    ],
+    "decoded_guest_dwords_after_published_tail": [
+      "0xC0013F00",
+      "0x09643680"
+    ],
+    "raw_gdb_word_display_little_endian_host": [
+      "0x0B000000",
+      "0x003F01C0",
+      "0x204A6209",
+      "0x5A000000",
+      "0x003F01C0",
+      "0x80E36309",
+      "0x0B000000",
+      "0x003F01C0",
+      "0x40236309",
+      "0x1C000000",
+      "0x003F01C0",
+      "0x80366409"
+    ]
+  },
+  "stacks": {
+    "guest_main_thread": {
+      "thread_name": "Core 0/0: Main",
+      "frames_top_down": [
+        "sub_823A0310 at generated/default/nfs_shift_recomp.99.cpp:4448",
+        "sub_823B34A0 at generated/default/nfs_shift_recomp.134.cpp:5091",
+        "sub_823B3850 at generated/default/nfs_shift_recomp.167.cpp:4994",
+        "sub_823A0760 at generated/default/nfs_shift_recomp.175.cpp:4867",
+        "sub_8264F868",
+        "sub_82FD46F8",
+        "sub_82FD5658",
+        "sub_82FC1880",
+        "sub_82D30380",
+        "xstart",
+        "rex::system::XThread::Execute"
+      ]
+    },
+    "host_graphics_worker": {
+      "thread_name": "SHIFT Native GP",
+      "state": "pthread_cond_wait in std::condition_variable::wait inside ShiftNativeGraphicsSystem::RingWorkerLoop"
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact-XEX retail main thread was still in the original queue wait at this snapshot.",
+      "The wait target 5649 lies between the observed head 5641 and tail 5651; completion mask 0x02 is clear.",
+      "The host graphics ring worker was asleep in its condition-variable wait at the same snapshot under the latest P2 plugin artifact."
+    ],
+    "not_proven": [
+      "That the retail queue state violates its original protocol.",
+      "That the P1 scheduler, P-code execution, or Win32 compatibility caused the wait.",
+      "That P2 should consume these exact words while the worker is asleep, or that the worker wait is the root cause.",
+      "A guest-visible menu, sustained presentation, or offline race."
+    ],
+    "next_step": "Trace the P2 queue wake and consume contract for this latest-plugin sample. Preserve the exact retail predicate and queue semantics until a contract violation is demonstrated."
+  }
+}

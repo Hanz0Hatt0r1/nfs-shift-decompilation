@@ -1,0 +1,94 @@
+{
+  "schema": "shift.xbox360.linux-current-p2-renderer-frontend-wait.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "host": {
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "rexglue_runtime": {
+      "path": "/home/pes/work/rexglue-sdk-retail-thread-resume-20261026/out/linux-amd64/RelWithDebInfo/librexruntimerd.so",
+      "sha256": "2b0d46856da000cecafb46581ddff50da99f549ff335bee9ba489238eed24059",
+      "mapped_hash_verified": true
+    },
+    "gpu_plugin": {
+      "path": "/home/pes/work/process2-current-head-renderer-handoff-20261026/librexgpu-shift-native.so",
+      "sha256": "f4da45fa6d72dae885d7cac942c7b8a7db1f1ea11094cad6438f96c036f2e4fd",
+      "build_id": "83da42be8cf666bfdbefc77f41109b140810b269",
+      "source_commit": "3f4a779049410d7e1b48e39cba6c41c0bd794087",
+      "mapped_hash_verified": true
+    }
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+      "--user_data_root=/tmp/nfs-shift-p1-current-p2-renderer-20261026/user",
+      "--cache_root=/tmp/nfs-shift-p1-current-p2-renderer-20261026/cache",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation",
+      "--fullscreen=false"
+    ],
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "termination": "GDB stopped and killed the inferior at the first retail software-queue wait; no clean title shutdown was observed.",
+    "gdb_trace": {
+      "script_path": "/tmp/nfs-shift-p1-current-p2-renderer-20261026.gdb",
+      "script_sha256": "0e72df1e762d899a2e153a3bf340c5535fb371cf8260eb575630cad212580e11",
+      "log_path": "/tmp/nfs-shift-p1-current-p2-renderer-20261026/gdb.log",
+      "log_sha256": "cdd01f4de3292dd888a0ffee079eb1593449091273e3555ba7df1529ddd806a8",
+      "mapping_hashes_verified_in_inferior": true,
+      "callback_hits_before_first_wait": {
+        "source_0": 99,
+        "source_1": 0
+      },
+      "deferred_consumer_hits": 98,
+      "deferred_queue_indices": {
+        "read": 0,
+        "write": 0
+      },
+      "software_queue_producer_0x823A4758_hits": 0,
+      "registered_callback_0x82649B68_hits": 0,
+      "first_wait": {
+        "function": "0x823B34A0",
+        "object": "0xB7365F00",
+        "target": 13,
+        "head": 0,
+        "tail": 21,
+        "predicate_byte": "0x14",
+        "completion_mask": "0x02"
+      }
+    },
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-p1-current-p2-renderer-20261026/bin/logs/nfs_shift_002.log",
+      "sha256": "127663746c63c605918fd875d630f9481196b7101613fccb83bda844ba4db295",
+      "vblank_callbacks_logged": 3,
+      "unsupported_register_wait_packets_logged": 4,
+      "captured_memory_wait_entry_logged": false
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact Process 2 HEAD DSO and current ReXGlue runtime were both mapped in the inferior and matched their recorded SHA-256 hashes.",
+      "The renderer dispatched vblank callbacks and retail source-0 reached the deferred consumer, but sampled deferred queue indices remained 0/0.",
+      "The first retail software-queue wait still had target 13 between head 0 and tail 21, with predicate byte 0x14 and completion mask 0x02 clear.",
+      "No source-1 callback, software-queue producer 0x823A4758, or registered callback 0x82649B68 was observed before that wait.",
+      "The bounded runtime log contains four unsupported register-space WAIT_REG_MEM packets but no captured memory-WAIT entry before GDB stopped at the retail software-queue wait."
+    ],
+    "not_proven": [
+      "Why source-1, the deferred producer, or the registered callback were not reached in this run.",
+      "That the GPU memory WAIT_REG_MEM at 0x1B964004 completed, or that this sample reached the main menu or an offline race.",
+      "That Process 2's renderer build or this short GDB run produced a clean title shutdown."
+    ],
+    "next_p1_step": "Trace the exact retail registration, first indirect invocation, and scheduler path for the missing producer/event; preserve the queue and predicate semantics."
+  },
+  "limitations": [
+    "This is a short, debugger-intrusive run stopped at the first observed retail software-queue wait.",
+    "No controller input was sent and no menu or race state was verified.",
+    "The result is a bounded observation and does not identify whether retail scheduling, runtime dispatch, or GPU execution owns the missing event."
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "schema": "shift.xbox360.linux-private-memory-current-p2-runtime.v1",
+  "captured_at_local": "2026-10-26T15:52:29+03:00",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "host": {
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "rexglue_runtime": {
+      "repository": "Hanz0Hatt0r1/rexglue-sdk",
+      "branch": "work/p1-xbox360-runtime-memory-scheduler-20261026",
+      "private_memory_fix_commit": "d6ed02eea517a34166e3a1d0ef8e5ab9c5ca8253",
+      "scheduler_warning_limit_commit": "ddc9db905c79384a52779f46834914ce3b73cfd5",
+      "sha256": "de4773f9089623c3385d625e4ce2b8fd6215187f963e8339078d93eb7d7dc878"
+    },
+    "gpu_plugin": {
+      "repository": "Hanz0Hatt0r1/nfs-shift-xbox-live-ring",
+      "branch": "work/process2-xbox-live-ring-20261023",
+      "head": "3f4a779049410d7e1b48e39cba6c41c0bd794087",
+      "working_tree_changes": true,
+      "sha256": "9e46bf16e1a1fadaac2754b29d5332127a078db12416f287313841367eac4d55",
+      "handoff_note": "/home/pes/work/process2-handoff-20261026/README.txt"
+    }
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "duration_approx_seconds": 77,
+    "controller_input_sent": false,
+    "termination": "SIGINT after bounded interval",
+    "exit_code": 0,
+    "mapping_hashes_verified": true,
+    "mapped_libraries": {
+      "librexruntime.so": "de4773f9089623c3385d625e4ce2b8fd6215187f963e8339078d93eb7d7dc878",
+      "librexgpu-shift-nativerd.so": "9e46bf16e1a1fadaac2754b29d5332127a078db12416f287313841367eac4d55"
+    },
+    "mapping_samples_approx_seconds": [10, 35, 75],
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-p1-combined-current-p2-20261026/bin/logs/nfs_shift_001.log",
+      "sha256": "91245e9f04fc0a2936b8707736024a851dabade96fcb5811c79d9be7783a767b",
+      "bytes": 16816,
+      "scheduler_warning_count": 1,
+      "sigbus_mentions": 0,
+      "guest_fault_mentions": 0,
+      "unsupported_register_wait_logs": 4
+    },
+    "renderer_wait": {
+      "guest_physical_word": "0x1B964004",
+      "reference": "0x00000001",
+      "mask": "0xFFFFFFFF",
+      "endian": 2,
+      "compare": 3,
+      "source": "0x095D0120",
+      "depth": 1,
+      "outer_byte_offset": "0x49C",
+      "entry_timestamp": "2026-10-26 15:48:37.804",
+      "completion_logged_before_sigint": false
+    },
+    "shared_memory": {
+      "object_present_before_run": "xenia_memory_16282887367127",
+      "same_object_present_after_run": true,
+      "owner_uid": 1000,
+      "size_bytes": 4831842304,
+      "proc_map_or_fd_references_after_run": [],
+      "unlinked_after_reference_check": true,
+      "named_xenia_memory_objects_after_cleanup": []
+    },
+    "external_run_record": "/tmp/nfs-shift-p1-combined-current-p2-20261026/run_result.json"
+  },
+  "regression": {
+    "command": "out/linux-amd64/RelWithDebInfo/unit_tests '[memory][posix]' --reporter compact",
+    "result": "passed",
+    "test_cases": 2,
+    "assertions": 10,
+    "covers": [
+      "An unlinked shared-memory descriptor remains usable for MapFileView read/write.",
+      "The default named mapping remains openable until CloseFileMappingHandle."
+    ]
+  },
+  "related_existing_pull_requests_at_capture": [
+    {
+      "number": 530,
+      "url": "https://github.com/rexglue/rexglue-sdk/pull/530",
+      "state": "OPEN",
+      "pull_request_head_commit": "d68122821a670dc1beea9990ecf411b12bf86f6a",
+      "local_commit": "d6ed02eea517a34166e3a1d0ef8e5ab9c5ca8253",
+      "patch_id": "f81668632bfb91942b17706dd483710b41b4c077"
+    },
+    {
+      "number": 534,
+      "url": "https://github.com/rexglue/rexglue-sdk/pull/534",
+      "state": "OPEN",
+      "pull_request_head_commit": "c1784dd8ddf48229e200e5036ac020180ed80bfc",
+      "local_commit": "ddc9db905c79384a52779f46834914ce3b73cfd5",
+      "patch_id": "4ff1136ac6bca800b210357dd071b70cb5252ef4"
+    }
+  ],
+  "limitations": [
+    "The run stopped at the retail memory wait; it does not prove the wait word was written or that the retail wait completed.",
+    "No visible frame, main menu, or offline race was verified.",
+    "The renderer handoff README reports that its gamma-target visual correction was not verified by a saved retail replay; this run does not establish renderer parity.",
+    "The four unsupported register-poll WAIT_REG_MEM forms are renderer observations and are not addressed by the Process 1 runtime change.",
+    "This run does not verify Vulkan 1.1, ARM64, or Android."
+  ]
+}

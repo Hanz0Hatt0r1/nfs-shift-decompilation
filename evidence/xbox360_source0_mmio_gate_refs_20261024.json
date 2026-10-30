@@ -1,0 +1,83 @@
+{
+  "schema": "shift.xbox360.source0-mmio-gate-refs.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3",
+    "live_memory_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c"
+  },
+  "static_scan": {
+    "source": "Full disassembly of the exact live-memory-derived PPC ELF with llvm-objdump",
+    "searched_operands": [
+      "lis immediate 32712 (high page 0x7FC80000)",
+      "memory/immediate operand 25924 (0x6544)"
+    ],
+    "high_page_0x7fc8_sites": [
+      {
+        "address": "0x823A46CC",
+        "instruction": "lis r10,32712",
+        "following_access": "stw r11,24848(r10)",
+        "resolved_address": "0x7FC86110"
+      },
+      {
+        "address": "0x823A48C8",
+        "instruction": "lis r11,32712",
+        "following_access": "stw r30,24848(r11)",
+        "resolved_address": "0x7FC86110"
+      },
+      {
+        "address": "0x823B2CD8",
+        "instruction": "lis r10,32712",
+        "following_access": "stw r11,1812(r10)",
+        "resolved_address": "0x7FC80714"
+      },
+      {
+        "address": "0x823B382C",
+        "instruction": "lis r11,32712",
+        "following_access": "lwz r11,25924(r11)",
+        "resolved_address": "0x7FC86544"
+      },
+      {
+        "address": "0x823B9CF8",
+        "instruction": "lis r11,32712",
+        "following_access": "stw r10,12820(r11)",
+        "resolved_address": "0x7FC83214"
+      }
+    ],
+    "gate_reader": {
+      "function": "0x823B37B8",
+      "instruction_bytes": [
+        "0x823B382C: 3d 60 7f c8  lis r11,32712",
+        "0x823B3830: 81 6b 65 44  lwz r11,25924(r11)",
+        "0x823B3834: 55 6b 07 ff  clrlwi. r11,r11,31",
+        "0x823B3838: 41 82 00 0c  bt 2,0x823B3844",
+        "0x823B3840: 4b ff 0e 01  bl 0x823A4640"
+      ],
+      "behavior": "On the source-0 branch, bit 0 is isolated. If it is zero, CR0 EQ branches to the epilogue; if it is one, execution falls through to call 0x823A4640."
+    },
+    "direct_guest_writes_to_0x7fc86544": [],
+    "coverage_limit": "This is an instruction/disassembly scan for direct address materialization and 0x6544 operands. It does not find alias writes through unrelated pointers or writes made by host/MMIO devices."
+  },
+  "runtime_crosscheck": {
+    "probe": "evidence/xbox360_linux_queue_callback_registration_probe_20261024.json",
+    "source0_consumer": "0x823A4640",
+    "sampled_entries": 8,
+    "candidate_queue_producer": "0x823A4758",
+    "candidate_producer_hits": 0,
+    "deferred_queue_read_indices": [0, 0, 0, 0, 0, 0, 0, 0],
+    "deferred_queue_write_indices": [0, 0, 0, 0, 0, 0, 0, 0]
+  },
+  "interpretation": {
+    "supported": [
+      "The direct guest-code reference found for 0x7FC86544 is the source-0 gate load at 0x823B3830; the source-0 path calls 0x823A4640 only when bit 0 is one.",
+      "Eight sampled entries at 0x823A4640 show the gate was passed in the recorded run, while the deferred queue indices remained zero."
+    ],
+    "not_proven": [
+      "The source or owner that sets bit 0 at 0x7FC86544; it may be written through an alias or host/MMIO path not visible as a direct guest-code reference.",
+      "Why producer 0x823A4758 did not execute or why the queue remained empty.",
+      "Frontend, visible retail frame, or offline-race progress."
+    ]
+  }
+}

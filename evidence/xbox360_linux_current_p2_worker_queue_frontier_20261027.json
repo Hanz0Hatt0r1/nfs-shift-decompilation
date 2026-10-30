@@ -1,0 +1,103 @@
+{
+  "schema": "shift.xbox360.linux-current-p2-worker-queue-frontier.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_path_outside_git": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data/default.xex",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "p1_host": {
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "p1_runtime": {
+      "source_commit": "7335383bf55d30bbca32a843445d6d333a26a368",
+      "sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253"
+    },
+    "p2_linux_plugin": {
+      "source_commit": "9afec9ead95484a63471912ed2e40c5f043bac46",
+      "sha256": "01a2908cfec4492cb6702a0217343d58a8c9d7618e836bef8e598bdfbdc2c0e7",
+      "build_id": "e16e929fc7a5ad5080c55709bc80b81747e14c13"
+    }
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "termination": "GDB quit on the first retail software-queue wait; clean title shutdown was not observed.",
+    "controller_input_sent": false,
+    "guest_memory_modified_by_probe": false,
+    "sigsegv_policy": "GDB was configured to pass SIGSEGV to the process without stopping; the run reached the queue breakpoint.",
+    "gdb_script": {
+      "path": "tools/xbox360/trace_linux_current_p2_frontier_20261027.gdb",
+      "sha256": "e304140cb0c2733eda0aaacc41b8a0334ac7019c30c918fb86f29df493d87e73"
+    },
+    "gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-current-p2-frontier-20261027/gdb.log",
+      "sha256": "cd795887050cf7aa1b5ef5baec1b53403f1ac8bac728ec92fad681ed6174e70c"
+    },
+    "mapped_libraries": {
+      "path_outside_git": "/tmp/nfs-shift-p1-current-p2-frontier-20261027/mapped-libraries.txt",
+      "sha256": "706d9401427b928b2d17b33268cf10f9dba4ae8d9029a046bc7a7b3cad7e29af"
+    },
+    "mapped_runtime_sha256_verified": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+    "mapped_plugin_sha256_verified": "01a2908cfec4492cb6702a0217343d58a8c9d7618e836bef8e598bdfbdc2c0e7",
+    "breakpoints": {
+      "worker_entry_hits": 2,
+      "worker_event_wait_hits": 2,
+      "producer_823a4758_hits_before_queue_wait": 0,
+      "registered_callback_82649b68_hits_before_queue_wait": 0,
+      "first_queue_wait_hits": 1
+    }
+  },
+  "worker_events": [
+    {
+      "worker_function": "0x823B8AC8",
+      "gdb_thread": 24,
+      "worker_guest_object": "0xB7368BE0",
+      "event_guest_address": "0xB7368C00",
+      "header_raw": "00000000",
+      "signal_state_raw": "00000000",
+      "wait_reason": 3,
+      "wait_mode": 1,
+      "alertable": false,
+      "timeout_signed_100ns_ticks": -300000
+    },
+    {
+      "worker_function": "0x823B8AC8",
+      "gdb_thread": 25,
+      "worker_guest_object": "0xB7368C30",
+      "event_guest_address": "0xB7368C50",
+      "header_raw": "00000000",
+      "signal_state_raw": "00000000",
+      "wait_reason": 3,
+      "wait_mode": 1,
+      "alertable": false,
+      "timeout": "infinite"
+    }
+  ],
+  "first_retail_queue_wait": {
+    "function": "0x823B34A0",
+    "gdb_thread": 15,
+    "guest_object": "0xB7365F00",
+    "head": 3,
+    "tail": 21,
+    "predicate_byte": "0x14",
+    "completion_mask": "0x02",
+    "completion_mask_set": false,
+    "worker_entry_hits": 2
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail XEX ran with the current P1 host/runtime and the Linux plugin built from P2 source commit 9afec9ead95484a63471912ed2e40c5f043bac46.",
+      "Both original guest workers entered 0x823B8AC8 and waited on their own guest object+32 event with signal state zero.",
+      "The main guest thread reached the original queue wait 0x823B34A0 with head 3, tail 21, predicate byte 0x14, and completion bit 0x02 clear; this matches the recorded P1 frontier.",
+      "The producer 0x823A4758 and registered callback 0x82649B68 breakpoints did not fire before the first queue wait."
+    ],
+    "not_proven": [
+      "That either worker event owns or signals the retail queue completion bit.",
+      "That the missing producer/callback before this breakpoint is a P1 scheduler defect or is caused by the renderer.",
+      "Frontend input consumption, visible main-menu entry, offline-race entry, sustained rendering, or clean title shutdown."
+    ],
+    "next_step": "Preserve the retail worker events and queue predicate. Extend the same-binary read-only trace past the first wait to identify the writer/callback or wake path; do not synthesize signals or set the completion bit."
+  }
+}

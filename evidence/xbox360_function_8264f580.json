@@ -1,0 +1,18 @@
+{
+  "schema": "shift.xbox360.rexglue.function-thunk.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "runtime_log": "nfs_shift_045.log",
+  "guest_address": "0x8264F580",
+  "bytes_hex": "38c000014bffe44c",
+  "decoded": [
+    "li r6,1",
+    "b 0x8264D9D0"
+  ],
+  "memory_capture": "read-only retained ReXGlue guest-memory backing from run 045 at file offset equal to guest VA; mapping cross-checked against the captured 0x8265BDB8 bytes",
+  "confidence": "observed",
+  "limitations": [
+    "The memory block was not stopped at 0x8264F580 under GDB.",
+    "The extracted default.pe has unverified provenance/address mapping and was not used for this result.",
+    "A patched runtime rebuild compiled and linked, but its rerun hit SIGBUS before guest function-table initialization, so this thunk has not yet been executed in the patched process."
+  ]
+}

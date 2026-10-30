@@ -1,0 +1,83 @@
+{
+  "schema": "shift.xbox360.rexglue.function-entry.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x823270D0",
+  "entry_bytes_hex": "2f050003419a00242f050000409a000c2f040000419a001481630000814b00887d4903a64e800420816300007ca42b78814b00807d4903a64e800420",
+  "capture_length_bytes": 60,
+  "function_length_bytes": 60,
+  "runtime_trap": {
+    "function": "0x823FA1A0",
+    "indirect_call_instruction": "0x823FA1D4",
+    "indirect_call_return_address": "0x823FA1D8",
+    "indirect_target": "0x823270D0",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x823FA1A0",
+      "0x823F3BC8",
+      "0x82327830",
+      "0x8231AEE0",
+      "0x822D6EA8",
+      "0x822D68C8",
+      "0x822EF7B0",
+      "0x822BD0C0",
+      "0x82FD5658",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ]
+  },
+  "memory_capture": "GDB read 64 bytes from host address 0x1823270D0 while PPCContext.ctr and last_indirect_target both contained 0x823270D0. The first 60 bytes contain the complete conditional dispatcher, ending in bctr at 0x82327108; the following 4 captured bytes are zero.",
+  "decoded_instructions": [
+    "cmpwi cr6,r5,3",
+    "beq cr6,0x823270F8",
+    "cmpwi cr6,r5,0",
+    "bne cr6,0x823270E8",
+    "cmpwi cr6,r4,0",
+    "beq cr6,0x823270F8",
+    "loc_823270E8: lwz r11,0(r3)",
+    "lwz r10,0x88(r11)",
+    "mtctr r10",
+    "bctr",
+    "loc_823270F8: lwz r11,0(r3)",
+    "mr r4,r5",
+    "lwz r10,0x80(r11)",
+    "mtctr r10",
+    "bctr"
+  ],
+  "semantics": "Conditional virtual dispatch: if r5==3 or (r5==0 and r4==0), dispatch through vtable slot +0x80 after moving r5 to r4; otherwise dispatch through slot +0x88.",
+  "function_extent_basis": "The conditional branches at 0x823270D4 and 0x823270E4 target the in-block path at 0x823270F8; the other path ends with bctr at 0x823270F4 and the alternate path ends with bctr at 0x82327108. The 60-byte extent therefore includes both dispatch paths and excludes the four following zero bytes.",
+  "runtime_context": {
+    "guest_code_base": "0x100000000",
+    "host_capture_address": "0x1823270D0",
+    "runtime_verification": {
+      "result": "executed_and_tail_dispatched",
+      "runtime_binary_sha256": "d3702554b63906d626bb0a1c9405cdaeb7554b5e00970946b033b7107a58972c",
+      "entry_registers": {
+        "r3": "0x00000000befef770",
+        "r4": "0x0000000000000001",
+        "r5": "0x0000000000000003"
+      },
+      "selected_path": "r5==3; vtable slot +0x80; r4 receives r5",
+      "next_invalid_target": "0x82341198",
+      "next_invalid_call_return_address": "0x8232C39C",
+      "renderer_breakpoints": "No vkCmdDraw, vkCmdDrawIndexed, or vkQueuePresentKHR breakpoint was hit before the next invalid-function trap."
+    },
+    "user_visual_observation": "The user reports seeing the original game's loading screen; no screenshot was captured.",
+    "user_visual_observation_scope": "The loading-screen observation is evidence of visible startup progress only; it does not establish main-menu, retail draw/present, or race execution."
+  },
+  "confidence": "full_live_guest_capture",
+  "limitations": [
+    "The entry passed codegen, a rebuilt runtime, and live execution; the next retail entry at 0x82341198 is still unresolved.",
+    "The captured path has not yet been proven to reach a main menu, complete a retail draw/present, or enter a race."
+  ],
+  "independent_decode": {
+    "decoder": "LLVM MC (powerpc64-unknown-linux-gnu), big-endian bytes",
+    "result": "All fifteen words decode as legal PPC instructions; the 60-byte extent includes both in-block branch destinations and both terminal bctr instructions.",
+    "control_flow": [
+      "0x823270D4 branches to 0x823270F8 when CR6.EQ is true.",
+      "0x823270DC branches to 0x823270E8 when CR6.EQ is false.",
+      "0x823270E4 branches to 0x823270F8 when CR6.EQ is true."
+    ],
+    "limitations": "No independent local XEX was used for this decode; the live GDB memory capture remains the source of instruction bytes."
+  }
+}

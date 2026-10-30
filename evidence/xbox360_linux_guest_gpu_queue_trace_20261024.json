@@ -1,0 +1,92 @@
+{
+  "schema": "shift.xbox360.linux.guest-gpu-queue-trace.v1",
+  "captured_at_local": "2026-10-24T23:30:05+03:00",
+  "input": {
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "run": {
+    "host_platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a1131aa4ec2fdf58c9a4ba05ed4d6e882fe13dcddc24f691c7e09b4035dacbc8",
+    "selected_gpu_plugin": {
+      "path": "/home/pes/work/process2-linux-multisampler-debug-run-20261024/bin/librexgpu-shift-native.so",
+      "sha256": "ed4f4bf8cba7cd73efba45ab07edec96f6173e40007d5aa1b9fb188b7bcc252d",
+      "mapped_identity_verified": false
+    },
+    "gdb_trace_script_sha256": "b118428e50ed36569c40e81cf946bc4c5b85d7b61028bdee87432df219fe62d5",
+    "bounded_seconds": 60,
+    "exit_code": 124,
+    "input_events_sent": false,
+    "guest_memory_modified_by_probe": false,
+    "trace_log": {
+      "path": "/home/pes/work/p1-guest-queue-trace-ed4f-20261024/logs/gdb-retail-frame-10.log",
+      "sha256": "4c81f7c3dcecd51202c8d740c6579d31953c9a2d76c136bcf1233eec630a9da8"
+    }
+  },
+  "guest_observations": {
+    "callback_object": "0xB7365F00",
+    "source0_interrupt": {
+      "retail_function": "0x823B37B8",
+      "hits": 3207,
+      "reported_state_samples": 376
+    },
+    "deferred_consumer": {
+      "retail_function": "0x823A4640",
+      "hits": 2746,
+      "reported_state_samples": 348,
+      "guest_lr_samples": ["0x823B3844"],
+      "meaning": "The callback consumer was reached through the source-0 handler's callsite after its retail MMIO bit test. The MMIO register itself was not read as ordinary guest RAM."
+    },
+    "deferred_queue_indices": {
+      "read_offset": "0x413C",
+      "write_offset": "0x4140",
+      "reported_values": {
+        "read": [0],
+        "write": [0]
+      }
+    },
+    "software_queue_predicate": {
+      "offset": "0x2ABD",
+      "reported_values": ["0x00", "0x04", "0x14"],
+      "mask_0x02_set_in_reported_samples": false
+    },
+    "wait_path": {
+      "retail_wait": "0x823B34A0",
+      "reported_hits": 384,
+      "wait_predicate": "0x823A0310",
+      "reported_hits": 3072,
+      "guest_lr_samples": ["0x823A557C", "0x823B38AC"]
+    },
+    "unreached_candidates": {
+      "deferred_queue_producer_0x823A4758_hits": 0,
+      "registered_callback_0x82649B68_hits": 0
+    }
+  },
+  "readback": {
+    "presenter_submission": 10,
+    "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "width": 1280,
+    "height": 720,
+    "bytes": 3686400,
+    "path": "/home/pes/work/p1-guest-queue-trace-ed4f-20261024/logs/retail-frame-10.a2b10g10r10",
+    "sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+    "non_black_rgb_pixels": 0,
+    "unique_packed_words": 2
+  },
+  "interpretation": {
+    "supported": [
+      "The Linux guest repeatedly receives source-0 callbacks and takes the retail path into 0x823A4640.",
+      "The sampled deferred queue remains empty and the software-queue predicate mask 0x02 remains clear during this bounded run.",
+      "Neither the candidate deferred producer nor the registered callback executes in this trace."
+    ],
+    "not_proven": [
+      "Why the deferred producer 0x823A4758 did not execute or whether a renderer rejection is its only cause.",
+      "The selected plugin hash was captured from the run directory; /proc mappings were not captured to prove the loaded file identity.",
+      "The readback does not show visible retail output; the main menu and offline race remain unverified."
+    ],
+    "debugger_timing": "GDB stopped at guest breakpoints and may alter thread scheduling.",
+    "next_step": "After the renderer accepts the current retail sampler state, repeat this trace with mapped-plugin identity captured and determine whether packet execution invokes 0x823A4758 and changes the queue/predicate. Do not set the guest predicate or bypass the wait."
+  }
+}

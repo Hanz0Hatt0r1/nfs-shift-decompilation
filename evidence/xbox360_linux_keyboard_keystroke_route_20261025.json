@@ -1,0 +1,134 @@
+{
+  "schema": "shift.xbox360.linux-keyboard-keystroke-route.v1",
+  "captured_at_local": "2026-10-25T13:32:24+03:00",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "retail_call": {
+    "caller_function": "0x82307790",
+    "call_address": "0x823077D0",
+    "return_address": "0x823077D4",
+    "guest_user_argument": 255,
+    "device_flags": "0x00000002",
+    "keystroke_output_offset_from_guest_stack": 80,
+    "wrapper_function": "0x826F1A70",
+    "wrapper_behavior": "sets user index to 0 and adds ANY_USER when the caller passes 255; forwards the keyboard device flag",
+    "xam_import_address": "0x8306347C",
+    "consumer_success_branch": "0x8230789C",
+    "consumer_mapper": "0x82307AA8"
+  },
+  "sdk_fix": {
+    "repository": "https://github.com/Hanz0Hatt0r1/rexglue-sdk",
+    "commit": "32afce4e6522f74b5e30031865fceeb9fb08ab5e",
+    "pull_request": "https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/5",
+    "stacked_on": "https://github.com/Hanz0Hatt0r1/rexglue-sdk/pull/4",
+    "behavior": [
+      "XAM accepts keyboard-selected keystroke queries while retaining unsupported-device rejection.",
+      "SDL reports only gamepad keystrokes for gamepad-selected queries.",
+      "The opt-in MNK driver queues raw keyboard keydown, repeat, and keyup records for keyboard-selected queries and drops stale records on focus loss."
+    ],
+    "regression_test": "tests/unit/input/mnk_keystroke_test.cpp",
+    "unit_test_result": "[input]: 34 assertions passed across 10 test cases"
+  },
+  "runtime_run": {
+    "platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-linux-retail-root-20261024/game",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation",
+      "--fullscreen=false",
+      "--mnk_mode=true"
+    ],
+    "input_device": "synthetic Linux keyboard via uinput",
+    "duration_seconds": 38.25,
+    "termination": "external GDB SIGINT after bounded run; harness returned 0; no guest fault observed",
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-mnk-keyboard-20261025/console.log",
+      "sha256": "13c9a569526c17f0826a178d701bc1f17e9165534c06bd545004be70f30a79bb"
+    }
+  },
+  "observed_keystrokes": [
+    {
+      "poll": 101,
+      "status": "0x00000000",
+      "virtual_key": "0x000D",
+      "event_flags": "KEYDOWN",
+      "user": 0
+    },
+    {
+      "poll": 102,
+      "status": "0x00000000",
+      "virtual_key": "0x000D",
+      "event_flags": "KEYUP",
+      "user": 0
+    },
+    {
+      "poll": 133,
+      "status": "0x00000000",
+      "virtual_key": "0x0020",
+      "event_flags": "KEYDOWN",
+      "user": 0
+    },
+    {
+      "poll": 134,
+      "status": "0x00000000",
+      "virtual_key": "0x0020",
+      "event_flags": "KEYUP",
+      "user": 0
+    }
+  ],
+  "interpretation": {
+    "supported": [
+      "The exact retail XAM keystroke import returns success with keyboard events for the observed flags=2 call.",
+      "The returned VirtualKey values and keydown/keyup flags match the synthetic Enter and Space events injected during the Linux run.",
+      "A follow-up GDB trace observed the retail keyboard event mapper and keydown/keyup callbacks after successful XAM polls."
+    ],
+    "not_proven": [
+      "That a later frontend state consumed these events or reached the main menu.",
+      "That a race is playable or renderer output is correct.",
+      "That the distinct physical-gamepad GetState path now advances the frontend; earlier Start/A probes only confirmed state delivery.",
+      "That these keyboard callbacks changed the frontend scene; this trace does not establish the main menu or race."
+    ],
+    "configuration_limit": "The MNK driver is opt-in; this run explicitly used --mnk_mode=true.",
+    "next_step": "Trace the consumer after the successful retail key poll and continue the independent gamepad GetState/action-map investigation."
+  },
+  "retail_consumer_trace": {
+    "runtime_host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_rexglue_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-input-consumer-20261025/consumer-route-gdb.log",
+      "sha256": "c6ea13498ca5c53f0071381a6ebe6b39baad031705ecd2669cf5779d82b99359"
+    },
+    "observed_retail_callbacks": [
+      {
+        "virtual_key": "0x000D",
+        "edge": "keydown",
+        "callback": "0x822FBC48"
+      },
+      {
+        "virtual_key": "0x000D",
+        "edge": "keyup",
+        "callback": "0x822FBCD8"
+      },
+      {
+        "virtual_key": "0x0020",
+        "edge": "keydown",
+        "callback": "0x822FBC48"
+      },
+      {
+        "virtual_key": "0x0020",
+        "edge": "keyup",
+        "callback": "0x822FBCD8"
+      }
+    ],
+    "interpretation": {
+      "supported": "The success branch in retail sub_82307790 and the mapper sub_82307AA8 ran for Enter and Space, followed by the retail key-edge callbacks.",
+      "not_proven": "A main-menu scene transition, the identity of the rendered screen, gamepad action consumption, or playable race entry."
+    }
+  }
+}

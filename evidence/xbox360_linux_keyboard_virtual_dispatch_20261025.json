@@ -1,0 +1,54 @@
+{
+  "schema": "shift.xbox360.linux-keyboard-virtual-dispatch.v1",
+  "captured_on": "2026-10-25",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b",
+    "gpu_plugin": "shift-native",
+    "gpu_plugin_sha256": "42f338bc48e144e9dbc70dd208f9a169f437b506d1c338832896c1a6b83b7f10",
+    "arguments": ["--mnk_mode=true", "--gpu_plugin=shift-native", "--no-async_shader_compilation"]
+  },
+  "input": {
+    "device": "Linux uinput keyboard",
+    "event": "Enter keydown and keyup",
+    "keydown_event_id": 7,
+    "keyup_event_id": 8,
+    "retail_key_code": "0x1C",
+    "listener_callback": "0x82FC0B68",
+    "keydown_guest_call": "0x8231AAC8",
+    "indirect_virtual_call": {
+      "guest_object": "0xA6E74690",
+      "key": "0x1C",
+      "state": 1,
+      "target": "0x82321198"
+    },
+    "listener_result": 0,
+    "gdb_script_sha256": "5496ebc978e0e67da8f94d5e1f75ccab815301106a4605bf07e12dff0c890541",
+    "gdb_log_sha256": "40900dd86577695c9212faeecd5bbfb1321296e9391e652c828e0db3367e1eca",
+    "runtime_log_sha256": "d5dc2675be053aa74ba9401f93dfa774c8b2738b2abba29fab426109d5464ef7"
+  },
+  "method_identity": {
+    "guest_address": "0x82321198",
+    "generated_source": "/home/pes/work/nfsshift-rex/generated/default/nfs_shift_recomp.240.cpp",
+    "generated_source_sha256": "1076b65f315e4840dcc5510ff85eb11d063f14eba0dc80d89a78a34d879bc3a5",
+    "body": "blr",
+    "effect": "Returns without reading or changing guest state."
+  },
+  "interpretation": {
+    "supported": [
+      "The synthetic Linux keyboard event reaches the original retail listener and its indirect virtual call in the same exact-XEX run.",
+      "That virtual call targets the generated retail method 0x82321198, whose guest instruction body is a return."
+    ],
+    "not_proven": [
+      "That this base virtual method should perform an input action; no evidence supports changing its retail no-op semantics.",
+      "A main-menu transition, offline-race entry, or failure of the separate XamInputGetState gamepad path."
+    ],
+    "discarded_probe": "An earlier GDB read used an incorrectly computed global address and produced an unrelated value; that value is excluded from this evidence."
+  }
+}

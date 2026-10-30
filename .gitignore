@@ -7,6 +7,10 @@ __pycache__/
 
 # Native/local build trees
 **/build/
+# ...except tools/xbox360/build/, which is the tracked reproducible build
+# recipe and pin ledger (README.md, pins.json, verify_pins.py), not a build tree.
+!tools/xbox360/build/
+!tools/xbox360/build/**
 *.o
 *.obj
 *.a

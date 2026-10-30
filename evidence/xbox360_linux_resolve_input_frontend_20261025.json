@@ -1,0 +1,150 @@
+{
+  "schema": "shift.xbox360.linux-resolve-input-frontend.v1",
+  "captured_on": "2026-10-25",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_source_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "rexglue_runtime_sha256": "d15165b314797e56f3eed7810161849dd2f2e3105424f7472e39453deafd9839",
+    "p2_renderer_source_commit": "700c43568bab6af77b19ecdd0c88d8ccd4a3e65f",
+    "p2_renderer_plugin_sha256": "1fa623feecb9a7ac6c1cd8d6de61bcabc6a4a01b12dfbeb9b0255fa29945042c",
+    "p2_branch_head_after_evidence_update": "f4382754d19638f4c3983802aaa60d2e28cc12d7"
+  },
+  "runs": {
+    "presenter_frame640_readback": {
+      "duration_seconds": 70.328,
+      "termination": "Bounded harness stop; runtime returned 0.",
+      "frame": 640,
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "extent": [1280, 720],
+      "raw_bytes": 3686400,
+      "raw_sha256": "4b61366d30e6c98619a82ea11964ab62c8564e77ba9c26d725c514bd1b8592da",
+      "raw_path_external": "/tmp/nfs-p1-p2-resolve-current-20261026/frame640.a2b10g10r10",
+      "decoded_png": {
+        "path": "evidence/screenshots/xbox360_linux_resolve_frame640_20261025.png",
+        "sha256": "ca9a3dd4ef345f111f48b47e1dee1b59efa638ee007e639ea1f444ddc8be2bf5",
+        "visual_observation": "Retail SHIFT logo and pink smoke are visible."
+      }
+    },
+    "input_and_window_trace": {
+      "duration_seconds": 123.005,
+      "termination": "GDB runner sent SIGINT while the title was still running; GDB and runtime returned 0.",
+      "guest_process_pid": 392893,
+      "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_sha256": "d15165b314797e56f3eed7810161849dd2f2e3105424f7472e39453deafd9839",
+      "renderer_plugin_sha256": "1fa623feecb9a7ac6c1cd8d6de61bcabc6a4a01b12dfbeb9b0255fa29945042c",
+      "loaded_library_paths_observed_in_proc_maps": {
+        "runtime": "/tmp/nfs-p1-p2-resolve-current-20261026/bin/librexruntime.so",
+        "renderer_plugin": "/tmp/nfs-p1-p2-resolve-current-20261026/bin/librexgpu-shift-native.so"
+      },
+      "arguments": [
+        "--game_data_root=/home/pes/work/process2-linux-retail-root-20261024/game",
+        "--gpu_plugin=shift-native",
+        "--no-async_shader_compilation",
+        "--fullscreen=false"
+      ],
+      "input": {
+        "device": "Linux uinput Microsoft Xbox 360 pad, VID:PID 045e:028e",
+        "sdl_gamecontroller_ignore_devices": "0x045e/0x0b12",
+        "pulses": [
+          {"at_seconds": 8.042, "button": "A", "duration_ms": 650},
+          {"at_seconds": 15.032, "button": "Start", "duration_ms": 650},
+          {"at_seconds": 24.048, "button": "A", "duration_ms": 650},
+          {"at_seconds": 35.016, "button": "A", "duration_ms": 650},
+          {"at_seconds": 46.028, "button": "Start", "duration_ms": 650},
+          {"at_seconds": 56.009, "button": "A", "duration_ms": 650},
+          {"at_seconds": 66.036, "button": "Start", "duration_ms": 650},
+          {"at_seconds": 76.005, "button": "A", "duration_ms": 650},
+          {"at_seconds": 86.040, "button": "Start", "duration_ms": 650},
+          {"at_seconds": 96.001, "button": "A", "duration_ms": 650},
+          {"at_seconds": 106.016, "button": "Start", "duration_ms": 650},
+          {"at_seconds": 116.015, "button": "A", "duration_ms": 650}
+        ],
+        "retail_trace": {
+          "consumer_function": "0x82308E60",
+          "xam_getstate_return_address": "0x82308EA8",
+          "xam_wrapper_hits": 1112,
+          "retail_state_polls": 1108,
+          "successful_non_neutral_user0_samples": {
+            "0x0010": 6,
+            "0x1000": 12
+          },
+          "mask_names_from_prior_exact-XEX_mapping": {
+            "0x0010": "Start",
+            "0x1000": "A"
+          },
+          "gdb_log_timestamps_for_each_sample": false,
+          "gdb_log_path_external": "/tmp/nfs-p1-input-resolve-current-20261026/gdb.log",
+          "gdb_log_sha256": "050e93129acb0549e58bc64e9529d84298b2684863cab8fa30362c3e6de7d61e",
+          "gdb_script_sha256": "2fd4551a1bb02518dd39b3a84d621357a4e6b087cd754f929e52ae7c68c696f8"
+        }
+      },
+      "window_captures": {
+        "capture_method": "Hyprland client geometry plus grim; SDL video driver was Wayland.",
+        "logical_size": [879, 579],
+        "png_size": [1054, 694],
+        "captures": [
+          {
+            "elapsed_seconds": 5.023,
+            "path": "evidence/screenshots/xbox360_linux_resolve_frontend_t005_20261025.png",
+            "sha256": "d8a3c81644ea6f90eab01a61f4ae4df3af71783701af17c677afd11eb03842cf",
+            "visual_observation": "Retail SHIFT loading emblem and progress bar."
+          },
+          {
+            "elapsed_seconds": 20.010,
+            "path": "evidence/screenshots/xbox360_linux_resolve_frontend_t020_20261025.png",
+            "sha256": "f1a7c86bfb14d09a853999ec5024763737ec83e38b7286e834a72698398c8fab",
+            "visual_observation": "Retail EA intro logo."
+          },
+          {
+            "elapsed_seconds": 40.039,
+            "path": "evidence/screenshots/xbox360_linux_resolve_frontend_t040_20261025.png",
+            "sha256": "a50b009509b046902c3d6bab1a76af945eed0f938edc668a8a4e685acd16514c",
+            "visual_observation": "Retail driving-safety disclaimer."
+          },
+          {
+            "elapsed_seconds": 120.027,
+            "path": "evidence/screenshots/xbox360_linux_resolve_frontend_t120_20261025.png",
+            "sha256": "567f5eb97dc8e7278eff4b779d2866a04c8906231aeef7620f24acea6a9afeb6",
+            "visual_observation": "Game viewport is black; ReXGlue diagnostic overlay remains visible."
+          }
+        ]
+      },
+      "runtime_log": {
+        "path_external": "/tmp/nfs-p1-p2-resolve-current-20261026/bin/logs/nfs_shift_002.log",
+        "sha256": "4f6d13f7f04cf55717678288084201fb2594858a22380aec8ee644efbf7a4e8b",
+        "bytes": 972513,
+        "indexed_draw_submission_entries": 428,
+        "accepted_copy_convert_entries": 428,
+        "vulkan_frame_refresh_failures": 0,
+        "menu_background_xml_open_failures": 4,
+        "last_draw_submission": "2026-10-25T19:21:31.512+03:00",
+        "first_menu_background_xml_failure": "2026-10-25T19:21:31.568+03:00",
+        "draw_submissions_after_first_xml_failure": 0,
+        "guest_fault_entries": 0
+      }
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "Presenter frame 640 contains the original retail SHIFT logo with the P2 resolve-capable plugin and matching runtime.",
+      "The second exact-XEX run showed a loading screen, EA intro, and safety disclaimer in the actual Wayland window.",
+      "The filtered uinput/GDB run observed successful non-neutral user-0 states with the known Start/A masks.",
+      "The selected renderer produced 428 submissions and no mixed-sample resolve failures in the traced run."
+    ],
+    "not_proven": [
+      "A causal link between the four menu_background.xml misses and the later absence of draw submissions.",
+      "Which individual pulse corresponds to each non-neutral state sample; the GDB log has no per-sample timestamps.",
+      "Main-menu entry, offline-race entry, or sustained playable output."
+    ],
+    "gate_status": {
+      "X3_retail_rendering": "in_progress",
+      "X4_frontend_to_offline_race": "in_progress"
+    }
+  }
+}

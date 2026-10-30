@@ -5,7 +5,23 @@ Effective 2026-10-22: **Xbox 360 retail is the primary executable being ported.*
 ## Authority and current state
 
 - Read [ROADMAP.md](ROADMAP.md), [docs/XBOX360_REXGLUE_MIGRATION.md](docs/XBOX360_REXGLUE_MIGRATION.md) and [coordination/xbox360_rexglue_status.json](coordination/xbox360_rexglue_status.json) before selecting new Xbox work.
-- **No `default.xex` is hash-locked, no SHIFT Xbox 360 recompilation or startup is proven.** Do not use PC corpus coverage, PC host frames or standalone Vulkan smoke tests as Xbox results.
+Before writing code answer: **Which exact open Xbox gate (X0–X6) does this change advance, and what observable proof will close it?**
+
+## Active lanes and the documents that define them
+
+Pick work from an existing lane document before inventing a new one; each states its open hypotheses and the red lines that must not be crossed (no guest-memory patching to force a predicate, no fabricated callback, no weakening fail-closed aborts into silent skips).
+
+| Lane | Document | Current open question |
+| --- | --- | --- |
+| P1 frontend | [docs/P1_FRONTEND_FRONTIER_PLAN_20261030.md](docs/P1_FRONTEND_FRONTIER_PLAN_20261030.md) | Why is the `MainMenu` scene gate never cleared, and why do the GUI queue enqueue breakpoints never fire? |
+| P2 renderer | [docs/P2_RENDER_UNRESOLVED_DRAW_PLAN_20261030.md](docs/P2_RENDER_UNRESOLVED_DRAW_PLAN_20261030.md) | Why are 24 draw packets register-ready with every render-target register zero, and what is opcode 7? |
+| P4 codegen | [docs/P4_PPC_CODEGEN_DIAGNOSTICS_PLAN_20261030.md](docs/P4_PPC_CODEGEN_DIAGNOSTICS_PLAN_20261030.md) | `float16_4` numeric drift in an implemented handler; unresolved branch in function discovery |
+| Build pins | [docs/XBOX360_BUILD_PINS_20261030.md](docs/XBOX360_BUILD_PINS_20261030.md) | Reconcile every artifact onto one SDK commit (T-PIN) |
+| Capture reproducibility | [docs/XBOX360_V118_SCENE_GATE_RUNNER_20261030.md](docs/XBOX360_V118_SCENE_GATE_RUNNER_20261030.md) | Re-derive the frontier numbers from raw run directories |
+
+## Honesty rules for measured negatives
+
+A zero is only a measurement when the probe that produced it is proven able to observe a one. Before claiming that something "never happens", state which breakpoint or counter produced the zero and what positive control demonstrates that it would fire. `tools/xbox360/build/verify_pins.py` and `tools/xbox360/analyse_menu_setup_scene_gate_run_20261029.py` both print their unproven parts (`unverified_pins`, `enqueue_evidence`) on every run — keep that behaviour; do not collapse it into a bare PASS.
 - Xbox original binary/runtime evidence governs Xbox-specific behavior; PC 1.02 may be used for cross-version corroboration only after identity and semantic agreement are demonstrated.
 - Source identities and reproducible tool revisions are mandatory; generated game code, retail game images, asset dumps and raw captures remain outside Git.
 - Do not equate function/codegen coverage with behavioral parity, fabricated state with initialization, or synthetic rendering with a retail game draw.

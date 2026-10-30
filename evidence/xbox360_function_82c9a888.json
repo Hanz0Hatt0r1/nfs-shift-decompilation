@@ -1,0 +1,37 @@
+{
+  "schema": "shift.xbox360.rexglue.function-thunk.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x82C9A888",
+  "bytes_hex": "38c000004bffe3cc",
+  "decoded": [
+    "li r6,0",
+    "b 0x82C98C58"
+  ],
+  "branch_target": "0x82C98C58",
+  "runtime_fatal": {
+    "function": "0x82503448",
+    "indirect_call_instruction": "0x82503528",
+    "indirect_call_return_address": "0x8250352C",
+    "indirect_target": "0x82C9A888",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x82503448",
+      "0x82F983C8",
+      "0x82DD8540",
+      "0x82E336B8",
+      "0x82E32640",
+      "0x8301DEC8",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ]
+  },
+  "memory_capture": "GDB read 16 bytes at host address 0x182C9A888 through the live guest mapping while PPCContext.last_indirect_target was 0x82C9A888.",
+  "registered_branch_target": "0x82C98C58 is present in generated/default/nfs_shift_register.cpp and the linked runtime.",
+  "confidence": "observed",
+  "limitations": [
+    "The exact retail XEX has no Ghidra load specification; the instruction bytes are from its live ReXGlue guest mapping.",
+    "The 0x82C9A888 override has not yet been passed through ReXGlue codegen or a rebuilt runtime.",
+    "The user observed the game's loading screen during an earlier run; the main menu, completed retail draw, and race remain unverified."
+  ]
+}

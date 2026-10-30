@@ -1,0 +1,114 @@
+{
+  "schema": "shift.xbox360.linux.post-video-frontend-probe.v1",
+  "captured_at_utc": "2026-10-25T17:24:29Z",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_override": {
+      "path": "/tmp/nfs-p1-shm-runtime-clang-20261025/librexruntime.so",
+      "sha256": "d0516220e6e3db828d4d016a517f5f870705628fa7016409067b7e6c94f4c740",
+      "selection": "LD_LIBRARY_PATH in isolated temporary launch directory"
+    },
+    "latest_p2_plugin": {
+      "path": "/home/pes/work/process2-current-p2-validated-linux-plugin-20261025/librexgpu-shift-native.so",
+      "sha256": "1c462ac883e1c37ed9502e5202ba03d9d1c5bc845bac1e283cbbbcc9b8052686",
+      "build_id": "d5a69288d8809b3c0061fe620481540a85bd11b6",
+      "loaded_from_this_path": true
+    },
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "movie_header": {
+    "path_relative_to_game_root": "Movies/Franchise_Ident.bik",
+    "sha256": "34a9ffeb18fb8410f7857e9abff361888050677f166aad3834a3a4125595cd1c",
+    "file_bytes": 14672084,
+    "signature": "BIKi",
+    "frame_count": 281,
+    "width": 1280,
+    "height": 720,
+    "frame_rate": "5000000/166833",
+    "audio_tracks": 10,
+    "frame_count_source": "Little-endian u32 at file offset 0x08; FFmpeg's Bink demuxer reads this field as stream duration/frame count.",
+    "format_reference": "https://github.com/FFmpeg/FFmpeg/blob/master/libavformat/bink.c"
+  },
+  "runs": [
+    {
+      "id": "latest_p2_plugin_retail_recapture",
+      "platform": "Linux AMD64",
+      "duration_seconds": 75.38,
+      "termination": "Harness sent SIGINT; host exited with code 0.",
+      "input_schedule": [
+        {"at_seconds": 8, "button": "A", "duration_ms": 600},
+        {"at_seconds": 15, "button": "Start", "duration_ms": 600},
+        {"at_seconds": 24, "button": "A", "duration_ms": 600},
+        {"at_seconds": 35, "button": "Start", "duration_ms": 600},
+        {"at_seconds": 44, "button": "A", "duration_ms": 600},
+        {"at_seconds": 55, "button": "Start", "duration_ms": 600}
+      ],
+      "captures": [
+        {"elapsed_seconds": 12, "path_external": "/tmp/nfs-p1-current-p2-plugin-recapture-verified-20261025/captures/t12.png", "sha256": "2cbc7baf721ad934a424a7aac56d37fa77af67f159f4faed92d2efd789d1888c", "observation": "Language Select"},
+        {"elapsed_seconds": 30, "path_external": "/tmp/nfs-p1-current-p2-plugin-recapture-verified-20261025/captures/t30.png", "sha256": "52ced58f1beb283704424d276d1e28296ecc4896d40b727e2b8024a84876683c", "observation": "Driving-safety warning"},
+        {"elapsed_seconds": 50, "path_external": "/tmp/nfs-p1-current-p2-plugin-recapture-verified-20261025/captures/t50.png", "sha256": "b5b6e95adb345e60e73e364046b019799463de24d53fc48d98957419b42e5f05", "observation": "Driving-safety warning"},
+        {"elapsed_seconds": 58, "path_external": "/tmp/nfs-p1-current-p2-plugin-recapture-verified-20261025/captures/t58.png", "sha256": "02b410f0df8aafdd32c5048a56a2ea5ce21d2e22b93524e073669cf367d2ddf7", "observation": "Black game viewport with diagnostic overlay"}
+      ],
+      "runtime_log": {
+        "path_external": "/tmp/nfs-p1-current-p2-plugin-recapture-verified-20261025/bin/logs/nfs_shift_001.log",
+        "sha256": "3d9221c3d0542e20d58a5ba7e4f0e5f5d5b000210145c52eb1db81040db7c9a9",
+        "accepted_copy_convert_entries": 1111,
+        "last_accepted_copy_convert": "2026-10-25 20:23:48.475",
+        "guest_fault_entries": 0,
+        "vulkan_frame_refresh_failures": 0
+      },
+      "shared_memory": {
+        "guest_mapping_lines_observed": "69 to 81",
+        "name_was_unlinked_while_process_was_live": true,
+        "linked_xenia_memory_objects_after_exit": 0
+      }
+    },
+    {
+      "id": "gdb_bink_completion_probe",
+      "platform": "Linux AMD64",
+      "duration_seconds": 91.27,
+      "termination": "Harness interrupted GDB after the bounded observation window; guest process had not exited naturally.",
+      "instrumentation": "Software breakpoints at generated guest functions sub_830670B8, sub_83066838 and sub_82678FD0. Breakpoint stops perturb guest scheduling.",
+      "guest_bink_object": "0xE6795040",
+      "observed_fields": {
+        "frame_target_object_plus_8": "0x00000119",
+        "progress_at_hit_272_object_plus_12": "0x00000110"
+      },
+      "hit_counts": {
+        "ready_check_0x830670B8": 280,
+        "clock_update_0x83066838": 280,
+        "video_wrapper_0x82678FD0": 280
+      },
+      "gdb_log": {
+        "path_external": "/tmp/nfs-p1-bink-completion-20261025.gdb.log",
+        "sha256": "b75a0264b57bebc1a588a9dc9cfc5796fa140b12429bb9afe401c9435946d3d0"
+      },
+      "console_log": {
+        "path_external": "/tmp/nfs-p1-bink-completion-20261025/console.log",
+        "sha256": "3f43f7639a9cfd11687826a20d34210d3ce37d76a9554c53055c4feadf3e32e3"
+      }
+    }
+  ],
+  "interpretation": {
+    "supported": [
+      "The exact XEX ran with the P2-supplied Linux plugin whose path and SHA-256 were observed in the live process maps.",
+      "The current plugin run reached Language Select, then the retail safety-warning presentation, followed by a black game viewport; it did not show the main menu or a race.",
+      "The selected runtime retained usable guest memory mappings after unlinking their POSIX shared-memory name; no linked xenia_memory_* object remained after the run.",
+      "The retail Bink object frame target 0x119 matches the 281-frame count in Franchise_Ident.bik. The interrupted trace observed 280 wrapper/readiness/clock calls, with progress 0x110 sampled at hit 272."
+    ],
+    "not_proven": [
+      "That the Bink stream naturally completed or that the 280 calls represent all frames presented; GDB stopped the run and perturbed scheduling.",
+      "That Bink decoding produced visible pixels or that a Bink callback is the cause of the black viewport.",
+      "That the missing menu_background.xml opens caused the lack of subsequent draw submissions; the traced retail parent stores the child result but returns success on the observed path.",
+      "That the exact frontend scene/state was entered after the warning or that any single renderer/runtime component caused the stall.",
+      "Main-menu entry, offline-race entry, Linux ARM64/Android execution, or Vulkan 1.1-only compatibility."
+    ],
+    "next_step": "Trace the retail scene-manager caller immediately after the Bink wrapper stops and around the first menu_background.xml miss. Record which guest initialization/state transition runs next and its return value before changing runtime semantics."
+  }
+}

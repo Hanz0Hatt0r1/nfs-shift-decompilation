@@ -1,0 +1,126 @@
+{
+  "schema": "shift.xbox360.linux-interrupt-context-virtual-watch.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host": {
+      "path": "/tmp/nfs-shift-p1-source1-context-20261026/bin/nfs_shift",
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "rexglue_runtime": {
+      "path": "/tmp/nfs-shift-p1-source1-context-20261026/bin/librexruntime.so",
+      "sha256": "2b0d46856da000cecafb46581ddff50da99f549ff335bee9ba489238eed24059",
+      "mapped_hash_verified": false
+    },
+    "gpu_plugin": {
+      "path": "/tmp/nfs-shift-p1-source1-context-20261026/bin/librexgpu-shift-nativerd.so",
+      "sha256": "f4da45fa6d72dae885d7cac942c7b8a7db1f1ea11094cad6438f96c036f2e4fd",
+      "source_commit": "3f4a779049410d7e1b48e39cba6c41c0bd794087",
+      "mapped_hash_verified": true
+    }
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+      "--user_data_root=/tmp/nfs-shift-p1-source1-context-20261026/user",
+      "--cache_root=/tmp/nfs-shift-p1-source1-context-20261026/cache",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation",
+      "--fullscreen=false"
+    ],
+    "controller_input_sent": false,
+    "game_data_was_read_only": true,
+    "guest_memory_written_by_probe": false,
+    "termination": "GDB killed the inferior at the first retail software-queue wait; clean title shutdown was not observed.",
+    "gdb_trace": {
+      "script_path": "/tmp/nfs-shift-p1-source1-context-20261026/watch_context.gdb",
+      "script_sha256": "a2a5015670e1b14b4e21114f322560d69d7522508bbfbb7dcd101c05ea9e8493",
+      "log_path": "/tmp/nfs-shift-p1-source1-context-20261026/watch_context.log",
+      "log_sha256": "ee1e01166ad021fd3f57e41f19e8c7be02e29baf14efe7cc48df270c4e9213f3",
+      "interrupt_context_watch": {
+        "first_callback_source": 0,
+        "object_guest_address": "0xB7365F00",
+        "context_guest_address": "0xFB963000",
+        "context_pointer_field_offset": "0x2A94",
+        "host_guest_virtual_mapping_base": "0x100000000",
+        "watchpoints": [
+          {
+            "field": "callback_target",
+            "guest_virtual_address": "0xFB963010",
+            "host_watch_address": "0x1FB963010",
+            "expected_retail_value": "0x823A4758",
+            "initial_guest_big_endian_value": "0x00000000",
+            "value_at_first_wait": "0x00000000"
+          },
+          {
+            "field": "callback_argument",
+            "guest_virtual_address": "0xFB963014",
+            "host_watch_address": "0x1FB963014",
+            "expected_retail_value": "0x00000208",
+            "initial_guest_big_endian_value": "0x00000000",
+            "value_at_first_wait": "0x00000000"
+          }
+        ],
+        "hardware_watchpoints_armed": 2,
+        "write_stop_before_first_wait": false,
+        "source_1_callback_observed_before_first_wait": false
+      },
+      "first_software_queue_wait": {
+        "function": "0x823B34A0",
+        "gdb_thread": 15,
+        "object_guest_address": "0xB7365F00",
+        "target": 13,
+        "head": 3,
+        "tail": 21,
+        "predicate_byte": "0x14",
+        "completion_mask": "0x02",
+        "completion_mask_set": false,
+        "interrupt_record_guest_address": "0xFB963000",
+        "callback_target": "0x00000000",
+        "callback_argument": "0x00000000",
+        "call_chain": [
+          "0x823B34A0",
+          "0x823A4E48",
+          "0x823A5610",
+          "0x8264F868",
+          "0x8301DB18"
+        ]
+      },
+      "gpu_plugin_hash_verified_in_inferior": true,
+      "runtime_library_path_resolved_by_ldd": true,
+      "runtime_mapping_hash_verified_in_inferior": false
+    },
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-p1-source1-context-20261026/bin/logs/nfs_shift_004.log",
+      "sha256": "b1ed276949f41b74adbc3d153f2acdce491e8ae168fb306e3d21e96030ac7643",
+      "unsupported_register_wait_forms_logged": true,
+      "same_run_memory_mode_callback_wait_identified": false
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail XEX and host executable hashes were recorded; the mapped GPU DSO hash was verified in the same Linux AMD64 inferior. The runtime DSO was resolved from its staged path but its mapped hash was not re-read in this inferior.",
+      "Two hardware watchpoints on the guest virtual mapping of interrupt-context offsets +0x10 and +0x14 were armed on the first source-0 callback and neither stopped execution before the first retail software-queue wait.",
+      "At the first wait the interrupt record still contained a zero callback target and zero argument; the wait target 13 lay between queue head 3 and tail 21, while predicate byte 0x14 did not contain completion mask 0x02.",
+      "The trace log contains no source-1 callback before the first wait."
+    ],
+    "not_proven": [
+      "That no write occurred through another host alias or a GPU/device DMA path; the watchpoints covered only the selected guest virtual host mapping.",
+      "That the renderer submitted or executed the specific memory-mode WAIT_REG_MEM packets associated with these context fields in this same run.",
+      "That the missing event belongs to the renderer, ReXGlue dispatch, or retail scheduling.",
+      "Main-menu entry, offline-race entry, sustained visible output, or a clean title shutdown."
+    ],
+    "next_step": "Trace whether the current renderer consumes the exact retail memory-mode WAIT_REG_MEM packets, translates their guest address to the interrupt-context fields, and dispatches source 1 only after the retail values are written. Preserve the original queue and predicate semantics."
+  },
+  "limitations": [
+    "The GDB run was intrusive and ended at the first software-queue wait.",
+    "The two hardware watchpoints monitored writes through the guest virtual mapping at 0x1FB963010 and 0x1FB963014; other host aliases and GPU/device DMA writes are outside this probe.",
+    "The runtime log's unsupported WAIT_REG_MEM messages describe register-space forms (memory=false); they are not identified as the exact callback-record packets.",
+    "The run used Linux GPU DSO commit 3f4a779049410d7e1b48e39cba6c41c0bd794087; the separately reported Android disclaimer-texture build was not staged in this Linux run."
+  ]
+}

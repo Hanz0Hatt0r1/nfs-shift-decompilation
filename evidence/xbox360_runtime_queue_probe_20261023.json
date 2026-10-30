@@ -1,0 +1,58 @@
+{
+  "schema": "shift.xbox360.rexglue.runtime-queue-probe.v1",
+  "captured_on": "2026-10-23",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "runtime_binary_sha256": "e0b0320715497a94b261f4ccaa6de4de3c9c311c9d4aaf5d1a40b9399b7670f1",
+    "rexglue_version": "0.10.0",
+    "host": "linux-amd64"
+  },
+  "run": {
+    "runtime_log": "/home/pes/work/nfsshift-rex/out/build/linux-amd64-release/logs/nfs_shift_105.log",
+    "gdb_log": "/tmp/nfs_shift_queue_watch.log",
+    "gpu_plugin_configured": false,
+    "video_calls_ignored": [
+      "VdSetGraphicsInterruptCallback",
+      "VdInitializeRingBuffer",
+      "VdEnableRingBufferRPtrWriteBack"
+    ]
+  },
+  "queue_wait": {
+    "guest_function": "0x823B34A0",
+    "caller_function": "0x823A4E48",
+    "call_instruction": "0x823A5578",
+    "return_address": "0x823A557C",
+    "arguments": {
+      "r4": 13,
+      "r5": 3,
+      "r6": 0
+    },
+    "guest_object_flags": {
+      "offset": "0x2ABD",
+      "observed_byte": "0x14",
+      "tested_mask": "0x02",
+      "tested_bit_set": false,
+      "offset_decimal": 10941,
+      "offset_note": "The original GDB script adds decimal 10941; its hexadecimal equivalent is 0x2ABD."
+    },
+    "queue_cursors_at_wait_entry": {
+      "head": 1,
+      "tail": 21
+    },
+    "queue_cursors_after": {
+      "head": 1,
+      "tail": 21
+    },
+    "wait_poll_function": "0x823A0310",
+    "main_guest_thread_at_interrupt": "inside 0x823A0310 while polling the predicate and queue state",
+    "other_guest_threads": "Several XEX worker threads were blocked in ReXGlue-backed KeWaitForSingleObject waits.",
+    "observation_interval_seconds": 45
+  },
+  "interpretation": {
+    "supported": "The same runtime produced the no-GPU-plugin warnings and stopped in sub_823A4E48 waiting in sub_823B34A0. Exact-XEX disassembly now verifies that this is a guest ring/cursor polling loop which repeatedly calls predicate 0x823A0310; the observed unchanged head/tail and clear 0x02 bit match that path. This makes an unserviced Xenos ring/completion path the leading explanation, while plugin-enabled runtime confirmation is still needed.",
+    "not_proven": "This does not prove that loading the Xenos plugin will resolve the wait, or establish a PPC/P-code or host scheduler defect, or prove a retail draw/Vulkan present.",
+    "next_owner": "Process 2 owns loading and validating the Xenos GPU plugin. Repeat this probe after plugin setup before classifying the guest queue wait as a runtime defect.",
+    "retail_static_evidence": "evidence/xbox360_guest_ring_wait_semantics_20261023.json"
+  },
+  "user_visual_observation": "The user confirmed that the game's loading screen appeared during a ReXGlue Xbox run, but the exact process/build hash was not recorded and the screen is no longer visible. This observation is not correlated to this controlled runtime binary."
+}

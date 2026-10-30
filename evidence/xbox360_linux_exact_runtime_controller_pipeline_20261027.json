@@ -1,0 +1,128 @@
+{
+  "schema": "shift.xbox360.linux-exact-runtime-controller-pipeline.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "p1_runtime_sha256": "6c56ca970160d9e3e6e28155c48ee11556763f206f6a49b78fdad2ca3f02ebb2",
+    "p2_plugin_sha256": "771201891a6ae28c0745f57beccf9c6474ce175c7bb3f5edadcce4c457a8a12b",
+    "launch_artifact_hashes_verified": true,
+    "p1_runtime_path_resolved_from_inferior_maps": true
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "duration_seconds": 68.527,
+    "termination": "After the controller pulses, the harness interrupted GDB; GDB detached, sent SIGINT to the inferior, and exited 0.",
+    "gdb_instrumented": true,
+    "guest_memory_modified_by_probe": false,
+    "controller": {
+      "device": "Linux uinput Xbox 360 pad, VID:PID 045e:028e",
+      "pulse_duration_ms": 3000,
+      "pulses": [
+        {"at_seconds": 12.227, "button": "Start"},
+        {"at_seconds": 18.228, "button": "A"},
+        {"at_seconds": 24.227, "button": "Start"}
+      ],
+      "pulses_scheduled_after_retail_controller_update": true
+    },
+    "tracing": {
+      "gdb_script": {
+        "path": "tools/xbox360/trace_linux_exact_runtime_controller_pipeline_20261027.gdb",
+        "sha256": "c2b111793ee95b27596c3ffc219daab0141e871b36bee63b7ff1bd072302af13"
+      },
+      "execution_runner": {
+        "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-controller-pipeline-20261027/capture-run-used.py",
+        "sha256": "bb282e4b157a16be839da66ef1539e9b1161d5b1e61a3b8fffcb6d44c8938a8f"
+      },
+      "reproduction_runner": {
+        "path": "tools/xbox360/capture_linux_exact_runtime_controller_pipeline_20261027_pre_runtime_override.py",
+        "sha256": "c10209424c95a3bde879b9f240dcfe6e766a1ef7309a898fa4583526fd55e675"
+      },
+      "gdb_log": {
+        "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-controller-pipeline-20261027/gdb.log",
+        "sha256": "57d704cda0172a6dfc14edbae8b4ca6bfda9d9082d606afa58953b801ade6838"
+      },
+      "runner_log": {
+        "path_outside_git": "/tmp/nfs-shift-p1-exact-runtime-controller-pipeline-20261027/runner.log",
+        "sha256": "ef65835a513f107e47ba9ac8f850362791d56c577ae8afc5f04831615620b0e4"
+      }
+    }
+  },
+  "retail_input_path": {
+    "runtime_symbols": {
+      "InputSystem_GetState_offset": "0x293260",
+      "XamInputGetState_entry_offset": "0x430540",
+      "offset_source": "nm on the exact 6c56ca97 runtime"
+    },
+    "counts": {
+      "XamInputGetState_entry": 1508,
+      "InputSystem_GetState": 1508,
+      "successful_user0_returns_sampled": 377,
+      "sampled_button_masks": {
+        "0x0000": 199,
+        "0x0010": 96,
+        "0x1000": 82
+      },
+      "sub_8230CD00_hits": 1508,
+      "sub_82308E60_hits": 1508,
+      "candidate_dispatcher_sub_8230D398_hits": 0,
+      "candidate_raw_mask_getter_sub_828B22B8_hits": 0
+    },
+    "retail_controller_object": "0xBCAEB260",
+    "observed_edges": [
+      {
+        "elapsed_seconds": 9.815,
+        "function": "sub_8230CD00",
+        "current": "0x0010",
+        "previous": "0x0000",
+        "edge": "0x0010"
+      },
+      {
+        "elapsed_seconds": 9.842,
+        "function": "sub_82308E60",
+        "current": "0x0010",
+        "previous": "0x0000",
+        "edge": "0x0010"
+      },
+      {
+        "elapsed_seconds": 13.580,
+        "function": "sub_8230CD00",
+        "current": "0x1000",
+        "previous": "0x0000",
+        "edge": "0x1000"
+      },
+      {
+        "elapsed_seconds": 13.685,
+        "function": "sub_82308E60",
+        "current": "0x1000",
+        "previous": "0x0000",
+        "edge": "0x1000"
+      }
+    ],
+    "matching_xam_return_samples": [
+      {"elapsed_seconds": 9.812, "packet": 2, "status": "0x0", "buttons": "0x0010"},
+      {"elapsed_seconds": 10.727, "packet": 3, "status": "0x0", "buttons": "0x0000"},
+      {"elapsed_seconds": 13.579, "packet": 4, "status": "0x0", "buttons": "0x1000"},
+      {"elapsed_seconds": 16.525, "packet": 5, "status": "0x0", "buttons": "0x0000"},
+      {"elapsed_seconds": 19.510, "packet": 6, "status": "0x0", "buttons": "0x0010"},
+      {"elapsed_seconds": 22.528, "packet": 7, "status": "0x0", "buttons": "0x0000"}
+    ]
+  },
+  "interpretation": {
+    "supported": [
+      "On the exact current retail XEX and P1 runtime, successful user-0 XamInputGetState samples contained Start (0x0010) and A (0x1000).",
+      "The same masks appeared as rising edges on retail controller object 0xBCAEB260 in sub_8230CD00 and sub_82308E60.",
+      "This run rules out host-to-retail input delivery failure before the observed retail edge-update path."
+    ],
+    "not_proven": [
+      "That an active frontend action handler consumed either edge or advanced a scene.",
+      "A visible main menu, offline race, gameplay, or correct rendering; this trace captured no pixels.",
+      "That sub_8230D398 is the only action dispatcher; it had no hits in this bounded trace."
+    ],
+    "next_p1_step": "Trace the active frontend scene and downstream action consumer after the confirmed controller edges. Preserve the original input and event semantics; do not patch the host-to-retail mapping based on the current evidence."
+  }
+}

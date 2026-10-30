@@ -1,0 +1,68 @@
+{
+  "schema": "shift.xbox360.rexglue.callback-queue-trace.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "code_provenance": {
+    "basis": "Four retained Xenia guest-memory backings; guest VA equals backing-file offset.",
+    "crosscheck": "Known 0x823A0310 and 0x823B34A0 windows match the exact-XEX hashes already recorded in xbox360_guest_ring_wait_semantics_20261023.json.",
+    "stable_windows": [
+      {
+        "address": "0x823B37B8",
+        "name": "graphics interrupt callback",
+        "length_bytes": 152,
+        "sha256": "1d8ba6ae7fd904f3ef01651a6fde5ba91899c7f607171ec8cf9142e33bcb1fa7"
+      },
+      {
+        "address": "0x823A4640",
+        "name": "deferred callback queue handler",
+        "length_bytes": 288,
+        "sha256": "1dc4dbf1e1dc38891b5a7cdb30cd6da943c39048d0708ba7ecc256ae443a868f"
+      },
+      {
+        "address": "0x823B33A0",
+        "name": "software queue helper",
+        "length_bytes": 256,
+        "sha256": "660ba0c31575a27a6907c0530063584f89857ae633a2929fb5a3329a9bd8f368"
+      }
+    ],
+    "all_four_backings_match": true
+  },
+  "retail_call_chain": {
+    "interrupt_callback": {
+      "function": "0x823B37B8",
+      "source_0": "Reads GPU MMIO address 0x7FC86544 and, when bit 0 is set, calls 0x823A4640 with the callback object.",
+      "source_1": "May invoke the registered object callback, then performs its spinlock and source-bit cleanup. This branch does not call 0x823A4640."
+    },
+    "deferred_callback_queue": {
+      "function": "0x823A4640",
+      "responsibility": "Under the guest spinlock at object+16712, consumes queued 8-byte records between the read and write indices at object+16700 and object+16704. The record array begins at object+16572. It may write the associated GPU register and invokes the registered callback at object+16544 when present.",
+      "separate_from_wait_predicate": "This function does not set the software-queue completion bit at object+0x2ABD."
+    },
+    "software_queue_completion": {
+      "predicate": "object+0x2ABD, mask 0x02",
+      "setter_candidate": "0x823B33A0 sets mask 0x02 after its queue path returns.",
+      "wait_path": "0x823B34A0 repeatedly calls predicate 0x823A0310 while waiting for queue progress."
+    }
+  },
+  "runtime_crosscheck": {
+    "source1_probe": "evidence/xbox360_source1_callback_pristine_probe_20261024.json",
+    "source_0_callback_hits_in_approximately_110_seconds": 0,
+    "source_1_dispatch_calls_observed": 2,
+    "predicate_byte_after_source1": "0x14",
+    "predicate_mask_0x02_set": false,
+    "software_queue_helper_0x823B33A0_hit_after_watch_install": false,
+    "helper_watch_interval_seconds_lower_bound": 15,
+    "guest_memory_mutated_by_probe": false
+  },
+  "interpretation": {
+    "supported": "Source 0 is the retail route into the deferred guest callback queue handler. The Linux run observed source-1 PM4 callbacks but no source-0 callback, while the separate software-queue completion predicate remained clear.",
+    "not_proven": "This does not prove that source-0 delivery alone sets the software-queue predicate, reaches the frontend, or resolves all remaining startup blockers. The source-0 callback path must be exercised before classifying guest scheduler behavior as defective.",
+    "next_owner": "Process 2 owns the missing Xenos vblank/source-0 plugin integration. Process 1 should rerun the pristine guest callback and queue watches after that integration is built.",
+    "next_p1_probe": "Verify source r3=0 enters 0x823B37B8, the MMIO bit permits the call to 0x823A4640, and then watch queue+0, object+0x2ABD, and the main guest PC for an actual transition. Do not fabricate the predicate or bypass the guest wait."
+  }
+}

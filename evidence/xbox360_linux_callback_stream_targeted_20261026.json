@@ -1,0 +1,231 @@
+{
+  "schema": "shift.xbox360.linux-callback-stream-targeted.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "live_memory_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c"
+  },
+  "host_executable": {
+    "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "path": "/tmp/nfs-p1-callback-targeted-20261026/latest/bin/nfs_shift"
+  },
+  "runs": {
+    "retail_stream_emission": {
+      "duration_limit_seconds": 25,
+      "gdb_timeout_exit_code": 124,
+      "guest_memory_mutated": false,
+      "gamepad_input_sent": false,
+      "runtime_sha256_mapped": "127181adbfb99b65e9d1a8f1d6aed12308e1cf320b86067588ad421f17eda68e",
+      "renderer_sha256_mapped": "0bcb918f41fd1f85d7e69f808bfc029635340f5b400ca2d18a43d495eb796e62",
+      "renderer_identity_note": "This probe loaded the older plugin from the original executable directory. Use it only for guest-side command-stream construction, not for claims about the current renderer.",
+      "gdb_log": {
+        "path_outside_git": "/home/pes/work/nfs-p1-retail-callback-targeted-20261026/probe-stream-after.log",
+        "sha256": "f9e8fbc35a66fc7fc5fa1b78846979996b69ee9a711b0416164cabdd3cd2ad18",
+        "bytes": 3004
+      },
+      "gdb_script_sha256": "99d2da14f34e5e45c310e8e9cca8ffb1123e6d7c8356a1151886af165fdd7620",
+      "observed": {
+        "command_builder": "0x823B3598",
+        "guest_lr": "0x823A4A40",
+        "guest_stream_address": "0xA95D05D0",
+        "guest_stream_host_address": "0x1A95D05D0",
+        "r5": "0x0",
+        "r6_guest_value": "0xFFFFFFFF823A4758",
+        "r7": "0x208",
+        "output_prefix_words_big_endian": [
+          "00000100",
+          "000005c8",
+          "00020000",
+          "0001057c",
+          "823a4758",
+          "00000208",
+          "00000578",
+          "00000004",
+          "c0043c00",
+          "00000013",
+          "1b964002",
+          "00000004",
+          "ffffffff",
+          "00000100",
+          "c0043c00",
+          "00000013",
+          "1b964016",
+          "00000208",
+          "ffffffff",
+          "00000100",
+          "c0043c00",
+          "00000013",
+          "1b964012",
+          "823a4758",
+          "ffffffff",
+          "00000100",
+          "c0005400",
+          "00000004",
+          "0000045e",
+          "00000004",
+          "c0043c00",
+          "00000013"
+        ],
+        "value_word_indexes": [
+          4,
+          23
+        ],
+        "producer_breakpoint_hits": 0
+      }
+    },
+    "current_p2_pair_frontier": {
+      "duration_limit_seconds": 40,
+      "gdb_timeout_exit_code": 124,
+      "guest_memory_mutated": false,
+      "gamepad_input_sent": false,
+      "runtime_sha256_mapped": "127181adbfb99b65e9d1a8f1d6aed12308e1cf320b86067588ad421f17eda68e",
+      "renderer_sha256_mapped": "dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1",
+      "gdb_log": {
+        "path_outside_git": "/home/pes/work/nfs-p1-retail-callback-targeted-20261026/probe-latest.log",
+        "sha256": "ecb7d13c1570d76edda9730732a8ee389dc7ac7e20dbf630ef800d37bf559ba2",
+        "bytes": 1790
+      },
+      "gdb_script_sha256": "990a3a4c423a02677f269a13dcb1d5f2b0035fa25bdcad8b0761640c9427a15f",
+      "observed": {
+        "retail_initialization_function": "0x823A4908",
+        "initialization_hits": 1,
+        "object": "0xB7365F00",
+        "guest_lr": "0x823A5678",
+        "producer_0x823A4758_hits": 0,
+        "registered_callback_0x82649B68_hits": 0,
+        "producer_and_callback_breakpoints_installed": true,
+        "runtime_and_renderer_mapping_hashes_read_from_proc_maps": true
+      }
+    },
+    "current_p2_pair_stream_and_ring_trace": {
+      "platform": "Linux AMD64",
+      "duration_limit_seconds": 45,
+      "runtime_log_observed_seconds": 40.205,
+      "termination": "The 45-second timeout sent SIGINT to GDB; no clean title shutdown was recorded.",
+      "instrumentation": "GDB source breakpoint at sub_823B3598 filtered to r6=0x823A4758, then breakpoints at sub_823A4758 and sub_82649B68; read-only guest memory sampling.",
+      "guest_memory_modified": false,
+      "gamepad_input_sent": false,
+      "ring_trace_enabled_by": "SHIFT_NATIVE_VULKAN_TRACE_RING=1",
+      "binaries": {
+        "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+        "rexglue_runtime_sha256": "127181adbfb99b65e9d1a8f1d6aed12308e1cf320b86067588ad421f17eda68e",
+        "gpu_plugin_sha256": "dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1",
+        "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+        "runtime_and_plugin_same_as_current_pair_frontier": true
+      },
+      "gdb_log": {
+        "path_outside_git": "/tmp/nfs-p1-callback-correlation-20261026/gdb.log",
+        "sha256": "d7777171b23e19611b80d3e2828b352bc8dfe93e44e91f6989000e6fb6669982",
+        "bytes": 2192
+      },
+      "runtime_log": {
+        "path_outside_git": "/tmp/nfs-p1-callback-correlation-20261026/bin/logs/nfs_shift_001.log",
+        "sha256": "acbfc64b69e21ca5ec7c458574c99650fa7bf3b448c87eb7b8f6bc727397e519",
+        "bytes": 2008130
+      },
+      "stream_emission": {
+        "builder": "0x823B3598",
+        "guest_lr": "0x823A4A40",
+        "guest_stream_address": "0xA95D05D0",
+        "r6_guest_value": "0xFFFFFFFF823A4758",
+        "r7": "0x208",
+        "captured_first_32_dwords_big_endian": [
+          "00000100",
+          "000005c8",
+          "00020000",
+          "0001057c",
+          "823a4758",
+          "00000208",
+          "00000578",
+          "00000004",
+          "c0043c00",
+          "00000013",
+          "1b964002",
+          "00000004",
+          "ffffffff",
+          "00000100",
+          "c0043c00",
+          "00000013",
+          "1b964016",
+          "00000208",
+          "ffffffff",
+          "00000100",
+          "c0043c00",
+          "00000013",
+          "1b964012",
+          "823a4758",
+          "ffffffff",
+          "00000100",
+          "c0005400",
+          "00000004",
+          "0000045e",
+          "00000004",
+          "c0043c00",
+          "00000013"
+        ],
+        "decoded_packet_context": {
+          "header_dword_index": 20,
+          "dwords_big_endian": [
+            "c0043c00",
+            "00000013",
+            "1b964012",
+            "823a4758",
+            "ffffffff"
+          ],
+          "type3_opcode": "0x3C",
+          "operation": "WAIT_REG_MEM",
+          "poll_address_field": "0x1B964012",
+          "reference_operand": "0x823A4758",
+          "mask_operand": "0xFFFFFFFF",
+          "reference_is_data_not_control_flow_target": true
+        },
+        "capture_bytes_read_after_builder_return": 256
+      },
+      "observed": {
+        "producer_0x823A4758_breakpoint_hits": 0,
+        "registered_callback_0x82649B68_breakpoint_hits": 0,
+        "guest_gpu_interrupt_callback_registered": "0x823B37B8",
+        "ring_wptr_events": 3954,
+        "ring_wake_events": 1116,
+        "ring_snapshot_events": 1116,
+        "ring_complete_events": 1116,
+        "final_guest_rptr": "0xE69",
+        "final_ring_writeback_guest_address": "0x17AF403C",
+        "final_ring_writeback_value": "0x00000E69",
+        "copy_convert_log_entries": 899,
+        "draw_submission_log_entries": 899,
+        "guest_faults_or_signals": 0,
+        "vulkan_frame_refresh_failures": 0
+      },
+      "interpretation": {
+        "supported": [
+          "The current runtime/plugin pair ran the retail stream builder and captured 0x823A4758 at dword indices 4 and 23.",
+          "The same bounded run recorded ring wakes, snapshots, completions, Copy/Convert accepts, and Vulkan presenter submissions.",
+          "The two guest breakpoints at 0x823A4758 and 0x82649B68 had no hits after the stream capture."
+        ],
+        "not_proven": [
+          "That the captured guest stream was submitted inside the particular GPU ring snapshots.",
+          "That the absent guest-function hits indicate a P1 runtime defect or a P2 packet-decoder defect.",
+          "That this stream controls the retail safety-warning transition, main-menu entry, or offline-race entry."
+        ]
+      }
+    }
+  },
+  "interpretation": {
+    "observed": [
+      "Retail function 0x823A4908 ran on object 0xB7365F00 during the 40-second run with the current mapped P2 plugin/runtime pair.",
+      "A separate stream-construction probe observed 0x823B3598 receive sign-extended 0x823A4758 in guest r6 and append that value at two positions in the guest stream.",
+      "The candidate producer and registered callback had no breakpoint hits in the 40-second current-pair probe."
+    ],
+    "not_proven": [
+      "The separate stream probe used an older renderer plugin; it does not prove how the current plugin executes the encoded stream.",
+      "The decoded WAIT_REG_MEM reference is data, not evidence of a guest indirect call to 0x823A4758; this stream capture alone does not prove the packet was submitted or executed.",
+      "The absence of producer hits in one 40-second GDB run does not identify the missing event or establish a permanent failure.",
+      "This probe does not establish main-menu or offline-race progress."
+    ],
+    "next_p1_step": "Trace the actual caller and indirect-call condition for function 0x823A4758 independently of its WAIT_REG_MEM reference value; preserve retail queue and wait predicates."
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "schema": "shift.xbox360.retail_event_import_scan.v1",
+  "captured_at_utc": "2026-10-24T18:29:55Z",
+  "retail_xex": {
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "live_memory_elf": {
+    "sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c"
+  },
+  "method": {
+    "description": "Parsed the XEX import-libraries optional header, then resolved each guest import-record address through the live-memory ELF PT_LOAD virtual-address mappings. Import type is the record high byte; ordinal is its low 16 bits.",
+    "xex_import_header_offset": "0x3678",
+    "xex_import_header_size": "0x988",
+    "endianness": "big"
+  },
+  "libraries": {
+    "xam.xex": {
+      "raw_import_records": 224,
+      "unique_function_or_variable_ordinals": 112,
+      "event_api_imports": {
+        "SetEvent": { "ordinal": "0x0420", "imported": false },
+        "ResetEvent": { "ordinal": "0x042B", "imported": false },
+        "WaitForSingleObject": { "ordinal": "0x0425", "imported": false },
+        "WaitForSingleObjectEx": { "ordinal": "0x0426", "imported": false }
+      }
+    },
+    "xboxkrnl.exe": {
+      "raw_import_records": 357,
+      "unique_function_or_variable_ordinals": 172,
+      "event_api_imports": {
+        "KePulseEvent": { "ordinal": "0x007F", "imported": false },
+        "KeSetEvent": { "ordinal": "0x009D", "imported": true, "record_types": [0, 1] },
+        "KeWaitForSingleObject": { "ordinal": "0x00B0", "imported": true, "record_types": [0, 1] },
+        "NtPulseEvent": { "ordinal": "0x00E2", "imported": false },
+        "NtSetEvent": { "ordinal": "0x00F6", "imported": true, "record_types": [0, 1] },
+        "NtWaitForSingleObjectEx": { "ordinal": "0x00FD", "imported": true, "record_types": [0, 1] }
+      }
+    }
+  },
+  "export_name_mapping": "The ordinals were mapped against src/kernel/xam/export_table.inc and src/kernel/xboxkrnl/export_table.inc in the ReXGlue SDK source used for the Linux runtime build.",
+  "conclusion": "This exact retail XEX does not import the XAM SetEvent, ResetEvent, WaitForSingleObject, or WaitForSingleObjectEx exports that are currently stubs. It does import Xbox kernel KeSetEvent, KeWaitForSingleObject, NtSetEvent, and NtWaitForSingleObjectEx. The XAM stubs are therefore not an evidenced explanation for this title's current wait. Import presence alone does not prove runtime call counts, correct event semantics, or frontend progress.",
+  "limits": [
+    "This is import-table evidence, not a runtime call trace.",
+    "It does not verify the semantics or results of the imported kernel APIs.",
+    "It does not establish a cause for the frontend stall, black readback, or missing race progress."
+  ]
+}

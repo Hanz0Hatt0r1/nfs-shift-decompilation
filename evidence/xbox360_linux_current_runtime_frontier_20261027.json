@@ -1,0 +1,87 @@
+{
+  "schema": "shift.xbox360.linux-current-runtime-retail-frontier.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host": {
+      "path_outside_git": "/home/pes/work/nfs-shift-p1-current-plugin-20261027/bin/nfs_shift",
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "rexglue_runtime": {
+      "path_outside_git": "/home/pes/work/nfs-shift-p1-current-plugin-20261027/bin/librexruntime.so",
+      "sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253"
+    },
+    "gpu_plugin": {
+      "path_outside_git": "/home/pes/work/nfs-shift-p1-current-plugin-20261027/bin/librexgpu-shift-native.so",
+      "sha256": "f4da45fa6d72dae885d7cac942c7b8a7db1f1ea11094cad6438f96c036f2e4fd",
+      "source_commit": "3f4a779049410d7e1b48e39cba6c41c0bd794087"
+    }
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "termination": "GDB quit at the first retail software-queue wait; clean title shutdown was not observed.",
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "mapped_hashes_verified_in_inferior": true,
+    "gdb_script": {
+      "path": "tools/xbox360/trace_linux_current_runtime_frontier_20261027.gdb",
+      "sha256": "6d2559714e669c7d19a75058aeeaea8e21c234dfd4e623ddfaa05f56447647ea"
+    },
+    "gdb_log": {
+      "path_outside_git": "/tmp/nfs-shift-p1-current-runtime-frontier-20261027/gdb.log",
+      "sha256": "1d7013724b531ce35daf3bc417833ccb834b24b6c16698baa5b19bd86ffa1003"
+    },
+    "mapped_libraries": {
+      "path_outside_git": "/tmp/nfs-shift-p1-current-runtime-frontier-20261027/mapped-libraries.txt",
+      "sha256": "d894d49cbab597a2f1892f10d12a911261c528c1e64669ed613ba17cb1e0ef99"
+    },
+    "breakpoints": {
+      "worker_entry_hits": 2,
+      "worker_event_wait_hits": 2,
+      "producer_823a4758_hits": 0,
+      "registered_callback_82649b68_hits": 0,
+      "first_queue_wait_hits": 1
+    }
+  },
+  "worker_events": [
+    {
+      "worker_function": "0x823B8AC8",
+      "gdb_thread": 24,
+      "worker_guest_object": "0xB7368BE0",
+      "event_guest_address": "0xB7368C00",
+      "timeout_signed_100ns_ticks": -300000
+    },
+    {
+      "worker_function": "0x823B8AC8",
+      "gdb_thread": 25,
+      "worker_guest_object": "0xB7368C30",
+      "event_guest_address": "0xB7368C50",
+      "timeout": "infinite"
+    }
+  ],
+  "first_retail_queue_wait": {
+    "function": "0x823B34A0",
+    "guest_object": "0xB7365F00",
+    "head": 3,
+    "tail": 21,
+    "predicate_byte": "0x14",
+    "completion_mask": "0x02",
+    "completion_mask_set": false
+  },
+  "interpretation": {
+    "supported": [
+      "The current exact-XEX run reached both original retail workers and observed each wait on its guest object+32 event.",
+      "The first main software-queue wait matched the previously recorded state: head 3, tail 21, predicate byte 0x14, and completion mask 0x02 clear.",
+      "The current P1 runtime and Linux renderer plugin hashes were read from the inferior's mapped files before the debugger stopped at the retail queue wait."
+    ],
+    "not_proven": [
+      "That either worker event owns or signals the retail queue completion bit.",
+      "A P1 scheduler defect, the cause of the outstanding renderer memory wait, frontend progress, main-menu entry, or offline-race entry."
+    ],
+    "next_step": "Preserve the retail worker events and queue predicate; continue only from a renderer/runtime trace that identifies the writer or callback handoff required by the captured wait."
+  }
+}

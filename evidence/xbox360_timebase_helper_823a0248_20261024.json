@@ -1,0 +1,82 @@
+{
+  "schema": "shift.xbox360.timebase-helper-analysis.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3",
+    "live_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c"
+  },
+  "static_basis": {
+    "ghidra_export": {
+      "program": "nfs_shift_xbox360_live_20261024.elf",
+      "export_sha256": "d60d9ca4faffcfb5fce5217de107abc344c05f088319e375721a2432ce4d9cf5",
+      "status": "succeeded"
+    },
+    "helper": {
+      "start": "0x823A0248",
+      "end_exclusive": "0x823A0310",
+      "instruction_count": 50,
+      "next_entry": "0x823A0310",
+      "record_pointer_register": "r3",
+      "record_fields": {
+        "+0x00": "nested object pointer, loaded as u32",
+        "+0x04": "u32 type; zero skips work, value 3 selects object+0x5468, other nonzero values select object+0x5460",
+        "+0x10": "u32 input to callback r6 subtraction",
+        "+0x14": "u32 saved low timebase value"
+      },
+      "thread_context_chain": "thread_value = load_u32(load_u32(r13 + 0x100) + 0x58)",
+      "timebase_delta": "delta32 = (mftb_low32 - record[+0x14]) mod 2^32; zero-extended before 64-bit accumulation",
+      "accumulators": {
+        "type_3": "object+0x5468, load/store u64",
+        "other_nonzero_type": "object+0x5460, load/store u64"
+      },
+      "callback": {
+        "function_pointer": "load_u32(object+0x347C)",
+        "skip_when_null": true,
+        "explicit_registers": {
+          "r3": "0",
+          "r4": "record[+0x04]",
+          "r6": "zero_extend_u64(thread_value) - zero_extend_u64(record[+0x10]); GPR-width subtraction with no explicit 32-bit truncate before bctrl",
+          "f1": "f32(f32(object.float32[+0x5458] * f32(delta32)) * 1000.0f)",
+          "ctr": "object+0x347C callback"
+        },
+        "r5": "not explicitly assigned in this block; callback signature is unknown"
+      },
+      "r6_instruction": {
+        "address": "0x823A0284",
+        "bytes_big_endian": "7cc85050",
+        "canonical_decode": "subf r6,r8,r10",
+        "architectural_operation": "r6 = r10 - r8",
+        "r8_source": "record[+0x10] via lwz",
+        "r10_source": "thread_value via lwz",
+        "crosscheck": "Ghidra export expresses callback value as iVar2-iVar1 (thread_value-record[+0x10]); llvm-mc encodes subf 6,8,10 as 7c c8 50 50 and llvm-objdump displays these bytes as sub 6,10,8."
+      },
+      "float_constant": {
+        "instruction": "0x823A02E8",
+        "address": "0x820FFE40",
+        "bytes_big_endian": "447a0000",
+        "value_float32": 1000.0,
+        "address_derivation": "lis r10,0x8210; addi r11,r10,-560; lfs f0,112(r11)"
+      }
+    },
+    "caller_context": {
+      "function": "0x823A4E48",
+      "wait_call": "0x823A55B8 -> 0x823A0310",
+      "finalizer_call": "0x823A55DC -> 0x823A0248",
+      "static_relationship": "The caller invokes the predicate in a loop and then calls this helper with its stack record. This relationship is from the full live-ELF Ghidra export; it is not visible from the 50-instruction helper body alone."
+    }
+  },
+  "runtime_context": {
+    "observations_are_from_separate_runs": true,
+    "predicate_wait_seen": "Main guest thread was sampled in 0x823A0310; no same-run callback to 0x823A0248 is claimed.",
+    "queue_helper_run": "0x823B33A0 had 27 hits, object+0x2A9C tail grew 3 to 3003, global 0x831B3820 stayed 0, predicate samples were 0x04/0x14.",
+    "source0_callback_run": "0x823A4640 was reached; object+0x413C/+0x4140 were 0/0; candidate producer 0x823A4758 had no hits."
+  },
+  "limitations": [
+    "No runtime sample proves that 0x823A0248 executed in the recorded wait runs.",
+    "The callback target at object+0x347C, callback ABI, counter units, timebase frequency, and units of object+0x5458 are unresolved by this function alone.",
+    "The evidence does not establish a scheduler or P-code defect, visible frontend progress, or offline race progress."
+  ]
+}

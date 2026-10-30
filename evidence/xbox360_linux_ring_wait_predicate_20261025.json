@@ -1,0 +1,297 @@
+{
+  "schema": "shift.xbox360.linux.ring-wait-predicate.v1",
+  "captured_at_utc": "2026-10-25T00:27:15Z",
+  "input": {
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "run": {
+    "host_platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+    "selected_gpu_plugin": {
+      "path": "/home/pes/work/xbox360-wsi-check-20261025/bin/librexgpu-shift-native.so",
+      "sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "source_commit": "d57598912d173ebbc46f718c52dd36ae27826b06",
+      "mapped_plugin_identity": "The same plugin hash and host/runtime pair were separately verified through /proc/maps in evidence/xbox360_linux_guest_queue_trace_mapped_20261025.json; this probe did not read /proc/maps."
+    },
+    "rexglue_sdk_fix_commit": "ede359f8a93cd26cb95531a0b39ed8584aa93bb7",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-linux-retail-root-20261024/game",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "bounded_seconds": 20,
+    "termination": "Planned timeout sent SIGINT to GDB after the observation window.",
+    "input_events_sent": false,
+    "guest_memory_modified_by_probe": false,
+    "gdb_script_sha256": "6f796146e36aea24ba26f739c2d388ab66435085769248bdb06f4cadcfa982d3",
+    "gdb_log": {
+      "external_path": "/home/pes/work/xbox360-wsi-check-20261025/predicate-return-probe/logs/state.gdb.log",
+      "sha256": "42d88a024c00156759d4c739750325264249b5c6dd8f897b9dcec869784ac486",
+      "bytes": 7002
+    }
+  },
+  "guest_observations": {
+    "ring_wait": {
+      "retail_function": "0x823B34A0",
+      "guest_callsite": "0x823A5578 -> 0x823B34A0",
+      "guest_lr_after_call": "0x823A557C",
+      "entry_counter_reached": 256,
+      "logged_entry_samples": [
+        {
+          "hit": 1,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 13,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 2,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 19,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 3,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 23,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 4,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 27,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 5,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 31,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 6,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 35,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 7,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 39,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 8,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 43,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 9,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 47,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 10,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 51,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 11,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 55,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 12,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 59,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 64,
+          "gdb_thread": 24,
+          "object": "0xb7365f00",
+          "expected_cursor": 261,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 128,
+          "gdb_thread": 24,
+          "object": "0xb7365f00",
+          "expected_cursor": 389,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 192,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 565,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        },
+        {
+          "hit": 256,
+          "gdb_thread": 15,
+          "object": "0xb7365f00",
+          "expected_cursor": 821,
+          "count": 3,
+          "guest_lr": "0x823a557c"
+        }
+      ],
+      "interpretation": "The same guest thread re-entered this callsite with increasing expected cursor values, so prior waits returned to their caller during the run."
+    },
+    "predicate": {
+      "retail_function": "0x823A0310",
+      "post_call_site": "0x823B3560",
+      "generated_source_breakpoint": {
+        "path": "/home/pes/work/nfsshift-rex/generated/default/nfs_shift_recomp.134.cpp",
+        "line": 5095,
+        "statement": "if (ctx.cr0.eq) goto loc_823B3584"
+      },
+      "return_site_counter_reached": 1792,
+      "logged_return_sample_count": 26,
+      "all_sampled_guest_r3_values_are_1": true,
+      "all_sampled_predicate_bytes": [
+        "0x14"
+      ],
+      "representative_samples": [
+        {
+          "hit": 1,
+          "gdb_thread": 15,
+          "guest_r3": 1,
+          "expected_cursor": 13,
+          "software_ring_head": 3,
+          "software_ring_tail": 21,
+          "predicate_byte": "0x14"
+        },
+        {
+          "hit": 128,
+          "gdb_thread": 15,
+          "guest_r3": 1,
+          "expected_cursor": 13,
+          "software_ring_head": 3,
+          "software_ring_tail": 21,
+          "predicate_byte": "0x14"
+        },
+        {
+          "hit": 256,
+          "gdb_thread": 15,
+          "guest_r3": 1,
+          "expected_cursor": 67,
+          "software_ring_head": 65,
+          "software_ring_tail": 73,
+          "predicate_byte": "0x14"
+        },
+        {
+          "hit": 512,
+          "gdb_thread": 15,
+          "guest_r3": 1,
+          "expected_cursor": 139,
+          "software_ring_head": 137,
+          "software_ring_tail": 145,
+          "predicate_byte": "0x14"
+        },
+        {
+          "hit": 896,
+          "gdb_thread": 15,
+          "guest_r3": 1,
+          "expected_cursor": 235,
+          "software_ring_head": 235,
+          "software_ring_tail": 241,
+          "predicate_byte": "0x14"
+        },
+        {
+          "hit": 1024,
+          "gdb_thread": 15,
+          "guest_r3": 1,
+          "expected_cursor": 485,
+          "software_ring_head": 483,
+          "software_ring_tail": 491,
+          "predicate_byte": "0x14"
+        },
+        {
+          "hit": 1280,
+          "gdb_thread": 15,
+          "guest_r3": 1,
+          "expected_cursor": 773,
+          "software_ring_head": 771,
+          "software_ring_tail": 779,
+          "predicate_byte": "0x14"
+        },
+        {
+          "hit": 1536,
+          "gdb_thread": 15,
+          "guest_r3": 1,
+          "expected_cursor": 853,
+          "software_ring_head": 851,
+          "software_ring_tail": 859,
+          "predicate_byte": "0x14"
+        },
+        {
+          "hit": 1792,
+          "gdb_thread": 15,
+          "guest_r3": 1,
+          "expected_cursor": 889,
+          "software_ring_head": 885,
+          "software_ring_tail": 895,
+          "predicate_byte": "0x14"
+        }
+      ]
+    }
+  },
+  "static_semantics": {
+    "predicate_bit": "object+0x2ABD mask 0x02",
+    "sampled_bit_state": "clear",
+    "meaning": "When this bit is clear and the expected ring cursor has not yet been consumed, 0x823A0310 returns 1 for continue-wait; 0x823B34A0 then rechecks software-ring cursors. The predicate's 1 return is not itself a failure.",
+    "source": "Exact-XEX PPC disassembly at 0x823A0310 and 0x823B34A0; input ELF SHA-256 2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c."
+  },
+  "interpretation": {
+    "supported": [
+      "The retail cursor wait was re-entered repeatedly and returned to its caller as expected cursor values increased.",
+      "In the post-predicate samples, guest r3 remained 1 while the software-ring head approached the expected cursor; later samples show the head catching or advancing toward it.",
+      "The observed wait/predicate path is active and making cursor progress; this does not support changing guest predicate semantics or forcing bit 0x02."
+    ],
+    "not_proven": [
+      "Why the frontend remains at the loading/black frame frontier.",
+      "That the main menu or offline race is reached.",
+      "A wall-clock performance rate, because debugger breakpoints perturb scheduling."
+    ],
+    "next_step": "Trace the retail frontend state/call path after these returning graphics submissions and correlate it with asset opens and XamInputGetState; keep the Xenos renderer implementation out of Process 1 changes."
+  },
+  "limits": [
+    "GDB pauses guest threads at each configured breakpoint.",
+    "The probe recorded read-only guest memory and sent no controller events.",
+    "No main-menu or race pixels were captured."
+  ]
+}

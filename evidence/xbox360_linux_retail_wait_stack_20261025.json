@@ -1,0 +1,89 @@
+{
+  "schema": "shift.xbox360.linux-retail-wait-stack.v1",
+  "capture_date": "2026-10-25",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b",
+    "gpu_plugin_sha256": "e2679a4ca54178a312af3f6cc7cc2ba0eb8dd562a8e730a32131068d46736bf4",
+    "plugin_mapping_verified_from_proc_maps": true
+  },
+  "probe": {
+    "platform": "Linux AMD64",
+    "process_pid": 509636,
+    "instrumentation": "GDB launched the exact retail XEX with no breakpoints. The process was interrupted for a one-time stack and read-only guest-memory snapshot; no guest memory was written.",
+    "gdb_log_path_external": "/tmp/nfs-p1-queue-stack-20261026/gdb.log",
+    "gdb_log_sha256": "dafe7e7d4938707540bec9301f41444d04c3f9034cee4f9dae3da4171d07ef85",
+    "queue_words_path_external": "/tmp/nfs-p1-queue-stack-20261026/pending_queue_words.json",
+    "queue_words_sha256": "da78c83fce74f89401c773b483fbd89652fed497a58ae66181bddfc929689514"
+  },
+  "retail_queue": {
+    "object_guest_address": "0xB7365F00",
+    "head_pointer_field_object_plus": "0x2A90",
+    "head_writeback_guest_address": "0xB7AF4000",
+    "head": 4937,
+    "tail_field_object_plus": "0x2A9C",
+    "tail": 4947,
+    "predicate_byte_field_object_plus": "0x2ABD",
+    "predicate": "0x04",
+    "tested_completion_mask": "0x02",
+    "pending_guest_physical_words_tail_exclusive": [
+      "0xC0013F00",
+      "0x0961BC40",
+      "0x0000000B",
+      "0xC0013F00",
+      "0x0960FC40",
+      "0x00000087",
+      "0xC0013F00",
+      "0x0962CF80",
+      "0x0000000B",
+      "0xC0013F00"
+    ],
+    "words_immediately_after_published_tail": [
+      "0x0961BC80",
+      "0x00000E92"
+    ]
+  },
+  "stacks": {
+    "guest_main_thread": {
+      "thread_name": "Core 0/0: Main",
+      "frames_top_down": [
+        "compare<int>() at rex/ppc/context.h:90",
+        "sub_823A0310 at generated/default/nfs_shift_recomp.99.cpp:4486",
+        "sub_823B34A0 at generated/default/nfs_shift_recomp.134.cpp:5091",
+        "sub_823B3850 at generated/default/nfs_shift_recomp.167.cpp:4994",
+        "sub_823A0760 at generated/default/nfs_shift_recomp.175.cpp:4867",
+        "sub_8264F868",
+        "sub_82FD46F8",
+        "sub_82FD5658",
+        "sub_82FC1880",
+        "sub_82D30380",
+        "xstart",
+        "rex::system::XThread::Execute"
+      ]
+    },
+    "host_graphics_worker": {
+      "thread_name": "SHIFT Native GP",
+      "state": "std::condition_variable::wait in ShiftNativeGraphicsSystem::RingWorkerLoop"
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The retail main thread was still in its original software-queue wait path when sampled.",
+      "The exact guest queue state was head 4937, tail 4947, and predicate 0x04 with completion mask 0x02 clear.",
+      "The host graphics ring worker was sleeping in its condition-variable wait while this guest queue state was outstanding."
+    ],
+    "not_proven": [
+      "That the queue state violates the original retail protocol.",
+      "That the P1 scheduler, PPC execution, or Win32 guest compatibility caused the wait.",
+      "That the P2 worker should have been awake for these specific queue words, or that its wait is the root cause.",
+      "Menu entry, sustained output, or offline-race entry."
+    ],
+    "next_step": "P2 should trace the queue-to-RingWorkerLoop wake/consume contract for this exact state. Keep the retail predicate and guest queue semantics unchanged until a contract violation is demonstrated."
+  }
+}

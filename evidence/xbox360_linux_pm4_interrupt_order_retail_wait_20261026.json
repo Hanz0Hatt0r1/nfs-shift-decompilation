@@ -1,0 +1,99 @@
+{
+  "schema": "shift.xbox360.linux-pm4-interrupt-order-retail-wait.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host": {
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "rexglue_runtime": {
+      "sha256": "2b0d46856da000cecafb46581ddff50da99f549ff335bee9ba489238eed24059",
+      "runtime_source_commit": "26cb90f67fd7df711ee6cd4338ef8402f0bfdefa",
+      "mapping_verified": true
+    },
+    "gpu_plugin": {
+      "sha256": "65b09ee6e498a1b1e04a1278da5bd737bdf703d98f3a3723c282610841539316",
+      "build_id": "a67ec63a267d3eca9849e3fce8ed3badb2a088af",
+      "renderer_source_commit": "0f5e9f11b16764b1e62f251aaa17f8e4769da8a6",
+      "sdk_commit_reported_by_handoff": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+      "mapping_verified": true
+    },
+    "retail_elf_analysis_image": {
+      "sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c"
+    }
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation",
+      "--fullscreen=false"
+    ],
+    "game_data_was_read_only": true,
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "termination": "GDB harness killed the title at the first retail wait sample.",
+    "gdb_trace": {
+      "script_path_external": "/tmp/nfs-shift-fixed-runtime-run-20261026/p2-latest-producer-trace-mapped.gdb",
+      "script_sha256": "47c422e5407ac089c05f5309e8848eb011afc361c2e3bbb26c614d91b9ebf39d",
+      "log_path_external": "/tmp/nfs-shift-fixed-runtime-run-20261026/p2-latest-producer-trace-mapped.log",
+      "log_sha256": "9abd63c99a92ebb0fd37f3291ecc378938ebab7888581198705c9ee8350cf3d6",
+      "callback_hits_before_first_wait": {
+        "source_0": 157,
+        "source_1": 0
+      },
+      "deferred_consumer_hits": 156,
+      "deferred_callback_queue_indices": {
+        "read": 0,
+        "write": 0
+      },
+      "software_queue_producer_0x823A4758_hits": 0,
+      "registered_callback_0x82649B68_hits": 0,
+      "first_wait": {
+        "function": "0x823B34A0",
+        "object_guest_address": "0xB7365F00",
+        "target": 13,
+        "head": 0,
+        "tail": 21,
+        "predicate_byte": "0x14",
+        "tested_completion_mask": "0x02"
+      },
+      "main_guest_thread_call_chain": [
+        "0x823B34A0",
+        "0x823A4E48",
+        "0x823A5610",
+        "0x8264F868",
+        "0x8301DB18"
+      ]
+    },
+    "mapped_pairing_capture": {
+      "path_external": "/tmp/nfs-shift-fixed-runtime-run-20261026/p2-latest-producer-trace-mapped.log",
+      "method": "The same GDB inferior hashed both shared libraries from /proc/<pid>/maps at the first retail callback."
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact-XEX retail source-0 callback was entered and reached the original deferred consumer before the first queue wait.",
+      "The sampled deferred-callback queue indices remained 0/0, and the software-queue producer and registered callback were not reached before this wait.",
+      "The first wait had target 13 between head 0 and tail 21; predicate byte 0x14 did not contain completion mask 0x02.",
+      "The hash-identified latest Process 2 DSO and ReXGlue runtime were both mapped in the traced inferior."
+    ],
+    "not_proven": [
+      "Why source-1 interrupts or the software-queue producer were absent before the wait.",
+      "Whether the outstanding producer belongs to retail scheduling, runtime dispatch, or GPU command execution.",
+      "Main-menu entry, frontend input consumption, or an offline race.",
+      "That Process 2's synthetic PM4 CTest results imply retail interrupt parity."
+    ],
+    "next_p1_step": "Trace the original registration and first indirect invocation of 0x823A4758 together with the guest scheduler path; keep retail queue and predicate semantics unchanged."
+  },
+  "limitations": [
+    "This read-only GDB trace is intrusive and ends at the first wait sample.",
+    "Zero source-1 and producer hits are bounded observations; they do not identify the missing event owner.",
+    "The run did not verify visible frontend progress or gameplay."
+  ]
+}

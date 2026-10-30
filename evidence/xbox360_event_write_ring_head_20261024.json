@@ -1,0 +1,45 @@
+{
+  "schema": "shift.xbox360.rexglue-event-write-ring-head.v1",
+  "captured_on": "2026-10-24",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4"
+  },
+  "runtime": {
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b",
+    "gpu_plugin_sha256": "54348dd521b97b15be963d0b9f680172dbfb83c3ef5f2fbb979f618dc9c32aaa",
+    "log": {
+      "path": "/tmp/p1-virtual-input-20261024/logs/nfs_shift_003.log",
+      "sha256": "ad99a535d3312c8549b7d5d8799764c23829c204d9418126445cb0eb84432680"
+    }
+  },
+  "event_write_shd_observations": {
+    "guest_destination": "0x17AF4000",
+    "descriptor_guest_address": "0xB7AF4000",
+    "head_word_values": [
+      "0x00000001",
+      "0x00000003",
+      "0x00000005",
+      "0x00000007",
+      "0x00000009",
+      "0x0000000B",
+      "0x0000000D",
+      "0x0000000F"
+    ],
+    "exact_log_lines": [
+      "EVENT_WRITE_SHD #1 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000003 swap_counter=0 guest_value=00000001->00000003",
+      "EVENT_WRITE_SHD #3 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000005 swap_counter=0 guest_value=00000003->00000005",
+      "EVENT_WRITE_SHD #7 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000007 swap_counter=1 guest_value=00000005->00000007",
+      "EVENT_WRITE_SHD #9 initiator=00000003 guest=17AF4000 endian=2 packet_value=00000009 swap_counter=1 guest_value=00000007->00000009",
+      "EVENT_WRITE_SHD #11 initiator=00000003 guest=17AF4000 endian=2 packet_value=0000000B swap_counter=1 guest_value=00000009->0000000B",
+      "EVENT_WRITE_SHD #13 initiator=00000003 guest=17AF4000 endian=2 packet_value=0000000D swap_counter=1 guest_value=0000000B->0000000D",
+      "EVENT_WRITE_SHD #15 initiator=00000003 guest=17AF4000 endian=2 packet_value=0000000F swap_counter=1 guest_value=0000000D->0000000F"
+    ]
+  },
+  "interpretation": {
+    "supported": "This plugin-enabled retail Linux run identifies the per-packet EVENT_WRITE_SHD destination and observed values. The word at guest destination 0x17AF4000 advances by two per observed packet and corresponds to the previously identified descriptor backing at 0xB7AF4000.",
+    "not_proven": "This head movement does not prove software-queue completion, predicate bit 0x02 production, Vd training success, frontend progress, or a visible retail frame."
+  }
+}

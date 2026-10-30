@@ -1,0 +1,458 @@
+{
+  "schema": "shift.xbox360.bink-guest-path.v1",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "live_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c"
+  },
+  "static_image": {
+    "pe_image_base": "0x82000000",
+    "sections": [
+      {
+        "name": "BINKCONS",
+        "virtual_address": "0x82196600",
+        "virtual_size": "0x2908"
+      },
+      {
+        "name": "BINK",
+        "virtual_address": "0x83064C00",
+        "virtual_size": "0xF354",
+        "interpretation": "Embedded PPC Bink code section"
+      },
+      {
+        "name": "BINKBSS",
+        "virtual_address": "0x83080000",
+        "virtual_size": "0x3B8"
+      },
+      {
+        "name": ".XBMOVIE",
+        "virtual_address": "0x83203C00",
+        "virtual_size": "0x8"
+      },
+      {
+        "name": "BINKDATA",
+        "virtual_address": "0x83203E00",
+        "virtual_size": "0x3D48"
+      }
+    ],
+    "code_call_sites": [
+      {
+        "call_site": "0x82678FEC",
+        "instruction_big_endian": "0x489EE0C5",
+        "target": "0x830670B0"
+      },
+      {
+        "call_site": "0x82678FF4",
+        "instruction_big_endian": "0x489EE0C5",
+        "target": "0x830670B8"
+      },
+      {
+        "call_site": "0x826790FC",
+        "instruction_big_endian": "0x489EE825",
+        "target": "0x83067920"
+      },
+      {
+        "call_site": "0x82679174",
+        "instruction_big_endian": "0x489EE845",
+        "target": "0x830679B8"
+      },
+      {
+        "call_site": "0x82679CF0",
+        "instruction_big_endian": "0x489EDF31",
+        "target": "0x83067C20"
+      },
+      {
+        "call_site": "0x82679D64",
+        "instruction_big_endian": "0x489EB425",
+        "target": "0x83065188"
+      },
+      {
+        "call_site": "0x82679DC0",
+        "instruction_big_endian": "0x489EB839",
+        "target": "0x830655F8"
+      },
+      {
+        "call_site": "0x82679DF4",
+        "instruction_big_endian": "0x489EB805",
+        "target": "0x830655F8"
+      }
+    ],
+    "embedded_strings": [
+      {
+        "virtual_address": "0x82147182",
+        "text": "cached memory for the Bink texture pointers - see BinkTextures.cpp",
+        "interpretation": "Bink texture integration is present in the retail image; this string alone does not identify its surface address or format."
+      },
+      {
+        "virtual_address": "0x821471EC",
+        "text": "Not a Bink file."
+      },
+      {
+        "virtual_address": "0x82147264",
+        "text": "Error reading Bink header."
+      }
+    ],
+    "media_file": {
+      "path_relative_to_game_root": "Movies/Franchise_Ident.bik",
+      "byte_length": 14672084,
+      "first_four_bytes_ascii": "BIKi",
+      "format_interpretation": "Bink-family file header"
+    }
+  },
+  "runtime_translation": {
+    "platform": "Linux AMD64",
+    "host_executable_sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a",
+    "generated_and_registered_guest_functions": [
+      "0x83065188",
+      "0x830654D0",
+      "0x830655A8",
+      "0x830655F8",
+      "0x830670B0",
+      "0x830670B8",
+      "0x83067118",
+      "0x83067310",
+      "0x830675F0",
+      "0x83067920",
+      "0x830679B8",
+      "0x83067C20"
+    ],
+    "host_side_media_hle_search": {
+      "scope": "nfs_shift/src, nfs_shift_manifest.toml, nfs_shift_overrides.toml",
+      "terms": ["Bink", "XBMovie", "Movie", "XMV", "video"],
+      "matches": 0,
+      "interpretation": "No title-specific host-side Bink/XBMOVIE decoder callback was found in these app sources; the retail executable contains its own Bink PPC code. This does not claim the generic runtime has no video-related kernel exports."
+    },
+    "p1_breakpoint_probe": {
+      "status": "superseded by p1_live_entry_probe_20261025",
+      "breakpoints": [
+        "0x83065188",
+        "0x830654D0",
+        "0x830655A8",
+        "0x830655F8",
+        "0x830670B0",
+        "0x830670B8",
+        "0x83067118",
+        "0x83067310",
+        "0x830675F0",
+        "0x83067920",
+        "0x830679B8",
+        "0x83067C20"
+      ],
+      "bink_entry_hits": 0,
+      "termination": "The earlier GDB attempt was recorded as stopping before the Bink entries at guest function 0x823A0998 (SIGSEGV). Its raw log is no longer available, and the failure did not reproduce in the controlled follow-up below.",
+      "log_sha256": "8870c9757b1c459b06ac5748cb7d8409f6fc75aac105d276d8e66b6f4fd705fa"
+    },
+    "p1_live_entry_probe_20261025": {
+      "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "duration_seconds": 40,
+      "stop": "The harness sent SIGINT after the process remained running. GDB recorded no SIGSEGV or SIGBUS before stop.",
+      "input": "No synthetic or physical input was sent.",
+      "instrumentation": "GDB software breakpoints on all twelve generated Bink entry functions and retail helper 0x823A0998; breakpoints perturb scheduling.",
+      "gdb_script": {
+        "external_path": "/tmp/nfs-p1-bink-trace-20261025/trace.gdb",
+        "sha256": "73f8fbcc098fba51f084690605ce01904304de44e76bfee2638a297f2dcda51d"
+      },
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-bink-trace-20261025/gdb.log",
+        "sha256": "c14b213a91c430672f4acaacf8c4a9785774a7c7443d528d0eb4ad22bacbe731"
+      },
+      "hit_counts": {
+        "0x823A0998": 656,
+        "0x83065188": 1,
+        "0x830654D0": 2,
+        "0x830655A8": 1,
+        "0x830655F8": 1,
+        "0x830670B0": 280,
+        "0x830670B8": 216,
+        "0x83067118": 280,
+        "0x83067310": 1,
+        "0x830675F0": 217,
+        "0x83067920": 4,
+        "0x830679B8": 4,
+        "0x83067C20": 1
+      },
+      "interpretation": "All twelve listed embedded-Bink guest functions executed in this bounded Linux run. This confirms execution of the retail decoder path but does not demonstrate decoded pixels or successful video presentation."
+    },
+    "p1_manager_callback_probe_20261025": {
+      "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "duration_seconds": 40,
+      "stop": "The timeout harness sent SIGINT while the retail process remained live; no SIGSEGV or SIGBUS was recorded before stop.",
+      "input": "No synthetic or physical input was sent.",
+      "instrumentation": "GDB breakpoints at both Bink manager dispatch functions and immediately before their indirect guest calls. PPC context was read through the host ABI because optimized debug info does not expose the ctx parameter by name.",
+      "gdb_script": {
+        "external_path": "/tmp/nfs-p1-bink-manager-20261025/trace.gdb",
+        "sha256": "13c72fc06b4bccc9cdcdeb4c4d27cb553ca94fdb3ea33c0151bf07425676cbed"
+      },
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-bink-manager-20261025/gdb.log",
+        "sha256": "f2a67e32f0ac844fe70600e15fa8eb241dc489f8859cad6baeadc1f965eb9f4a"
+      },
+      "manager": {
+        "guest_object_address": "0xE6795040",
+        "guest_slot_table_address": "0xE67967C0",
+        "slot_count": 4,
+        "dispatch_356_hits": 4,
+        "dispatch_376_hits": 4,
+        "callback_slot_offsets": [356, 376]
+      },
+      "callback_targets": {
+        "0x83068250": {
+          "slot_offset": 356,
+          "indirect_guest_calls": 4,
+          "manager_indices": [0, 1, 2, 3],
+          "manager_entry_r5": ["0x8000", "0x8000", "0x8000", "0x8000"]
+        },
+        "0x83068608": {
+          "slot_offset": 376,
+          "indirect_guest_calls": 4,
+          "manager_indices": [0, 1, 2, 3],
+          "manager_entry_r5": ["0x7018F7B0", "0x7018F7B0", "0x7018F7B0", "0x7018F7B0"]
+        }
+      },
+      "interpretation": "Both retail Bink manager callback slots contain valid guest code pointers and dispatch through the generated PPC runtime for all four manager entries. This rules out an empty/unregistered Bink callback slot in this run; it does not show that callback execution produced pixels or reached the renderer's texture handoff."
+    },
+    "p1_guest_callback_method_probe_20261025": {
+      "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "duration_seconds": 38,
+      "stop": "The timeout harness sent SIGINT while the retail process remained live; no SIGSEGV or SIGBUS was recorded before stop.",
+      "input": "No synthetic or physical input was sent.",
+      "instrumentation": "GDB breakpoints at embedded guest callback functions 0x83068250 and 0x83068608. The probe read each slot's guest pointer at +128, the pointed-to object's vtable pointer, and the guest method pointer at vtable offsets 56 and 64.",
+      "gdb_script": {
+        "external_path": "/tmp/nfs-p1-bink-sink-20261025/trace.gdb",
+        "sha256": "a1263da0cfa91924d5996664f81a129317094efd6bcd764d23f13e29fad17e57"
+      },
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-bink-sink-20261025/gdb.log",
+        "sha256": "5e602c7c12adebe8b5000901ca9979b71222c2805d997fb5b7677140456f9a9b"
+      },
+      "callback_hits": {
+        "0x83068250": 4,
+        "0x83068608": 4
+      },
+      "slot_guest_addresses": ["0xE67967C0", "0xE6796940", "0xE6796AC0", "0xE6796C40"],
+      "downstream_guest_objects": ["0xB73DB588", "0xB73E16C0", "0xB73E1788", "0xB73E1850"],
+      "shared_vtable_guest_address": "0x820A8D28",
+      "vtable_method_targets": {
+        "offset_56": "0x82B9C9F0",
+        "offset_64": "0x82B9DC78"
+      },
+      "static_call_chain": {
+        "0x83068250": "stores a per-slot value and tail-calls 0x83067E68, which conditionally dispatches through the callback object's vtable offset 56 to 0x82B9C9F0",
+        "0x83068608": "tail-calls 0x83068398, which conditionally dispatches through the callback object's vtable offset 64 to 0x82B9DC78",
+        "0x82B9DC78": "adjusts this by four bytes and tail-calls 0x82BA9258"
+      },
+      "interpretation": "Each Bink slot points to a distinct downstream guest callback object, and all four objects share guest vtable 0x820A8D28. The vtable entries resolve to generated guest functions. This identifies the retail callback-object boundary downstream of Bink; it does not prove a texture upload, GPU command, visible pixel, or dynamic entry into the vtable targets."
+    },
+    "p1_guest_callback_downstream_probe_20261025": {
+      "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "duration_seconds": 38,
+      "stop": "The timeout harness sent SIGINT while the retail process remained live; no SIGSEGV or SIGBUS was recorded before stop.",
+      "instrumentation": "GDB breakpoints on vtable targets 0x82B9C9F0 and 0x82B9DC78 and the latter's implementation 0x82BA9258.",
+      "gdb_script": {
+        "external_path": "/tmp/nfs-p1-bink-downstream-20261025/trace.gdb",
+        "sha256": "f2e2302d28ed9910838e9f2530ab9969acc1d7e0e6e182d9bb8bd2e1002ce9ff"
+      },
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-bink-downstream-20261025/gdb.log",
+        "sha256": "724b46dc155f157df68c66f063d86f55d68c4776345b584d84324328029fbb66"
+      },
+      "dynamic_hits": {
+        "0x82B9C9F0": 4,
+        "0x82B9DC78": 4,
+        "0x82BA9258": 4
+      },
+      "callback_call_arguments": {
+        "0x82B9DC78": {
+          "r4": "0x0",
+          "r5_by_entry": ["0x2", "0x1", "0x1", "0x2"],
+          "r6": "0x6",
+          "r7_guest_stack_array": "0x7018F6F0",
+          "r8": "0x0"
+        },
+        "0x82BA9258": {
+          "this_guest_addresses": ["0xB73DB58C", "0xB73E16C4", "0xB73E1790", "0xB73E1854"],
+          "r5_by_entry": ["0x2", "0x1", "0x1", "0x2"],
+          "r6": "0x6",
+          "r7_guest_stack_array": "0x7018F6F0"
+        }
+      },
+      "interpretation": "The exact guest vtable methods and 0x82BA9258 execute on all four observed callback objects. This proves the guest Bink callback path reaches its downstream retail implementation, but the stack array's content, texture upload, GPU command, and visible output remain unverified."
+    },
+    "p1_guest_callback_transform_probe_20261025": {
+      "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "duration_seconds": 38,
+      "stop": "The timeout harness sent SIGINT while the retail process remained live; no SIGSEGV or SIGBUS was recorded before stop.",
+      "instrumentation": "Conditional GDB breakpoints tied to the Bink callback caller at 0x82BA92B8 and retail transform callback return 0x82BA8E28.",
+      "gdb_script": {
+        "external_path": "/tmp/nfs-p1-bink-transform-20261025/trace.gdb",
+        "sha256": "0c43a28660c55ad5a6efd11a5248eff6072b99789cf088d31bfcc207896ac4ed"
+      },
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-bink-transform-20261025/gdb.log",
+        "sha256": "e8587dcdbd7c596fb06669918c1162e7fb94aa94c4c9ab3f38197033772bd409"
+      },
+      "callback_compare_entries": 4,
+      "callback_compare_selectors": ["0x2", "0x1", "0x1", "0x2"],
+      "guest_stack_array": "0x7018F6F0",
+      "transform_entries": 3,
+      "transform_guest_structs": ["0xB7B06B30", "0xB7B06B5C", "0xB7B06B88"],
+      "transform_guest_children": ["0xB7B03998", "0xB7B039C8", "0xB73E3E38"],
+      "transform_vtable_guest_address": "0x820AD3A4",
+      "transform_vtable_offset_12_target": "0x82BB50E8",
+      "target_static_body": "0x82BB50E8 adjusts this by -24 and tail-calls 0x82BB4F20",
+      "interpretation": "Four Bink callback compare entries share guest data pointer 0x7018F6F0 and selectors 1/2; three enter the six-element transform callback. The exact reason the fourth comparison avoids a transform is unknown. The transform reaches 0x82BB50E8, which adjusts the object pointer and enters a resource wrapper. This probe alone did not verify pixel/GPU output."
+    },
+    "p1_resource_lock_probe_20261025": {
+      "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "gdb_script": {
+        "external_path": "/tmp/nfs-p1-bink-resource-vtable-20261025/trace.gdb",
+        "sha256": "f5765a64ddb66aa0b4bfd9320fa7111a12b8ee35a5ed8fdf08db2affc144339c"
+      },
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-bink-resource-vtable-20261025/gdb.log",
+        "sha256": "15e86b2e326f40521a0644a6db109e112319a86455656e430411be89c33eb3ca"
+      },
+      "resource_wrapper_entry_hits": 3,
+      "child_guest_object": "0xB73D288C",
+      "child_vtable": "0x820A8C08",
+      "lock_method_targets": {
+        "vtable_offset_8": "0x82B982D0",
+        "vtable_offset_20": "0x82B982E0"
+      },
+      "method_identity": {
+        "0x82B982D0": "RtlEnterCriticalSection import wrapper",
+        "0x82B982E0": "RtlLeaveCriticalSection import wrapper"
+      },
+      "resource_wrapper_static_dispatch": {
+        "function": "0x82BB4F20",
+        "before_resource_update_vtable_offset": 8,
+        "after_resource_update_vtable_offset": 20,
+        "lock_wrapper_entry_breakpoints_set": false
+      },
+      "interpretation": "The child object's vtable slots at offsets 8 and 20 point to critical-section enter/leave wrappers. Static body 0x82BB4F20 calls those slots around its resource update. The probe did not separately break on the lock-wrapper entries. This classifies the observed object as a lock/resource-table wrapper; it is not evidence of a graphics sink or texture upload."
+    },
+    "p1_resource_update_probe_20261025": {
+      "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "gdb_script": {
+        "external_path": "/tmp/nfs-p1-bink-allocation-20261025/trace.gdb",
+        "sha256": "95bae3ad2a41bd7482b454b60035fb5527e75b3706e03d790d288d29b5910370"
+      },
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-bink-allocation-20261025/gdb.log",
+        "sha256": "a9370c1e5b0fcdbb4091b64d5d26146334dedae79687cdba8d967084a4f4bab1"
+      },
+      "observed_bink_calls": 3,
+      "resource_update_calls": 3,
+      "non_null_allocator_returns": ["0xB740C6E0", "0xB740C6E0", "0xB7B09220"],
+      "resource_update_returns": ["0x0", "0x0", "0x0"],
+      "call_chain": ["0x82BB50E8", "0x82BB4F20", "0x82BB6460", "0x82B98128"],
+      "interpretation": "Three Bink-associated resource updates entered the retail allocator, returned non-null addresses, and the update method returned 0 each time; no guest fault was observed. Other resource updates in the same trace were not counted as Bink-associated. This shows guest resource-table progress only; it does not establish a decoded-pixel or GPU-transfer path."
+    },
+    "p1_frame_clock_probe_20261025": {
+      "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+      "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "duration_seconds": 46.67,
+      "stop": "Harness sent SIGINT after the guest remained live. GDB recorded no SIGSEGV or SIGBUS before stop.",
+      "input": "No synthetic or physical input was sent.",
+      "instrumentation": "GDB breakpoints on generated guest Bink functions 0x83066838 and 0x830670B8 and wrapper 0x82678FD0; guest PPC registers and memory read through the host ABI. Software breakpoints perturb scheduling.",
+      "gdb_script": {
+        "external_path": "/tmp/nfs-p1-bink-clock-20261025/trace.gdb",
+        "sha256": "d508e8f2529438292ff7c5c9acc530a8069d91edeb757fc7977c5c49aca2e09b"
+      },
+      "runner": {
+        "external_path": "/tmp/nfs-p1-bink-clock-20261025/run.py",
+        "sha256": "a46726e056705330fc9718615b87ac35d215961b1ba11a442582ec75d41b7586"
+      },
+      "gdb_log": {
+        "external_path": "/tmp/nfs-p1-bink-clock-20261025/gdb.log",
+        "sha256": "27d2b54bcdd328050d210554f7a39aad30787c3c6fe26d2fec719bea5b69ced8"
+      },
+      "host_console_log": {
+        "external_path": "/tmp/nfs-p1-bink-clock-20261025/console.log",
+        "sha256": "16b734de91bad63f2e8fa90b9480c778a9b4e6016537bc2c7af0b7f56c2d5ff7"
+      },
+      "observed": {
+        "video_wrapper_address": "0xBF0E5EA0",
+        "video_wrapper_vtable": "0x82036CBC",
+        "bink_object_address": "0xE6795040",
+        "bink_object_field_0x08": "0x00000119",
+        "bink_object_field_0x0c_at_hit_256": "0x00000100",
+        "wrapper_hits": 280,
+        "ready_check_hits": 280,
+        "clock_helper_hits": 280
+      },
+      "interpretation": "The same non-null Bink object reached the retail readiness and clock helpers. Its +0x0c counter advanced monotonically to 0x100 by update 256 while +0x08 remained 0x119; the readiness and clock helpers each ran 280 times during the bounded trace. Static 0x830670B8 compares +0x0c against +0x08. This confirms progress through the retail Bink timing path, not decoded pixels or a scene transition."
+    }
+  },
+  "external_runtime_report": {
+    "source": "Process 2 report relayed in the task conversation",
+    "reported": [
+      "The retail process opened and read Movies/Franchise_Ident.bik using pread64; reported total reads were 22010824 bytes across a 14672084-byte file.",
+      "At Vulkan submit 130, the readback was black and the only three guest draws were fullscreen untextured zero-color triangles, followed by an accepted 4x-to-1x Copy/Convert."
+    ],
+    "raw_pread_trace_or_log_hash_provided": false,
+    "local_path_filtered_trace": {
+      "path": "/home/pes/work/process2-linux-muls-prev-retail-20261025/cutscene-trace/openat-frame130.log.83146",
+      "observed": "Two openat calls for Franchise_Ident.bik; this path-filtered trace contains no pread64/read calls.",
+      "sha256": "56aa89c0ef341d1c605532355535ccf3851e57659eae8d3d6b58076ead9cfff6"
+    },
+    "readback": {
+      "path": "/home/pes/work/process2-linux-muls-prev-retail-20261025/cutscene-trace/franchise_ident_frame130_after_add.a2b10g10r10",
+      "sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+      "non_black_rgb_pixels": 0
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail image contains a substantial PPC Bink code section and game-code call sites into generated Bink functions.",
+      "The local generated Linux runtime registers the Bink-section function entries listed above.",
+      "The Franchise_Ident.bik file is a Bink-family asset, and the local trace confirms the retail process opened it twice.",
+      "A fresh 40-second P1 GDB trace hit all twelve registered embedded-Bink entry points and called 0x823A0998 656 times; it was manually interrupted without a recorded SIGSEGV or SIGBUS.",
+      "A separate 40-second exact-XEX GDB probe observed both Bink manager callback slots dispatching guest targets 0x83068250 and 0x83068608 for each of four entries; the slots were populated and no SIGSEGV/SIGBUS was recorded before manual interruption.",
+      "A 38-second exact-XEX probe observed all four callback slots point to distinct downstream guest objects sharing vtable 0x820A8D28. Vtable offsets 56 and 64 contain guest targets 0x82B9C9F0 and 0x82B9DC78.",
+      "A follow-up dynamically hit 0x82B9C9F0, 0x82B9DC78, and 0x82BA9258 four times each. A further probe reached the six-element transform callback three times and read its vtable target 0x82BB50E8. The target adjusts into 0x82BB4F20, whose child vtable methods are RtlEnterCriticalSection/RtlLeaveCriticalSection wrappers; its three Bink-associated resource allocations returned non-null addresses and the update method returned 0 each time. This is resource-table progress, not proof of a graphics sink, pixel transfer, or GPU output.",
+      "A 46.67-second exact-XEX trace observed the live video wrapper point to non-null Bink object 0xE6795040. Its +0x0c progress counter advanced to 0x100 by update 256 against a stable +0x08 threshold of 0x119; the retail readiness and clock helpers each ran 280 times."
+    ],
+    "likely_but_not_runtime_proven": [
+      "Process 2's reported sustained pread64 activity while the cutscene was active is consistent with guest Bink decoding; the raw read trace was not available in the shared artifacts."
+    ],
+    "not_proven": [
+      "That execution of the Bink decoder produced a visible video frame.",
+      "The exact guest RAM address, texture format, or EDRAM destination for decoded pixels.",
+      "That the black frame is caused by a missing host media callback, by the renderer, or by another part of the Bink texture handoff.",
+      "Main-menu entry, offline-race entry, or sustained gameplay.",
+      "That the advancing Bink counter corresponds to frames decoded or presented, or that natural clip completion leads to frontend/menu progress."
+    ],
+    "working_conclusion": "The title's Bink decoder and both manager callbacks are guest PPC code inside the XEX; fresh P1 traces confirm the decoder entries execute and populated callback slots dispatch to 0x83068250 and 0x83068608. Those callbacks reference four downstream guest objects sharing vtable 0x820A8D28, and the methods 0x82B9C9F0, 0x82B9DC78, and 0x82BA9258 execute on the traced path. A six-element transform callback executes for three of four comparisons and reaches 0x82BB50E8, which enters a lock/resource-table wrapper. Three Bink-associated resource updates allocate non-null addresses and return 0 without a guest fault. There is no evidence that P1 needs a separate host Bink decoder callback or that callback slots are missing. The surface contract, pixel transfer, and GPU command path remain unverified."
+  },
+  "limitations": [
+    "The fresh P1 GDB probe was interrupted after 40 seconds and instrumented execution; it does not establish the natural video end or a scene transition.",
+    "The P2 pread64 totals and draw summary were relayed without their raw log or hash.",
+    "The black readback is evidence of output state only; it does not identify the missing stage.",
+    "The 46.67-second Bink clock trace used software breakpoints, stopped by SIGINT, and sampled the progress counter only through update 256; it does not establish natural clip completion or a scene transition."
+  ]
+}

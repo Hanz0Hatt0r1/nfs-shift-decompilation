@@ -1,0 +1,287 @@
+{
+  "schema": "shift.xbox360.linux.retail-boot-followthrough.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "d15165b314797e56f3eed7810161849dd2f2e3105424f7472e39453deafd9839",
+    "p2_renderer_plugin_sha256": "1fa623feecb9a7ac6c1cd8d6de61bcabc6a4a01b12dfbeb9b0255fa29945042c",
+    "p2_renderer_source_commit": "35dab256",
+    "rexglue_sdk_commit": "fb151b94b4956d1c74ba5052e8838b0829eb9c99",
+    "p2_renderer_plugin_build_id": "e84e4259c4a93aea6209a528d8fe70a40a3e0e0f"
+  },
+  "run": {
+    "duration_seconds": 120.026,
+    "termination": "Harness sent SIGINT at 120 seconds while the guest process remained live; it did not exit naturally.",
+    "instrumentation": "No GDB breakpoints; guest memory was not modified.",
+    "controller": {
+      "device": "Linux uinput Microsoft X-Box 360 pad, VID:PID 045e:028e",
+      "physical_controller_filter": "SDL_GAMECONTROLLER_IGNORE_DEVICES=0x045e/0x0b12",
+      "pulse_duration_ms": 650,
+      "events": [
+        {
+          "at": 8.003,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 8.653,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 15.031,
+          "button": "Start",
+          "edge": "press"
+        },
+        {
+          "at": 15.683,
+          "button": "Start",
+          "edge": "release"
+        },
+        {
+          "at": 24.038,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 24.688,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 35.044,
+          "button": "Start",
+          "edge": "press"
+        },
+        {
+          "at": 35.694,
+          "button": "Start",
+          "edge": "release"
+        },
+        {
+          "at": 40.002,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 40.652,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 44.014,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 44.664,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 48.028,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 48.678,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 52.039,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 52.689,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 56.045,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 56.695,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 62.026,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 62.676,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 70.033,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 70.683,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 78.033,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 78.683,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 86.039,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 86.689,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 94.019,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 94.669,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 102.012,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 102.663,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 110.002,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 110.653,
+          "button": "A",
+          "edge": "release"
+        },
+        {
+          "at": 118.034,
+          "button": "A",
+          "edge": "press"
+        },
+        {
+          "at": 118.684,
+          "button": "A",
+          "edge": "release"
+        }
+      ]
+    },
+    "window_capture": {
+      "method": "Hyprland client geometry plus grim; captures target the nfs_shift window.",
+      "captures": [
+        {
+          "elapsed_seconds": 38.0,
+          "path": "evidence/screenshots/xbox360_linux_boot_followthrough_t38_20261026.png",
+          "sha256": "128e066d2096fe9b80ed8af57c375fa3f18e718c013046dbe8628704d997f2b4",
+          "observation": "driving-safety warning"
+        },
+        {
+          "elapsed_seconds": 54.0,
+          "path": "evidence/screenshots/xbox360_linux_boot_followthrough_t54_20261026.png",
+          "sha256": "2e15277ea96d30a981ea75344e6748c0608e405ab3d3d2ee9e550c1f8fd16f02",
+          "observation": "driving-safety warning"
+        },
+        {
+          "elapsed_seconds": 65.0,
+          "path": "evidence/screenshots/xbox360_linux_boot_followthrough_t65_20261026.png",
+          "sha256": "d8e56977b19dfb7cdabe07848c47bda6c9457191a97007a564f496d2061976b6",
+          "observation": "black game viewport; diagnostic overlay remains"
+        },
+        {
+          "elapsed_seconds": 75.0,
+          "path": "evidence/screenshots/xbox360_linux_boot_followthrough_t75_20261026.png",
+          "sha256": "d063b8d8a17d0b23e6e2600966c9baf4ecbeba9ef0f1ee4127ad82a83ca322d6",
+          "observation": "black game viewport; diagnostic overlay remains"
+        },
+        {
+          "elapsed_seconds": 85.0,
+          "path": "evidence/screenshots/xbox360_linux_boot_followthrough_t85_20261026.png",
+          "sha256": "7dada2ed786e97b98f6e429aed87d7ded812d4265b743615db1ba06ccff0c0de",
+          "observation": "driving-safety warning"
+        },
+        {
+          "elapsed_seconds": 95.0,
+          "path": "evidence/screenshots/xbox360_linux_boot_followthrough_t95_20261026.png",
+          "sha256": "009c942b339e715df832e0d94d3834a7e525931039e14c3847735bd17d144e43",
+          "observation": "black game viewport; diagnostic overlay remains"
+        },
+        {
+          "elapsed_seconds": 105.0,
+          "path": "evidence/screenshots/xbox360_linux_boot_followthrough_t105_20261026.png",
+          "sha256": "cb795f5743987b428a44d81b61878a20e2cdb04e8a5a7bba1226d179d8d7dd5f",
+          "observation": "black game viewport; diagnostic overlay remains"
+        },
+        {
+          "elapsed_seconds": 115.0,
+          "path": "evidence/screenshots/xbox360_linux_boot_followthrough_t115_20261026.png",
+          "sha256": "4bbb0b8e12bf76008febb42d5126611957b6ccdf334a9f49155f0ac1f9582574",
+          "observation": "driving-safety warning"
+        },
+        {
+          "elapsed_seconds": 119.0,
+          "path": "evidence/screenshots/xbox360_linux_boot_followthrough_t119_20261026.png",
+          "sha256": "abb098e3ce2d530aa7a8c8d9c87bd6598dfeeb948ad56d16cbda9b8431fa79d4",
+          "observation": "black game viewport; diagnostic overlay remains"
+        }
+      ]
+    },
+    "runtime_log": {
+      "path_external": "/tmp/nfs-p1-p2-resolve-current-20261026/bin/logs/nfs_shift_007.log",
+      "sha256": "cd078abcfbc6625ef8abdc8ec95e763c5d1ded90dc7680700681c96fa07bf694",
+      "bytes": 1275753,
+      "accepted_copy_convert_entries": 1136,
+      "vulkan_frame_refresh_failures": 0,
+      "cameraconfig_xml_open_failures": 1,
+      "menu_background_xml_open_failures": 4,
+      "guest_fault_entries": 0
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail title remained live through the 120-second bounded run and accepted 1,136 captured Copy/Convert operations with zero Vulkan frame-refresh failures and zero logged guest faults.",
+      "Window captures alternated between the retail driving-safety warning and a black game viewport while the ReXGlue diagnostic overlay remained visible.",
+      "The runtime logged one cameraconfig.xml miss and four menu_background.xml misses; the final accepted Copy/Convert entry preceded the first menu_background.xml miss by about 108 ms."
+    ],
+    "not_proven": [
+      "That either XML miss caused the blank viewport or stopped the retail scene transition.",
+      "That every uinput pulse reached or was consumed by the active frontend action path in this run.",
+      "Main-menu entry, offline-race entry, or sustained playable output.",
+      "Whether the black viewport is produced by retail game state or by the renderer/presentation path; the captures have no same-instant Vulkan readback."
+    ],
+    "gate_status": {
+      "X2_linux_x86_64_guest_boot": "in_progress",
+      "X3_xenos_vulkan_retail_frame": "in_progress",
+      "X4_linux_frontend_offline_race": "in_progress"
+    }
+  }
+}

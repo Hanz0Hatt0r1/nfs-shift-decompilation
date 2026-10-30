@@ -1,0 +1,104 @@
+{
+  "schema": "shift.xbox360.linux-missing-asset-caller-semantics.v1",
+  "captured_on": "2026-10-25",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "static_artifact": {
+    "kind": "exact-live-memory-derived-PPC-ELF",
+    "path": "/home/pes/ghidra_projects/research_inputs/nfs_shift_xbox360_live_20261024.elf",
+    "sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c",
+    "instruction_endianness": "big"
+  },
+  "runtime_crosscheck": {
+    "evidence": "evidence/xbox360_linux_ntcreatefile_guest_callers_20261025.json",
+    "run": "camera-config-caller-stack",
+    "failed_path": "d:\\tracks\\cameraconfig.xml",
+    "status": "0xc000000f",
+    "guest_lr": "0x826EF304",
+    "guest_call_chain": [
+      "0x826EF1A0",
+      "0x822DD650",
+      "0x822DC478",
+      "0x822CA1F8",
+      "0x822CA0F8",
+      "0x821CF880"
+    ]
+  },
+  "retail_return_flow": {
+    "generic_open": {
+      "function": "0x826EF1A0",
+      "guest_return_address_after_ntcreatefile": "0x826EF304",
+      "failure_result": "0xffffffff"
+    },
+    "file_reader": {
+      "function": "0x822DD650",
+      "calls_generic_open_at": "0x822DD704",
+      "maps_open_failure_to": "0xfffffffb"
+    },
+    "resource_reader": {
+      "function": "0x822DC478",
+      "calls_file_reader_at": "0x822DC4D4",
+      "maps_missing_file_to": "0xfffffffb",
+      "cleanup_return": "0xfffffffb"
+    },
+    "config_probe": {
+      "function": "0x822CA1F8",
+      "calls_resource_reader_at": "0x822CA240",
+      "nonzero_resource_result_return": "0"
+    },
+    "config_probe_wrapper": {
+      "function": "0x822CA0F8",
+      "normalizes_probe_result_to": [0, 1]
+    },
+    "initializer": {
+      "function": "0x82625158",
+      "calls_config_path_at": "0x8262519C",
+      "false_result_cleanup_call": "0x822C6120",
+      "false_return": "0"
+    },
+    "outer_initializer": {
+      "function": "0x82625278",
+      "calls_initializer_at": "0x826252A0",
+      "false_result_cleanup_calls": ["0x82624A28", "0x82623EE0"],
+      "continues_initialization_at": "0x826252C0"
+    }
+  },
+  "instruction_checks": [
+    {"address": "0x822DD704", "bytes_big_endian": "48411a9d", "meaning": "call 0x826EF1A0"},
+    {"address": "0x822DD70C", "bytes_big_endian": "2f03ffff", "meaning": "compare open result with -1"},
+    {"address": "0x822DD724", "bytes_big_endian": "3860fffb", "meaning": "return -5 after failed open"},
+    {"address": "0x822DC4D4", "bytes_big_endian": "4800117d", "meaning": "call 0x822DD650"},
+    {"address": "0x822DC4D8", "bytes_big_endian": "2f03fffb", "meaning": "compare resource result with -5"},
+    {"address": "0x822DC5C0", "bytes_big_endian": "3860fffb", "meaning": "return -5 after cleanup"},
+    {"address": "0x822CA240", "bytes_big_endian": "48012239", "meaning": "call 0x822DC478"},
+    {"address": "0x822CA244", "bytes_big_endian": "2f030000", "meaning": "compare resource result with zero"},
+    {"address": "0x822CA26C", "bytes_big_endian": "38600000", "meaning": "return false for nonzero resource result"},
+    {"address": "0x822CA134", "bytes_big_endian": "480000c5", "meaning": "call 0x822CA1F8"},
+    {"address": "0x822CA14C", "bytes_big_endian": "38600001", "meaning": "return true when probe result is nonzero"},
+    {"address": "0x822CA15C", "bytes_big_endian": "38600000", "meaning": "return false when probe result is zero"},
+    {"address": "0x8262519C", "bytes_big_endian": "4bca120d", "meaning": "call 0x822C63A8"},
+    {"address": "0x826251A0", "bytes_big_endian": "2f030000", "meaning": "test initializer result"},
+    {"address": "0x826251AC", "bytes_big_endian": "4bca0f75", "meaning": "cleanup when initializer returns false"},
+    {"address": "0x826251B0", "bytes_big_endian": "38600000", "meaning": "return false after cleanup"},
+    {"address": "0x826252A0", "bytes_big_endian": "4bfffeb9", "meaning": "call 0x82625158"},
+    {"address": "0x826252A4", "bytes_big_endian": "2f030000", "meaning": "test initializer result"},
+    {"address": "0x826252AC", "bytes_big_endian": "4bfff779", "meaning": "cleanup first object after false result"},
+    {"address": "0x826252BC", "bytes_big_endian": "4bffec25", "meaning": "cleanup second object after false result"},
+    {"address": "0x826252C0", "bytes_big_endian": "38610060", "meaning": "continue with following initialization"}
+  ],
+  "interpretation": {
+    "supported": [
+      "The traced cameraconfig.xml miss is converted by the retail caller chain into false; the outer initializer cleans up two associated objects and then continues into later initialization.",
+      "This exact path is not evidence that the Linux VFS should fabricate the missing file or change NTSTATUS behavior."
+    ],
+    "not_proven": [
+      "Whether this config is needed in a later frontend or race state.",
+      "Whether the separate audio.bff and drivers2.lod misses follow the same caller chain.",
+      "A main menu, offline race, or causal connection between this optional-style probe and the black frame."
+    ],
+    "next_step": "Keep VFS semantics unchanged and pursue a blocker tied to the guest's actual menu or race transition."
+  }
+}

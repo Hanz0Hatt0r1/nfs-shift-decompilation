@@ -1,0 +1,108 @@
+{
+  "schema": "shift.xbox360.linux.ringtrace-frontend-followthrough.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "host": {
+      "path": "/dev/shm/nfs-p1-ringtrace-frontend-20261026d/bin/nfs_shift",
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "rexglue_runtime": {
+      "path": "/home/pes/work/rexglue-sdk-process2-resolve-20261024/out/linux-amd64/librexruntime.so",
+      "sha256": "127181adbfb99b65e9d1a8f1d6aed12308e1cf320b86067588ad421f17eda68e",
+      "mapping_verified": true,
+      "prior_hash_claim_reconciliation": "A previous 2026-10-25 record claimed 544154e1705686d8be06852a16cda2c670f95b0852e38b290f6e0144b3830732 for this path; an independent SHA-256 check for this run resolved to the value recorded here."
+    },
+    "gpu_plugin": {
+      "path": "/home/pes/work/process2-p1-ring-trace-resolve-handover-20261026/librexgpu-shift-native.so",
+      "sha256": "dec875819cc6146c820838ac8ee52b45b90b83c7bb70d4d521ecc9dcdb4c6ee1",
+      "mapping_verified": true
+    }
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "duration_seconds": 180.01,
+    "exit_code": 0,
+    "termination": "Harness sent SIGINT after the bounded run while the title remained live; shutdown returned 0.",
+    "instrumentation": "No GDB or breakpoints; guest memory was not modified.",
+    "ring_trace_enabled": true,
+    "readback": {
+      "frame": 640,
+      "format": "A2B10G10R10",
+      "bytes": 3686400,
+      "sha256": "6d029f4d3c92f81f3cd55739809fe4dfe46757e796a7d9e4b9ab956c790a7ebe"
+    },
+    "controller": {
+      "device": "Linux uinput Microsoft X-Box 360 pad, VID:PID 045e:028e",
+      "button_edges": 44,
+      "buttons": ["A", "Start"],
+      "same_run_guest_consumption_proven": false
+    },
+    "window_capture": {
+      "method": "PID-scoped Hyprland client geometry plus grim crop",
+      "captures": [
+        {
+          "elapsed_seconds": 134.114,
+          "sha256": "cd5dd75d5ff685a5ee50baf078ab221373a239b7a7c1aa53044b474872e2baef",
+          "observation": "retail driving-safety warning"
+        },
+        {
+          "elapsed_seconds": 146.151,
+          "sha256": "6ed3e922560ef273397efa75abf66a8c203806b58602ac0ca9faa9cd1b7e1122",
+          "observation": "black game viewport"
+        },
+        {
+          "elapsed_seconds": 158.118,
+          "sha256": "553a0f84b6d7043040e888768c1c138fc751bfc03d554926e2718b792edcf833",
+          "observation": "retail driving-safety warning"
+        },
+        {
+          "elapsed_seconds": 178.153,
+          "sha256": "f5800187f41ed1b114aca5d4e70756535a3d81a8b13a1847b482c42171e4ed16",
+          "observation": "black game viewport"
+        }
+      ]
+    },
+    "runtime_log": {
+      "path": "/dev/shm/nfs-p1-ringtrace-frontend-20261026d/bin/logs/nfs_shift_001.log",
+      "bytes": 3510727,
+      "sha256": "b1e4396b63e5446592a097ddb58ffaa6e588ce0156fbda14f148f3bb1f11e4bb",
+      "retained_in_git": false,
+      "ring_wptr_events": 5380,
+      "ring_wake_events": 1529,
+      "ring_snapshot_events": 1529,
+      "ring_complete_events": 1529,
+      "final_guest_rptr": "0x1F1F",
+      "event_write_shd_events": 16,
+      "menu_background_xml_open_failures": 4,
+      "cameraconfig_xml_open_failures": 1,
+      "unresolved_captured_draws": 1,
+      "vulkan_frame_refresh_failures": 0,
+      "guest_faults": 0,
+      "sigsegv": 0,
+      "sigbus": 0,
+      "low_host_cpu_warning_entries": 12199
+    }
+  },
+  "interpretation": {
+    "observed": [
+      "The exact retail XEX stayed live through the 180-second bounded run.",
+      "The plugin ring worker continued to wake, snapshot, consume, and write back the guest RPTR through 0x1F1F; the old queue-wait snapshot does not describe this worker's final state.",
+      "The window alternated between the retail safety warning and a black viewport in PID-scoped captures after repeated A/Start input edges.",
+      "One captured draw remained unresolved because captured raster state was incomplete; no Vulkan refresh failure or guest fault was recorded."
+    ],
+    "not_proven": [
+      "The retail main menu or an offline race was reached.",
+      "The A/Start edges were consumed by a same-run frontend action handler.",
+      "The missing XML requests or unresolved draw caused the alternating output.",
+      "The 12199 low-host-CPU warning messages changed guest scheduling behavior.",
+      "The run verifies Vulkan 1.1 compatibility, Linux ARM64, or Android ARM64."
+    ],
+    "next_p1_step": "Trace the exact retail deferred callback registration and first expected indirect invocation against the live-memory-derived PPC ELF; preserve the retail queues and wait predicates."
+  }
+}
