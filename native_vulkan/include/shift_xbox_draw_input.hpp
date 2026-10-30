@@ -601,6 +601,19 @@ bool captured_xenos_edram_layout_fits_store(
     uint32_t* required_tiles,
     std::string* error);
 
+// True when every EDRAM tile of `inner` is also a tile of `outer`. A mip chain
+// reuses one EDRAM region across levels: the guest resolves a level to guest
+// memory and then renders the next, smaller level into the head of the same
+// tiles, so the smaller layout is a tile subset of the larger one rather
+// than a conflicting view of it. Both color and depth must be subsets for the
+// reuse to be safe; the caller decides whether the earlier layout has been
+// drained.
+bool captured_xenos_edram_layout_is_tile_subset(
+    const CapturedRasterState& inner,
+    const CapturedRasterState& outer,
+    bool* is_subset,
+    std::string* error);
+
 // Checks only framebuffer effects represented by the captured raster state.
 bool captured_draw_has_no_framebuffer_effects(
     const CapturedRasterState& raster) noexcept;

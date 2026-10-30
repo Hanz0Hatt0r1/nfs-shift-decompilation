@@ -2139,6 +2139,59 @@ bool captured_xenos_edram_alias_tiles(
     return true;
 }
 
+namespace {
+// xenos.h GetStorageColorFormat: codes 3 and 12 are one stored surface.
+uint32_t edram_storage_guest_color_format_local(uint32_t guest_color_format) {
+    return guest_color_format == 12u ? 3u : guest_color_format;
+}
+}  // namespace
+
+bool captured_xenos_edram_layout_is_tile_subset(
+    const CapturedRasterState& inner,
+    const CapturedRasterState& outer,
+    bool* is_subset,
+    std::string* error) {
+    if (!is_subset) {
+        return fail("missing Xenos EDRAM tile-subset result", error);
+    }
+    *is_subset = false;
+    // Tile containment alone is not reuse: a different render-target code, depth
+    // format, sample count or depth-only mode over the same tiles is a genuine
+    // reinterpretation of stored values and still needs shared EDRAM backing. A
+    // mip level of one chain keeps all of those identical and only shrinks.
+    if (edram_storage_guest_color_format_local(inner.guest_color_format) !=
+            edram_storage_guest_color_format_local(outer.guest_color_format) ||
+        inner.color_format != outer.color_format ||
+        inner.depth_format != outer.depth_format ||
+        inner.sample_count != outer.sample_count ||
+        inner.depth_only != outer.depth_only ||
+        inner.color_base_tiles != outer.color_base_tiles ||
+        inner.depth_base_tiles != outer.depth_base_tiles) {
+        if (error) error->clear();
+        return true;
+    }
+    for (bool depth_target : {false, true}) {
+        std::vector<CapturedEdramRasterTile> inner_tiles;
+        std::vector<CapturedEdramRasterTile> outer_tiles;
+        if (!captured_xenos_edram_raster_tiles(inner, depth_target, &inner_tiles,
+                                               error) ||
+            !captured_xenos_edram_raster_tiles(outer, depth_target, &outer_tiles,
+                                               error)) {
+            return false;
+        }
+        std::array<bool, 2048> occupied{};
+        for (const CapturedEdramRasterTile& tile : outer_tiles) {
+            occupied[tile.physical_tile_index & 2047u] = true;
+        }
+        for (const CapturedEdramRasterTile& tile : inner_tiles) {
+            if (!occupied[tile.physical_tile_index & 2047u]) return true;
+        }
+    }
+    *is_subset = true;
+    if (error) error->clear();
+    return true;
+}
+
 bool captured_xenos_edram_tile_footprint(
     const CapturedRasterState& raster,
     bool depth_target,

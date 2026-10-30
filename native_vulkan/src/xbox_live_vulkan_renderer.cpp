@@ -5942,6 +5942,13 @@ bool submit_captured_vulkan_operation_stream(
         tolerate_missing_copy_source = true;
     }
     std::vector<CapturedRasterState> preflight_targets;
+    // Set when a Copy/Convert has consumed the currently active draw layout.
+    // The guest resolves a mip level to guest memory and then renders the next
+    // level into the head of the same EDRAM tiles, so after a drain the tiles
+    // are free to be reused by a smaller layout. Without this the renderer sees
+    // two overlapping layouts with no transfer between them and rejects the
+    // frame, even though hardware is simply doing a mip chain.
+    bool preflight_active_layout_drained = false;
     bool found_presenter_copy = false;
     // Operations the tolerance hatch decided to leave out. Consumed by the
     // replay below so a skipped packet is not executed as a fullscreen
@@ -5973,6 +5980,20 @@ bool submit_captured_vulkan_operation_stream(
                                "invalid target layout transition: "
                             << layout_error;
                     return fail(message.str(), error);
+                }
+                bool tile_subset = false;
+                if (!disjoint &&
+                    preflight_active_layout_drained &&
+                    captured_xenos_edram_layout_is_tile_subset(
+                        draw_raster, draws[preflight_layout_draw].raster,
+                        &tile_subset, nullptr) &&
+                    tile_subset) {
+                    // Legitimate mip-level reuse: the previous level was
+                    // resolved to guest memory, and this smaller level lives in
+                    // the head of the same tiles. It gets its own EDRAM target
+                    // image at its own extent, so no shared backing is needed;
+                    // the drained source is no longer read.
+                    disjoint = true;
                 }
                 if (!disjoint && !alias_transfer) {
                     std::ostringstream message;
@@ -6020,6 +6041,15 @@ bool submit_captured_vulkan_operation_stream(
                                 << layout_error;
                         return fail(message.str(), error);
                     }
+                    bool drained_subset = false;
+                    if (!disjoint && preflight_active_layout_drained &&
+                        captured_xenos_edram_layout_is_tile_subset(
+                            draw_raster, previous, &drained_subset, nullptr) &&
+                        drained_subset) {
+                        // Same legitimate mip-level reuse as above: this level
+                        // fits inside tiles a resolved level already vacated.
+                        disjoint = true;
+                    }
                     if (!disjoint) {
                         std::ostringstream message;
                         message << "draw packet " << operation.packet_index
@@ -6028,6 +6058,13 @@ bool submit_captured_vulkan_operation_stream(
                                 << " aliases a cached layout and requires shared physical EDRAM backing";
                         message << "; " << describe_alias_tiles(previous,
                                                                  draw_raster);
+                        message << "; active=" << describe_target_layout(previous)
+                                << ", next=" << describe_target_layout(draw_raster)
+                                << ", packet27_alias="
+                                << is_captured_packet27_alias_layout(previous,
+                                                                     draw_raster)
+                                << ", copy_after_alias="
+                                << has_captured_copy_after_alias(i, draw_raster);
                         return fail(message.str(), error);
                     }
                 }
@@ -6039,6 +6076,9 @@ bool submit_captured_vulkan_operation_stream(
             if (!draw_raster.depth_only && draw_raster.color_write_mask != 0) {
                 preflight_color_source_draw = operation.draw_index;
             }
+            // A new draw has written into the active layout, so it is no longer
+            // the drained copy of an earlier level.
+            preflight_active_layout_drained = false;
             ++preflight_draw_count;
             continue;
         }
@@ -6181,6 +6221,9 @@ bool submit_captured_vulkan_operation_stream(
                 return fail(message.str(), error);
             }
         }
+        // The copy has read the active draw layout into guest memory, so those
+        // EDRAM tiles may now be reused for the next (smaller) mip level.
+        preflight_active_layout_drained = true;
         const bool writes_presenter = presenter_copy &&
             operation.copy_state.destination_format ==
                 presenter_copy->state.destination_format &&
@@ -6297,6 +6340,15 @@ bool submit_captured_vulkan_operation_stream(
                             << overlap_tile;
                     message << ", " << describe_alias_tiles(
                         stage_draws[stage_layout_draw].raster, draw.raster);
+                    message << "; active="
+                            << describe_target_layout(source_layout)
+                            << ", next=" << describe_target_layout(draw.raster)
+                            << ", packet27_alias="
+                            << is_captured_packet27_alias_layout(source_layout,
+                                                                 draw.raster)
+                            << ", copy_after_alias="
+                            << has_captured_copy_after_alias(operation_index,
+                                                             draw.raster);
                     return fail(message.str(), error);
                 }
                 if (!submit_stage(nullptr, false, false,
