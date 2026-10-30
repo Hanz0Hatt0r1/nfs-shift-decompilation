@@ -21,6 +21,8 @@ def test_android_and_xcb_share_one_vulkan_surface_probe_contract():
     assert "common probe owns and destroys that surface" in header
 
     assert "vkCreateInstance" in common
+    assert "vkGetPhysicalDeviceProperties" in common
+    assert "properties.apiVersion < VK_API_VERSION_1_1" in common
     assert "vkGetPhysicalDeviceSurfaceSupportKHR" in common
     assert "vkDestroySurfaceKHR" in common
     assert "vkDestroyInstance" in common
