@@ -17,7 +17,16 @@ extern "C" int shift_vulkan_surface_probe_backend(
     app.applicationVersion = 1;
     app.pEngineName = "SHIFT";
     app.engineVersion = 1;
-    app.apiVersion = VK_API_VERSION_1_0;
+    app.apiVersion = VK_API_VERSION_1_1;
+
+    uint32_t loader_api_version = VK_API_VERSION_1_0;
+    auto enumerate_instance_version = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(
+        vkGetInstanceProcAddr(VK_NULL_HANDLE, "vkEnumerateInstanceVersion"));
+    if (enumerate_instance_version == nullptr ||
+        enumerate_instance_version(&loader_api_version) != VK_SUCCESS ||
+        loader_api_version < VK_API_VERSION_1_1) {
+        return SHIFT_VULKAN_SURFACE_PROBE_API_VERSION_FAILURE;
+    }
 
     VkInstanceCreateInfo instance_create{};
     instance_create.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -58,8 +67,16 @@ extern "C" int shift_vulkan_surface_probe_backend(
         return SHIFT_VULKAN_SURFACE_PROBE_PHYSICAL_DEVICE_FAILURE;
     }
 
+    bool has_vulkan_11_device = false;
     bool compatible_queue = false;
     for (VkPhysicalDevice physical : devices) {
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(physical, &properties);
+        if (properties.apiVersion < VK_API_VERSION_1_1) {
+            continue;
+        }
+        has_vulkan_11_device = true;
+
         uint32_t queue_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(
             physical, &queue_count, nullptr);
@@ -86,6 +103,9 @@ extern "C" int shift_vulkan_surface_probe_backend(
 
     vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
+    if (!has_vulkan_11_device) {
+        return SHIFT_VULKAN_SURFACE_PROBE_API_VERSION_FAILURE;
+    }
     return compatible_queue
         ? SHIFT_VULKAN_SURFACE_PROBE_OK
         : SHIFT_VULKAN_SURFACE_PROBE_QUEUE_FAMILY_FAILURE;
