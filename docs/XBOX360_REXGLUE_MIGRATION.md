@@ -4,7 +4,57 @@
 
 On 2026-10-22 the project selected the Xbox 360 retail version of Need for Speed: SHIFT as the **primary proposed** source for a native Linux / Android ARM64 port. ReXGlue SDK is the first-choice AOT compiler/runtime foundation. The older PC 1.02 P-code recompilation is preserved and moved to a research/maintenance role.
 
-This remains a **pre-playability migration**, not a successful port. The exact retail XEX, individual splash readbacks, and bounded Linux guest/GPU runs are recorded in the gate ledger. The main menu and an offline race are still unverified.
+This remains a **pre-playability migration**, not a successful port. The retail XEX identity is verified, the boot chain is proven end-to-end on both graphics backends, and the guest reaches the Main Menu setup screen — but the frontend is never entered and every menu frame currently aborts, so there is no menu UI, no offline race, and no ARM64/Android in-game frame. See the current frontier section immediately below; it supersedes the dated sections that follow it.
+
+## Current frontier (2026-10-30)
+
+This section supersedes the 2026-10-25 frontier below it. The sections after this
+one are kept as history: their hashes describe superseded hosts, runtimes and
+plugins and must not be read as the current pin.
+
+### Where the retail guest actually is
+
+Both graphics backends run the retail boot chain to the **Main Menu setup screen**
+and stall there:
+
+| Observation | Xenos plugin `8b5abe7a…` | Native Vulkan plugin `fd615ada…` |
+|---|---|---|
+| boot chain (Bink 281/281 → language select → EA logo → disclaimer) | reached | reached |
+| Menu Setup state 2 updates | 20 (76.77 s → 110.05 s) | 20 (77.46 s → 110.17 s) |
+| `MainMenu` scene gate set (`sub_82DD9020`) | 1 × at 75.644 s | 1 × at 76.303 s |
+| `MainMenu` scene gate cleared (`sub_82DD8FF8`) | **0** | **0** |
+| menu GUI queue ctors / opens / polls | 70 / 9 / 16 | 70 / 9 / 16 |
+| enqueue breakpoint hits | 0 (armed, no positive control) | 0 (armed, no positive control) |
+| frontend dispatcher `sub_822FDCE0` calls | 0 | 0 |
+
+Both runs: read-only GDB, `guest_memory_modified_by_probe=false`, exit 0. The
+numbers are recomputed from the raw run directories by
+`tools/xbox360/test_analyse_menu_setup_scene_gate_run_20261029.py`, so they cannot
+drift from the prose silently.
+
+### The two blockers, precisely
+
+1. **Frontend never entered (X4).** The scene gate at `scene+8` is set once and
+   never cleared. Six hypotheses (unfed queue, uninvoked producer, rejected
+   status 5, missing-asset early-out, scheduling, false predicate) each carry a
+   prediction, a static check and a GDB probe in
+   [P1_FRONTEND_FRONTIER_PLAN_20261030.md](P1_FRONTEND_FRONTIER_PLAN_20261030.md).
+2. **Every menu frame aborts (X3).** 24 draw packets are declared register-ready
+   while `surface`, `color`, `depth`, `color_mask` and `stencil_refmask` are all
+   zero, because readiness is gated on `draw_register_valid_mask != 0` rather
+   than a grouped render-target-complete mask. Shader control-flow opcode 7 is
+   strictly downstream of this. See
+   [P2_RENDER_UNRESOLVED_DRAW_PLAN_20261030.md](P2_RENDER_UNRESOLVED_DRAW_PLAN_20261030.md).
+
+### Reproducibility caveat that must travel with any pin citation
+
+Pinned artifacts are hash-verified but **not** build-reproducible. The pinned
+native plugin was built from SDK `b3648b0`, an ancestor of fork HEAD `32afce4`;
+five commits separate them, touching `vulkan_presenter.cpp`, `vulkan_device.cpp`,
+`vulkan_instance.cpp`, `memory_posix.cpp` and `xam_input.cpp`. The pinned runtime
+`693abc48…` matches neither tree. `tools/xbox360/build/verify_pins.py` prints
+`unverified_pins` on every run so a PASS cannot launder an unproven producer; see
+[XBOX360_BUILD_PINS_20261030.md](XBOX360_BUILD_PINS_20261030.md).
 
 ## Linux AMD64 runtime frontier (2026-10-25)
 
