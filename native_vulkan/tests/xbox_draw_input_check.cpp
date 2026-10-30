@@ -1068,6 +1068,24 @@ int main() {
                 raster_state.stencil_refmask == 0x00FF0000u &&
                 raster_state.scissor_has_area,
             "run-060 Xenos depth-only target was not normalized to no color writes");
+    // Retail menu draws emit RB_BLENDCONTROL0 = 0x00010701 (ONE plus inverted
+    // source alpha on both sub-blends, i.e. premultiplied alpha). The raster
+    // decoder used to whitelist only three whole-register values and rejected
+    // it, which failed the containing frame.
+    auto premultiplied_blend_registers = captured_raster_registers;
+    premultiplied_blend_registers.blend_control_0 = 0x00010701u;
+    require(shift::xbox::decode_captured_raster_state(
+                premultiplied_blend_registers, &raster_state, &error) &&
+                raster_state.blend_control_0 == 0x00010701u,
+            "retail premultiplied-alpha blend control was rejected");
+    // A factor index outside the Xenos subset must still be rejected, so the
+    // widened acceptance does not turn into "accept anything".
+    auto unsupported_blend_registers = captured_raster_registers;
+    unsupported_blend_registers.blend_control_0 = 0x00011F01u;
+    require(!shift::xbox::decode_captured_raster_state(
+                unsupported_blend_registers, &raster_state, &error) &&
+                error == "unsupported captured target or raster state",
+            "an unsupported blend factor was accepted");
     auto partial_viewport_registers = captured_raster_registers;
     partial_viewport_registers.viewport_x_scale = 0x43780000u;  // 248
     partial_viewport_registers.viewport_x_offset = 0x44200000u; // 640

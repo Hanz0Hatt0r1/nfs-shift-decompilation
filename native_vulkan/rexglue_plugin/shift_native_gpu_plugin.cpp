@@ -1607,11 +1607,20 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
           }
           return false;
         }
+        // GPUSIGN TextureSign::kSigned means two's complement texel data, so
+        // an 8-bit RGBA fetch with any signed channel must be sampled through
+        // SNORM; UNORM would clamp negatives to zero.
+        bool signed_rgba8 = false;
+        for (shift::xbox::TextureSign sign : resolved.sampling.signs) {
+          if (sign == shift::xbox::TextureSign::Signed) signed_rgba8 = true;
+        }
         texture.format = use_native_r8
             ? shift::xbox::CapturedVulkanTexture::Format::R8
             : fetch.format == 31u
                 ? shift::xbox::CapturedVulkanTexture::Format::Rg16Float
-                : shift::xbox::CapturedVulkanTexture::Format::Rgba8;
+                : signed_rgba8
+                      ? shift::xbox::CapturedVulkanTexture::Format::Rgba8Snorm
+                      : shift::xbox::CapturedVulkanTexture::Format::Rgba8;
         total_texture_bytes += fetch.byte_length;
         prepared.textures.push_back(std::move(texture));
       }

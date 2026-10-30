@@ -280,9 +280,14 @@ bool append_fetch(std::ostringstream& glsl,
         }
     }
     for (TextureSign sign : texture_options.signs) {
-        if (sign != TextureSign::Unsigned && sign != TextureSign::Gamma) {
+        // TextureSign::Signed is GPUSIGN two's complement texel data. The
+        // renderer binds such fetches through an SNORM image view, so the
+        // sampled value already carries the correct signed normalization and
+        // no per-channel fixup is emitted (unlike Gamma below).
+        if (sign != TextureSign::Unsigned && sign != TextureSign::Gamma &&
+            sign != TextureSign::Signed) {
             std::ostringstream message;
-            message << "captured texture channel sign is outside the unsigned/gamma subset"
+            message << "captured texture channel sign is outside the unsigned/gamma/signed subset"
                     << " fetch_constant=" << fetch.fetch_constant_index
                     << " signs=[";
             for (size_t lane = 0; lane < texture_options.signs.size(); ++lane) {

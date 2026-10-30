@@ -547,6 +547,23 @@ int main() {
                 translated.glsl.find("sampled_0.w=shift_pwl_gamma_to_linear") ==
                     std::string::npos,
             "captured Gamma RGB texture signs did not preserve linear alpha");
+    // GPUSIGN TextureSign::kSigned is two's complement texel data, so the
+    // renderer samples it through an SNORM image view and the translator must
+    // accept it without emitting a per-channel fixup.
+    auto signed_texture_options = options;
+    signed_texture_options.textures[0].signs = {
+        shift::xbox::TextureSign::Signed,
+        shift::xbox::TextureSign::Signed,
+        shift::xbox::TextureSign::Signed,
+        shift::xbox::TextureSign::Signed};
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel, shader.data(), shader.size(),
+                signed_texture_options, &translated, &error) &&
+                translated.glsl.find("shift_pwl_gamma_to_linear") ==
+                    std::string::npos,
+            "captured Signed texture signs were rejected or gained a gamma fixup");
+
+    // UnsignedBiased is still outside the supported subset.
     gamma_texture_options.textures[0].signs = {
         shift::xbox::TextureSign::Signed,
         shift::xbox::TextureSign::UnsignedBiased,
@@ -556,8 +573,8 @@ int main() {
                 shift::xbox::CapturedShaderStage::Pixel, shader.data(), shader.size(),
                 gamma_texture_options, &translated, &error) &&
                 error ==
-                    "captured texture channel sign is outside the unsigned/gamma subset "
-                    "fetch_constant=0 signs=[1,2,3,0]",
+                    "captured texture channel sign is outside the unsigned/gamma/signed "
+                    "subset fetch_constant=0 signs=[1,2,3,0]",
             "unsupported captured texture signs were silently accepted or omitted from diagnostics");
 
     std::vector<uint8_t> multiple_samplers = shader;

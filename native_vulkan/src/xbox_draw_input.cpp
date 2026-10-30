@@ -1557,7 +1557,8 @@ bool decode_captured_raster_state(
         (registers.color_mask & ~0xFFFFu) != 0 || registers.window_offset != 0 ||
         (registers.blend_control_0 != 0x07010706u &&
          registers.blend_control_0 != 0x07060706u &&
-         registers.blend_control_0 != 0x00010001u)) {
+         registers.blend_control_0 != 0x00010001u &&
+         registers.blend_control_0 != 0x00010701u)) {
         return fail("unsupported captured target or raster state", error);
     }
 

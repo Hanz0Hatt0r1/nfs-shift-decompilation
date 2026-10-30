@@ -482,8 +482,20 @@ bool validate_captured_operation_stream(
     std::vector<bool> referenced_draws(draw_count, false);
     uint32_t previous_draw_index = 0;
     bool have_previous_draw = false;
+    // Diagnostic escape hatch: a single prepared draw that the shader/raster
+    // path cannot handle currently costs the entire frame, which hides every
+    // otherwise-correct draw behind it. Opting in drops just that packet and
+    // still presents the rest, so partially-correct frames become visible and
+    // measurable. The default stays strict so correctness regressions are not
+    // masked.
+    bool tolerate_unresolved_draws = false;
+    if (const char* raw = std::getenv("SHIFT_NATIVE_VULKAN_TOLERATE_UNRESOLVED_DRAWS");
+        raw && *raw && std::strcmp(raw, "0") != 0) {
+        tolerate_unresolved_draws = true;
+    }
     for (const CapturedVulkanOperation& operation : operations) {
         if (operation.type == CapturedVulkanOperation::Type::UnresolvedDraw) {
+            if (tolerate_unresolved_draws) continue;
             std::ostringstream message;
             message << "captured operation stream contains unresolved draw packet "
                     << operation.packet_index;
@@ -1885,6 +1897,7 @@ bool create_draw_resources(
               : 4u;
     if (texture.format != CapturedVulkanTexture::Format::R8 &&
         texture.format != CapturedVulkanTexture::Format::Rgba8 &&
+        texture.format != CapturedVulkanTexture::Format::Rgba8Snorm &&
         texture.format != CapturedVulkanTexture::Format::Rg16Float &&
         texture.format != CapturedVulkanTexture::Format::Rgba16Unorm) {
       return fail("captured Vulkan texture format is unsupported", error);
@@ -1937,7 +1950,8 @@ bool create_draw_resources(
   }
   if (source.raster.blend_control_0 != 0x07060706u &&
       source.raster.blend_control_0 != 0x07010706u &&
-      source.raster.blend_control_0 != 0x00010001u) {
+      source.raster.blend_control_0 != 0x00010001u &&
+      source.raster.blend_control_0 != 0x00010701u) {
     return fail("captured blend control is outside the supported retail draw",
                 error);
   }
@@ -2063,7 +2077,9 @@ bool create_draw_resources(
                     ? VK_FORMAT_R16G16_SFLOAT
                     : input.format == CapturedVulkanTexture::Format::Rgba16Unorm
                           ? VK_FORMAT_R16G16B16A16_UNORM
-                          : VK_FORMAT_R8G8B8A8_UNORM;
+                          : input.format == CapturedVulkanTexture::Format::Rgba8Snorm
+                                ? VK_FORMAT_R8G8B8A8_SNORM
+                                : VK_FORMAT_R8G8B8A8_UNORM;
       CachedGuestCopyImage *guest_copy_image = input.captured
           ? find_guest_copy_texture(texture_cache, *input.captured)
           : nullptr;
@@ -2504,6 +2520,16 @@ bool create_draw_resources(
           VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     } else if (source.raster.blend_control_0 == 0x07010706u) {
       blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+      blend_attachment.dstColorBlendFactor =
+          VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+      blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+      blend_attachment.dstAlphaBlendFactor =
+          VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    } else if (source.raster.blend_control_0 == 0x00010701u) {
+      // Premultiplied-alpha blend: the source color already carries its
+      // alpha, so the color term uses ONE rather than SRC_ALPHA. Retail emits
+      // this on the menu overlay draws.
+      blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
       blend_attachment.dstColorBlendFactor =
           VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
       blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
