@@ -466,6 +466,8 @@ bool decode_captured_shader_control_flow(
     constexpr uint32_t kControlFlowExecEnd = 2;
     constexpr uint32_t kControlFlowConditionalExec = 3;
     constexpr uint32_t kControlFlowConditionalExecEnd = 4;
+    constexpr uint32_t kControlFlowLoopStart = 7;
+    constexpr uint32_t kControlFlowLoopEnd = 8;
     constexpr uint32_t kControlFlowConditionalJump = 11;
     constexpr uint32_t kControlFlowAllocate = 12;
     constexpr uint32_t kControlFlowTripletBytes = 12;
@@ -529,6 +531,8 @@ bool decode_captured_shader_control_flow(
                 raw_opcode != kControlFlowExecEnd &&
                 raw_opcode != kControlFlowConditionalExec &&
                 raw_opcode != kControlFlowConditionalExecEnd &&
+                raw_opcode != kControlFlowLoopStart &&
+                raw_opcode != kControlFlowLoopEnd &&
                 raw_opcode != kControlFlowConditionalJump &&
                 raw_opcode != kControlFlowAllocate) {
                 const std::string message =
@@ -567,6 +571,28 @@ bool decode_captured_shader_control_flow(
                 if (static_cast<uint64_t>(decoded.address) >=
                     static_cast<uint64_t>(control_flow_triplet_count) * 2) {
                     return fail("captured shader jump target is out of range", error);
+                }
+            } else if (raw_opcode == kControlFlowLoopStart) {
+                // ucode.h ControlFlowLoopStartInstruction: address_:13,
+                // is_repeat_:1, loop_id_:5; addr_mode at word1 bit 11.
+                decoded.address = word0 & 0x1FFFu;
+                decoded.loop_is_repeat = ((word0 >> 13) & 1u) != 0;
+                decoded.loop_id = (word0 >> 16) & 0x1Fu;
+                if (static_cast<uint64_t>(decoded.address) >
+                    static_cast<uint64_t>(control_flow_triplet_count) * 2) {
+                    return fail("captured shader loop skip target is out of range", error);
+                }
+            } else if (raw_opcode == kControlFlowLoopEnd) {
+                // ucode.h ControlFlowLoopEndInstruction: address_:13,
+                // loop_id_:5, is_predicated_break_:1 at bit 19;
+                // condition_ at word1 bit 10.
+                decoded.address = word0 & 0x1FFFu;
+                decoded.loop_id = (word0 >> 16) & 0x1Fu;
+                decoded.loop_predicated_break = ((word0 >> 19) & 1u) != 0;
+                decoded.condition = ((word1 >> 10) & 1u) != 0;
+                if (static_cast<uint64_t>(decoded.address) >=
+                    static_cast<uint64_t>(control_flow_triplet_count) * 2) {
+                    return fail("captured shader loop body target is out of range", error);
                 }
             } else if (raw_opcode == kControlFlowAllocate) {
                 decoded.allocation_size = word0 & 0x7u;

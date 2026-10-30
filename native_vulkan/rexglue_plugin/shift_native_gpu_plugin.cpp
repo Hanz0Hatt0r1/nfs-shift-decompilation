@@ -1135,6 +1135,13 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     shift::xbox::CapturedShaderTranslationOptions options{};
     options.pixel_b128 = constants.pixel_b128;
     options.pixel_b129 = constants.pixel_b129;
+    // Loop constants drive static loop unrolling in the translator.
+    {
+      const shift::xbox::CapturedShaderLoopConstantBank loop_bank =
+          shader_state.snapshot_loop_constants();
+      options.loop_constants = loop_bank.words;
+      options.loop_constant_valid = loop_bank.valid;
+    }
     options.gamma_color_target =
         raster_state.color_format ==
         shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
@@ -1163,6 +1170,26 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (!shader_translation_cache_.translate(
             shift::xbox::CapturedShaderStage::Pixel, pixel_program.data(),
             pixel_program.size(), options, &pixel_translation, error)) {
+      // Diagnostic: dump the exact retail bytes that failed to translate, so
+      // the failure can be analysed offline instead of guessed at.
+      if (const char* dump_prefix =
+              std::getenv("SHIFT_NATIVE_VULKAN_DUMP_FAILED_SHADER_PREFIX");
+          dump_prefix && *dump_prefix) {
+        const auto dump_failed = [&](const char* tag,
+                                     const std::vector<uint8_t>& bytes) {
+          std::ostringstream path;
+          path << dump_prefix << ".draw" << draw_slot << '.' << tag << ".bin";
+          std::ofstream file(path.str(), std::ios::binary | std::ios::trunc);
+          if (!bytes.empty()) {
+            file.write(reinterpret_cast<const char*>(bytes.data()),
+                       static_cast<std::streamsize>(bytes.size()));
+          }
+          REXLOG_INFO("shift-native: saved failed {} shader bytes={} path={}",
+                      tag, bytes.size(), path.str());
+        };
+        dump_failed("vs", vertex_program);
+        dump_failed("ps", pixel_program);
+      }
       if (error) *error = "captured pixel shader: " + *error;
       return false;
     }

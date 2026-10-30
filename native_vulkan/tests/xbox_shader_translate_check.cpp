@@ -929,5 +929,135 @@ int main() {
     require(cache_stats.entries == 0 && cache_stats.retained_payload_bytes == 0 &&
                 cache_stats.hits == 0 && cache_stats.misses == 0,
             "clearing shader translation cache did not reset retained state");
+
+    // Exact 156-byte retail pixel shader captured from the failing menu frame
+    // (shaderdump4-20261030). Its bounded prefix is
+    //   Exec @2 | LoopStart.skip=4 loop_id=31 | Exec @3 | LoopEnd.body=2
+    //   predicated_break=1 condition=1 | Alloc | ExecEnd @9
+    // so the translator must unroll a one-instruction loop body using the
+    // captured loop constant instead of rejecting opcode 7.
+    const auto captured_loop_shader = [] {
+        const uint8_t bytes[] = {
+            0x00, 0x00, 0x10, 0x03, 0x00, 0x04, 0x12, 0x00, 0x70, 0x00, 0x00, 0x1F,
+            0x00, 0x24, 0x50, 0x04, 0x00, 0x02, 0x12, 0x00, 0x84, 0x00, 0x00, 0x1F,
+            0x00, 0x00, 0x00, 0x00, 0x30, 0x09, 0xC4, 0x00, 0x22, 0x00, 0x00, 0x00,
+            0xC8, 0x0C, 0x00, 0x00, 0x04, 0x6C, 0x6C, 0x00, 0xA5, 0x80, 0xFF, 0x00,
+            0xC8, 0x03, 0x00, 0x01, 0x80, 0xB0, 0xB0, 0x00, 0xA0, 0x00, 0x00, 0x00,
+            0x10, 0x08, 0x10, 0x21, 0x1F, 0x1F, 0xFF, 0xF8, 0x00, 0x00, 0x40, 0x00,
+            0xC8, 0x02, 0x00, 0x01, 0x00, 0x6C, 0x6C, 0x00, 0xA2, 0x01, 0xFF, 0x00,
+            0xC8, 0x01, 0x00, 0x01, 0x02, 0xB1, 0xB1, 0x00, 0xE5, 0x01, 0x01, 0x00,
+            0xC8, 0x0C, 0x00, 0x00, 0x00, 0xAC, 0x06, 0x00, 0xE0, 0x01, 0x00, 0x00,
+            0xC8, 0x01, 0x00, 0x00, 0x00, 0xC6, 0xB1, 0x00, 0xA2, 0x00, 0xFF, 0x00,
+            0x4C, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x6C, 0xE2, 0x00, 0x00, 0x00,
+            0xC8, 0x8F, 0xC0, 0x00, 0x00, 0x1B, 0x6C, 0x00, 0xE1, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        };
+        return std::vector<uint8_t>(std::begin(bytes), std::end(bytes));
+    }();
+    std::vector<shift::xbox::CapturedShaderControlFlow> loop_control_flow;
+    std::string loop_decode_error;
+    require(shift::xbox::decode_captured_shader_control_flow(
+                captured_loop_shader.data(), captured_loop_shader.size(),
+                &loop_control_flow, &loop_decode_error),
+            "captured retail loop shader control flow failed to decode");
+    bool saw_loop_start = false;
+    bool saw_loop_end = false;
+    for (const auto& clause : loop_control_flow) {
+        if (clause.opcode == shift::xbox::ShaderControlFlowOpcode::LoopStart) {
+            saw_loop_start = true;
+            require(clause.loop_id == 31u && clause.address == 4u &&
+                        !clause.loop_is_repeat,
+                    "captured LoopStart fields were decoded incorrectly");
+        }
+        if (clause.opcode == shift::xbox::ShaderControlFlowOpcode::LoopEnd) {
+            saw_loop_end = true;
+            require(clause.loop_id == 31u && clause.address == 2u &&
+                        clause.loop_predicated_break && clause.condition,
+                    "captured LoopEnd fields were decoded incorrectly");
+        }
+    }
+    require(saw_loop_start && saw_loop_end,
+            "captured retail loop shader lost its LoopStart/LoopEnd opcodes");
+
+    auto loop_options = options;
+    loop_options.pixel_b128 = true;
+    loop_options.pixel_b129 = true;
+    // count=1, aL start=0, step=+1 for the loop constant the shader uses.
+    loop_options.loop_constants[31] = 0x00010001u;
+    loop_options.loop_constant_valid[31] = true;
+    shift::xbox::CapturedShaderTranslation loop_translation{};
+    std::string loop_error;
+    const bool loop_translated = shift::xbox::translate_captured_shader_glsl(
+        shift::xbox::CapturedShaderStage::Pixel, captured_loop_shader.data(),
+        captured_loop_shader.size(), loop_options, &loop_translation,
+        &loop_error);
+    require(loop_translated,
+            (std::string("captured retail loop shader was rejected instead of ")
+             + "unrolled: " + loop_error).c_str());
+
+    // Unrolling must repeat the body the exact number of times the captured
+    // loop constant asks for, and each iteration must see its own aL value
+    // (aL = iterator * step + start, xenos::LoopConstant).
+    auto three_iteration_options = loop_options;
+    three_iteration_options.loop_constants[31] = 0x00010103u;  // count=3, start=1, step=+1
+    shift::xbox::CapturedShaderTranslation three_iteration_translation{};
+    std::string three_iteration_error;
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                captured_loop_shader.data(), captured_loop_shader.size(),
+                three_iteration_options, &three_iteration_translation,
+                &three_iteration_error),
+            "captured retail loop shader failed to unroll three iterations");
+    // The loop body reads c[.. + aL]; with start=1, step=+1 the three
+    // iterations must address c[1], c[2] and c[3] respectively.
+    require(three_iteration_translation.glsl.find(".c[0 + 1]") !=
+                    std::string::npos &&
+                three_iteration_translation.glsl.find(".c[0 + 2]") !=
+                    std::string::npos &&
+                three_iteration_translation.glsl.find(".c[0 + 3]") !=
+                    std::string::npos,
+            (std::string("unrolled loop did not resolve per-iteration aL: ") +
+             three_iteration_translation.glsl).c_str());
+
+    // Zero iterations must skip the body entirely rather than emit it once.
+    auto zero_iteration_options = loop_options;
+    zero_iteration_options.loop_constants[31] = 0x00000000u;  // count=0
+    shift::xbox::CapturedShaderTranslation zero_iteration_translation{};
+    std::string zero_iteration_error;
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                captured_loop_shader.data(), captured_loop_shader.size(),
+                zero_iteration_options, &zero_iteration_translation,
+                &zero_iteration_error),
+            "zero-iteration captured loop was not skipped");
+
+    // A trip count beyond the unroll limit must be reported, not truncated.
+    auto oversized_loop_options = loop_options;
+    oversized_loop_options.loop_constants[31] = 0x000000FFu;  // count=255
+    shift::xbox::CapturedShaderTranslation oversized_loop_translation{};
+    std::string oversized_loop_error;
+    require(!shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                captured_loop_shader.data(), captured_loop_shader.size(),
+                oversized_loop_options, &oversized_loop_translation,
+                &oversized_loop_error) &&
+                oversized_loop_error.find("trip count exceeds the unroll limit") !=
+                    std::string::npos,
+            "oversized loop trip count was not rejected");
+
+    // An uncaptured loop constant must still be reported, not silently zeroed.
+    auto missing_loop_options = loop_options;
+    missing_loop_options.loop_constant_valid[31] = false;
+    shift::xbox::CapturedShaderTranslation missing_loop_translation{};
+    std::string missing_loop_error;
+    require(!shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                captured_loop_shader.data(), captured_loop_shader.size(),
+                missing_loop_options, &missing_loop_translation,
+                &missing_loop_error) &&
+                missing_loop_error.find(
+                    "captured shader loop uses an uncaptured loop constant") !=
+                    std::string::npos,
+            "uncaptured loop constant was silently accepted");
     return 0;
 }

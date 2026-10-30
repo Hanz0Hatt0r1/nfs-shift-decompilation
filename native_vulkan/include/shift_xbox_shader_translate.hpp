@@ -39,6 +39,14 @@ struct CapturedShaderTranslationOptions {
     float window_coordinate_x_offset = 0.0f;
     float window_coordinate_y_offset = 0.0f;
     std::array<CapturedShaderTextureOptions, 32> textures{};
+    // Loop-constant dwords captured from the guest register file
+    // (0x4908 + index): count[7:0], aL start[15:8], signed aL step[23:16].
+    // Shaders whose loops are unrolled at translation time read these instead
+    // of a dynamic loop construct.
+    std::array<uint32_t, 32> loop_constants{};
+    std::array<bool, 32> loop_constant_valid{};
+    // Upper bound on the number of times a single loop body may be unrolled.
+    uint32_t loop_unroll_limit = 32;
 };
 
 struct CapturedVertexInputAttribute {

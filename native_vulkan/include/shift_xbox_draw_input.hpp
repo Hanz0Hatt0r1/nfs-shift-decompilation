@@ -123,6 +123,8 @@ enum class ShaderControlFlowOpcode : uint8_t {
     ExecEnd = 2,
     ConditionalExec = 3,
     ConditionalExecEnd = 4,
+    LoopStart = 7,
+    LoopEnd = 8,
     ConditionalJump = 11,
     Allocate = 12,
 };
@@ -141,6 +143,11 @@ struct CapturedShaderControlFlow {
     uint32_t allocation_size;
     uint32_t allocation_type;
     bool allocation_unserialized;
+    // kLoopStart: target to skip to when the loop runs zero iterations.
+    // kLoopEnd: address of the first loop-body instruction.
+    uint32_t loop_id;
+    bool loop_is_repeat;
+    bool loop_predicated_break;
 };
 
 enum class ShaderScheduledInstructionKind : uint8_t {

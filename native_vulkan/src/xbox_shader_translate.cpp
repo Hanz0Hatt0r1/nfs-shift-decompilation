@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <map>
 #include <cmath>
 #include <cstring>
 #include <iomanip>
@@ -88,9 +89,21 @@ bool scalar_constant_temporary_opcode(uint32_t opcode) {
     return opcode >= 42 && opcode <= 47;
 }
 
+// Loop-relative (aL) constant addressing. The translator statically unrolls
+// Xenos loops, so every reachable instruction instance knows its aL value:
+// aL = iterator * step + start, from xenos::LoopConstant (xenos.h).
+// In the reference translator (translator.cpp) a constant operand that is
+// addressed but NOT address-register-relative is kLoopRelative - i.e. aL - not
+// an error, which is what the previous code assumed.
+std::string al_operand(bool address_register_relative, int32_t al_value) {
+    return address_register_relative ? std::string("a0")
+                                     : std::to_string(al_value);
+}
+
 std::string swizzled_vector(const CapturedShaderAluInstruction& instruction,
                             uint32_t source,
-                            CapturedShaderStage stage) {
+                            CapturedShaderStage stage,
+                            int32_t al_value) {
     std::string base;
     if (instruction.source_is_temporary[source]) {
         const uint32_t reg = instruction.source_temporary_registers[source];
@@ -102,7 +115,16 @@ std::string swizzled_vector(const CapturedShaderAluInstruction& instruction,
         const bool relative = constant_relative(instruction, source);
         const uint32_t reg = instruction.source_registers[source];
         base = constant_block(stage) + ".c[" + std::to_string(reg);
-        if (relative) base += " + a0";
+        // Loop-relative (aL) addressing is resolved at translation time: the
+        // translator unrolls loops, so every reachable instruction instance has
+        // a statically known aL value. See xenos::LoopConstant in xenos.h
+        // (aL = iterator * step + start) and translator.cpp, where a constant
+        // operand with const_address_register_relative clear is kLoopRelative
+        // rather than an error.
+        if (relative) {
+            base += " + " +
+                    al_operand(instruction.const_address_register_relative, al_value);
+        }
         base += "]";
     }
 
@@ -118,7 +140,7 @@ std::string swizzled_vector(const CapturedShaderAluInstruction& instruction,
 
 std::string scalar_source_component(
     const CapturedShaderAluInstruction& instruction,
-    CapturedShaderStage stage, uint32_t source_component) {
+    CapturedShaderStage stage, uint32_t source_component, int32_t al_value) {
     const uint32_t source = 2;
     const uint32_t component = captured_alu_source_component(
         instruction.source_swizzles[source], source_component);
@@ -130,7 +152,10 @@ std::string scalar_source_component(
     } else {
         base = constant_block(stage) + ".c[" +
                std::to_string(instruction.source_registers[source]);
-        if (constant_relative(instruction, source)) base += " + a0";
+        if (constant_relative(instruction, source)) {
+            base += " + " + al_operand(
+                instruction.const_address_register_relative, al_value);
+        }
         base += "]";
     }
     std::string result = base + "." + component_name(component);
@@ -139,13 +164,13 @@ std::string scalar_source_component(
 }
 
 std::string scalar_source(const CapturedShaderAluInstruction& instruction,
-                          CapturedShaderStage stage) {
-    return scalar_source_component(instruction, stage, 3);
+                          CapturedShaderStage stage, int32_t al_value) {
+    return scalar_source_component(instruction, stage, 3, al_value);
 }
 
 std::string scalar_source_x(const CapturedShaderAluInstruction& instruction,
-                            CapturedShaderStage stage) {
-    return scalar_source_component(instruction, stage, 0);
+                            CapturedShaderStage stage, int32_t al_value) {
+    return scalar_source_component(instruction, stage, 0, al_value);
 }
 
 std::string scalar_multiply(const std::string& a, const std::string& b) {
@@ -157,9 +182,13 @@ std::string scalar_multiply(const std::string& a, const std::string& b) {
 }
 
 std::string scalar_constant(CapturedShaderStage stage, uint32_t reg,
-                            uint32_t component, bool relative) {
+                            uint32_t component, bool relative,
+                            bool address_register_relative, int32_t al_value) {
     return constant_block(stage) + ".c[" + std::to_string(reg) +
-           (relative ? " + a0" : "") + "]." + component_name(component);
+           (relative ? " + " +
+                           al_operand(address_register_relative, al_value)
+                     : "") +
+           "]." + component_name(component);
 }
 
 const char* vertex_input_type(uint32_t format) {
@@ -351,6 +380,8 @@ bool emit_alu(std::ostringstream& glsl,
               uint32_t address,
               const CapturedShaderAluInstruction& instruction,
               uint32_t allocation_type,
+              int32_t al_value,
+              uint32_t emission_index,
               std::string* error) {
     const auto fail_at_slot = [address, error](const std::string& reason) {
         if (error) {
@@ -393,21 +424,22 @@ bool emit_alu(std::ostringstream& glsl,
         if (instruction.source_temporary_relative[source]) {
             return fail_at_slot("captured ALU uses relative temporary addressing");
         }
-        if (!instruction.source_is_temporary[source] &&
-            constant_relative(instruction, source) &&
-            !instruction.const_address_register_relative) {
-            return fail_at_slot("captured ALU constant-relative source has no a0 selector");
-        }
+        // A constant operand can be relative through either aL (loop, statically
+        // resolved by unrolling) or a0 (address register). Both are supported;
+        // the aL/a0 choice is made at emission time by al_operand().
     }
-    if (scalar_constant_temporary && constant_relative(instruction, 2) &&
-        !instruction.const_address_register_relative) {
-        return fail_at_slot("captured ALU constant-relative source has no a0 selector");
-    }
+    // See above: relative scalar-constant operands are supported through both
+    // aL (statically resolved) and a0.
 
-    const std::string a = swizzled_vector(instruction, 0, stage);
-    const std::string b = swizzled_vector(instruction, 1, stage);
-    const std::string c = swizzled_vector(instruction, 2, stage);
-    const std::string result = "alu_" + std::to_string(address);
+    const std::string a = swizzled_vector(instruction, 0, stage, al_value);
+    const std::string b = swizzled_vector(instruction, 1, stage, al_value);
+    const std::string c = swizzled_vector(instruction, 2, stage, al_value);
+    // A loop body re-emitted by unrolling repeats its instruction address. The
+    // first emission keeps the historical `alu_<address>` symbol; repeats get a
+    // disambiguating suffix so the generated GLSL stays valid.
+    const std::string result = emission_index == 0
+        ? "alu_" + std::to_string(address)
+        : "alu_" + std::to_string(address) + "_" + std::to_string(emission_index);
     const uint32_t constant_one_mask = instruction.export_data ?
         instruction.vector_write_mask & instruction.scalar_write_mask : 0;
     const uint32_t constant_zero_mask =
@@ -443,6 +475,10 @@ bool emit_alu(std::ostringstream& glsl,
                 // the source operand choice when either value is unordered.
                 operation = "mix(" + b + ", " + a + ", lessThan(" + a +
                             ", " + b + "))";
+                break;
+            case 5:
+                // Xenos SGT: per-component src0 > src1 ? 1.0 : 0.0.
+                operation = "mix(vec4(0.0), vec4(1.0), greaterThan(" + a + ", " + b + "))";
                 break;
             case 6:
                 operation = "mix(vec4(0.0), vec4(1.0), greaterThanEqual(" + a + ", " + b + "))";
@@ -484,37 +520,45 @@ bool emit_alu(std::ostringstream& glsl,
     std::string scalar;
     switch (instruction.scalar_opcode) {
             case 3:
-                scalar = scalar_multiply(scalar_source(instruction, stage),
+                scalar = scalar_multiply(scalar_source(instruction, stage, al_value),
                                          "previous_scalar");
                 break;
             case 5:
-                scalar = "(" + scalar_source(instruction, stage) + " >= " +
-                         scalar_source_x(instruction, stage) + " ? " +
-                         scalar_source(instruction, stage) + " : " +
-                         scalar_source_x(instruction, stage) + ")";
+                scalar = "(" + scalar_source(instruction, stage, al_value) + " >= " +
+                         scalar_source_x(instruction, stage, al_value) + " ? " +
+                         scalar_source(instruction, stage, al_value) + " : " +
+                         scalar_source_x(instruction, stage, al_value) + ")";
                 break;
             case 6:
-                scalar = "(" + scalar_source(instruction, stage) + " < " +
-                         scalar_source_x(instruction, stage) + " ? " +
-                         scalar_source(instruction, stage) + " : " +
-                         scalar_source_x(instruction, stage) + ")";
+                scalar = "(" + scalar_source(instruction, stage, al_value) + " < " +
+                         scalar_source_x(instruction, stage, al_value) + " ? " +
+                         scalar_source(instruction, stage, al_value) + " : " +
+                         scalar_source_x(instruction, stage, al_value) + ")";
                 break;
             case 23:
-                scalar = "(" + scalar_source(instruction, stage) + " >= " +
-                         scalar_source_x(instruction, stage) + " ? " +
-                         scalar_source(instruction, stage) + " : " +
-                         scalar_source_x(instruction, stage) + ")";
+                scalar = "(" + scalar_source(instruction, stage, al_value) + " >= " +
+                         scalar_source_x(instruction, stage, al_value) + " ? " +
+                         scalar_source(instruction, stage, al_value) + " : " +
+                         scalar_source_x(instruction, stage, al_value) + ")";
                 break;
             case 12:
-                scalar = "trunc(" + scalar_source(instruction, stage) + ")";
+                scalar = "trunc(" + scalar_source(instruction, stage, al_value) + ")";
                 break;
             case 13:
-                scalar = "floor(" + scalar_source(instruction, stage) + ")";
+                scalar = "floor(" + scalar_source(instruction, stage, al_value) + ")";
                 break;
+            case 19: {
+                // Xenos rcp/RECIP_IEEE: dest = src0.a == 1.0 ? 1.0 : 1.0 / src0.a
+                // (ucode.h AluScalarOpcode::kRcp).
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                scalar = "(" + operand + " == 1.0 ? 1.0 : 1.0 / " + operand + ")";
+                break;
+            }
             case 16:
                 // Xenos LOG_IEEE computes log2(src0.a). The captured scalar
                 // source selector is already decoded by scalar_source().
-                scalar = "log2(" + scalar_source(instruction, stage) + ")";
+                scalar = "log2(" + scalar_source(instruction, stage, al_value) + ")";
                 break;
             case 42:
             case 43:
@@ -530,7 +574,8 @@ bool emit_alu(std::ostringstream& glsl,
                 std::string constant_operand = scalar_constant(
                     stage, instruction.source_registers[2],
                     instruction.scalar_constant_component,
-                    constant_relative(instruction, 2));
+                    constant_relative(instruction, 2),
+                    instruction.const_address_register_relative, al_value);
                 std::string temporary_operand =
                     "r[" + std::to_string(instruction.scalar_temporary_register) +
                     "]." + component_name(instruction.scalar_temporary_component);
@@ -591,7 +636,7 @@ bool emit_alu(std::ostringstream& glsl,
         }
     }
     if (instruction.scalar_opcode == 23) {
-        const std::string address_value = scalar_source(instruction, stage);
+        const std::string address_value = scalar_source(instruction, stage, al_value);
         glsl << "  a0 = clamp(int(floor(" << address_value
              << " + 0.5)), -256, 255);\n";
     }
@@ -634,17 +679,106 @@ bool translate_captured_shader_glsl(
         return false;
     }
 
-    std::vector<uint32_t> path;
+    struct PathEntry { uint32_t slot; int32_t al_value; };
+    std::vector<PathEntry> path;
+    // Loop bodies are unrolled statically using the captured loop constants.
+    // The Xenos loop is `LoopStart` (skip target + loop_id) ... `LoopEnd`
+    // (body start + loop_id + predicated-break condition); see
+    // rex::graphics::ucode::ControlFlowLoopStartInstruction / ...LoopEnd and
+    // the reference sequencer in interpreter.cpp. Each stack entry remembers
+    // the LoopStart clause index, the recorded iteration and the trip count so
+    // the body can be emitted exactly trip_count times with no dynamic loop in
+    // the generated GLSL.
+    struct ActiveLoop {
+        uint32_t start_clause;
+        uint32_t iteration;
+        uint32_t trip_count;
+        int32_t al_start;
+        int32_t al_step;
+    };
+    std::vector<ActiveLoop> active_loops;
+    // aL for the innermost active loop iteration: iterator * step + start.
+    const auto current_al = [&active_loops]() -> int32_t {
+        if (active_loops.empty()) return 0;
+        const ActiveLoop& loop = active_loops.back();
+        return static_cast<int32_t>(loop.iteration) * loop.al_step + loop.al_start;
+    };
+    uint32_t unrolled_clause_budget = options.loop_unroll_limit == 0
+        ? 32u
+        : options.loop_unroll_limit * 8u;
     uint32_t pc = 0;
-    for (size_t steps = 0; steps <= control_flow.size(); ++steps) {
+    for (size_t steps = 0; steps <= control_flow.size() + unrolled_clause_budget;
+         ++steps) {
         if (pc >= control_flow.size()) return fail("captured shader control flow leaves its prefix", error);
         const CapturedShaderControlFlow& clause = control_flow[pc];
         if (clause.opcode == ShaderControlFlowOpcode::ExecEnd) {
-            path.push_back(pc);
+            path.push_back(PathEntry{pc, 0});
             break;
         }
+        if (clause.opcode == ShaderControlFlowOpcode::LoopStart) {
+            if (clause.loop_id >= options.loop_constants.size() ||
+                !options.loop_constant_valid[clause.loop_id]) {
+                std::ostringstream message;
+                message << "captured shader loop uses an uncaptured loop constant "
+                        << "(loop_id=" << clause.loop_id << ')';
+                if (error) *error = message.str();
+                return false;
+            }
+            if (active_loops.size() >= 4) {
+                return fail("captured shader loop nesting exceeds the supported depth",
+                            error);
+            }
+            const uint32_t constant = options.loop_constants[clause.loop_id];
+            const uint32_t trip_count = constant & 0xFFu;
+            if (trip_count > (options.loop_unroll_limit == 0 ? 32u
+                                                            : options.loop_unroll_limit)) {
+                std::ostringstream message;
+                message << "captured shader loop trip count exceeds the unroll limit "
+                        << "(loop_id=" << clause.loop_id
+                        << " count=" << trip_count << ')';
+                if (error) *error = message.str();
+                return false;
+            }
+            const int32_t al_start = static_cast<int32_t>((constant >> 8) & 0xFFu);
+            const int32_t al_step = static_cast<int32_t>(
+                static_cast<int8_t>((constant >> 16) & 0xFFu));
+            path.push_back(PathEntry{pc, 0});
+            if (trip_count == 0) {
+                // Zero iterations: jump straight to the skip target after the
+                // matching LoopEnd.
+                if (clause.address <= pc) {
+                    return fail("captured shader loop skip target is not forward", error);
+                }
+                pc = clause.address;
+                continue;
+            }
+            active_loops.push_back(
+                ActiveLoop{pc, 0u, trip_count, al_start, al_step});
+            ++pc;
+            continue;
+        }
+        if (clause.opcode == ShaderControlFlowOpcode::LoopEnd) {
+            if (active_loops.empty()) {
+                return fail("captured shader loop end has no matching loop start", error);
+            }
+            ActiveLoop& loop = active_loops.back();
+            if (loop.iteration + 1u < loop.trip_count) {
+                path.push_back(PathEntry{pc, current_al()});
+                // Advance the iterator, then re-enter the body right after the
+                // LoopStart clause. The increment must happen before the next
+                // clause is recorded, because current_al() is sampled when a
+                // clause is pushed.
+                ++loop.iteration;
+                pc = loop.start_clause + 1u;
+                continue;
+            }
+            path.push_back(PathEntry{pc, 0});
+            active_loops.pop_back();
+            ++pc;
+            continue;
+        }
         if (clause.opcode == ShaderControlFlowOpcode::ConditionalJump) {
-            path.push_back(pc);
+            path.push_back(PathEntry{pc, 0});
             if (clause.predicated || clause.jump_direction) {
                 std::ostringstream message;
                 message << "captured shader branch uses unsupported predicate/direction "
@@ -685,7 +819,7 @@ bool translate_captured_shader_glsl(
             }
             const bool execute = value == clause.condition;
             if (execute) {
-                path.push_back(pc);
+                path.push_back(PathEntry{pc, 0});
                 if (clause.opcode == ShaderControlFlowOpcode::ConditionalExecEnd) {
                     break;
                 }
@@ -700,12 +834,13 @@ bool translate_captured_shader_glsl(
             clause.opcode != ShaderControlFlowOpcode::Allocate) {
             return fail("captured shader control-flow opcode is unsupported", error);
         }
-        path.push_back(pc);
+        path.push_back(PathEntry{pc, current_al()});
         ++pc;
     }
     if (path.empty() ||
-        (control_flow[path.back()].opcode != ShaderControlFlowOpcode::ExecEnd &&
-         control_flow[path.back()].opcode != ShaderControlFlowOpcode::ConditionalExecEnd)) {
+        (control_flow[path.back().slot].opcode != ShaderControlFlowOpcode::ExecEnd &&
+         control_flow[path.back().slot].opcode !=
+             ShaderControlFlowOpcode::ConditionalExecEnd)) {
         return fail("captured shader path has no bounded exec-end", error);
     }
 
@@ -719,14 +854,21 @@ bool translate_captured_shader_glsl(
     uint32_t vertex_fetch_constant_index = 0;
     CapturedShaderFetchInstruction preceding_vertex_full{};
     bool has_preceding_vertex_full = false;
-    for (uint32_t slot : path) {
-        const auto& clause = control_flow[slot];
+    // Instructions executed by each path entry, in emission order. Unrolled
+    // loops repeat the same clause index, so per-path-entry lists (rather than
+    // a flat list keyed by clause) are required to keep the two passes aligned.
+    std::vector<std::vector<CapturedShaderInstructionSchedule>> path_instructions;
+    path_instructions.reserve(path.size());
+    for (const PathEntry& entry : path) {
+        path_instructions.emplace_back();
+        const auto& clause = control_flow[entry.slot];
         if (clause.opcode != ShaderControlFlowOpcode::Exec &&
             clause.opcode != ShaderControlFlowOpcode::ExecEnd &&
             clause.opcode != ShaderControlFlowOpcode::ConditionalExec &&
             clause.opcode != ShaderControlFlowOpcode::ConditionalExecEnd) continue;
         for (const auto& instruction : schedule) {
-            if (instruction.control_flow_index == slot) {
+            if (instruction.control_flow_index == entry.slot) {
+                path_instructions.back().push_back(instruction);
                 executed.push_back(instruction);
                 if (instruction.kind == ShaderScheduledInstructionKind::Fetch) {
                     CapturedShaderFetchInstruction fetch{};
@@ -889,13 +1031,11 @@ bool translate_captured_shader_glsl(
                 return true;
             }
             if (constant_relative(alu, source)) {
-                uses_relative_float_constant_index = true;
-                if (!alu.const_address_register_relative) {
-                    if (record_error) {
-                        *record_error =
-                            "captured shader constant-relative source has no a0 selector";
-                    }
-                    return false;
+                // aL-relative operands are resolved to a literal offset while
+                // unrolling, so only a0-relative accesses need the dynamic
+                // address register to be tracked as a constant index range.
+                if (alu.const_address_register_relative) {
+                    uses_relative_float_constant_index = true;
                 }
                 return true;
             }
@@ -909,7 +1049,12 @@ bool translate_captured_shader_glsl(
             float_constant_registers.push_back(index);
             return true;
         };
-    for (uint32_t slot : path) {
+    // How many times each instruction address has already been emitted. A
+    // statically unrolled loop emits its body more than once.
+    std::map<uint32_t, uint32_t> emitted_address_counts;
+    for (size_t path_index = 0; path_index < path.size(); ++path_index) {
+        const PathEntry& entry = path[path_index];
+        const uint32_t slot = entry.slot;
         const auto& clause = control_flow[slot];
         if (clause.opcode == ShaderControlFlowOpcode::Allocate) {
             const uint32_t expected = stage == CapturedShaderStage::Vertex ?
@@ -924,8 +1069,7 @@ bool translate_captured_shader_glsl(
             clause.opcode != ShaderControlFlowOpcode::ExecEnd &&
             clause.opcode != ShaderControlFlowOpcode::ConditionalExec &&
             clause.opcode != ShaderControlFlowOpcode::ConditionalExecEnd) continue;
-        for (const auto& instruction : executed) {
-            if (instruction.control_flow_index != slot) continue;
+        for (const auto& instruction : path_instructions[path_index]) {
             if (instruction.kind == ShaderScheduledInstructionKind::Fetch) {
                 if (fetch_index >= executed_fetches.size()) {
                     return fail("captured shader fetch schedule changed during translation", error);
@@ -972,8 +1116,13 @@ bool translate_captured_shader_glsl(
                 } else if (alu.scalar_opcode != 50) {
                     if (!record_constant_source(alu, 2, false, error)) return false;
                 }
+                const uint32_t emission_index =
+                    emitted_address_counts[instruction.address]++;
                 if (!emit_alu(glsl, stage, instruction.address, alu,
-                              allocation_type, error)) return false;
+                              allocation_type, entry.al_value, emission_index,
+                              error)) {
+                    return false;
+                }
             }
         }
     }
