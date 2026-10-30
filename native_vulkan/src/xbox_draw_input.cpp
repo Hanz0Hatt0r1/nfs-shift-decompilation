@@ -2307,18 +2307,69 @@ bool captured_xenos_edram_layouts_are_tile_disjoint(
         const uint32_t logical_height = raster.height / sample_height;
         const uint32_t tile_logical_width = kTileWidthSamples / sample_width;
         const uint32_t tile_logical_height = kTileHeightSamples / sample_height;
-        const uint64_t columns =
-            (static_cast<uint64_t>(logical_width) + tile_logical_width - 1u) /
-            tile_logical_width;
-        const uint64_t rows =
-            (static_cast<uint64_t>(logical_height) + tile_logical_height - 1u) /
-            tile_logical_height;
+        // Enumerate only the tiles this operation actually touches. Hardware is
+        // scissor-bound: a predicated-tiling strip describes a full surface but
+        // writes one scissored rectangle, and that rectangle is far smaller than
+        // the surface. Enumerating the whole extent instead is actively wrong for
+        // any surface larger than the 2048-tile store, because the tile addresses
+        // wrap and the scan marks every tile 0..2047 occupied - which then makes
+        // *every* other layout in the frame look aliased and rejects the frame.
+        uint64_t columns;
+        uint64_t rows;
+        if (raster.scissor_has_area && raster.scissor_x1 > raster.scissor_x0 &&
+            raster.scissor_y1 > raster.scissor_y0) {
+            const uint64_t scissor_x0 = raster.scissor_x0 / sample_width;
+            const uint64_t scissor_y0 = raster.scissor_y0 / sample_height;
+            const uint64_t scissor_x1 =
+                (static_cast<uint64_t>(raster.scissor_x1) + sample_width - 1u) /
+                sample_width;
+            const uint64_t scissor_y1 =
+                (static_cast<uint64_t>(raster.scissor_y1) + sample_height - 1u) /
+                sample_height;
+            columns =
+                (std::min(scissor_x1, static_cast<uint64_t>(logical_width)) +
+                 tile_logical_width - 1u) /
+                    tile_logical_width -
+                std::min(scissor_x0, static_cast<uint64_t>(logical_width)) /
+                    tile_logical_width;
+            rows =
+                (std::min(scissor_y1, static_cast<uint64_t>(logical_height)) +
+                 tile_logical_height - 1u) /
+                    tile_logical_height -
+                std::min(scissor_y0, static_cast<uint64_t>(logical_height)) /
+                    tile_logical_height;
+        } else {
+            columns =
+                (static_cast<uint64_t>(logical_width) + tile_logical_width - 1u) /
+                tile_logical_width;
+            rows =
+                (static_cast<uint64_t>(logical_height) + tile_logical_height - 1u) /
+                tile_logical_height;
+        }
         // EDRAM tile addresses wrap at 2048. Scanning one period per axis is
         // sufficient and bounds work even for malformed giant captures.
         const uint64_t scan_columns = std::min<uint64_t>(columns, kTileCount);
         const uint64_t scan_rows = std::min<uint64_t>(rows, kTileCount);
-        for (uint64_t tile_y = 0; tile_y < scan_rows; ++tile_y) {
-            for (uint64_t tile_x = 0; tile_x < scan_columns; ++tile_x) {
+        const uint64_t first_tile_x =
+            raster.scissor_has_area
+                ? std::min<uint64_t>(raster.scissor_x0 / sample_width,
+                                     logical_width) /
+                      tile_logical_width
+                : 0;
+        const uint64_t first_tile_y =
+            raster.scissor_has_area
+                ? std::min<uint64_t>(raster.scissor_y0 / sample_height,
+                                     logical_height) /
+                      tile_logical_height
+                : 0;
+        for (uint64_t row = 0; row < scan_rows; ++row) {
+            for (uint64_t column = 0; column < scan_columns; ++column) {
+                const uint64_t tile_x = first_tile_x + column;
+                const uint64_t tile_y = first_tile_y + row;
+                if (tile_x * tile_logical_width >= logical_width ||
+                    tile_y * tile_logical_height >= logical_height) {
+                    continue;
+                }
                 const uint32_t x = static_cast<uint32_t>(
                     tile_x * tile_logical_width);
                 const uint32_t y = static_cast<uint32_t>(

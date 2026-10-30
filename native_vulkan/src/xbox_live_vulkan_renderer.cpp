@@ -5949,6 +5949,13 @@ bool submit_captured_vulkan_operation_stream(
     // two overlapping layouts with no transfer between them and rejects the
     // frame, even though hardware is simply doing a mip chain.
     bool preflight_active_layout_drained = false;
+    // Opt-in: let a resolve whose EDRAM source was never created proceed against
+    // a freshly allocated, cleared target instead of failing the whole frame.
+    const bool allocate_uninitialized_copy_source = [] {
+        const char* raw =
+            std::getenv("SHIFT_NATIVE_VULKAN_ALLOCATE_UNINITIALIZED_COPY_SOURCE");
+        return raw && *raw && std::strcmp(raw, "0") != 0;
+    }();
     bool found_presenter_copy = false;
     // Operations the tolerance hatch decided to leave out. Consumed by the
     // replay below so a skipped packet is not executed as a fullscreen
@@ -6103,7 +6110,15 @@ bool submit_captured_vulkan_operation_stream(
                 ? find_initialized_edram_target(texture_cache_state,
                                                 operation.source_raster)
                 : nullptr;
-            if (!source_target) {
+            // A frame whose first operation is a resolve has no draw of its own
+            // to create the source, and the frames that do draw it are the very
+            // frames being rejected - so the target is never created and the
+            // guest never advances. In that deadlock, admit the frame; replay
+            // allocates the target (cleared) so the resolve has defined contents.
+            const bool admit_uninitialized =
+                !source_target && allocate_uninitialized_copy_source &&
+                operation.source_raster_ready;
+            if (!source_target && !admit_uninitialized) {
                 std::ostringstream message;
                 message << "Copy/Convert packet " << operation.packet_index
                         << " has no preceding captured draw segment or initialized "
@@ -6449,6 +6464,29 @@ bool submit_captured_vulkan_operation_stream(
                 ? find_initialized_edram_target(texture_cache_state,
                                                 operation.source_raster)
                 : nullptr;
+            if (!source_target && allocate_uninitialized_copy_source &&
+                operation.source_raster_ready) {
+                // Allocate the missing source so this resolve has a defined
+                // (cleared) image. acquire_edram_target creates and clears the
+                // target, which also makes it available to later frames - the
+                // deadlock was that nothing ever created it because every frame
+                // that would have was rejected first.
+                const VkFormat allocate_format =
+                    captured_color_format(operation.source_raster.color_format, false);
+                VkPhysicalDeviceMemoryProperties local_memory_properties{};
+                vkGetPhysicalDeviceMemoryProperties(physical_device,
+                                                   &local_memory_properties);
+                if (!acquire_edram_target(
+                        texture_cache_state, local_memory_properties, device,
+                        operation.source_raster, allocate_format, false,
+                        &source_target, error)) {
+                    return false;
+                }
+                if (source_target) {
+                    source_target->color_initialized = true;
+                    source_target->last_used_frame = texture_cache_state->frame;
+                }
+            }
             if (!source_target) {
                 std::ostringstream message;
                 message << "Copy/Convert packet " << operation.packet_index
