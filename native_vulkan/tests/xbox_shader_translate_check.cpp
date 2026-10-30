@@ -322,20 +322,71 @@ int main() {
                     std::vector<uint32_t>{3},
             "false CEXEC did not skip its clause and continue to EXEC_END");
 
+    // Exact 360-byte retail pixel shader captured from a frame rejected with
+    // "branch uses unsupported predicate/direction" (preddump-20261030). It has
+    // a predicated CondJmp and never assigns the predicate, so the branch must
+    // resolve statically against the reset value (false).
+    const auto captured_predicated_branch_shader = [] {
+        const uint8_t bytes[] = {
+            0x00, 0x94, 0x60, 0x05, 0x40, 0x04, 0x10, 0x00, 0xB0, 0x00, 0x00, 0x00,
+            0x00, 0x09, 0x20, 0x0B, 0x20, 0x05, 0x12, 0x00, 0xB0, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x10, 0x0D, 0x00, 0x00, 0x12, 0x00, 0xC4, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x60, 0x0E, 0x60, 0x14, 0x12, 0x00, 0x12, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x30, 0x1A, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x14, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x6C, 0xC2, 0x00, 0x00, 0xFD,
+            0xA8, 0x08, 0x00, 0x01, 0x1F, 0x1F, 0xFE, 0x3F, 0x00, 0x00, 0x40, 0x00,
+            0x10, 0x28, 0x10, 0x01, 0x1F, 0x1F, 0xFE, 0x88, 0x00, 0x00, 0x40, 0x00,
+            0x4C, 0x13, 0x00, 0x02, 0x02, 0x6D, 0x6D, 0x6C, 0x80, 0x00, 0x00, 0x01,
+            0x4C, 0x27, 0x00, 0x01, 0x00, 0xC0, 0x1B, 0xB1, 0x83, 0x01, 0xFE, 0x01,
+            0x74, 0x03, 0x00, 0x00, 0x00, 0x6D, 0xB0, 0x6C, 0xC1, 0x02, 0x00, 0x02,
+            0x10, 0x18, 0x20, 0x01, 0x1F, 0x1F, 0xFE, 0x88, 0x00, 0x00, 0x40, 0x00,
+            0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,
+            0xC8, 0x07, 0x00, 0x02, 0x04, 0x6C, 0xC6, 0x00, 0xA5, 0x80, 0xFD, 0x00,
+            0xA8, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42, 0xC2, 0x00, 0x00, 0xFF,
+            0x38, 0x12, 0x00, 0x00, 0x00, 0xBE, 0xC0, 0x6C, 0xB0, 0x01, 0xFE, 0x00,
+            0xB8, 0x10, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xC2, 0x00, 0x00, 0xFD,
+            0x14, 0x21, 0x00, 0x00, 0x00, 0x6C, 0xB1, 0xB1, 0xA1, 0x00, 0xFD, 0x00,
+            0x14, 0x41, 0x00, 0x00, 0x00, 0x6C, 0x6C, 0xC6, 0x82, 0x00, 0x05, 0xFD,
+            0x14, 0x21, 0x00, 0x00, 0x00, 0x6C, 0x6C, 0xB6, 0xA3, 0x00, 0x06, 0x00,
+            0x4C, 0x12, 0x03, 0x03, 0x00, 0xB1, 0x1B, 0x6C, 0xA3, 0x00, 0xFE, 0x00,
+            0x08, 0x43, 0x00, 0x00, 0x00, 0xB0, 0x6C, 0x6C, 0x81, 0x03, 0x04, 0x03,
+            0x4C, 0x41, 0x00, 0x03, 0x00, 0xB1, 0x6C, 0xC6, 0xE1, 0x00, 0x03, 0x00,
+            0xC8, 0x02, 0x00, 0x03, 0x00, 0x6C, 0xC6, 0x00, 0xE1, 0x03, 0x00, 0x00,
+            0xC8, 0x0A, 0x00, 0x00, 0x00, 0xBC, 0x1B, 0x00, 0xA0, 0x03, 0xFD, 0x00,
+            0x4C, 0x48, 0x00, 0x00, 0x00, 0x6C, 0x1B, 0xB1, 0xE1, 0x03, 0x00, 0x00,
+            0xC8, 0x04, 0x00, 0x00, 0x00, 0x1B, 0xC6, 0x00, 0xE1, 0x00, 0x00, 0x00,
+            0xC8, 0x01, 0x00, 0x00, 0x00, 0xC6, 0x6C, 0x00, 0xE1, 0x00, 0x00, 0x00,
+            0xC8, 0x8F, 0xC0, 0x00, 0x00, 0x6C, 0xC0, 0xC0, 0xEB, 0x00, 0x01, 0x02,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        };
+        return std::vector<uint8_t>(std::begin(bytes), std::end(bytes));
+    }();
+    shift::xbox::CapturedShaderTranslation predicated_branch_translation{};
+    std::string predicated_branch_error;
+    const bool predicated_branch_translated =
+        shift::xbox::translate_captured_shader_glsl(
+            shift::xbox::CapturedShaderStage::Pixel,
+            captured_predicated_branch_shader.data(),
+            captured_predicated_branch_shader.size(), conditional_options,
+            &predicated_branch_translation, &predicated_branch_error);
+    const std::string predicated_branch_diagnostic =
+        "retail predicated-branch shader was rejected: [" +
+        predicated_branch_error + "]";
+    require(predicated_branch_translated, predicated_branch_diagnostic.c_str());
+
+    // A predicated CJMP tests the predicate register, not a bool constant
+    // (interpreter.cpp kCondJmp). This fixture never writes the predicate, so it
+    // holds the value ShaderInterpreterState::Reset gives it - false - and the
+    // branch is not taken, so control simply falls through.
     const std::vector<uint8_t> predicated_jump_shader =
         captured_predicated_jump_pixel_shader();
-    require(!shift::xbox::translate_captured_shader_glsl(
+    require(shift::xbox::translate_captured_shader_glsl(
                 shift::xbox::CapturedShaderStage::Pixel,
                 predicated_jump_shader.data(), predicated_jump_shader.size(),
                 conditional_options, &conditional_translation,
-                &conditional_error) &&
-                conditional_error.find("instruction=0, opcode=11, address=3") !=
-                    std::string::npos &&
-                conditional_error.find("bool_constant=129, condition=1") !=
-                    std::string::npos &&
-                conditional_error.find("unconditional=0, predicated=1, direction=1") !=
-                    std::string::npos,
-            "unsupported retail-style CJMP rejection omitted its decoded fields");
+                &conditional_error),
+            (std::string("predicated CJMP without a predicate write was "
+                         "rejected: ") + conditional_error).c_str());
 
     const std::vector<uint8_t> vertex_shader =
         captured_full_mini_vertex_shader();
@@ -636,11 +687,14 @@ int main() {
                 translated.glsl.find("shift_color0.w = 0.0") != std::string::npos,
             "captured export overlap/constant masks were not preserved");
 
+    // Scalar MAXS is implemented from its ucode.h definition
+    // (dest = src0.a >= src0.b ? src0.a : src0.b), so the branch that uses it
+    // now translates instead of being rejected.
     options.pixel_b129 = true;
-    require(!shift::xbox::translate_captured_shader_glsl(
-                shift::xbox::CapturedShaderStage::Pixel, shader.data(), shader.size(),
-                options, &translated, &error),
-            "unsupported captured MAXS branch was silently translated");
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel, shader.data(),
+                shader.size(), options, &translated, &error),
+            "captured MAXS branch was rejected instead of translated");
 
     options.pixel_b128 = false;
     options.pixel_b129 = false;
@@ -847,12 +901,16 @@ int main() {
             "pixel b128 was omitted from the shader translation cache key");
     cache_options.pixel_b128 = true;
     cache_options.pixel_b129 = true;
-    const auto hits_before_b129 = translation_cache.stats().hits;
-    require(!translation_cache.translate(
+    // Changing b129 must select a different translation. Previously this
+    // asserted a translation *failure*, because the b129 branch used scalar
+    // MAXS and that opcode was unimplemented; MAXS is now supported, so the
+    // meaningful check is that the cache key still distinguishes b129.
+    shift::xbox::CapturedShaderTranslation b129_translation{};
+    require(translation_cache.translate(
                 shift::xbox::CapturedShaderStage::Pixel,
                 retail_pixel.data(), retail_pixel.size(), cache_options,
-                &cached, &error) &&
-                translation_cache.stats().hits == hits_before_b129,
+                &b129_translation, &error) &&
+                b129_translation.glsl != uncached.glsl,
             "pixel b129 was omitted from the shader translation cache key");
     cache_options.pixel_b129 = false;
     cache_options.pixel_b128 = true;

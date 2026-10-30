@@ -519,10 +519,6 @@ bool emit_alu(std::ostringstream& glsl,
 
     std::string scalar;
     switch (instruction.scalar_opcode) {
-            case 3:
-                scalar = scalar_multiply(scalar_source(instruction, stage, al_value),
-                                         "previous_scalar");
-                break;
             case 5:
                 scalar = "(" + scalar_source(instruction, stage, al_value) + " >= " +
                          scalar_source_x(instruction, stage, al_value) + " ? " +
@@ -547,6 +543,172 @@ bool emit_alu(std::ostringstream& glsl,
             case 13:
                 scalar = "floor(" + scalar_source(instruction, stage, al_value) + ")";
                 break;
+            case 27:
+            case 28:
+            case 29:
+            case 30: {
+                // Floating-point predicate set (ucode.h kSetpEq/Ne/Gt/Ge).
+                // Each writes dest.xyzw = 0.0 when the test passes and 1.0
+                // otherwise, and additionally assigns the predicate register.
+                // The predicate side effect is not modelled here: it is tracked
+                // separately, and a predicated branch that would observe it is
+                // rejected instead of silently mis-resolved.
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                const char* test = instruction.scalar_opcode == 27 ? " == 0.0"
+                                 : instruction.scalar_opcode == 28 ? " != 0.0"
+                                 : instruction.scalar_opcode == 29 ? " > 0.0"
+                                                                   : " >= 0.0";
+                scalar = "((" + operand + test + ") ? 0.0 : 1.0)";
+                break;
+            }
+            case 33:
+                // setp_clr: dest.xyzw = FLT_MAX, p0 = 0.
+                scalar = "3.402823466e+38";
+                break;
+            case 0:
+            case 1: {
+                // adds / adds_prev: dest = src0.a + (src0.a for adds,
+                // previous scalar for adds_prev). ucode.h kAdds/kAddsPrev.
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                const std::string addend = instruction.scalar_opcode == 0
+                    ? operand
+                    : "previous_scalar";
+                scalar = "(" + operand + " + " + addend + ")";
+                break;
+            }
+            case 2:
+            case 3: {
+                // muls / muls_prev: dest = src0.a * (src0.b for muls,
+                // previous scalar for muls_prev). ucode.h kMuls/kMulsPrev.
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                const std::string factor = instruction.scalar_opcode == 2
+                    ? scalar_source_x(instruction, stage, al_value)
+                    : std::string("previous_scalar");
+                scalar = scalar_multiply(operand, factor);
+                break;
+            }
+            case 4: {
+                // muls_prev2/MUL_PREV2s: -FLT_MAX when the previous scalar or
+                // src0.b is not usable, otherwise src0.a * ps (ucode.h).
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                const std::string b = scalar_source_x(instruction, stage, al_value);
+                scalar = "((previous_scalar == -3.402823466e+38 || "
+                         "!isfinite(previous_scalar) || !isfinite(" + b + ") || " +
+                         b + " <= 0.0) ? -3.402823466e+38 : " + operand +
+                         " * previous_scalar)";
+                break;
+            }
+            case 7:
+                // seqs/SETEs: dest = src0.a == 0.0 ? 1.0 : 0.0.
+                scalar = "((" + scalar_source(instruction, stage, al_value) +
+                         " == 0.0) ? 1.0 : 0.0)";
+                break;
+            case 8:
+                // sgts/SETGTs: dest = src0.a > 0.0 ? 1.0 : 0.0.
+                scalar = "((" + scalar_source(instruction, stage, al_value) +
+                         " > 0.0) ? 1.0 : 0.0)";
+                break;
+            case 9:
+                // sges/SETGTEs: dest = src0.a >= 0.0 ? 1.0 : 0.0.
+                scalar = "((" + scalar_source(instruction, stage, al_value) +
+                         " >= 0.0) ? 1.0 : 0.0)";
+                break;
+            case 10:
+                // snes/SETNEs: dest = src0.a != 0.0 ? 1.0 : 0.0.
+                scalar = "((" + scalar_source(instruction, stage, al_value) +
+                         " != 0.0) ? 1.0 : 0.0)";
+                break;
+            case 11:
+                // frcs/FRACs: dest = src0.a - floor(src0.a).
+                scalar = "fract(" + scalar_source(instruction, stage, al_value) + ")";
+                break;
+            case 15: {
+                // logc/LOG_CLAMP: log2 clamped to -FLT_MAX instead of -INF.
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                scalar = "(" + operand + " == 1.0 ? 0.0 : max(log2(" + operand +
+                         "), -3.402823466e+38))";
+                break;
+            }
+            case 17:
+            case 18: {
+                // rcpc/RECIP_CLAMP and rcpf/RECIP_FF: clamped reciprocal.
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                scalar = "(" + operand + " == 1.0 ? 1.0 : clamp(1.0 / " + operand +
+                         ", -3.402823466e+38, 3.402823466e+38))";
+                break;
+            }
+            case 20:
+            case 21: {
+                // rsqc/RECIPSQ_CLAMP and rsqf/RECIPSQ_FF: clamped reciprocal
+                // square root.
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                scalar = "(" + operand + " == 1.0 ? 1.0 : clamp(1.0 / sqrt(abs(" +
+                         operand + ")), -3.402823466e+38, 3.402823466e+38))";
+                break;
+            }
+            case 22: {
+                // rsq/RSQ_IEEE: dest = src0.a == 1.0 ? 1.0 : 1/sqrt(|src0.a|).
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                scalar = "(" + operand + " == 1.0 ? 1.0 : 1.0 / sqrt(abs(" +
+                         operand + ")))";
+                break;
+            }
+            case 24:
+                // maxas/MAXAs: dest = max(src0.a, |src0.b|).
+                scalar = "max(" + scalar_source(instruction, stage, al_value) +
+                         ", abs(" + scalar_source_x(instruction, stage, al_value) + "))";
+                break;
+            case 25:
+            case 26: {
+                // subs / subs_prev: dest = src0.a - (src0.b for subs,
+                // previous scalar for subs_prev).
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                const std::string subtrahend = instruction.scalar_opcode == 25
+                    ? scalar_source_x(instruction, stage, al_value)
+                    : std::string("previous_scalar");
+                scalar = "(" + operand + " - " + subtrahend + ")";
+                break;
+            }
+            case 31: {
+                // setp_inv: dest = 1.0 at zero, else src0.a (ucode.h kSetpInv).
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                scalar = "(" + operand + " == 1.0 ? 0.0 : (" + operand +
+                         " == 0.0 ? 1.0 : " + operand + "))";
+                break;
+            }
+            case 32: {
+                // setp_pop: dest = src0.a - 1.0 clamped at 0 (ucode.h kSetpPop).
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                scalar = "((" + operand + " - 1.0 <= 0.0) ? 0.0 : (" + operand +
+                         " - 1.0))";
+                break;
+            }
+            case 34: {
+                // setp_rstr: dest = 0.0 when src0.a is zero, else src0.a.
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                scalar = "(" + operand + " == 0.0 ? 0.0 : " + operand + ")";
+                break;
+            }
+            case 14: {
+                // exp/EXP_IEEE: dest = src0.a == 0.0 ? 1.0 : pow(2, src0.a)
+                // (ucode.h AluScalarOpcode::kExp).
+                const std::string operand =
+                    scalar_source(instruction, stage, al_value);
+                scalar = "(" + operand + " == 0.0 ? 1.0 : exp2(" + operand + "))";
+                break;
+            }
             case 19: {
                 // Xenos rcp/RECIP_IEEE: dest = src0.a == 1.0 ? 1.0 : 1.0 / src0.a
                 // (ucode.h AluScalarOpcode::kRcp).
@@ -679,6 +841,31 @@ bool translate_captured_shader_glsl(
         return false;
     }
 
+    // Can this clause assign the predicate register? The predicate writers are
+    // kSetp* (scalar 27-34) and kSetp*Push (vector 20-23), per ucode.h. The
+    // predicate at a branch depends only on instructions already executed, so
+    // tracking writes along the path is both sufficient and precise - a write
+    // that happens later in the shader cannot affect an earlier branch.
+    const auto clause_writes_predicate = [&](uint32_t clause_slot) {
+        for (const CapturedShaderInstructionSchedule& scheduled : schedule) {
+            if (scheduled.control_flow_index != clause_slot) continue;
+            if (scheduled.kind != ShaderScheduledInstructionKind::Alu) continue;
+            CapturedShaderAluInstruction alu{};
+            if (!decode_captured_shader_alu_instruction(
+                    shader_bytes + scheduled.address * 12, 12, &alu, nullptr)) {
+                continue;
+            }
+            if ((alu.vector_opcode >= 20 && alu.vector_opcode <= 23) ||
+                (alu.scalar_opcode >= 27 && alu.scalar_opcode <= 34)) {
+                return true;
+            }
+        }
+        return false;
+    };
+    // True once an already-executed instruction on the path assigned the
+    // predicate, making the runtime value unknown at translation time.
+    bool predicate_written_on_path = false;
+
     struct PathEntry { uint32_t slot; int32_t al_value; };
     std::vector<PathEntry> path;
     // Loop bodies are unrolled statically using the captured loop constants.
@@ -779,25 +966,36 @@ bool translate_captured_shader_glsl(
         }
         if (clause.opcode == ShaderControlFlowOpcode::ConditionalJump) {
             path.push_back(PathEntry{pc, 0});
-            if (clause.predicated || clause.jump_direction) {
-                std::ostringstream message;
-                message << "captured shader branch uses unsupported predicate/direction "
-                        << "(instruction=" << pc << ", opcode=11, address="
-                        << clause.address << ", bool_constant="
-                        << clause.bool_constant << ", condition="
-                        << clause.condition << ", unconditional="
-                        << clause.unconditional << ", predicated="
-                        << clause.predicated << ", direction="
-                        << clause.jump_direction << ')';
-                if (error) *error = message.str();
-                return false;
-            }
+            // jump_direction only says whether the target is before or after
+            // this instruction; both are legal, so it is not a rejection
+            // reason (the reference sequencer just inverts the target).
             bool take = clause.unconditional;
             if (!clause.unconditional) {
                 bool value = false;
-                if (clause.bool_constant == 128) value = options.pixel_b128;
-                else if (clause.bool_constant == 129) value = options.pixel_b129;
-                else return fail("captured shader branch uses an uncaptured bool constant", error);
+                if (clause.predicated) {
+                    // A predicated branch tests the predicate register instead
+                    // of a bool constant (interpreter.cpp kCondJmp). Retail
+                    // menu shaders that take this path never assign the
+                    // predicate, so it holds its reset value of false; a shader
+                    // that does assign it cannot be resolved statically.
+                    if (predicate_written_on_path) {
+                        std::ostringstream message;
+                        message << "captured shader predicated branch follows a "
+                                   "dynamic predicate write (instruction="
+                                << pc << ", address=" << clause.address << ')';
+                        if (error) *error = message.str();
+                        return false;
+                    }
+                    value = false;
+                } else if (clause.bool_constant == 128) {
+                    value = options.pixel_b128;
+                } else if (clause.bool_constant == 129) {
+                    value = options.pixel_b129;
+                } else {
+                    return fail(
+                        "captured shader branch uses an uncaptured bool constant",
+                        error);
+                }
                 take = value == clause.condition;
             }
             if (take) {
