@@ -1,0 +1,676 @@
+{
+  "schema": "shift.xbox360.linux-deferred-queue-producer-probe.v1",
+  "captured_on": "2026-10-24",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b",
+    "gpu_plugin_sha256": "54348dd521b97b15be963d0b9f680172dbfb83c3ef5f2fbb979f618dc9c32aaa",
+    "linux_host": "AMD64",
+    "game_data_root": "/tmp/nfs_shift_xbox_game_root_20261023",
+    "input": "A filtered SDL/uinput Xbox 360 pad sent Start and A while the exact retail XEX ran; this GDB session did not trace XamInputGetState."
+  },
+  "capture": {
+    "monitor_limit_seconds": 50,
+    "timing_caveat": "GDB breakpoints pause guest execution; callback samples and absence of a producer hit are diagnostic observations, not timing measurements.",
+    "gdb_log": {
+      "path": "/tmp/p1-virtual-input-20261024/gdb-queue-functions.log",
+      "sha256": "5ad69f791c3f012329c162f9cddf2b9da1da874697ea20c63cee73160b8d3bc3"
+    },
+    "runtime_log": {
+      "path": "/tmp/p1-virtual-input-20261024/logs/nfs_shift_019.log",
+      "sha256": "3eefade7091c99fdeef3e0038422099c9857e9f203fc9472b4aa7b812312fcbd"
+    },
+    "uinput_log": {
+      "path": "/tmp/p1-virtual-input-20261024/uinput-queue-functions.log",
+      "sha256": "841b20487aa77fc6ee94c0238f6591e38fcaae8a37da01ab5ca62d05c9061501"
+    }
+  },
+  "retail_functions": {
+    "interrupt_callback": {
+      "address": "0x823B37B8",
+      "dynamic_observation": "Twelve sampled source-0 callback entries ran on one guest interrupt thread. Each sampled callback entered 0x823A4640 with object 0xB7365F00."
+    },
+    "deferred_queue_consumer": {
+      "address": "0x823A4640",
+      "guest_object": "0xB7365F00",
+      "read_index_offset": "0x413C",
+      "write_index_offset": "0x4140",
+      "sampled_read_index": 0,
+      "sampled_write_index": 0,
+      "consumer_entries_sampled": 12
+    },
+    "candidate_deferred_queue_producer": {
+      "address": "0x823A4758",
+      "static_behavior": "The ReXGlue-generated retail function selects a per-process object, acquires object+0x4148, and under its enqueue condition writes an 8-byte record then advances object+0x4140. Its alternate path increments a dropped-record counter.",
+      "dynamic_hits_during_capture": 0,
+      "codegen_presence": {
+        "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+        "host_executable_path": "/home/pes/work/process2-linux-readback-frame200-20261024/bin/nfs_shift",
+        "readelf_symbol": {
+          "name": "sub_823A4758",
+          "address": "0x00000000038DF0A0",
+          "size_bytes": 2404,
+          "type": "FUNC",
+          "binding": "WEAK",
+          "section_index": 11
+        },
+        "alias_symbol": {
+          "name": "__imp__sub_823A4758",
+          "address": "0x00000000038DF0A0",
+          "size_bytes": 2404,
+          "type": "FUNC",
+          "binding": "GLOBAL",
+          "section_index": 11
+        },
+        "observation": "The exact host executable recorded for the Linux probe contains the generated function symbol; this static symbol presence does not prove that the function executed."
+      }
+    }
+  },
+  "host_call_chain": {
+    "callback_entry": "0x823B37B8 was dispatched through FunctionDispatcher::ExecuteInterrupt from ShiftNativeGraphicsSystem::SetupGuestGpu callback lambda #3.",
+    "consumer_entry": "0x823A4640 was called directly by 0x823B37B8 on the sampled source-0 path."
+  },
+  "interpretation": {
+    "supported": "The source-0 GPU callback and retail deferred-queue consumer both execute on Linux, but the sampled queue remains empty. The candidate retail enqueue function 0x823A4758 was not entered during the monitored run. This separates callback delivery from deferred-record production.",
+    "not_proven": "A bounded run with no breakpoint hit does not prove 0x823A4758 is the only possible producer or that it is never called in other game states. It does not identify why the enqueue callback is absent, set the software predicate bit 0x02, prove a visible frame, or demonstrate menu/race progress."
+  },
+  "next_probe": "Trace initialization and registration of the deferred callback at object+0x4140's producer path, including the process-specific global object selected by KeGetCurrentProcessType. Preserve the XEX queue and predicate behavior; do not fabricate completion or bypass the guest wait.",
+  "static_disassembly": {
+    "source": "Complete function decoded from the exact live-memory-derived PPC ELF with llvm-objdump; big-endian instruction bytes retained.",
+    "elf_basename": "nfs_shift_xbox360_live_20261024.elf",
+    "elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c",
+    "range": {
+      "start": "0x823A4758",
+      "end_exclusive": "0x823A4904",
+      "instruction_count": 107
+    },
+    "direct_write_inventory": {
+      "field_offset_hex": "0x4140",
+      "full_elf_matching_stw_sites": [
+        {
+          "address": "0x823A48AC",
+          "source_register": "r11",
+          "base_register": "r31"
+        }
+      ],
+      "coverage": "Full llvm-objdump scan found one direct stw with displacement 16704 (0x4140). This does not rule out alias writes or stores through computed addresses."
+    },
+    "derived_behavior": {
+      "callback_slot_load": {
+        "address": "0x823A4830",
+        "instruction": "lwz r9,16540(r31)",
+        "offset_hex": "0x409C"
+      },
+      "callback_invocation": {
+        "ctr_load": "0x823A4858",
+        "branch_link": "0x823A4868",
+        "condition": "callback slot nonzero"
+      },
+      "record_stores": [
+        {
+          "address": "0x823A489C",
+          "instruction": "stw r11,16576(r10)",
+          "relative_record_field": "0x04"
+        },
+        {
+          "address": "0x823A48A0",
+          "instruction": "stw r30,16572(r10)",
+          "relative_record_field": "0x00"
+        }
+      ],
+      "write_index_advance": {
+        "load": "0x823A48A4: lwz r11,16704(r31)",
+        "increment": "0x823A48A8: addi r11,r11,1",
+        "store": "0x823A48AC: stw r11,16704(r31)",
+        "queue_object_base_register": "r31"
+      },
+      "enqueue_condition": "After callback handling, the code takes the append path only when its candidate index/count differs from object+0x40A4 and object+0x40B4 is not 1; otherwise it increments object+0x40B8 on the alternate path."
+    },
+    "runtime_scope": "The supplied exact-XEX capture observed zero hits at 0x823A4758; static code does not establish why the GPU command stream did not invoke it.",
+    "instructions": [
+      {
+        "address": "0x823A4758",
+        "bytes_big_endian": "7d8802a6",
+        "assembly": "mflr 12"
+      },
+      {
+        "address": "0x823A475C",
+        "bytes_big_endian": "4833515d",
+        "assembly": "bl 0x826d98b8 <PT_LOAD#3+0x5398b8>"
+      },
+      {
+        "address": "0x823A4760",
+        "bytes_big_endian": "9421ff50",
+        "assembly": "stwu 1, -176(1)"
+      },
+      {
+        "address": "0x823A4764",
+        "bytes_big_endian": "7c7e1b78",
+        "assembly": "mr\t30, 3"
+      },
+      {
+        "address": "0x823A4768",
+        "bytes_big_endian": "48cbf355",
+        "assembly": "bl 0x83063abc <PT_LOAD#3+0xec3abc>"
+      },
+      {
+        "address": "0x823A476C",
+        "bytes_big_endian": "2f030002",
+        "assembly": "cmpwi 6, 3, 2"
+      },
+      {
+        "address": "0x823A4770",
+        "bytes_big_endian": "409a0010",
+        "assembly": "bf\t26, 0x823a4780 <PT_LOAD#3+0x204780>"
+      },
+      {
+        "address": "0x823A4774",
+        "bytes_big_endian": "3d608200",
+        "assembly": "lis 11, -32256"
+      },
+      {
+        "address": "0x823A4778",
+        "bytes_big_endian": "816b06b0",
+        "assembly": "lwz 11, 1712(11)"
+      },
+      {
+        "address": "0x823A477C",
+        "bytes_big_endian": "4800000c",
+        "assembly": "b 0x823a4788 <PT_LOAD#3+0x204788>"
+      },
+      {
+        "address": "0x823A4780",
+        "bytes_big_endian": "3d608200",
+        "assembly": "lis 11, -32256"
+      },
+      {
+        "address": "0x823A4784",
+        "bytes_big_endian": "816b06ac",
+        "assembly": "lwz 11, 1708(11)"
+      },
+      {
+        "address": "0x823A4788",
+        "bytes_big_endian": "83eb0000",
+        "assembly": "lwz 31, 0(11)"
+      },
+      {
+        "address": "0x823A478C",
+        "bytes_big_endian": "3b5f4148",
+        "assembly": "addi 26, 31, 16712"
+      },
+      {
+        "address": "0x823A4790",
+        "bytes_big_endian": "7f43d378",
+        "assembly": "mr\t3, 26"
+      },
+      {
+        "address": "0x823A4794",
+        "bytes_big_endian": "48cbf479",
+        "assembly": "bl 0x83063c0c <PT_LOAD#3+0xec3c0c>"
+      },
+      {
+        "address": "0x823A4798",
+        "bytes_big_endian": "815f40b4",
+        "assembly": "lwz 10, 16564(31)"
+      },
+      {
+        "address": "0x823A479C",
+        "bytes_big_endian": "817f5434",
+        "assembly": "lwz 11, 21556(31)"
+      },
+      {
+        "address": "0x823A47A0",
+        "bytes_big_endian": "57ddc73e",
+        "assembly": "rlwinm 29, 30, 24, 28, 31"
+      },
+      {
+        "address": "0x823A47A4",
+        "bytes_big_endian": "394a0001",
+        "assembly": "addi 10, 10, 1"
+      },
+      {
+        "address": "0x823A47A8",
+        "bytes_big_endian": "57db063e",
+        "assembly": "clrlwi\t27, 30, 24"
+      },
+      {
+        "address": "0x823A47AC",
+        "bytes_big_endian": "7c791b78",
+        "assembly": "mr\t25, 3"
+      },
+      {
+        "address": "0x823A47B0",
+        "bytes_big_endian": "915f40b4",
+        "assembly": "stw 10, 16564(31)"
+      },
+      {
+        "address": "0x823A47B4",
+        "bytes_big_endian": "57de0026",
+        "assembly": "rlwinm 30, 30, 0, 0, 19"
+      },
+      {
+        "address": "0x823A47B8",
+        "bytes_big_endian": "2b0b0000",
+        "assembly": "cmplwi 6, 11, 0"
+      },
+      {
+        "address": "0x823A47BC",
+        "bytes_big_endian": "7d7c5b78",
+        "assembly": "mr\t28, 11"
+      },
+      {
+        "address": "0x823A47C0",
+        "bytes_big_endian": "409a0008",
+        "assembly": "bf\t26, 0x823a47c8 <PT_LOAD#3+0x2047c8>"
+      },
+      {
+        "address": "0x823A47C4",
+        "bytes_big_endian": "3b80003c",
+        "assembly": "li 28, 60"
+      },
+      {
+        "address": "0x823A47C8",
+        "bytes_big_endian": "7d6c42e6",
+        "assembly": "mftb 11, 268"
+      },
+      {
+        "address": "0x823A47CC",
+        "bytes_big_endian": "815f40a8",
+        "assembly": "lwz 10, 16552(31)"
+      },
+      {
+        "address": "0x823A47D0",
+        "bytes_big_endian": "556b003e",
+        "assembly": "slwi 11, 11, 0"
+      },
+      {
+        "address": "0x823A47D4",
+        "bytes_big_endian": "7f0a5850",
+        "assembly": "sub\t24, 11, 10"
+      },
+      {
+        "address": "0x823A47D8",
+        "bytes_big_endian": "48cbef85",
+        "assembly": "bl 0x8306375c <PT_LOAD#3+0xec375c>"
+      },
+      {
+        "address": "0x823A47DC",
+        "bytes_big_endian": "546b003e",
+        "assembly": "slwi 11, 3, 0"
+      },
+      {
+        "address": "0x823A47E0",
+        "bytes_big_endian": "1d580064",
+        "assembly": "mulli 10, 24, 100"
+      },
+      {
+        "address": "0x823A47E4",
+        "bytes_big_endian": "7d6be396",
+        "assembly": "divwu 11, 11, 28"
+      },
+      {
+        "address": "0x823A47E8",
+        "bytes_big_endian": "0cdc0000",
+        "assembly": "twi 6, 28, 0"
+      },
+      {
+        "address": "0x823A47EC",
+        "bytes_big_endian": "0ccb0000",
+        "assembly": "twi 6, 11, 0"
+      },
+      {
+        "address": "0x823A47F0",
+        "bytes_big_endian": "7d6a5b96",
+        "assembly": "divwu 11, 10, 11"
+      },
+      {
+        "address": "0x823A47F4",
+        "bytes_big_endian": "38eb0001",
+        "assembly": "addi 7, 11, 1"
+      },
+      {
+        "address": "0x823A47F8",
+        "bytes_big_endian": "2b070064",
+        "assembly": "cmplwi 6, 7, 100"
+      },
+      {
+        "address": "0x823A47FC",
+        "bytes_big_endian": "40990008",
+        "assembly": "bf\t25, 0x823a4804 <PT_LOAD#3+0x204804>"
+      },
+      {
+        "address": "0x823A4800",
+        "bytes_big_endian": "38e00064",
+        "assembly": "li 7, 100"
+      },
+      {
+        "address": "0x823A4804",
+        "bytes_big_endian": "811f40ac",
+        "assembly": "lwz 8, 16556(31)"
+      },
+      {
+        "address": "0x823A4808",
+        "bytes_big_endian": "815f40a4",
+        "assembly": "lwz 10, 16548(31)"
+      },
+      {
+        "address": "0x823A480C",
+        "bytes_big_endian": "7d68ea14",
+        "assembly": "add 11, 8, 29"
+      },
+      {
+        "address": "0x823A4810",
+        "bytes_big_endian": "7f0b5040",
+        "assembly": "cmplw 6, 11, 10"
+      },
+      {
+        "address": "0x823A4814",
+        "bytes_big_endian": "4199001c",
+        "assembly": "bt\t25, 0x823a4830 <PT_LOAD#3+0x204830>"
+      },
+      {
+        "address": "0x823A4818",
+        "bytes_big_endian": "7d4b5378",
+        "assembly": "mr\t11, 10"
+      },
+      {
+        "address": "0x823A481C",
+        "bytes_big_endian": "2b1d0000",
+        "assembly": "cmplwi 6, 29, 0"
+      },
+      {
+        "address": "0x823A4820",
+        "bytes_big_endian": "419a0010",
+        "assembly": "bt\t26, 0x823a4830 <PT_LOAD#3+0x204830>"
+      },
+      {
+        "address": "0x823A4824",
+        "bytes_big_endian": "7f07d840",
+        "assembly": "cmplw 6, 7, 27"
+      },
+      {
+        "address": "0x823A4828",
+        "bytes_big_endian": "40990008",
+        "assembly": "bf\t25, 0x823a4830 <PT_LOAD#3+0x204830>"
+      },
+      {
+        "address": "0x823A482C",
+        "bytes_big_endian": "396b0001",
+        "assembly": "addi 11, 11, 1"
+      },
+      {
+        "address": "0x823A4830",
+        "bytes_big_endian": "813f409c",
+        "assembly": "lwz 9, 16540(31)"
+      },
+      {
+        "address": "0x823A4834",
+        "bytes_big_endian": "2b090000",
+        "assembly": "cmplwi 6, 9, 0"
+      },
+      {
+        "address": "0x823A4838",
+        "bytes_big_endian": "419a0038",
+        "assembly": "bt\t26, 0x823a4870 <PT_LOAD#3+0x204870>"
+      },
+      {
+        "address": "0x823A483C",
+        "bytes_big_endian": "80df40b4",
+        "assembly": "lwz 6, 16564(31)"
+      },
+      {
+        "address": "0x823A4840",
+        "bytes_big_endian": "30beffff",
+        "assembly": "addic 5, 30, -1"
+      },
+      {
+        "address": "0x823A4844",
+        "bytes_big_endian": "91610064",
+        "assembly": "stw 11, 100(1)"
+      },
+      {
+        "address": "0x823A4848",
+        "bytes_big_endian": "38610050",
+        "assembly": "addi 3, 1, 80"
+      },
+      {
+        "address": "0x823A484C",
+        "bytes_big_endian": "7d65f110",
+        "assembly": "subfe 11, 5, 30"
+      },
+      {
+        "address": "0x823A4850",
+        "bytes_big_endian": "91410058",
+        "assembly": "stw 10, 88(1)"
+      },
+      {
+        "address": "0x823A4854",
+        "bytes_big_endian": "9101005c",
+        "assembly": "stw 8, 92(1)"
+      },
+      {
+        "address": "0x823A4858",
+        "bytes_big_endian": "7d2903a6",
+        "assembly": "mtctr 9"
+      },
+      {
+        "address": "0x823A485C",
+        "bytes_big_endian": "90e10060",
+        "assembly": "stw 7, 96(1)"
+      },
+      {
+        "address": "0x823A4860",
+        "bytes_big_endian": "90c10054",
+        "assembly": "stw 6, 84(1)"
+      },
+      {
+        "address": "0x823A4864",
+        "bytes_big_endian": "91610050",
+        "assembly": "stw 11, 80(1)"
+      },
+      {
+        "address": "0x823A4868",
+        "bytes_big_endian": "4e800421",
+        "assembly": "bctrl"
+      },
+      {
+        "address": "0x823A486C",
+        "bytes_big_endian": "81610064",
+        "assembly": "lwz 11, 100(1)"
+      },
+      {
+        "address": "0x823A4870",
+        "bytes_big_endian": "815f40a4",
+        "assembly": "lwz 10, 16548(31)"
+      },
+      {
+        "address": "0x823A4874",
+        "bytes_big_endian": "917f40ac",
+        "assembly": "stw 11, 16556(31)"
+      },
+      {
+        "address": "0x823A4878",
+        "bytes_big_endian": "7f0b5040",
+        "assembly": "cmplw 6, 11, 10"
+      },
+      {
+        "address": "0x823A487C",
+        "bytes_big_endian": "419a0038",
+        "assembly": "bt\t26, 0x823a48b4 <PT_LOAD#3+0x2048b4>"
+      },
+      {
+        "address": "0x823A4880",
+        "bytes_big_endian": "815f40b4",
+        "assembly": "lwz 10, 16564(31)"
+      },
+      {
+        "address": "0x823A4884",
+        "bytes_big_endian": "2b0a0001",
+        "assembly": "cmplwi 6, 10, 1"
+      },
+      {
+        "address": "0x823A4888",
+        "bytes_big_endian": "419a002c",
+        "assembly": "bt\t26, 0x823a48b4 <PT_LOAD#3+0x2048b4>"
+      },
+      {
+        "address": "0x823A488C",
+        "bytes_big_endian": "815f4140",
+        "assembly": "lwz 10, 16704(31)"
+      },
+      {
+        "address": "0x823A4890",
+        "bytes_big_endian": "554a1e78",
+        "assembly": "rlwinm 10, 10, 3, 25, 28"
+      },
+      {
+        "address": "0x823A4894",
+        "bytes_big_endian": "7d4afa14",
+        "assembly": "add 10, 10, 31"
+      },
+      {
+        "address": "0x823A4898",
+        "bytes_big_endian": "392a40bc",
+        "assembly": "addi 9, 10, 16572"
+      },
+      {
+        "address": "0x823A489C",
+        "bytes_big_endian": "916a40c0",
+        "assembly": "stw 11, 16576(10)"
+      },
+      {
+        "address": "0x823A48A0",
+        "bytes_big_endian": "93ca40bc",
+        "assembly": "stw 30, 16572(10)"
+      },
+      {
+        "address": "0x823A48A4",
+        "bytes_big_endian": "817f4140",
+        "assembly": "lwz 11, 16704(31)"
+      },
+      {
+        "address": "0x823A48A8",
+        "bytes_big_endian": "396b0001",
+        "assembly": "addi 11, 11, 1"
+      },
+      {
+        "address": "0x823A48AC",
+        "bytes_big_endian": "917f4140",
+        "assembly": "stw 11, 16704(31)"
+      },
+      {
+        "address": "0x823A48B0",
+        "bytes_big_endian": "48000040",
+        "assembly": "b 0x823a48f0 <PT_LOAD#3+0x2048f0>"
+      },
+      {
+        "address": "0x823A48B4",
+        "bytes_big_endian": "817f40b8",
+        "assembly": "lwz 11, 16568(31)"
+      },
+      {
+        "address": "0x823A48B8",
+        "bytes_big_endian": "2b1e0000",
+        "assembly": "cmplwi 6, 30, 0"
+      },
+      {
+        "address": "0x823A48BC",
+        "bytes_big_endian": "396b0001",
+        "assembly": "addi 11, 11, 1"
+      },
+      {
+        "address": "0x823A48C0",
+        "bytes_big_endian": "917f40b8",
+        "assembly": "stw 11, 16568(31)"
+      },
+      {
+        "address": "0x823A48C4",
+        "bytes_big_endian": "419a0018",
+        "assembly": "bt\t26, 0x823a48dc <PT_LOAD#3+0x2048dc>"
+      },
+      {
+        "address": "0x823A48C8",
+        "bytes_big_endian": "3d607fc8",
+        "assembly": "lis 11, 32712"
+      },
+      {
+        "address": "0x823A48CC",
+        "bytes_big_endian": "93cb6110",
+        "assembly": "stw 30, 24848(11)"
+      },
+      {
+        "address": "0x823A48D0",
+        "bytes_big_endian": "7c0006ac",
+        "assembly": "eieio"
+      },
+      {
+        "address": "0x823A48D4",
+        "bytes_big_endian": "7c0004ac",
+        "assembly": "sync"
+      },
+      {
+        "address": "0x823A48D8",
+        "bytes_big_endian": "48000010",
+        "assembly": "b 0x823a48e8 <PT_LOAD#3+0x2048e8>"
+      },
+      {
+        "address": "0x823A48DC",
+        "bytes_big_endian": "817f2a94",
+        "assembly": "lwz 11, 10900(31)"
+      },
+      {
+        "address": "0x823A48E0",
+        "bytes_big_endian": "39400000",
+        "assembly": "li 10, 0"
+      },
+      {
+        "address": "0x823A48E4",
+        "bytes_big_endian": "914b0004",
+        "assembly": "stw 10, 4(11)"
+      },
+      {
+        "address": "0x823A48E8",
+        "bytes_big_endian": "7d6c42e6",
+        "assembly": "mftb 11, 268"
+      },
+      {
+        "address": "0x823A48EC",
+        "bytes_big_endian": "917f5b50",
+        "assembly": "stw 11, 23376(31)"
+      },
+      {
+        "address": "0x823A48F0",
+        "bytes_big_endian": "7f24cb78",
+        "assembly": "mr\t4, 25"
+      },
+      {
+        "address": "0x823A48F4",
+        "bytes_big_endian": "7f43d378",
+        "assembly": "mr\t3, 26"
+      },
+      {
+        "address": "0x823A48F8",
+        "bytes_big_endian": "48cbf305",
+        "assembly": "bl 0x83063bfc <PT_LOAD#3+0xec3bfc>"
+      },
+      {
+        "address": "0x823A48FC",
+        "bytes_big_endian": "382100b0",
+        "assembly": "addi 1, 1, 176"
+      },
+      {
+        "address": "0x823A4900",
+        "bytes_big_endian": "48335008",
+        "assembly": "b 0x826d9908 <PT_LOAD#3+0x539908>"
+      }
+    ],
+    "instruction_bytes_sha256": "4d3e45385dd4d7c04e03db3b095a49a321f31e3681e096193fe0f6040312e110"
+  }
+}

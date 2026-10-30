@@ -1,0 +1,126 @@
+{
+  "_schema_version": 1,
+  "_description": "Machine-readable pin ledger for Xbox 360 SHIFT ReXGlue host artifacts. Read by tools/xbox360/build/verify_pins.py. Every entry records what produced an artifact and confirms its SHA-256 as seen during the noted verification pass.",
+  "_rules": [
+    "status=verified means sha256sum was recomputed on this host during verified_on and matched sha256.",
+    "status=unverified means the claimed value was NOT recomputed on this host; do not cite it as fact.",
+    "status=unavailable means the artifact file is absent locally; verify_pins.py reports it and does not fail.",
+    "status=mismatch is produced by verify_pins.py at check time, never written by hand.",
+    "Build outputs are never committed. Only hashes, source commits and the recipe are tracked."
+  ],
+  "_verify_commands": [
+    "python3 tools/xbox360/build/verify_pins.py",
+    "python3 tools/xbox360/build/verify_pins.py --json",
+    "python3 tools/xbox360/build/verify_pins.py --explain <artifact-name>"
+  ],
+  "updated_on": "2026-10-30",
+  "verified_on": "2026-10-30",
+  "verified_by": "build-pins (task-3)",
+  "title": {
+    "name": "Need for Speed: SHIFT (Xbox 360 retail)",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "xex_filename": "default.xex",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "xex_status": "unverified",
+    "xex_note": "The retail dump is deliberately kept outside Git and was not present at a verified local path during this pass; the recorded SHA-256 comes from evidence/xbox360_rexglue_preflight_20261022.md and must be re-checked against the user-owned dump with sha256sum before citing it as verified.",
+    "proprietary": true
+  },
+  "sdk": {
+    "repository": "https://github.com/rexglue/rexglue-sdk",
+    "fork_repository": "https://github.com/Hanz0Hatt0r1/rexglue-sdk",
+    "version": "0.10.0",
+    "base_release_tag": "f5337cdc947ff6d4c4196737e2c807a48f2a1fc2",
+    "fork_commit": "32afce4",
+    "fork_commit_full": null,
+    "fork_commit_status": "unverified",
+    "fork_commit_note": "git -C /home/pes/work/rexglue-sdk-xbox360-memory-lifecycle-20261025 log --oneline -1 reported 32afce4 'fix(input): route retail keyboard keystrokes'. The full 40-hex object id was NOT resolved during this pass, so only the abbreviation is asserted. Run `git -C <clone> rev-parse HEAD` and fill in fork_commit_full before citing an exact commit.",
+    "clone_path_seen": "/home/pes/work/rexglue-sdk-xbox360-memory-lifecycle-20261025",
+    "platform": "linux-amd64",
+    "integrated": false,
+    "build_recipe": "tools/xbox360/build/pins.json"
+  },
+  "recipe": {
+    "source": "tools/xbox360/build/README.md",
+    "generator": "Ninja Multi-Config",
+    "cmake": "/usr/bin/cmake",
+    "build_type": "Release",
+    "compiler": {
+      "cxx": "/usr/bin/clang++",
+      "cc": "/usr/bin/clang"
+    },
+    "cxx_flags": "-march=x86-64-v2",
+    "configuration_flags": [
+      "-DREXGLUE_USE_VULKAN=ON",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_C_COMPILER=clang",
+      "-DCMAKE_CXX_COMPILER=clang++"
+    ],
+    "configuration_flags_status": "verified",
+    "configuration_flags_evidence": "Recovered from /home/pes/work/rexglue-sdk-rexui-vulkan-20261023/out/build/linux-amd64/CMakeCache.txt (CMAKE_GENERATOR=Ninja Multi-Config, CMAKE_CXX_FLAGS=-march=x86-64-v2, REXGLUE_USE_VULKAN=ON) plus the sibling plugin build cache /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027/CMakeCache.txt (CMAKE_BUILD_TYPE=Release, clang/clang++, REXGLUE_USE_VULKAN=ON).",
+    "recovered_target_compile_flags": "-DENABLE_OPT=0 -DGLSLANG_OSINCLUDE_UNIX -DREXGLUE_BUILD_CONFIG=\"Release\" -DREX_PLATFORM_LINUX=1 -march=x86-64-v2 -O3 -DNDEBUG -std=c++11 -fPIC -mcmodel=large -fno-strict-aliasing -ffp-model=strict -fno-char8_t -fno-exceptions",
+    "recovered_target_compile_flags_scope": "glslang thirdparty translation unit only",
+    "recovered_target_compile_flags_status": "verified",
+    "recovered_target_compile_flags_evidence": "First entry of compile_commands.json in /home/pes/work/.build-process2-p2161-vulkan-plugin-20261027.",
+    "caveat": "The pinned runtime and the native plugin were produced by DIFFERENT SDK trees than the memory-lifecycle pin. See artifacts.*.built_from_commit. Two SDK trees are therefore tracked in sdk.trees, and reconciling them onto one commit is an open item, recorded here rather than papered over."
+  },
+  "artifacts": {
+    "runtime": {
+      "name": "librexruntime.so",
+      "kind": "runtime",
+      "sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+      "status": "verified",
+      "verified_on": "2026-10-30",
+      "sample_path": "/home/pes/work/nfs-shift-p1-v100-native-same-script-20261029/bin/librexruntime.so",
+      "built_from_commit": null,
+      "built_from_commit_status": "unverified",
+      "note": "Hash recomputed and matched in the v100 run bin/. Which SDK commit produced it was not established (no build tree was matched to this hash). sdk.out/linux-amd64/librexruntime.so in the rexui tree is be70fe8e..., which is NOT this artifact."
+    },
+    "host": {
+      "name": "nfs_shift",
+      "kind": "host_executable",
+      "sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+      "status": "verified",
+      "verified_on": "2026-10-30",
+      "sample_path": "/home/pes/work/nfs-shift-p1-v100-native-same-script-20261029/bin/nfs_shift",
+      "built_from_commit": null,
+      "built_from_commit_status": "unverified",
+      "note": "Hash recomputed and matched. The host executable is game codegen output; its generator commit is the nfs-shift repo revision that produced it, which was not resolved here."
+    },
+    "plugin_native_vulkan": {
+      "name": "librexgpu-shift-native.so",
+      "kind": "graphics_plugin",
+      "sha256": "fd615adad5febc2adcf9a46fa0b74a67c9cf28f013bc74ca8715ac9abad9c490",
+      "status": "verified",
+      "verified_on": "2026-10-30",
+      "sample_path": "/home/pes/work/nfs-shift-p1-native-predicate-after-p2-pr2161-v73-20261029/bin/librexgpu-shift-native.so",
+      "producer_path": "/home/pes/work/rexglue-sdk-rexui-vulkan-20261023/out/linux-amd64/librexgpu-shift-native.so",
+      "producer_path_status": "verified",
+      "built_from_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+      "built_from_commit_status": "verified",
+      "plugin_source_commit": null,
+      "plugin_source_commit_status": "unverified",
+      "note": "Confirmed: the run dir's run_metadata.json points plugin_path at the rexui SDK out/ tree and plugin_sha256 matches, and that file hashes identically. The producer SDK tree is the rexui tree at b3648b0 (not the fork HEAD 32afce4). The plugin .cpp source commit inside the nfs-shift repo was not resolved in this pass."
+    },
+    "plugin_xenos": {
+      "name": "librexgpu-xenos.so",
+      "kind": "graphics_plugin",
+      "sha256": "8b5abe7a0c59a8a41af5aa166df23de46fed191bfc863e183c98d6023c54e4de",
+      "status": "verified",
+      "verified_on": "2026-10-30",
+      "sample_path": "/home/pes/work/nfs-shift-p1-action-consumer-v96-v262-xenos-20261029/bin/librexgpu-xenos.so",
+      "second_sample_path": "/home/pes/work/nfs-shift-p1-menu-setup-v118-repeat-xenos-20261029/bin/librexgpu-xenos.so",
+      "built_from_commit": null,
+      "built_from_commit_status": "unverified",
+      "note": "Hash recomputed and matched in two independent run dirs. The immediate producer was /home/pes/work/rexglue-sdk-retail-lwsync-20261027/out/build/linux-amd64 (xenos-build.log), but a locally built copy at nfs-shift-p1-v86-xenos-dispatch-join-20261028/runtime-build/librexgpu-xenos-pm4-trace.so carries the SAME hash including a rename, so the exact source commit is unverified. Do not cite a commit for this artifact."
+    }
+  },
+  "artifact_inventory_20261030": {
+    "note": "Observed duplication this ledger exists to stop. Counted with find over /home/pes/work (maxdepth 4).",
+    "plugin_copies_with_pinned_native_hash": null,
+    "distinct_xenos_hashes_seen": 10,
+    "most_common_xenos_hash": "19053b691d7d1f8f17bbe3e90be38ba3acc60439cbe5c1dfcad271e07b47ce43",
+    "most_common_xenos_hash_copies": 32,
+    "status": "verified"
+  }
+}

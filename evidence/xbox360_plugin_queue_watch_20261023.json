@@ -1,0 +1,87 @@
+{
+  "schema": "shift.xbox360.rexglue.plugin-queue-watch.v1",
+  "captured_on": "2026-10-23",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3",
+    "local_hash_verification": "The default.xex at the manifest path matched the locked SHA-256 before the run."
+  },
+  "linux_run": {
+    "host": "linux-amd64",
+    "gpu": "NVIDIA GeForce GTX 950",
+    "display_backend": "Wayland",
+    "runtime_version": "ReXGlue 0.10.0",
+    "runtime_sha256": "ff31b096a4a0bbb212e4e145f029239e1093776145070a232267182ce2642b32",
+    "generated_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin": {
+      "name": "shift-native",
+      "sha256": "dbbacc40d993cac1a0b3519ab1ae7392b6fcb26457ebe5d8cb4faf3249dff05b"
+    },
+    "arguments": [
+      "--game_data_root=/tmp/nfs_shift_xbox_game_root_20261023",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "xex_to_executable_lineage": "GDB source locations resolved to the generated/default C++ tree associated with the locked manifest input. The run evidence does not include a build invocation artifact that independently binds this executable hash to that XEX hash."
+  },
+  "guest_frontier": {
+    "main_thread": "Core 2/1: Main",
+    "predicate_function": "0x823A0310",
+    "predicate_call_lr": "0x823B3560",
+    "wait_function": "0x823B34A0",
+    "call_stack": [
+      "0x823A0310",
+      "0x823B34A0",
+      "0x823A4E48",
+      "0x823A5610",
+      "0x8264F868",
+      "0x8301DB18",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ],
+    "observation": "At the final interrupt, the main guest thread remained inside the original queue polling path. It was not blocked in a ReXGlue KeWait call."
+  },
+  "ring_state": {
+    "guest_object": "0xB7365F00",
+    "read_pointer_field_offset": "0x2A90",
+    "read_pointer_guest_address": "0xB7AF4000",
+    "read_pointer_value": 1,
+    "predicate_flag_offset": "0x2ABD",
+    "predicate_flag_byte": "0x14",
+    "predicate_test_mask": "0x02",
+    "predicate_bit_set": false,
+    "tail_field_offset": "0x2A9C",
+    "tail_value_at_first_predicate": 21
+  },
+  "interrupt_callbacks": {
+    "guest_function": "0x823B37B8",
+    "dispatch_count": 2,
+    "arguments": {
+      "r3": 1,
+      "r4": "0xB7365F00"
+    },
+    "thread": "SHIFT Native GPU",
+    "result": "The retail callback was entered twice. It did not change the watched read-pointer word or predicate flag during the observed interval."
+  },
+  "watch": {
+    "watched_locations": [
+      "the 32-bit big-endian guest read-pointer word at 0xB7AF4000",
+      "guest_object+0x2ABD"
+    ],
+    "duration_after_callbacks_seconds_approx": 25,
+    "writes_observed": 0,
+    "final_values": {
+      "read_pointer": 1,
+      "predicate_flag_byte": "0x14"
+    },
+    "local_gdb_log": "/tmp/p1-xbox-guest-predicate-20261023/logs/gdb-ringptr.log"
+  },
+  "interpretation": {
+    "supported": "With the shift-native plugin loaded, the first guest predicate sample had read pointer 1 and tail 21. The guest interrupt callback then executed twice. Hardware watchpoints confirmed that the read-pointer word and exact-XEX completion byte did not change in the observed interval, and the original guest queue loop continued. This gives no evidence of a P1 scheduler or P-code semantic defect.",
+    "not_proven": "The probe does not show whether VdEnableRingBufferRPtrWriteBack supplied 0xB7AF4000 to the plugin, whether TranslatePhysical accepted that address, or why no guest read-pointer store occurred. It does not prove that this queue wait alone prevents frontend progress, and it does not establish a menu, visible retail frame, or race.",
+    "next_owner": "Process 2 should correlate the plugin's configured read-pointer writeback address and actual guest-memory store with 0xB7AF4000 in its current Linux runtime-frontier investigation."
+  }
+}

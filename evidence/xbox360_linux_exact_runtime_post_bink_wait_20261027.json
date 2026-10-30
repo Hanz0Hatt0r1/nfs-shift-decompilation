@@ -1,0 +1,119 @@
+{
+  "schema": "shift.xbox360.linux-exact-runtime-post-bink-wait.v1",
+  "captured_on": "2026-10-27",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "movie": {
+      "guest_object": "0xE6795040",
+      "asset": "Movies/Franchise_Ident.bik",
+      "frame_target": 281
+    }
+  },
+  "binaries": {
+    "p1_host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "p1_runtime_sha256": "6c56ca970160d9e3e6e28155c48ee11556763f206f6a49b78fdad2ca3f02ebb2",
+    "p2_linux_plugin_sha256": "771201891a6ae28c0745f57beccf9c6474ce175c7bb3f5edadcce4c457a8a12b",
+    "runtime_and_plugin_mapped_hashes_verified": true
+  },
+  "run": {
+    "platform": "Linux x86_64",
+    "duration_seconds": 96.198,
+    "guest_memory_modified_by_probe": false,
+    "termination": "After the bounded input sequence, GDB detached and sent SIGINT to the still-live title. Clean title shutdown was not observed.",
+    "controller": {
+      "device": "Linux uinput Xbox 360 pad, VID:PID 045e:028e",
+      "pulses": [
+        {"at_seconds": 75.527, "button": "Start", "duration_ms": 3000},
+        {"at_seconds": 81.527, "button": "A", "duration_ms": 3000},
+        {"at_seconds": 87.529, "button": "Start", "duration_ms": 3000}
+      ],
+      "retail_action_samples": 0,
+      "host_state_masks_observed": ["0x0000"]
+    },
+    "runner": {
+      "path": "tools/xbox360/capture_linux_exact_runtime_controller_pipeline_20261027_pre_runtime_override.py",
+      "sha256": "c10209424c95a3bde879b9f240dcfe6e766a1ef7309a898fa4583526fd55e675",
+      "log_path_outside_git": "/tmp/nfs-shift-p1-writer-trace-20261027/runner.log",
+      "log_sha256": "b02055cc45eaffa38cdf88b6924fbe3d7fe42958cb957eeed3205c11111a4dde"
+    },
+    "gdb_trace": {
+      "path": "tools/xbox360/trace_linux_exact_runtime_post_bink_wait_20261027.gdb",
+      "sha256": "0f10c281c0a138ebc70b689a47d10eafaa37a056b32e4376e440ed7a3c21b2b8",
+      "log_path_outside_git": "/tmp/nfs-shift-p1-writer-trace-20261027/gdb.log",
+      "log_sha256": "2cd52a95bfae8175b2ba4d49d25f2b22ec19673fe851bba3ace630554b703340"
+    }
+  },
+  "retail_wait": {
+    "target_reached": {
+      "elapsed_seconds": 71.762,
+      "progress": 281,
+      "target": 281
+    },
+    "manager_guest_object": "0xB7365F00",
+    "counter_field_offset": 11012,
+    "counter_guest_address": "0xB7368A04",
+    "counter_host_alias": "0x1B7368A04",
+    "counter_initial_value": "0x00000000",
+    "post_bink_queue_sample": {
+      "head": 1763,
+      "tail": 1769,
+      "predicate_byte": "0x14",
+      "target": 1763
+    },
+    "first_counter_transitions": [
+      {
+        "old": "0x00000000",
+        "new": "0x00000001",
+        "thread": "Core 0/0: Main",
+        "writer": "sub_823B31A0",
+        "stack": ["sub_823B31A0", "sub_823B8EE8", "sub_823A7478", "sub_8267BEC8"]
+      },
+      {
+        "old": "0x00000001",
+        "new": "0x00000000",
+        "thread": "XThreadB0FF86C0",
+        "writer": "sub_823B85D0",
+        "stack": ["sub_823B85D0", "sub_823B87B0", "sub_823B8AC8", "sub_82706AE0"]
+      },
+      {
+        "old": "0x00000000",
+        "new": "0xFFFFFFFF",
+        "thread": "XThreadB0FF86C0",
+        "writer": "sub_823B85D0",
+        "stack": ["sub_823B85D0", "sub_823B87B0", "sub_823B8AC8", "sub_82706AE0"]
+      }
+    ],
+    "main_thread_at_final_sample": {
+      "host_thread": "Core 0/0: Main",
+      "guest_function": "sub_823B3850",
+      "host_frame": "generated/default/nfs_shift_recomp.167.cpp:4997",
+      "retail_loop": "load manager+11012; signed compare with zero; branch back while nonzero"
+    },
+    "input_and_scene_followthrough": {
+      "xam_input_entries_at_final_sample": 1360,
+      "input_system_getstate_entries_at_final_sample": 1360,
+      "user0_button_masks_observed": {"0x0000": 340},
+      "retail_start_or_a_predicate_samples": 0,
+      "frontend_action_samples": 0,
+      "scene_update_hits_total": 175,
+      "scene_update_samples_after_bink_target": 0
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The current exact-XEX runtime reached the original Bink counter target 281/281.",
+      "A read-only hardware watchpoint captured the retail producer's 0-to-1 write, the worker's 1-to-0 write, and the same worker path's subsequent 0-to-0xFFFFFFFF underflow.",
+      "At the final debugger sample, the main guest thread was in the original sub_823B3850 nonzero-counter spin loop.",
+      "Start/A pulses sent after the Bink target produced no non-neutral user-0 host-state sample, retail Start/A predicate sample, or frontend action sample in this trace."
+    ],
+    "not_proven": [
+      "The full contract of manager+11012 or whether the retail worker's repeated decrement is itself erroneous.",
+      "That the counter underflow alone caused the main thread to miss the brief zero value; no scheduler or guest semantics were changed.",
+      "That the host input poll stopped at the exact Bink-target timestamp; only the final counters and absence of non-neutral input samples are recorded.",
+      "A visible main menu, offline race, gameplay, clean shutdown, ARM64 execution, or Vulkan 1.1 compatibility."
+    ],
+    "next_p1_step": "Trace sub_823B85D0 arguments and the aliased object fields +56/+60/+64/+72 across the first 0-to-1-to-0-to-negative sequence, then correlate each call with the guest callback and worker queue. Establish the counter contract before changing any guest or scheduler behavior."
+  }
+}

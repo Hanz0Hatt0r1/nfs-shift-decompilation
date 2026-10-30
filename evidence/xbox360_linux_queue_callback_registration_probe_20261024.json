@@ -1,0 +1,173 @@
+{
+  "schema": "shift.xbox360.linux-queue-callback-registration-probe.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "host": "Linux AMD64",
+    "rexglue_version": "0.10.0",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b",
+    "gpu_plugin_sha256": "54348dd521b97b15be963d0b9f680172dbfb83c3ef5f2fbb979f618dc9c32aaa",
+    "arguments": [
+      "--game_data_root=/tmp/nfs_shift_xbox_game_root_20261023",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "duration_limit_seconds": 45,
+    "gdb_exit_code": 124,
+    "input_events_sent": false,
+    "runtime_log": {
+      "path": "/tmp/p1-virtual-input-20261024/logs/nfs_shift_022.log",
+      "sha256": "0162f93a72896c691c2d13019fadffe5136346f5531ce8f5dc8b3cf64202914f",
+      "single_draw_submissions": 203,
+      "accepted_copy_convert_entries": 687,
+      "guest_vblank_callbacks_logged": 3
+    }
+  },
+  "retail_static_crosscheck": {
+    "callback_setter": {
+      "function": "0x823A5730",
+      "behavior": "stores argument r4 at object+0x409C (decimal 16540); this callback slot is distinct from the deferred-record ring at object+0x40BC",
+      "caller": "0x8264C858",
+      "callsite": "0x8264D30C",
+      "link_register": "0x8264D310",
+      "registered_target": "0x82649B68",
+      "retail_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c",
+      "verified_instruction_bytes": [
+        "0x8264D300: 3d 60 82 65  lis r11,-32155",
+        "0x8264D304: 80 7a 00 00  lwz r3,0(r26)",
+        "0x8264D308: 38 8b 9b 68  addi r4,r11,-25752",
+        "0x8264D30C: 4b d5 84 25  bl 0x823A5730",
+        "0x823A5730: 90 83 40 9c  stw r4,16540(r3)",
+        "0x823A5734: 4e 80 00 20  blr"
+      ],
+      "static_conclusion": "The exact retail caller loads guest object from *(r26), forms callback address 0x82649B68 in r4, and calls a setter that stores that value at r3+0x409C then returns."
+    },
+    "queue_consumer": {
+      "function": "0x823A4640",
+      "read_index_offset": "0x413C",
+      "write_index_offset": "0x4140"
+    },
+    "candidate_queue_producer": {
+      "function": "0x823A4758",
+      "writes_record_at": "object+0x40BC",
+      "advances_write_index": "object+0x4140"
+    },
+    "source0_interrupt_handler": {
+      "function": "0x823B37B8",
+      "range": "[0x823B37B8, 0x823B384C)",
+      "retail_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c",
+      "source0_path": "If r3 is 0, load 0x7FC86544, test bit 0, and call 0x823A4640 with the original r4 object only when the bit is set.",
+      "separate_from": ["object+0x409C callback slot", "object+0x2ABD predicate bit 0x02", "global 0x831B3820"],
+      "verified_instruction_bytes": [
+        "0x823B37B8: 7d 88 02 a6  mflr 12",
+        "0x823B37BC: 48 32 61 11  bl 0x826D98CC",
+        "0x823B37C0: 94 21 ff 90  stwu 1,-112(1)",
+        "0x823B37C4: 7c 9f 23 78  mr 31,4",
+        "0x823B37C8: 2b 03 00 01  cmplwi 6,3,1",
+        "0x823B37CC: 40 9a 00 58  bf 26,0x823B3824",
+        "0x823B37D0: 81 64 2a 94  lwz 11,10900(4)",
+        "0x823B37D4: 81 4b 00 10  lwz 10,16(11)",
+        "0x823B37D8: 2b 0a 00 00  cmplwi 6,10,0",
+        "0x823B37DC: 41 9a 00 10  bt 26,0x823B37EC",
+        "0x823B37E0: 80 6b 00 14  lwz 3,20(11)",
+        "0x823B37E4: 7d 49 03 a6  mtctr 10",
+        "0x823B37E8: 4e 80 04 21  bctrl",
+        "0x823B37EC: 3b df 2a 98  addi 30,31,10904",
+        "0x823B37F0: 89 6d 01 0c  lbz 11,268(13)",
+        "0x823B37F4: 39 40 00 01  li 10,1",
+        "0x823B37F8: 83 ff 2a 94  lwz 31,10900(31)",
+        "0x823B37FC: 7f c3 f3 78  mr 3,30",
+        "0x823B3800: 7d 5d 58 30  slw 29,10,11",
+        "0x823B3804: 48 cb 05 49  bl 0x83063D4C",
+        "0x823B3808: 81 7f 00 00  lwz 11,0(31)",
+        "0x823B380C: 7f c3 f3 78  mr 3,30",
+        "0x823B3810: 7d 6b e8 78  andc 11,11,29",
+        "0x823B3814: 55 6b 06 be  clrlwi 11,11,26",
+        "0x823B3818: 91 7f 00 00  stw 11,0(31)",
+        "0x823B381C: 48 cb 05 01  bl 0x83063D1C",
+        "0x823B3820: 48 00 00 24  b 0x823B3844",
+        "0x823B3824: 2b 03 00 00  cmplwi 6,3,0",
+        "0x823B3828: 40 9a 00 1c  bf 26,0x823B3844",
+        "0x823B382C: 3d 60 7f c8  lis 11,32712",
+        "0x823B3830: 81 6b 65 44  lwz 11,25924(11)",
+        "0x823B3834: 55 6b 07 ff  clrlwi. 11,11,31",
+        "0x823B3838: 41 82 00 0c  bt 2,0x823B3844",
+        "0x823B383C: 7f e3 fb 78  mr 3,31",
+        "0x823B3840: 4b ff 0e 01  bl 0x823A4640",
+        "0x823B3844: 38 21 00 70  addi 1,1,112",
+        "0x823B3848: 48 32 60 d4  b 0x826D991C"
+      ]
+    }
+  },
+  "probe": {
+    "guest_memory_mutated_by_probe": false,
+    "gdb_script_path_outside_git": "/tmp/p1-queue-registration-20261024/trace-registration.gdb",
+    "gdb_script_sha256": "559b3a2c3e61312217d18e118bb46398e32aaa35713368a2dc048cf5ef3aaac3",
+    "gdb_log_path_outside_git": "/tmp/p1-queue-registration-20261024/gdb-registration.log",
+    "gdb_log_sha256": "42a7bd560a40130e6595ae59972f36f517708b0c4e40f19edf06368aabfb8377",
+    "timing_caveat": "GDB breakpoints pause guest execution; the 45-second timeout is a bounded observation window, not guest-time coverage."
+  },
+  "observations": {
+    "callback_registration": {
+      "hits": 1,
+      "object": "0xB7365F00",
+      "registered_callback": "0x82649B68",
+      "old_callback_before_store": "0x00000000",
+      "guest_thread_id": 15,
+      "stack": [
+        "0x823A5730",
+        "0x8264C858",
+        "0x82FC1550",
+        "0x82FBDF58",
+        "0x82D30380",
+        "xstart"
+      ]
+    },
+    "registered_callback_body": {
+      "function": "0x82649B68",
+      "hits": 0
+    },
+    "source0_deferred_consumer": {
+      "function": "0x823A4640",
+      "sampled_entries": 8,
+      "object": "0xB7365F00",
+      "read_index_values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "write_index_values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "guest_thread_id": 12,
+      "caller": "0x823B37B8 via SetupGuestGpu interrupt lambda #3"
+    },
+    "candidate_producer": {
+      "function": "0x823A4758",
+      "hits": 0
+    }
+  },
+  "interpretation": {
+    "supported": "The retail queue callback is registered during the xstart initialization chain, and the Linux ReXGlue source-0 interrupt path enters the guest consumer. The sampled queue remains empty; neither the registered callback body nor candidate producer executes in this bounded run.",
+    "not_proven": "This does not prove 0x823A4758 is the only producer, identify why no work is enqueued, establish a scheduler defect, or demonstrate menu/race progress. No raw Vulkan readback was captured in this run.",
+    "next_p1_frontier": "Find every retail path that can advance object+0x4140 or enqueue a record, then trace the first expected caller/registration that is absent during startup. Preserve the original queue and wait semantics."
+  }
+}

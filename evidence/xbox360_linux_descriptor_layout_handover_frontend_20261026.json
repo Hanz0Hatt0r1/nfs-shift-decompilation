@@ -1,0 +1,142 @@
+{
+  "schema": "shift.xbox360.linux-descriptor-layout-handover-frontend.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host": {
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "mapping_verified": true
+    },
+    "rexglue_runtime": {
+      "sha256": "1c436773e551544fbc4b49847826d73093042b8ef8be146932b622450fbefae7",
+      "mapping_verified": true
+    },
+    "gpu_plugin": {
+      "sha256": "78d02ba81efa7a8d07e8a1cc6c1b93c22259954dd401b029a02d24bc08fc61d6",
+      "build_id": "2ca8cc113fef865e3a6630089bd4a240db890e22",
+      "renderer_source_commit": "345fc2ef69f485ab3f2f15effbb4d837be96c51f",
+      "mapping_verified": true
+    },
+    "handoff_pr": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2161",
+    "ldd_r_unresolved_symbols": 0
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "started_at_from_runtime_log": "2026-10-26 10:55:02.416",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation",
+      "--fullscreen=false"
+    ],
+    "game_data_was_read_only": true,
+    "apk_or_installation_replaced": false,
+    "termination": "After the bounded UI observations, a follow-up GDB session failed to insert its breakpoints and reported an internal fatal error. The still-traced test process and debugger were then terminated; this run has no clean-exit claim.",
+    "controller": {
+      "device": "Linux uinput Microsoft X-Box 360 pad, VID:PID 045e:028e",
+      "same_run_retail_consumption_proven": false,
+      "pulses": [
+        { "sequence": 1, "button": "A", "purpose": "confirm English at Language Select", "pulse_ms": 350 },
+        { "sequence": 2, "button": "A", "purpose": "advance from safety disclaimer", "pulse_ms": 350 },
+        { "sequence": 3, "button": "A", "purpose": "probe black transition", "pulse_ms": 350 },
+        { "sequence": 4, "button": "Start", "purpose": "probe black transition", "pulse_ms": 350 }
+      ]
+    },
+    "window_captures": {
+      "scope": "Target nfs_shift Wayland client window crop only",
+      "logical_geometry": "2635,205 879x579",
+      "image_size": "1054x694",
+      "captures": [
+        {
+          "state": "Language Select with English highlighted",
+          "path_external": "/home/pes/work/nfs-p1-global-gate-layout-20261026/window-start.png",
+          "sha256": "e2db84ad9344585ebcc217f7595bc2ff830836f8ef84bde091c865dd9d22914a"
+        },
+        {
+          "state": "EA logo after A at Language Select",
+          "path_external": "/home/pes/work/nfs-p1-global-gate-layout-20261026/window-after-language.png",
+          "sha256": "a74cb0c899606970e52b886d1faa3f6ff35ef55cad68ccc8b3413c78ebc0efb6"
+        },
+        {
+          "state": "Retail driving-safety disclaimer",
+          "path_external": "/home/pes/work/nfs-p1-global-gate-layout-20261026/window-after-intro.png",
+          "sha256": "07a0f06e748905cbaf824c08e65160e15622a6496b9d50a34a0c5b7961e3a475"
+        },
+        {
+          "state": "Black viewport after A; remained black in the follow-up capture 8 seconds later",
+          "path_external": "/home/pes/work/nfs-p1-global-gate-layout-20261026/window-after-warning.png",
+          "sha256": "18fce18e38c0fd2f8066b568c55f4d2663bbba85e919545761784374b535ce75"
+        },
+        {
+          "state": "Black viewport after 8-second wait",
+          "path_external": "/home/pes/work/nfs-p1-global-gate-layout-20261026/window-after-warning-wait.png",
+          "sha256": "10d8aac97c1aa571db153151779814b44e307190b187873e6830bcce1757d63e"
+        },
+        {
+          "state": "Safety disclaimer visible again after A and Start",
+          "path_external": "/home/pes/work/nfs-p1-global-gate-layout-20261026/window-after-a-start.png",
+          "sha256": "259cad2cdcc1982a649068e40aa47e6395f59ad287a2d69b0c8bbf272ac0e4a0"
+        }
+      ]
+    },
+    "gdb_wait_sample": {
+      "path_external": "/home/pes/work/nfs-p1-global-gate-layout-20261026/wait-sample.txt",
+      "sha256": "8d2f5e8c612f82142ce523a9ce6740812d52e06e6dc97db95cf86614cce57999",
+      "guest_memory_written": false,
+      "guest_main_thread": "Core 0/0: Main",
+      "call_chain_top_down": [
+        "sub_823A0310",
+        "sub_823B34A0",
+        "sub_823B3850",
+        "sub_823A0760",
+        "sub_8264F868",
+        "sub_82FD46F8"
+      ],
+      "object_guest_address": "0xB7365F00",
+      "wait_target": "0x1761",
+      "predicate_byte": "0x04",
+      "tested_completion_mask": "0x02",
+      "owner_thread_id": "0x6",
+      "owner_wait_field": "0x00000000"
+    },
+    "thread_snapshot": {
+      "path_external": "/home/pes/work/nfs-p1-global-gate-layout-20261026/attach-snapshot.txt",
+      "sha256": "642943397f0c2477fcd21c0cdc5db2f271891838ce79635e49a869f022abfbec",
+      "guest_memory_written": false
+    },
+    "runtime_log": {
+      "path_external": "/home/pes/work/nfs-p1-global-gate-layout-20261026/bin/logs/nfs_shift_001.log",
+      "sha256": "c127769c82ab010aadbd308f92b49a9a76157c6cdcf156e7d91ebb12ca8d1161",
+      "guest_faults": 0,
+      "unhandled_exceptions": 0,
+      "unresolved_frontend_file_warnings": [
+        "render\\shaders\\cache\\",
+        "d:\\pakfiles\\dir\\audio.bff",
+        "d:\\characters\\drivers2.lod",
+        "d:\\tracks\\cameraconfig.xml",
+        "d:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+        "d:\\tracks\\_data\\static\\scenes\\menu_background.xml"
+      ]
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The hash-identified Process 2 handoff plugin and matching ReXGlue runtime loaded together; ldd -r found no unresolved symbols.",
+      "The retail XEX visibly reached Language Select, the EA logo, and the driving-safety disclaimer in the target window.",
+      "The main guest thread was still in the original 0x823A0310 wait path at the read-only GDB snapshot; sampled predicate byte 0x04 did not contain tested mask 0x02.",
+      "The target window showed black after A for at least the two captured observations, and the safety disclaimer was visible again after later A/Start pulses."
+    ],
+    "not_proven": [
+      "That the descriptor-layout cache change caused or prevented any screen transition.",
+      "That any individual uinput pulse was consumed by the retail frontend.",
+      "That the logged loose-file or shader-cache requests caused the wait or black viewport.",
+      "The exact producer, callback, or scheduler cause of the retail wait; the short follow-up breakpoint counter trace was not collected.",
+      "Main-menu entry, an offline race, gameplay, Vulkan 1.1, ARM64, or Android runtime readiness."
+    ],
+    "next_p1_step": "Continue tracing the retail producer/completion callback and its registration/scheduling conditions from the 0x823A0310 wait without changing retail queue or predicate semantics."
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "schema": "shift.xbox360.rexglue.function-entry.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x8233D128",
+  "entry_bytes_hex": "816300402b0b0000419a00185563003e81630000814b01647d4903a64e80042081630000814b01b07d4903a64e800420",
+  "capture_length_bytes": 48,
+  "runtime_fatal": {
+    "function": "0x82328C00",
+    "indirect_call_instruction": "0x82328C44",
+    "indirect_call_return_address": "0x82328C48",
+    "indirect_target": "0x8233D128",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x82328C00",
+      "0x8231C500",
+      "0x8231AEE0",
+      "0x822D6EA8",
+      "0x822D68C8",
+      "0x822EF7B0",
+      "0x822BD0C0",
+      "0x82FD5658",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ]
+  },
+  "memory_capture": "GDB read all 48 bytes from host address 0x18233D128; this confirms the two vtable slots and branch target reconstructed by ReXGlue codegen.",
+  "renderer_diagnostic_run": {
+    "launch_flag": "--no-async_shader_compilation",
+    "runtime_log": "nfs_shift_072.log",
+    "runtime_log_sha256": "f5471c6c73488b1c84205bab25a0a36e726278bd8a44010b961c98368c02c8d5",
+    "observations": [
+      "The log contains many synchronous graphics pipeline-state creation requests and no async-placeholder frame-skip warning.",
+      "The log reaches the guest trap at 0x8233D128."
+    ],
+    "limits": [
+      "The log contains no vkCmdDraw* event or successful Vulkan present evidence.",
+      "Pipeline-state requests do not prove a retail guest draw or presented frame."
+    ]
+  },
+  "user_visual_observation": "The user reports seeing the original game's loading screen; no screenshot was captured.",
+  "confidence": "full_live_guest_capture_and_runtime_verified",
+  "limitations": [
+    "The next virtual-dispatch destination 0x8233D0F8 was unregistered and trapped; its live bytes are recorded separately.",
+    "No screenshot, main-menu state, completed retail draw/present, or race has been verified."
+  ],
+  "codegen_reconstruction": [
+    "lwz r11,0x40(r3)",
+    "cmplwi cr6,r11,0",
+    "beq cr6,0x8233D148",
+    "rotlwi r3,r11,0",
+    "lwz r11,0(r3)",
+    "lwz r10,0x164(r11)",
+    "mtctr r10",
+    "bctr",
+    "loc_8233D148: lwz r11,0(r3)",
+    "lwz r10,0x1B0(r11)",
+    "mtctr r10",
+    "bctr"
+  ],
+  "function_length_bytes": 48,
+  "semantics": "Null-conditional virtual dispatch: load the field at object offset +0x40; dispatch via vtable slot +0x164 if non-null, otherwise via slot +0x1B0.",
+  "codegen_validation": {
+    "result": "ReXGlue v0.10.0 generated and registered the complete 48-byte conditional dispatch function.",
+    "build": "Linux AMD64 nfs_shift linked successfully.",
+    "runtime_execution": "GDB hit 0x8233D128 and continued through its conditional dispatch to 0x8233D0F8, where the next InvalidFunctionTrap occurred."
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "schema": "shift.xbox360.linux-retail-wait-shader-cache.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "binaries": {
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime": {
+      "path": "/tmp/nfs-p1-queue-state-finalprobe-20261026/bin/librexruntime.so",
+      "sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+      "mapping_verified": true
+    },
+    "gpu_plugin": {
+      "path": "/tmp/nfs-p1-queue-state-finalprobe-20261026/bin/librexgpu-shift-native.so",
+      "sha256": "f1d6394bfa01dd65b2472d50eda64b1dd5ceade8993a43771b0e73b84090f95c",
+      "build_id": "e76c6515f0d0737753023971fcc68916d0aaf706",
+      "source_commit": "8e76681cc",
+      "mapping_verified": true
+    },
+    "proc_maps_path_external": "/tmp/nfs-p1-queue-state-finalprobe-20261026/mapped-libraries.txt",
+    "proc_maps_sha256": "b34c9a85e91ddf08840ab56b990b1a4a7614b8cbc41de88ca57b9618d44f03f9"
+  },
+  "probe": {
+    "platform": "Linux AMD64",
+    "duration_seconds": 53.4,
+    "exit_code": 0,
+    "termination": "The harness sent SIGINT after one read-only GDB snapshot; the still-live title returned 0.",
+    "instrumentation": "GDB attached once without breakpoints. The guest process memory was read only and not modified.",
+    "gdb_log_path_external": "/tmp/nfs-p1-queue-state-finalprobe-20261026/gdb-queue-state.log",
+    "gdb_log_sha256": "8cb0dc85f8e6706078535faa70cd23807ed86981c2e2290d8e843d8d443ce03c",
+    "runtime_log_path_external": "/tmp/nfs-p1-queue-state-finalprobe-20261026/bin/logs/nfs_shift_001.log",
+    "runtime_log_sha256": "846733934282ee78324d33ca9a45d62b5919359f1acce7a16aa74c4b9ec3f929",
+    "controller_events_sent": false
+  },
+  "retail_queue": {
+    "wait_record_guest_address": "0x7018FA20",
+    "object_guest_address": "0xB7365F00",
+    "head_pointer_field_object_plus": "0x2A90",
+    "head_writeback_guest_address": "0xB7AF4000",
+    "head": 4967,
+    "tail_field_object_plus": "0x2A9C",
+    "tail": 4977,
+    "wait_target_guest_r30": "0x136F",
+    "wait_target_decimal": 4975,
+    "wait_record_cursor_after_predicate": 4967,
+    "wait_return_site": "0x823B3560",
+    "predicate_function": "0x823A0310",
+    "predicate_return_r3": 1,
+    "predicate_byte_field_object_plus": "0x2ABD",
+    "predicate": "0x04",
+    "tested_completion_mask": "0x02",
+    "object_flag_field_object_plus": "0x2ABC",
+    "object_flag": "0x00",
+    "global_831B3820": "0x00000000"
+  },
+  "stacks": {
+    "guest_main_thread": {
+      "thread_name": "Core 0/0: Main",
+      "frames_top_down": [
+        "sub_823B34A0 at generated/default/nfs_shift_recomp.134.cpp:5097",
+        "sub_823B3850 at generated/default/nfs_shift_recomp.167.cpp:4994",
+        "sub_823A0760 at generated/default/nfs_shift_recomp.175.cpp:4867",
+        "sub_8264F868 at generated/default/nfs_shift_recomp.239.cpp:11185"
+      ]
+    },
+    "host_graphics_worker": {
+      "thread_name": "SHIFT Native GP",
+      "state": "pthread_cond_wait in std::condition_variable::wait"
+    }
+  },
+  "runtime_activity": {
+    "copy_convert_accepts": 1093,
+    "draw_submission_entries": 1093,
+    "menu_background_xml_open_failures": 4,
+    "cameraconfig_xml_open_failures": 1,
+    "vulkan_frame_refresh_failures": 0,
+    "guest_faults": 0,
+    "sigsegv": 0,
+    "sigbus": 0
+  },
+  "interpretation": {
+    "supported": [
+      "The exact-XEX main guest thread was in the original retail queue wait path at the GDB snapshot.",
+      "Predicate 0x823A0310 returned 1 at guest return site 0x823B3560, indicating the original path continues waiting.",
+      "The wait target 4975 was between the sampled head 4967 and tail 4977; completion mask 0x02 was clear in predicate byte 0x04.",
+      "The SHIFT Native GP host thread was asleep in a condition-variable wait at the same snapshot.",
+      "The P2 shader-cache plugin and selected ReXGlue runtime were loaded from the mapped paths recorded above."
+    ],
+    "not_proven": [
+      "That the sampled retail queue violates its original protocol.",
+      "That the P1 scheduler, guest thread dispatch, or P2 graphics worker caused the wait.",
+      "That the sleeping host graphics worker should consume these software-queue entries or set predicate bit 0x02.",
+      "Why the expected retail producer or completion callback has not advanced this queue.",
+      "Same-run frontend input consumption, main-menu entry, or an offline race."
+    ],
+    "next_p1_step": "Trace the exact guest producer/completion callback path and its scheduling conditions for this live wait state. Preserve retail queue and predicate semantics until the missing transition is demonstrated."
+  }
+}

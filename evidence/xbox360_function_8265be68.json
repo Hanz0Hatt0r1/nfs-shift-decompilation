@@ -1,0 +1,46 @@
+{
+  "schema": "shift.xbox360.rexglue.function-thunk.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x8265BE68",
+  "bytes_hex": "806300584bfffc0c",
+  "decoded": [
+    "lwz r3,0x58(r3)",
+    "b 0x8265BA78"
+  ],
+  "semantics": "Load the guest field at object offset +0x58 into r3, then tail-branch to registered helper 0x8265BA78.",
+  "branch_target": "0x8265BA78",
+  "runtime_fatal": {
+    "function": "0x8264B248",
+    "indirect_call_instruction": "0x8264B4F4",
+    "indirect_call_return_address": "0x8264B4F8",
+    "indirect_target": "0x8265BE68",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x8264B248",
+      "0x8264DF98",
+      "0x8264FC78",
+      "0x82344CD0",
+      "0x82344BD8",
+      "0x8239AC38",
+      "0x82398500",
+      "0x8238C098",
+      "0x82D1D048",
+      "0x82CF0FE8",
+      "0x82CF1290",
+      "0x82CF12F0",
+      "0x82CF1378",
+      "0x82CF6A80",
+      "0x82CF9FE0",
+      "0x82D1CDE8"
+    ]
+  },
+  "memory_capture": "GDB read 16 bytes at host address 0x18265BE68 while PPCContext.ctr and last_indirect_target both contained 0x8265BE68.",
+  "registered_branch_target": "0x8265BA78 is present in generated/default/nfs_shift_register.cpp and the linked runtime.",
+  "prior_frontier": "The same runtime passed the 0x82D365A0 virtual dispatch thunk and trapped at the dynamically loaded callback here.",
+  "confidence": "observed",
+  "limitations": [
+    "Bytes were captured from the live ReXGlue guest mapping of the exact XEX; no Ghidra load specification is available for the XEX.",
+    "This entry still requires ReXGlue codegen, a rebuilt runtime, and execution verification.",
+    "No main-menu state, completed retail draw/present, or race has been verified."
+  ]
+}

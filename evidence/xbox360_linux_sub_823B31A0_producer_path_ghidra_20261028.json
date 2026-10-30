@@ -1,0 +1,68 @@
+{
+  "schema": "shift.xbox360.retail.producer-function-analysis.v1",
+  "procedure": "sub_823B31A0",
+  "authority": "shipped-artifact plus generated PPC translation",
+  "raw_fragment": {
+    "path": "/home/pes/ghidra_projects/NeedForSpeedShift_RetailProducerCode_20261027/sub_823B31A0.bin",
+    "size_bytes": 256,
+    "sha256": "c43c2b12bc23bd4a74c825e0f10b7368ad4f6a3e2f3aa3ee1a4dd8271bfed678",
+    "guest_entry_mapping": "file offset 0 corresponds to guest entry 0x823B31A0 based on the extracted function identity",
+    "ghidra_language": "PowerPC:BE:64:64-32addr",
+    "ghidra_version": "12.1.2_DEV",
+    "manual_function_body_file_offsets": [0, 211],
+    "limitation": "The 256-byte raw fragment does not contain the shared save/restore helper bodies or callees. Ghidra's raw import initially defined no functions; an analysis-only script created the function at file offset 0. The translated generated PPC source was used to corroborate helper calls and control flow."
+  },
+  "translation_cross_check": {
+    "generated_source": "/home/pes/work/nfsshift-rex-lwsync-20261027/generated/default/nfs_shift_recomp.115.cpp",
+    "generated_source_sha256": "7acb5574184601b02d2828e98518044040bb556b86579205c3b79e96be48b1df",
+    "function_source_lines": [5068, 5188],
+    "related_sub_823B21D0_source_lines": [4812, 4900],
+    "related_sub_823B2AF0_source_lines": [4971, 5290],
+    "generated_source_was_modified": false
+  },
+  "observed_semantics": {
+    "counter_offset_decimal": 11012,
+    "counter_offset_hex": "0x2B04",
+    "spin_lock_offset_hex": "0x2B08",
+    "counter_update": "Both paths add incoming PPC r7 to manager+0x2B04 exactly once; this function does not decrement it.",
+    "nonzero_counter_path": [
+      "Acquire the spin lock at manager+0x2B08, then re-read manager+0x2B04.",
+      "If still nonzero, write `(r6 | 0x81000000)` at r4+4, r5 at r4+8, and `0xC0000000` at r4+12.",
+      "Call sub_823B21D0 with r8 and the record range, add r7 to manager+0x2B04, then release the lock."
+    ],
+    "zero_counter_or_recheck_zero_path": [
+      "Do not read or write the preexisting record buffer at r4; preserve and return its pointer in r3.",
+      "Build an 8-byte stack record containing `((r6 & 0x00FFFFFF) | 0x81000000)` and r5.",
+      "Add r7 to manager+0x2B04, then call sub_823B2AF0(manager, stack_record, 1)."
+    ],
+    "callee_address_crosswalk": {
+      "sub_823B21D0": "0x823B21D0",
+      "sub_823B2AF0": "0x823B2AF0",
+      "KfAcquireSpinLock": "0x83063C0C",
+      "KfReleaseSpinLock": "0x83063BFC",
+      "crosswalk_basis": "PPC relative branch targets were mapped from the raw fragment using 32-bit guest-address wrap and checked against the generated translation."
+    }
+  },
+  "capture_correlation": {
+    "paired_capture_id": "gpu-dispatch-pair-36aad927-20261028-r1",
+    "paired_events_sha256": {
+      "native": "226dca18cbb0c5d93ab0f7af00bf6fadec2af906cea23a9becc69d7df176e5ae",
+      "xenos": "9e1db2f5df282ac024b141708f531b51ff8712c1d078239d89ef57a88493c55c"
+    },
+    "first_tag_11_call": {
+      "caller_lr": "0x823B342C",
+      "manager_counter_before_native": 0,
+      "manager_counter_before_xenos": 0,
+      "r7_delta_native": 0,
+      "r7_delta_xenos": 0,
+      "record_words_native": ["0x00000000", "0x00000000", "0x00000000", "0x00000000"],
+      "record_words_xenos": ["0x00000000", "0x00000000", "0xC0012201", "0x00000000"]
+    },
+    "candidate_disposition": "The differing preexisting r4 buffer words on this call are not consumed by the observed zero-counter branch. Both backends had manager counter 0 and r7 delta 0; the function builds a separate stack record and routes it through sub_823B2AF0. This observation does not establish a semantic difference or explain the later worker wait.",
+    "remaining_unknowns": [
+      "The nonzero-counter fast path has not been matched to the 0xC0000000 records and subsequent completion/decrement events in one causal trace.",
+      "The meaning of incoming r7 is structurally an additive counter delta; its higher-level name remains unknown.",
+      "This function analysis does not identify the writer for WAIT_REG_MEM address 0x1B964004."
+    ]
+  }
+}

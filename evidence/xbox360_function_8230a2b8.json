@@ -1,0 +1,51 @@
+{
+  "schema": "shift.xbox360.rexglue.function-block.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x8230A2B8",
+  "bytes_hex": "8163005465698000912300544e800020",
+  "decoded": [
+    "lwz r11,84(r3)",
+    "oris r9,r11,0x8000",
+    "stw r9,84(r3)",
+    "blr"
+  ],
+  "semantics": "Set bit 31 of the 32-bit field at guest object offset +0x54 and return.",
+  "runtime_fatal": {
+    "function": "0x82308A00",
+    "indirect_call_instruction": "0x82308AE4",
+    "indirect_call_return_address": "0x82308AE8",
+    "indirect_target": "0x8230A2B8",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x82308A00",
+      "0x82308938",
+      "0x82305058",
+      "0x822FAB18",
+      "0x8222B108",
+      "0x822D9728",
+      "0x822D96E0",
+      "0x826C5A50",
+      "0x822D6258",
+      "0x822EF870",
+      "0x822BCF50",
+      "0x82FBEB98",
+      "0x82DD7F98",
+      "0x82E336B8",
+      "0x82E32640",
+      "0x8301DEC8"
+    ]
+  },
+  "memory_capture": "GDB read 16 bytes at host address 0x18230A2B8 through the live guest mapping while PPCContext.last_indirect_target was 0x8230A2B8.",
+  "neighboring_codegen_entry": {
+    "address": "0x8230A2B0",
+    "status": "registered",
+    "generated_body": "addi r3,r3,8; unresolved tail branch to 0x8230E4A0",
+    "note": "The captured indirect target is the separate address 0x8230A2B8, eight bytes into this neighboring generated entry."
+  },
+  "confidence": "observed",
+  "limitations": [
+    "The exact retail XEX has no Ghidra load specification; the instruction bytes are from its live ReXGlue guest mapping.",
+    "The 0x8230A2B8 override has not yet been passed through ReXGlue codegen or a rebuilt runtime.",
+    "The runtime has not reached a visible frontend menu, a completed retail draw, or a race."
+  ]
+}

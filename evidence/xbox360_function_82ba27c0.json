@@ -1,0 +1,81 @@
+{
+  "schema": "shift.xbox360.rexglue.function-entry.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "live_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c",
+  "guest_address": "0x82BA27C0",
+  "entry_bytes_hex": "3863fffc4800007c",
+  "function_length_bytes": 8,
+  "decoded_instructions": [
+    "addi r3,r3,-4",
+    "b 0x82BA2840"
+  ],
+  "semantics": "Subtract 4 from guest r3, then tail-branch to 0x82BA2840. This records only the entry thunk's PPC behavior; the higher-level callback or class meaning is unknown.",
+  "branch": {
+    "instruction_address": "0x82BA27C4",
+    "instruction_word_big_endian": "0x4800007C",
+    "displacement": "0x7C",
+    "target": "0x82BA2840",
+    "target_has_existing_generated_body": true
+  },
+  "external_report": {
+    "source": "Process 2 message received in the Codex task",
+    "reported_sequence": [
+      "SDL_OpenAudioDeviceStream failed while opening ALSA audio",
+      "ReXGlue then reported invalid or unregistered guest address 0x82BA27C0"
+    ],
+    "raw_log_or_hash_provided": false,
+    "status": "unverified_report"
+  },
+  "runtime_validation": {
+    "codegen": {
+      "sdk_version": "0.10.0",
+      "override_file": "nfs_shift_overrides.toml",
+      "generated_body": "ctx.r3.s64 = ctx.r3.s64 + -4; sub_82BA2840(ctx, base); return;",
+      "registered_in": [
+        "nfs_shift_register.cpp",
+        "nfs_shift_init.cpp"
+      ],
+      "generated_function_symbol": "sub_82BA27C0"
+    },
+    "build": {
+      "target": "nfs_shift",
+      "platform": "Linux AMD64",
+      "executable_sha256": "610d8f53750cef76ecf3f003c7e6e5e1b9873f9068579b43429a819815a0122a",
+      "nm_symbols": [
+        "sub_82BA27C0",
+        "__imp__sub_82BA27C0"
+      ],
+      "result": "successful"
+    },
+    "bounded_smoke": {
+      "gpu_plugin": "ReXGlue SDK Xenos",
+      "gpu_plugin_sha256": "09745cbdda1b30b91df8c371c8141a57a41be499eab745b12f4a3041561729f7",
+      "duration_seconds": 45,
+      "log_sha256": "d2bfb843d0dfbb9d6e1d42776e252691c0c93e457ed8f5ffcdee588f0474f485",
+      "observed": [
+        "retail guest GPU pipeline submissions",
+        "ALSA audio endpoint opened successfully",
+        "clean application shutdown after the planned timeout"
+      ],
+      "invalid_or_unregistered_82ba27c0": false,
+      "direct_thunk_hit_observed": false
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail entry bytes decode to an eight-byte pointer-adjusting tail thunk.",
+      "ReXGlue code generation produced and registered the corresponding function in a successful Linux AMD64 build."
+    ],
+    "not_proven": [
+      "That the Process 2 audio-open failure was reproduced by this local run.",
+      "That 0x82BA27C0 was entered in the bounded local run.",
+      "The higher-level audio, callback, or class meaning of this thunk.",
+      "Main-menu or offline-race execution."
+    ]
+  },
+  "limitations": [
+    "The Process 2 report did not include a raw log, runtime hash, or exact launch command.",
+    "The local smoke run opened an ALSA endpoint and therefore did not reproduce the reported audio failure path.",
+    "The entry's byte-level semantics are preserved without assigning an unverified high-level role."
+  ]
+}

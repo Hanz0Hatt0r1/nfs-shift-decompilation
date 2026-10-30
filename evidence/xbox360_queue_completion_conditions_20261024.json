@@ -1,0 +1,142 @@
+{
+  "schema": "shift.xbox360.queue-completion-conditions.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "static_basis": {
+    "ghidra": {
+      "input_slice": "nfs_shift_xbox360_wait_callback_slice_20261024.elf",
+      "input_slice_sha256": "1c74bb33e32fa052c666dd415fa1ea89974705101c781b117b6dca1dcca059fa",
+      "result": "xbox360_wait_callback_slice_20261024.jsonl",
+      "result_sha256": "7fa1c96c7e886b55a5543df94445428eca122a87ba35b4d3ac2a48c98a681ade",
+      "analysis_note": "Sparse PPC big-endian slice; target functions 0x823B33A0, 0x823B34A0 and 0x823A0310 are present. Out-of-slice warnings do not affect the complete 0x823B33A0 body."
+    },
+    "software_queue_helper": {
+      "function": "0x823B33A0",
+      "completion_predicate_byte_offset": "0x2ABD",
+      "completion_mask": "0x02",
+      "setter_guard": "object+0x2ABC bit 0x80 clear, global 0x831B3820 nonzero, and object+0x2ABD bit 0x02 clear; helper calls 0x823B34A0 before OR-ing bit 0x02"
+    },
+    "global_producer": {
+      "guest_callsite": "0x823B9FC8",
+      "import": "VdIsHSIOTrainingSucceeded",
+      "global_address": "0x831B3820",
+      "retail_transform": "cntlzw(return) then extract high bit; a return value of 1 produces global value 0",
+      "rexglue_source": "src/kernel/xboxkrnl/xboxkrnl_video.cpp: VdIsHSIOTrainingSucceeded_entry returns 1",
+      "rexglue_sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+      "upstream_reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/kernel/xboxkrnl/xboxkrnl_video.cc",
+      "upstream_behavior": "VdIsHSIOTrainingSucceeded_entry returns 1"
+    }
+  },
+  "runtime_probe": {
+    "host_platform": "Linux AMD64",
+    "duration_limit_seconds": 60,
+    "input_events_sent": false,
+    "guest_memory_mutated": false,
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b",
+    "renderer_plugin_sha256": "54348dd521b97b15be963d0b9f680172dbfb83c3ef5f2fbb979f618dc9c32aaa",
+    "rexglue_sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+    "arguments": [
+      "--game_data_root=/tmp/nfs_shift_xbox_game_root_20261023",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "gdb_log_outside_git": "/tmp/p1-callback-condition-20261024/logs/gdb-callback-conditions.log",
+    "gdb_log_sha256": "cd0edf1cbf397abe2299c43dcc97cd54a363bfc4342d004298815065d8fad731",
+    "sampling": {
+      "guest_object": "0xB7365F00",
+      "helper_entry_sample_count": 27,
+      "helper_sample_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        100,
+        200,
+        300,
+        400,
+        500,
+        600,
+        700,
+        800,
+        900,
+        1000,
+        1100,
+        1200,
+        1300,
+        1400,
+        1500
+      ],
+      "global_0x831B3820_values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "flag_object_0x2ABC_values": [
+        "0x00"
+      ],
+      "predicate_byte_at_helper_samples": [
+        "0x00",
+        "0x14"
+      ],
+      "queue_tail_object_0x2A9C_first": 3,
+      "queue_tail_object_0x2A9C_last_sample": 3003,
+      "predicate_hardware_watchpoint_write_count": 1624,
+      "predicate_hardware_watchpoint_values": [
+        "0x04",
+        "0x14"
+      ],
+      "global_hardware_watchpoint_value_change_count": 0
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail helper is called repeatedly; sampled object+0x2A9C tail values rise from 3 to 3003 while global 0x831B3820 samples remain 0.",
+      "The predicate byte is observed as 0x04 or 0x14; none of 1,624 observed writes sets mask 0x02.",
+      "Retail code sets this completion mask only when VdIsHSIOTrainingSucceeded reports false, consistent with the current ReXGlue stub and upstream Xenia success result of 1."
+    ],
+    "not_proven": [
+      "This does not show why the distinct software queue consumer/head fails to advance, nor establish the exact EVENT_WRITE_SHD destination/value.",
+      "The global watchpoint reports value changes, so its zero event count does not prove the guest never writes the same zero value.",
+      "This run contains no raw Vulkan readback and proves no visible frontend, main menu, or offline race."
+    ],
+    "next_frontier": "Trace the exact guest address and value written by EVENT_WRITE_SHD against descriptor+0 and the software queue consumer; preserve the retail success return and completion predicate unless contrary retail evidence is found."
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "schema": "shift.xbox360.linux-queue-field-writer-pair.v1",
+  "date": "2026-10-28",
+  "capture_root": "/home/pes/work/nfs-shift-p1-queue-field-writers-pair-20261028",
+  "capture": {
+    "requested_seconds_per_backend": 90,
+    "guest_memory_modified_by_probe": false,
+    "resource_manifest_sha256": "f26a6709fa57fc36e85b75578ac05563bc8aa12f3641faf045f6bc8cef9fc1f6",
+    "xenos": {
+      "utc_start": "2026-10-28T10:26:22.952Z",
+      "utc_end": "2026-10-28T10:27:54.642Z",
+      "duration_seconds": 91.69,
+      "gdb_exit": 0,
+      "bink_frames": "281/281",
+      "scene_gate_reached": true,
+      "scene_gate_elapsed_seconds": 65.026,
+      "main_queue_wait_entries": 224,
+      "main_queue_wait_returns": 224,
+      "queue_at_stop": {
+        "head_pointer": "0xB7AF4000",
+        "head": 4543,
+        "tail": 4553,
+        "predicate_byte": "0x04",
+        "manager_11012": 1
+      },
+      "host_input_masks": ["0x0010", "0x1000", "0x0010"],
+      "queue_field_watchpoints_armed": false,
+      "watch_arm_threshold_reached": false
+    },
+    "shift_native": {
+      "utc_start": "2026-10-28T10:27:58.037Z",
+      "utc_end": "2026-10-28T10:29:29.177Z",
+      "duration_seconds": 91.14,
+      "gdb_exit": 0,
+      "bink_frames": "281/281",
+      "scene_gate_reached": false,
+      "main_queue_wait_entries": 188,
+      "main_queue_wait_returns": 187,
+      "pending_call": 254,
+      "pending_entry_elapsed_seconds": 65.949,
+      "pending_entry": {
+        "head_pointer": "0xB7AF4000",
+        "head": 3253,
+        "tail": 3287,
+        "wait_target_r30": 3285,
+        "predicate_byte": "0x14",
+        "completion_bit_0x02_set": false
+      },
+      "watchpoint_initial_values": {
+        "software_head": 3255,
+        "software_tail": 3287,
+        "completion_predicate": "0x14"
+      },
+      "queue_field_watch_events": 0,
+      "queue_at_stop": {
+        "head_pointer": "0xB7AF4000",
+        "head": 3259,
+        "tail": 3287,
+        "predicate_byte": "0x14",
+        "manager_11012_unsigned": 4294967228,
+        "manager_11012_hex": "0xFFFFFFBC",
+        "manager_11012_signed": -68
+      },
+      "worker_queue_at_stop": {
+        "producer": 221,
+        "consumer": 146,
+        "observed_backlog": 75,
+        "event_signal_state": 0
+      },
+      "source1_guest_callback_entries": 455,
+      "native_ring_trace_records": 1176,
+      "source1_pm4_interrupt_records": 833
+    }
+  },
+  "identity": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_sha256": "ff4278b3df0957d31870c933a001e2d8df4d7ced2149053f773c7fdb39087178",
+    "runtime_sha256": "693abc4814fe04a8025e41be989ac14faa31565b2786e1397f87ad9544d601cd",
+    "sdk_commit": "923a7a03575b43f6c22ee97c376077a7022d17d6",
+    "native_plugin_sha256": "d01405cca2dcc8d67413b3fd1ee9bebdd7db72cc3656849d57f013d3202d6d90",
+    "native_plugin_build_id": "0fb71ebd09a498fc0515de313289b39ccfc22300",
+    "native_plugin_source_commit": "ec657d411c25d91a03e7a5991c0dc41f50e1af43",
+    "xenos_plugin_sha256": "19053b691d7d1f8f17bbe3e90be38ba3acc60439cbe5c1dfcad271e07b47ce43"
+  },
+  "native_join_input_archive": {
+    "path": "evidence/xbox360_linux_queue_field_writer_pair_native_source1_join_inputs_20261028.jsonl.gz",
+    "sha256": "cc0f71fcdbca7ff995f5679c0d4e65f2a441a3cb804443037b6dad4d47bff008",
+    "records": 1288,
+    "guest_callbacks": 455,
+    "source1_pm4_interrupts": 833
+  },
+  "artifacts": {
+    "pair_metadata_sha256": "52c4f703024da9ac30002a7fdb354317b67f8d46cd7066b486c47d880b2c30d8",
+    "comparison_sha256": "5cf0d2ad5201d6679651aeef107d27bf0990f40a75ddfa61872e8e4d4cce09e5",
+    "xenos_events_sha256": "8c090719a47b83338cdce87eedff8214c5c0642028fdd8f98012aed9fd31b1c9",
+    "xenos_gdb_log_sha256": "93edb2986b84ed8c953ff731f2edc84fb733d6801d37125b34680804efebe7e5",
+    "native_events_sha256": "419e956f995bacd39a4f42ccdc7dd1b8d52a3f0924b3b06270ff3b3433cac592",
+    "native_gdb_log_sha256": "91c27f0f3929e75880c7ceb62218723cb154805538ab2e724ac9fa6ec8d5a1fa",
+    "native_renderer_log_sha256": "33c6e9d76e5b4def6e73b8616f000dc55eff8ad19bf71cc9e6b513adf6b1e5a3"
+  },
+  "interpretation": {
+    "xenos_queue_waits_returned_and_input_gate_reached": true,
+    "native_queue_wait_call_254_unreturned_at_stop": true,
+    "native_head_changed_after_watchpoint_arm_without_a_recorded_write": true,
+    "native_tail_and_predicate_unchanged_at_stop": true,
+    "current_watchpoint_alias_coverage_complete": false,
+    "alternate_mapping_alias_or_unobserved_writer_path_exists": true,
+    "callback_to_cursor_causality_proven": false,
+    "main_menu_confirmed": false,
+    "runtime_semantics_changed": false,
+    "renderer_changed_by_p1": false,
+    "next_step": "Watch the four ReXGlue guest-memory aliases for the software head and snapshot head/tail/predicate at each source-1 callback; establish which alias or writer path moves the head and whether the wait target is satisfied."
+  }
+}

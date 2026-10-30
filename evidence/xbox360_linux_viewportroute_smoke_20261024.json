@@ -1,0 +1,62 @@
+{
+  "schema": "shift.xbox360.linux-viewportroute-smoke.v1",
+  "captured_on": "2026-10-24",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "runtime": {
+    "host": "Linux AMD64",
+    "gpu": "NVIDIA GeForce GTX 950",
+    "duration_limit_seconds": 30,
+    "exit_code": 124,
+    "termination": "bounded timeout",
+    "input_sent": false,
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b",
+    "gpu_plugin_sha256": "e05ea50726caea536e25f0e3f76d052e56740bdc455fb26d0884ecab8e8adfdd",
+    "gpu_plugin_source": "/home/pes/work/rexglue-sdk-rexui-vulkan-20261023/out/linux-amd64/librexgpu-shift-native.so",
+    "arguments": [
+      "--game_data_root=<external user-provided game data>",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "runtime_log": {
+      "path_outside_git": "/tmp/p1-viewport-smoke-20261024/logs/nfs_shift_001.log",
+      "sha256": "5fe1420422d420cae253b2f7d605f5c83ac0b634cc56c72a27e4c9c426765559"
+    }
+  },
+  "observations": {
+    "startup": "The title reached 'Initializing shader storage for title 454108B4'.",
+    "unresolved_captured_draws": [
+      {
+        "index": 0,
+        "reason": "incomplete captured raster register state",
+        "valid_mask": "0x17038"
+      },
+      {
+        "index": 29,
+        "reason": "unsupported captured target/raster state; Copy/Convert color registers [0x0, 0x975e000, 0x2d00500, 0x0], valid=0xf"
+      }
+    ],
+    "draw_27": "No unresolved-captured-draw diagnostic was emitted; the prior viewport/scissor rejection is absent in this plugin run. The runtime log does not provide an explicit per-draw success receipt.",
+    "draw_28": "No unresolved-captured-draw diagnostic was emitted; remains non-rejected in this plugin run. The runtime log does not provide an explicit per-draw success receipt.",
+    "presenter_submission_entries": 1762,
+    "submission_batch_histogram": {
+      "1_draw": 1436,
+      "2_draws": 257,
+      "5_draws": 69
+    },
+    "reported_draw_submissions_total": 2295,
+    "accepted_copy_convert_entries": 1762,
+    "refresh_failure_or_rejection_messages": 0,
+    "readback": "No raw readback or per-pixel capture was configured or emitted."
+  },
+  "interpretation": {
+    "supported": "The new plugin removes the prior draw-27 viewport/scissor rejection from runtime diagnostics, draw 28 remains without an unresolved diagnostic, and batches of five captured indexed draws are now submitted. No refresh failure was logged.",
+    "not_proven": "This is not proof of visible pixels, correct retail rendering, menu progress, or an offline race. The smoke used no input and has no pixel readback. Submission counters are runtime diagnostics only."
+  }
+}

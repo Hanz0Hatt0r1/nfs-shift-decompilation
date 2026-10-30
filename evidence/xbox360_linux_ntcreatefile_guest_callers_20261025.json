@@ -1,0 +1,127 @@
+{
+  "schema": "shift.xbox360.linux.ntcreatefile-guest-callers.v1",
+  "captured_at_utc": "2026-10-25T00:58:46Z",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "runs": [
+    {
+      "id": "timestamped-entry-map",
+      "platform": "Linux AMD64",
+      "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "rexglue_runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "arguments": [
+        "--game_data_root=/home/pes/work/process2-linux-retail-root-20261024/game",
+        "--gpu_plugin=shift-native",
+        "--no-async_shader_compilation"
+      ],
+      "bounded_seconds": 30,
+      "input_events_sent": false,
+      "guest_memory_modified": false,
+      "gdb_script_sha256": "dbf4ca1a47cd8c698da2b45ee31c5c434a79e9bb1bb26279846d8b92dfe59527",
+      "gdb_log_sha256": "0d24acac1221c1e8183d4b88e7bbc0919f09ec7a9c12ac89294394f5a00291e9",
+      "runtime_log": {
+        "external_path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_020.log",
+        "sha256": "434928eaf87081a8d9d5b246b4abb7720a9efa7a51315f6da5b306c696b7b7d0"
+      },
+      "correlated_failed_opens": [
+        {
+          "guest_path": "d:\\pakfiles\\dir\\audio.bff",
+          "status": "0xc000000f",
+          "ntcreatefile_entry_hit": 24,
+          "entry_time_local": "2026-10-25 03:55:48.003551",
+          "failure_time_local": "2026-10-25 03:55:48.018",
+          "guest_lr": "0x826ef304"
+        },
+        {
+          "guest_path": "d:\\characters\\drivers2.lod",
+          "status": "0xc000000f",
+          "ntcreatefile_entry_hit": 38,
+          "entry_time_local": "2026-10-25 03:55:48.721712",
+          "failure_time_local": "2026-10-25 03:55:48.726",
+          "guest_lr": "0x826ef304"
+        },
+        {
+          "guest_path": "d:\\tracks\\cameraconfig.xml",
+          "status": "0xc000000f",
+          "ntcreatefile_entry_hit": 40,
+          "entry_time_local": "2026-10-25 03:55:49.589424",
+          "failure_time_local": "2026-10-25 03:55:49.591",
+          "guest_lr": "0x826ef304"
+        }
+      ],
+      "gdb_script_repository_path": "tools/xbox360/trace_ntcreatefile_guest_callers.gdb",
+      "gdb_log_external_path": "/tmp/xbox360_ntcreatefile_entry_trace.log"
+    },
+    {
+      "id": "camera-config-caller-stack",
+      "platform": "Linux AMD64",
+      "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+      "rexglue_runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+      "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "arguments": [
+        "--game_data_root=/home/pes/work/process2-linux-retail-root-20261024/game",
+        "--gpu_plugin=shift-native",
+        "--no-async_shader_compilation"
+      ],
+      "bounded_seconds": 20,
+      "input_events_sent": false,
+      "guest_memory_modified": false,
+      "gdb_script_sha256": "9985f4f5fffd121131b4c682bddb6dd5c3ad47c28604c582d011698aba0f591d",
+      "gdb_log_sha256": "49b2b7f4556f9bf222fbbfc9b22b6462ea848db6d3e9ae767cf81a15f8f200d0",
+      "runtime_log": {
+        "external_path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_022.log",
+        "sha256": "ff22f085f9c76a874a8f21255a9b5c70fdaaf68d55aeb5c136929c92a167daf4"
+      },
+      "matched_entry": {
+        "hit": 40,
+        "time_local": "2026-10-25 03:57:36.112470",
+        "guest_lr": "0x826ef304",
+        "runtime_camera_config_failure_time_local": "2026-10-25 03:57:36.582",
+        "host_backtrace_guest_functions": [
+          "0x826ef1a0",
+          "0x822dd650",
+          "0x822dc478",
+          "0x822ca1f8",
+          "0x822ca0f8",
+          "0x821cf880",
+          "0x822c6270",
+          "0x822c63a8",
+          "0x82625158",
+          "0x82625278",
+          "0x82fbeb98",
+          "0x82dd7f98",
+          "0x82e336b8",
+          "0x82e32640",
+          "0x8301dec8",
+          "0x82fc1880"
+        ]
+      },
+      "gdb_script_repository_path": "tools/xbox360/trace_ntcreatefile_hit40_stack.gdb",
+      "gdb_log_external_path": "/tmp/xbox360_ntcreatefile_hit40_confirm.log"
+    }
+  ],
+  "static_guest_behavior": {
+    "sub_826ef1a0": "For ordinary negative NtCreateFile results, returns -1; it maps selected special statuses separately.",
+    "sub_822dd650": "Maps the -1 open result to sentinel -5 after cleanup.",
+    "sub_822dc478": "Branches to cleanup and returns -5 when the nested helper returns -5 or zero.",
+    "source": "Generated instruction-faithful PPC C++ for the exact retail XEX; sub_826ef1a0 in generated/default/nfs_shift_recomp.99.cpp and its callers in generated/default/nfs_shift_recomp.135.cpp, .194.cpp, .137.cpp, and .180.cpp."
+  },
+  "interpretation": {
+    "supported": [
+      "In the timestamped run, the three listed NtCreateFile failures immediately follow entry hits 24, 38, and 40; all carry guest LR 0x826ef304 inside the retail generic file-open helper 0x826ef1a0.",
+      "A bounded trace at hit 40 captured the nested guest call chain while the same run logged the camera-config open failure.",
+      "Retail code propagates the missing-file result through sentinels -1 and -5; the trace does not show an OS or worker-start failure."
+    ],
+    "not_proven": [
+      "Whether any of the three files is required for the main menu or an offline race.",
+      "Whether the retail caller performs an archive fallback or treats each specific missing file as optional.",
+      "A causal link between these opens and the black readback or frontend stall.",
+      "The timing traces are intrusive and cannot establish production scheduling behavior."
+    ],
+    "next_step": "Inspect caller return-value handling for these exact guest paths and the retail archive lookup path before changing VFS semantics; keep the queue/predicate frontier independent until causal evidence connects them."
+  }
+}

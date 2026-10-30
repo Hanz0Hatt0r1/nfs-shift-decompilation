@@ -1,0 +1,51 @@
+{
+  "schema": "shift.xbox360.rexglue.function-thunk.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x82B9DD08",
+  "bytes_hex": "3863fffc4800007c",
+  "decoded": [
+    "addi r3,r3,-4",
+    "b 0x82B9DD88"
+  ],
+  "branch_target": "0x82B9DD88",
+  "semantics": "Adjust the guest object pointer in r3 by -4, then tail-branch to the registered helper at 0x82B9DD88.",
+  "runtime_fatal": {
+    "function": "0x82BA8E48",
+    "indirect_call_instruction": "0x82BA8F60",
+    "indirect_call_return_address": "0x82BA8F64",
+    "indirect_target": "0x82B9DD08",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x82BA8E48",
+      "0x83067FB0",
+      "0x83067310",
+      "0x826799B8",
+      "0x82679E88",
+      "0x82679190",
+      "0x82679968",
+      "0x82650A20",
+      "0x82E2CBC0",
+      "0x82E2CD10",
+      "0x82E2C650",
+      "0x82DDD1C8",
+      "0x8301DEC8",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ]
+  },
+  "memory_capture": "GDB read 16 bytes at host address 0x182B9DD08 while PPCContext.ctr and last_indirect_target both contained 0x82B9DD08.",
+  "registered_branch_target": "0x82B9DD88 is registered in generated/default/nfs_shift_register.cpp and the linked runtime.",
+  "prior_frontier": "With --no-async_shader_compilation, the runtime passed 0x82BA3188's full nested-dispatch thunk before trapping at this adjustor.",
+  "confidence": "observed",
+  "limitations": [
+    "The trap output captured 16 bytes, but the two-instruction thunk body is only the first eight; adjacent bytes may be a separate entry.",
+    "No screenshot, main-menu state, completed retail draw/present, or race has been verified."
+  ],
+  "runtime_validation": {
+    "codegen": "ReXGlue v0.10.0 generated and registered 0x82B9DD08.",
+    "build": "The Linux AMD64 nfs_shift target linked successfully.",
+    "execution": "GDB reached 0x82B9DD08 and continued through registered tail target 0x82B9DD88.",
+    "next_runtime_trap": "0x8233D128 from indirect call instruction 0x82328C44"
+  }
+}

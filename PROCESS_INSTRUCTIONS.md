@@ -5,7 +5,7 @@ Effective 2026-10-22: **Xbox 360 retail is the primary executable being ported.*
 ## Authority and current state
 
 - Read [ROADMAP.md](ROADMAP.md), [docs/XBOX360_REXGLUE_MIGRATION.md](docs/XBOX360_REXGLUE_MIGRATION.md) and [coordination/xbox360_rexglue_status.json](coordination/xbox360_rexglue_status.json) before selecting new Xbox work.
-- **No `default.xex` is hash-locked, no SHIFT Xbox 360 recompilation or startup is proven.** Do not use PC corpus coverage, PC host frames or standalone Vulkan smoke tests as Xbox results.
+- **X0 is verified** for the user-provided external retail `default.xex`; its SHA-256, title ID, media ID and build are recorded in the status ledger. ReXGlue has generated and run the guest on Linux, and the Vulkan plugin has submitted early frames, but there is no verified main menu, offline race or visible retail image yet. Do not use PC corpus coverage, PC host frames or standalone Vulkan smoke tests as Xbox results.
 - Xbox original binary/runtime evidence governs Xbox-specific behavior; PC 1.02 may be used for cross-version corroboration only after identity and semantic agreement are demonstrated.
 - Source identities and reproducible tool revisions are mandatory; generated game code, retail game images, asset dumps and raw captures remain outside Git.
 - Do not equate function/codegen coverage with behavioral parity, fabricated state with initialization, or synthetic rendering with a retail game draw.

@@ -1,0 +1,81 @@
+{
+  "schema": "shift.xbox360.linux-stale-shm-startup.v1",
+  "captured_on": "2026-10-24",
+  "target": {
+    "xex": "default.xex",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4"
+  },
+  "runtime": {
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b",
+    "gpu_plugin_sha256": "d5f72d299989745a8216979856226132e62e73bbe7d42bdde3d16b962160487e",
+    "guest_data_root": "/tmp/nfs_shift_xbox_game_root_20261023",
+    "pre_cleanup_failure": {
+      "runtime_log": {
+        "path": "/tmp/p1-virtual-input-20261024/logs/nfs_shift_041.log",
+        "sha256": "9be6dd2cd898fd0e7e955a89f7e3025f63826723fe429c741ead655fe217374c"
+      },
+      "signal": "SIGBUS, si_code=BUS_ADRERR",
+      "stack": [
+        "rex::memory::Memory::Initialize",
+        "rex::Runtime::Setup",
+        "rex::ReXApp::ConstructRuntime",
+        "main"
+      ],
+      "fault_host_address": "0x18000001c",
+      "faulting_guest_address": "0x8000001c",
+      "faulting_operation": "Memory::Initialize writes the title-specific constant 0x2A6E3F38 at guest 0x8000001C after mapping the guest arena."
+    },
+    "orphaned_shm_cleanup": {
+      "before": {
+        "objects": 15,
+        "dev_shm_used": "4.7 GiB of 5.9 GiB",
+        "dev_shm_available": "1.2 GiB",
+        "active_mappings_or_open_fds": 0,
+        "same_offset_probe": "A write to a shared mapping at file offset 0x80000000 raised SIGBUS."
+      },
+      "action": "Removed only the 15 xenia_memory_* objects after checking /proc for active mappings and open file descriptors.",
+      "after": {
+        "dev_shm_used": "22 MiB of 5.9 GiB",
+        "dev_shm_available": "5.8 GiB",
+        "same_size_and_offset_probe": "A 4.5 GiB shared-memory file accepted a write at offset 0x80000000."
+      }
+    },
+    "post_cleanup_run": {
+      "runtime_log": {
+        "path": "/tmp/p1-virtual-input-20261024/logs/nfs_shift_043.log",
+        "sha256": "f9bbfed4dc294b129ecb74e6ff298332ba783f7301f8e75a8f530085f2dfe388"
+      },
+      "gdb_file_open_trace": {
+        "path": "/tmp/p1-menu-open-20261024/gdb-menu-path.log",
+        "sha256": "2a3c05539fca0239a6b0acc1c4037715864b2fc90840847cea2a711c35b42f71"
+      },
+      "ntcreatefile_calls_before_bounded_stop": 69,
+      "retail_progress": "After cleanup, the same Linux executable initialized the retail runtime, opened the boot and persistent BFF archives, reached repeated guest draw and Copy/Convert work, and issued file requests from the frontend scene path.",
+      "observed_missing_paths": [
+        {
+          "path": "d:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+          "attempts": 2,
+          "status": "0xC000000F"
+        },
+        {
+          "path": "d:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+          "attempts": 2,
+          "status": "0xC000000F"
+        },
+        {
+          "path": "d:\\tracks\\cameraconfig.xml",
+          "status": "0xC000000F"
+        }
+      ],
+      "menu_background_archive_cross_reference": "evidence/xbox360_menu_background_pak_index_20261024.json"
+    }
+  },
+  "interpretation": {
+    "supported": "The reproduced SIGBUS correlated with a large set of orphaned POSIX shared-memory objects. Removing objects with no live references restored the identical offset write and allowed the retail runtime to advance into boot archives and frontend asset requests.",
+    "not_proven": "The exact tmpfs quota or kernel resource mechanism behind SIGBUS was not isolated. This environment cleanup is not a code fix and does not establish that a fresh installation will encounter the same issue.",
+    "frontend_limit": "The repeated XML misses may be expected fallback probes or a fatal asset gap; the archive index has no exact XML member. No menu or offline race is proven by draw counts or file requests.",
+    "ownership_limit": "The repeated Vulkan frame-refresh warnings in the runtime log report a 4x versus 1x sample-count mismatch and remain in Process 2's renderer scope; no renderer files were changed."
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "schema": "shift.xbox360.linux-ring-head-cpu-write-watch.v1",
+  "captured_at_local": "2026-10-25T17:34:00+03:00",
+  "target": {
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "host_runtime": {
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_override_sha256": "7335f654806f073a733f2207f00832919a0d13010131420275396a61cfd1092b",
+    "gpu_plugin_file_sha256": "42f338bc48e144e9dbc70dd208f9a169f437b506d1c338832896c1a6b83b7f10",
+    "plugin_mapping_note": "The staged shift-native plugin file hash is recorded; /proc mappings were not captured in this run."
+  },
+  "probe": {
+    "duration_seconds": 70.4,
+    "gdb_attached_from_runtime_seconds": 20.0,
+    "gdb_detached_at_runtime_seconds": 43.6,
+    "guest_memory_modified": false,
+    "input_events": [
+      {"at_seconds": 10, "button": "A", "duration_seconds": 0.5},
+      {"at_seconds": 20, "button": "Start", "duration_seconds": 0.5},
+      {"at_seconds": 32, "button": "A", "duration_seconds": 0.5},
+      {"at_seconds": 44, "button": "Start", "duration_seconds": 0.5},
+      {"at_seconds": 56, "button": "A", "duration_seconds": 0.5}
+    ],
+    "watchpoint": {
+      "type": "GDB hardware watchpoint on CPU writes",
+      "guest_address": "0xB7AF4000",
+      "host_mapping_address": "0x1B7AF4000",
+      "wait_object": "0xB7365F00",
+      "initial_head": 1611,
+      "initial_tail": 1619,
+      "expected_cursor": 1613,
+      "predicate_byte": "0x14",
+      "head_write_hits": 0
+    },
+    "gdb_script": {
+      "path": "tools/xbox360/trace_guest_ring_head_cpu_write.gdb",
+      "sha256": "285fdcc13da4dc9136ce1300b7dfb7b5abaa77a0a83422e33c058e8073150777"
+    },
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-head-watch-unfiltered-20261025/gdb.log",
+      "sha256": "1ea60cc788c20b39447a68f157b0605b6f083c3dc1fda829166aa549bbf66ba0"
+    },
+    "termination": "The runner sent SIGINT after its 70-second window. The runtime exited normally after shutdown; no guest fault was recorded."
+  },
+  "runtime_observation": {
+    "runtime_log": {
+      "external_path": "/tmp/nfs-p1-private-bin-20261025/logs/nfs_shift_011.log",
+      "sha256": "098714064d0db64f7e2199cbaf7e73f1c318990fe6c83d19dcab9fd3faaedefe"
+    },
+    "captured_draw_submissions": 89,
+    "accepted_copy_convert_entries": 905,
+    "first_menu_background_xml_miss": "2026-10-25T17:33:27.490+03:00",
+    "draw_submissions_after_first_xml_miss": 0,
+    "guest_fault_lines": 0,
+    "pixel_readback": false
+  },
+  "interpretation": {
+    "supported": [
+      "The read-only CPU write watchpoint on the sampled guest software-ring head mapping did not trigger during the attached interval.",
+      "The runtime logged 89 captured draw submissions and 905 Copy/Convert entries during the full bounded run, then logged four menu_background.xml misses and no later draw submission before shutdown.",
+      "The retail wait predicate and guest memory were not modified by this probe."
+    ],
+    "not_proven": [
+      "The watchpoint interval does not cover writes before attachment or after detachment, and it does not detect GPU/device DMA writes.",
+      "The absence of a CPU watchpoint hit does not identify the component responsible for ring progress or prove a guest scheduler defect.",
+      "The timing between the missing XML opens and later draw submissions does not establish causality.",
+      "A visible retail frame, main-menu entry, offline-race entry, or gameplay."
+    ],
+    "next_step": "Continue read-only tracing of the ring-head writeback and completion path across the shared guest mapping; keep the retail predicate and queue state unchanged until a contract violation is demonstrated."
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "schema": "shift.xbox360.linux-renderer-surface-diagnostic.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "game_root": "/tmp/nfs_shift_xbox_game_root_20261023"
+  },
+  "build": {
+    "host_platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "a324c4099ccc3d09462510f75d8a755721405f8b806c8657667ef4ef3019571b",
+    "rexglue_sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+    "renderer_plugin_sha256": "54348dd521b97b15be963d0b9f680172dbfb83c3ef5f2fbb979f618dc9c32aaa",
+    "renderer_plugin_source_commit": "not recorded"
+  },
+  "run": {
+    "timeout_seconds": 60,
+    "exit_code": 124,
+    "arguments": [
+      "--game_data_root=/tmp/nfs_shift_xbox_game_root_20261023",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation",
+      "--log-level=debug"
+    ],
+    "input_events_sent": false,
+    "pre_run_shared_memory_cleanup": {
+      "objects_removed": 12,
+      "owner": "current user",
+      "live_references": 0,
+      "dev_shm_free_after_cleanup": "5.8 GiB",
+      "reason": "The preceding run exited with SIGBUS while stale xenia_memory_* objects occupied 4.7 GiB."
+    }
+  },
+  "first_renderer_rejection": {
+    "timestamp": "2026-10-24 04:19:56.403",
+    "captured_draw_count": 3,
+    "reason": "captured Vulkan draw 1 sample count 1 differs from frame sample count 4",
+    "draw_0_surface": {
+      "color_base_tiles": 0,
+      "depth_base_tiles": 720,
+      "pitch": 640,
+      "color_format": 1,
+      "extent": "1280x720"
+    },
+    "draw_1_surface": {
+      "color_base_tiles": 0,
+      "depth_base_tiles": 720,
+      "pitch": 1280,
+      "color_format": 1,
+      "extent": "1280x720"
+    },
+    "repeated_refresh_failures": 3010,
+    "submitted_draw_batch_log_entries": 3
+  },
+  "shader_diagnostics": {
+    "log_tokens_checked": [
+      "shader_inputs_ready",
+      "shaders_translated",
+      "resource resolve",
+      "resource missing"
+    ],
+    "matching_lines": 0,
+    "interpretation": "No shader/resource readiness lines were emitted in this run; the refresh rejection is observed before any such diagnostic. This does not prove that shader translation is never attempted elsewhere."
+  },
+  "raw_readback": {
+    "path": "/home/pes/work/p1-event-write-linux-probe-20261024/p2-draw-surface-diagnostic-after-shm-clean-20261024/retail.a2b10g10r10",
+    "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "width": 1280,
+    "height": 720,
+    "bytes": 3686400,
+    "sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+    "fnv1a64": "B161DE6EEC272325",
+    "pixel_words": {
+      "0x00000000": 518400,
+      "0xC0000000": 403200
+    },
+    "rgb_nonblack_pixels": 0
+  },
+  "runtime_log": {
+    "path": "/home/pes/work/p1-event-write-linux-probe-20261024/p2-draw-surface-diagnostic-after-shm-clean-20261024/logs/nfs_shift_001.log",
+    "sha256": "349f62a60e27d45ae721887172c91689ea2a9aae7434aafa84fa8ccfff99214f",
+    "first_rejection_line": "[2026-10-24 04:19:56.403] shift-native: Vulkan frame refresh failed for 1280x720 with 3 captured draws: captured Vulkan draw 1 sample count 1 differs from frame sample count 4; draw 0 surface={color_base_tiles=0,depth_base_tiles=720,pitch=640,color_format=1,extent=1280x720}; draw 1 surface={color_base_tiles=0,depth_base_tiles=720,pitch=1280,color_format=1,extent=1280x720}"
+  },
+  "interpretation": {
+    "supported": "For this exact plugin build, the first logged three-draw rejection is a sample-count mismatch. Both reported surfaces have the same color/depth bases, color format, and extent; pitch differs. The rejection repeats and the raw retail readback remains byte-identical to earlier all-black runs.",
+    "not_proven": [
+      "The evidence does not establish which pitch is correct or whether either captured draw should be submitted in a separate frame.",
+      "The run does not establish shader translation results, visible frontend output, the main menu, or an offline race.",
+      "This plugin artifact is identified by SHA-256; its source commit was not recorded."
+    ]
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "schema": "shift.xbox360.linux.guest-gpu-queue-trace.v1",
+  "captured_at_local": "2026-10-25T01:03:37+03:00",
+  "input": {
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "run": {
+    "host_platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "0d30312c672d68b2ef269b4bb0f76f2cfa7c7315faf848dee013790cf333f021",
+    "mapped_gpu_plugin": {
+      "path": "/home/pes/work/xbox360-wsi-check-20261025/bin/librexgpu-shift-native.so",
+      "sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+      "segments": 7,
+      "identity_verified_from_proc_maps": true,
+      "source_commit": "d57598912d173ebbc46f718c52dd36ae27826b06"
+    },
+    "sdk_fix_commit": "ede359f8a93cd26cb95531a0b39ed8584aa93bb7",
+    "gdb_trace_script_sha256": "e6393aac10ee4af657a697a55b1d5180060952ae2fb2128c54f6193a22aab38b",
+    "trace_log_sha256": "0be40ca6ff246665bb47d3e08c7218549e56b973ae6a86ad2b5dd163a066e0ca",
+    "trace_log_bytes": 47904,
+    "runtime_log_sha256": "9289a1ec267c571bb581b1e27128c2f7ad96335144fa3c3b896e2d86bba9cf2f",
+    "runtime_log_bytes": 46610,
+    "external_trace_log": "/home/pes/work/xbox360-wsi-check-20261025/current-queue-trace/logs/gdb.log",
+    "bounded_seconds": 45,
+    "exit_code": 124,
+    "input_events_sent": false,
+    "guest_memory_modified_by_probe": false
+  },
+  "guest_observations": {
+    "callback_object": "0xB7365F00",
+    "source0_interrupt": {
+      "retail_function": "0x823B37B8",
+      "hit_counter_reached": 411,
+      "reported_state_samples": 68
+    },
+    "deferred_consumer": {
+      "retail_function": "0x823A4640",
+      "hit_counter_reached": 380,
+      "reported_state_samples": 66,
+      "guest_lr_samples": [
+        "0x823B3844"
+      ],
+      "meaning": "The source-0 handler reaches the retail deferred consumer at its guest callsite."
+    },
+    "deferred_queue_indices": {
+      "read_offset": "0x413C",
+      "write_offset": "0x4140",
+      "sampled_pairs": [
+        [
+          0,
+          0
+        ]
+      ],
+      "all_reported_pairs_empty": true
+    },
+    "software_queue": {
+      "helper_function": "0x823B33A0",
+      "hit_counter_reached": 65,
+      "head_pointer": "0xB7AF4000",
+      "sampled_head_range": [
+        1,
+        129
+      ],
+      "sampled_tail_range": [
+        3,
+        131
+      ],
+      "global_0x831B3820": 0,
+      "guard_offset_0x2ABC": "0x00",
+      "predicate_offset_0x2ABD": [
+        "0x00",
+        "0x04",
+        "0x14"
+      ],
+      "predicate_mask_0x02_set_in_samples": false
+    },
+    "ring_wait": {
+      "retail_function": "0x823B34A0",
+      "hit_counter_reached": 29,
+      "sampled_predicate": "0x14",
+      "guest_lr": "0x823A557C"
+    },
+    "unreached_candidates": {
+      "deferred_queue_producer_0x823A4758_hits": 0,
+      "registered_callback_0x82649B68_hits": 0
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The exact retail guest continues entering source-0 callbacks and the deferred consumer while the software queue head/tail advance.",
+      "The separately sampled deferred queue indices remain 0/0.",
+      "The sampled software predicate values never set mask 0x02.",
+      "The exact plugin loaded by the inferior is hash-identified from /proc maps."
+    ],
+    "not_proven": [
+      "Why the deferred producer or registered callback is not reached.",
+      "Whether this queue state alone explains the absence of a main menu.",
+      "That renderer packet submission counts correspond to displayed scene output."
+    ],
+    "debugger_timing": "GDB breakpoints pause guest threads and may affect scheduling.",
+    "next_step": "Trace retail callsites that advance software queue head/tail and determine the conditions under which the deferred producer is expected to run. Do not force predicate bit 0x02 or change guest memory."
+  },
+  "limits": [
+    "The run was terminated after the planned 45-second observation window.",
+    "No controller events were sent.",
+    "The main menu and offline race remain unverified.",
+    "Raw GDB/runtime logs and the retail XEX remain outside Git."
+  ],
+  "host_scheduler_environment": {
+    "visible_logical_cpu_count": 4,
+    "allowed_host_cpu_ids": "0-3",
+    "guest_cpu_count": 6,
+    "runtime_behavior": "ReXGlue XThread::SetActiveCpu sets host affinity only when logical_processor_count() >= 6; this environment falls back without per-thread host affinity.",
+    "warning": "Too few processor cores - scheduling will be wonky",
+    "warning_count_in_run_log": 444,
+    "interpretation": "This is a host scheduling limitation. It may affect timing but is not proven to cause the black readback, empty deferred queue, or frontend stall."
+  }
+}

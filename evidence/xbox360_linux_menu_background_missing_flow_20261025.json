@@ -1,0 +1,183 @@
+{
+  "schema": "shift.xbox360.linux-menu-background-missing-flow.v1",
+  "captured_at_local": "2026-10-25T12:54:00+03:00",
+  "target": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "build": "0.0.0.3"
+  },
+  "static_artifact": {
+    "kind": "exact-live-memory-derived-PPC-ELF",
+    "path": "/home/pes/ghidra_projects/research_inputs/nfs_shift_xbox360_live_20261024.elf",
+    "sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c",
+    "instruction_endianness": "big",
+    "load_segment": {
+      "virtual_address": "0x821A0000",
+      "file_offset": "0x001A1000",
+      "file_size": "0x00EC4BA4"
+    }
+  },
+  "runtime_run": {
+    "platform": "Linux AMD64",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "85a519fbac4eedac961ca48fc1108ffa2cd8d045fbb878b5b52f6adac4c773e0",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-linux-retail-root-20261024/game",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "bounded_seconds": 90,
+    "termination": "external timeout; no guest fault observed",
+    "input_events_sent": false,
+    "guest_memory_modified_by_probe": false,
+    "runtime_log": {
+      "external_path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_040.log",
+      "sha256": "07e28facb4ce19f02a1bfd57ee5ce088e329c73f9f71b933cab8a49f0529c223"
+    },
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-menu-stack-20261025/gdb.log",
+      "sha256": "18198b97b779ac8c4bbb160863a6757604559c668431c83bbfe72425e4321414"
+    }
+  },
+  "failed_open_samples": [
+    {
+      "guest_path": "d:\\tracks\\_data\\instances\\scenes\\menu_background.xml",
+      "ntstatus": "0xc000000f",
+      "runtime_log_time_local": "2026-10-25T12:53:40.862+03:00",
+      "gdb_entry_hits": [68, 69],
+      "guest_lr": "0x826EF304",
+      "call_chain": [
+        "0x826EF1A0",
+        "0x822DD650",
+        "0x822DC478",
+        "0x822F3350",
+        "0x822C0870",
+        "0x821B7550",
+        "0x82F7C560",
+        "0x82F7C938"
+      ]
+    },
+    {
+      "guest_path": "d:\\tracks\\_data\\static\\scenes\\menu_background.xml",
+      "ntstatus": "0xc000000f",
+      "runtime_log_time_local": "2026-10-25T12:53:40.907+03:00",
+      "gdb_entry_hits": [70, 71],
+      "guest_lr": "0x826EF304",
+      "call_chain": [
+        "0x826EF1A0",
+        "0x822DD650",
+        "0x822DC478",
+        "0x822F3350",
+        "0x822C0870",
+        "0x821B7550",
+        "0x82F7C560",
+        "0x82F7C938"
+      ]
+    }
+  ],
+  "retail_return_flow": {
+    "parent_function": "0x82F7C938",
+    "child_loader": "0x82F7C560",
+    "child_call_at": "0x82F7CB44",
+    "child_result_stored_at": "0x82F7CB4C",
+    "child_result_field_offset": 1456,
+    "parent_success_value_set_at": "0x82F7CB50",
+    "parent_success_value_stored_at": "0x82F7CB54",
+    "parent_return_value_loaded_at": "0x82F7CC00",
+    "parent_return": "1 on the observed path",
+    "translation_source": {
+      "parent_path": "/home/pes/work/nfsshift-rex/generated/default/nfs_shift_recomp.102.cpp",
+      "parent_sha256": "0f23b447d025c7b7262ff15edc81ef35a861d88c01197adfda279d7f0bbd76d8",
+      "child_path": "/home/pes/work/nfsshift-rex/generated/default/nfs_shift_recomp.150.cpp",
+      "child_sha256": "3fa3203e11be296c975704634acf56fc12c0a611507e4445def6dab9056895c8"
+    }
+  },
+  "runtime_frontier": {
+    "last_draw_submission_before_first_missing_xml": {
+      "local_time": "2026-10-25T12:53:40.109+03:00",
+      "indexed_packets": 14,
+      "resolution": [1280, 720]
+    },
+    "first_missing_xml_local_time": "2026-10-25T12:53:40.862+03:00",
+    "draw_submission_entries_after_last_missing_xml": 0,
+    "log_end_local_time": "2026-10-25T12:54:26.593+03:00",
+    "later_ntcreatefile_hits": [72, 73],
+    "interpretation": "The scene-loader call returns to later file activity, but no further draw submission is logged for the remainder of this bounded run. This temporal relation does not prove the missing XML caused the renderer/frontend stall."
+  },
+  "retail_parent_field_probe_20261025": {
+    "target_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637",
+    "bounded_seconds": 65,
+    "input_events_sent": false,
+    "guest_memory_modified_by_probe": false,
+    "instrumentation": "GDB breakpoint at parent initializer 0x82F7C938 filtered to caller LR 0x82E8BDB4/0x82F47DC4, a source breakpoint immediately after the parent+1456 store, a hardware read watchpoint on the field, and a conditional breakpoint on candidate reader 0x82B84CD8.",
+    "gdb_script": {
+      "external_path": "/tmp/nfs-p1-menu-child-consumer-final-20261025/trace.gdb",
+      "sha256": "b88facb4342ff28a4cbdf9c53c01b80cb7c3594a15e60af8d855b67bfa67679b"
+    },
+    "gdb_log": {
+      "external_path": "/tmp/nfs-p1-menu-child-consumer-final-20261025/gdb.log",
+      "sha256": "718e6010da65a04139398af4e24e0f9d74efabef3620b4c5988354965132c407"
+    },
+    "observed": {
+      "parent_entry_hits": 1,
+      "parent_guest_object": "0x831EA280",
+      "caller_lr": "0x82E8BDB4",
+      "child_loader_return": "0x00000000",
+      "stored_parent_field_offset": 1456,
+      "stored_field_value": "0x00000000",
+      "later_field_access_hits": 0,
+      "candidate_reader": "0x82B84CD8",
+      "candidate_reader_hits_for_parent": 0,
+      "guest_faults": [],
+      "termination": "External timeout sent SIGINT after 65 seconds while the runtime remained live.",
+      "draw_submissions_in_runtime_log": 1032,
+      "last_draw_before_xml_miss": "2026-10-25T15:36:28.053+03:00",
+      "first_xml_miss": "2026-10-25T15:36:28.159+03:00",
+      "draw_submissions_after_xml_misses": 0,
+      "runtime_log": {
+        "external_path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_110.log",
+        "sha256": "b7bbaf675d584efe3c939dce00e7027ad3c956f59bcb686fa3158f8da6f856ab"
+      }
+    },
+    "interpretation": {
+      "supported": [
+        "In this run, the child loader returned 0 and the parent stored that value while its own retail initializer continued.",
+        "No later access to this parent object's +1456 field or call to candidate reader 0x82B84CD8 with this object was observed in the bounded run.",
+        "The repeated draw submissions stopped around the same time as the loose XML misses, but the trace does not establish a causal link."
+      ],
+      "not_proven": [
+        "That the field is never consumed in a later frontend state or race state.",
+        "That the absent XML has no visual or gameplay effect.",
+        "Main-menu entry, offline-race entry, or successful rendering."
+      ],
+      "next_step": "Continue with the retail frontend state/input transition trace. Do not add a VFS alias without proof of retail lookup equivalence."
+    }
+  },
+  "instruction_checks": [
+    {"address": "0x82F7CB44", "bytes_big_endian": "4bfffa1d", "meaning": "call 0x82F7C560"},
+    {"address": "0x82F7CB4C", "bytes_big_endian": "906605b0", "meaning": "store child result at parent+1456"},
+    {"address": "0x82F7CB50", "bytes_big_endian": "38a00001", "meaning": "load immediate 1"},
+    {"address": "0x82F7CB54", "bytes_big_endian": "90a100b0", "meaning": "store parent return value 1 on stack"},
+    {"address": "0x82F7CC00", "bytes_big_endian": "806100b0", "meaning": "load parent return value into r3"},
+    {"address": "0x82F7CC14", "bytes_big_endian": "4e800020", "meaning": "return to caller"}
+  ],
+  "interpretation": {
+    "supported": [
+      "Both loose menu_background.xml misses were observed inside the retail resource-loader call chain, not as an unhandled host or worker failure.",
+      "On the traced parent path, retail stores the child loader result at parent+1456, sets its own return value to 1, and returns that value; this specific missing child asset does not directly fail the parent initializer.",
+      "The parent function does not directly propagate the child result as its own failure on the observed path."
+    ],
+    "not_proven": [
+      "That the missing XML is optional in every frontend or race state, or that its absence has no visual effect.",
+      "That the retail main menu or an offline race was reached.",
+      "Whether the missing XML is related to draw submissions stopping in either bounded trace; the traces establish timing but not causality.",
+      "Whether a later frontend or race state consumes parent+1456; no matching access was observed in the 65-second probe.",
+      "The cause of black output; the selected GPU plugin remains a separate renderer workstream."
+    ],
+    "next_step": "Continue tracing the retail frontend state/input transition. No field access was observed in the bounded parent+1456 probe; do not alias the absent XML to archive members without evidence of retail lookup equivalence."
+  }
+}

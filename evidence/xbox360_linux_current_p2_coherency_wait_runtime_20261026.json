@@ -1,0 +1,204 @@
+{
+  "schema": "shift.xbox360.linux-current-p2-coherency-wait-runtime.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "build": "0.0.0.3",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host": {
+      "path": "/tmp/nfs-shift-p1-ccdee6b4-run2-20261026/bin/nfs_shift",
+      "sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b"
+    },
+    "rexglue_runtime": {
+      "path": "/tmp/nfs-shift-p1-ccdee6b4-run2-20261026/bin/librexruntime.so",
+      "sha256": "2b0d46856da000cecafb46581ddff50da99f549ff335bee9ba489238eed24059",
+      "mapped_hash_verified_in_direct_run": true
+    },
+    "gpu_plugin": {
+      "path": "/tmp/nfs-shift-p1-ccdee6b4-run2-20261026/bin/librexgpu-shift-native.so",
+      "sha256": "d8f7d15a140b89a258a2d80cdf1286bcb18a77ad4b84c70ac2e7db3ea43a2efa",
+      "build_id": "07a336315ff2f441b2d8147d1cb7afb9b34ff327",
+      "source_commit": "ccdee6b4d125f3a8670806f0ba15f0361588b137",
+      "mapped_hash_verified_in_direct_run": true
+    }
+  },
+  "game_data": {
+    "root": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+    "default_xex_sha256_matches_target": true,
+    "read_only": true
+  },
+  "direct_run": {
+    "platform": "Linux AMD64",
+    "duration_seconds": 90,
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "termination": "The bounded run timed out and sent SIGINT (exit 124); clean title shutdown was not observed.",
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-p1-ccdee6b4-run2-20261026/bin/logs/nfs_shift_001.log",
+      "sha256": "4447375fc9e2c3d0b46d34c19bf36c771bab0666ae9feebe9a2edd8447c042b0"
+    },
+    "renderer_waits": {
+      "coher_status_host_entered": 4,
+      "coher_status_host_completed": 4,
+      "memory_wait_entered": 1,
+      "memory_wait_completed": 0,
+      "memory_wait_guest_physical_word": "0x1B964004",
+      "memory_wait_poll_address": "0x1B964006",
+      "reference": "0x00000001",
+      "mask": "0xFFFFFFFF",
+      "endian_mode": 2,
+      "compare": 3,
+      "source_ib": "0x095D0120",
+      "byte_offset": "0x49C"
+    },
+    "verified_game_window_capture": false
+  },
+  "gdb_run": {
+    "platform": "Linux AMD64",
+    "duration_after_first_wait_seconds": 49,
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "termination": "GDB sent SIGINT; the bounded harness then killed the inferior with SIGKILL (exit 137). No clean title shutdown was observed.",
+    "script": {
+      "path": "/tmp/nfs-shift-p1-ccdee6b4-run2-20261026/watch_current_wait.gdb",
+      "sha256": "394e2c28bf76f8b261a99a798bd52f13a9969b55039c009ce684ed8d8e3111f7"
+    },
+    "trace": {
+      "path": "/tmp/nfs-shift-p1-ccdee6b4-run2-20261026/watch_current_wait.log",
+      "sha256": "ded93056befe8afc023497cfafa89d96725e26d6ba7e7fa7352b9da3b6d777fc"
+    },
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-p1-ccdee6b4-run2-20261026/bin/logs/nfs_shift_002.log",
+      "sha256": "5e31b188212bac6e7ed79288128121941536e6c055fc46a8eec9e0ee3daabea8"
+    },
+    "first_retail_software_queue_wait": {
+      "function": "0x823B34A0",
+      "thread": 15,
+      "object": "0xB7365F00",
+      "head": 3,
+      "target": 13,
+      "tail": 21,
+      "predicate_byte": "0x14",
+      "completion_mask": "0x02",
+      "completion_mask_set": false,
+      "return_address": "0x823A557C"
+    },
+    "memory_wait": {
+      "guest_physical_word": "0x1B964004",
+      "poll_address": "0x1B964006",
+      "source1_callback_hits": 0,
+      "hardware_write_watchpoints_armed": 4,
+      "watched_host_aliases": [
+        {"name": "physical", "address": "0x21B964004", "initial_bytes": "00000000"},
+        {"name": "vA0000000", "address": "0x1BB964004", "initial_bytes": "00000000"},
+        {"name": "vC0000000", "address": "0x1DB964004", "initial_bytes": "00000000"},
+        {
+          "name": "vE0000000_displaced_address",
+          "address": "0x1FB965004",
+          "initial_bytes": "00000000",
+          "covers_target": false,
+          "correct_host_alias_for_target": "0x1FB963004"
+        }
+      ],
+      "writes_observed_through_watched_aliases": 0,
+      "writes_observed_through_confirmed_target_aliases": 0,
+      "completion_log_count": 0
+    }
+  },
+  "input_probe": {
+    "platform": "Linux AMD64",
+    "controller": {
+      "name": "Microsoft X-Box 360 pad",
+      "vendor_id": "0x045E",
+      "product_id": "0x028E",
+      "created_after_sdl_input_init": true,
+      "recognized_by_standalone_sdl3_check": true,
+      "sdl_gamecontroller_ignore_devices": "0x045e/0x0b12"
+    },
+    "buttons_sent": ["START", "A", "A", "A", "A", "A"],
+    "gdb_observation_window_seconds": 22,
+    "controller_input_reached_guest": false,
+    "termination": "The harness sent SIGINT while the title remained on the captured guest-memory wait; the process exited with code 0.",
+    "script": {
+      "path": "/tmp/nfs-shift-p1-controller-probe-20261026/trace_input.gdb",
+      "sha256": "50ca810bfdfae2aee1182c38ff5890df26fc36b9d481df0e9b8286d124e883a4"
+    },
+    "trace": {
+      "path": "/tmp/nfs-shift-p1-controller-probe-20261026/gdb.log",
+      "sha256": "79ab6137dee6b3ff2b196648840c82be7014d8c6e5286f356f1070579322ece4",
+      "input_system_get_state_hits": 0,
+      "sdl_enumerate_devices_hits": 0,
+      "sdl_controller_added_hits": 0
+    },
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-p1-controller-probe-20261026/bin/logs/nfs_shift_001.log",
+      "sha256": "34d5cd95f29bc3b6cb4c1be41f469d9073f2463c1ab7e010b0d8e62447b34c68",
+      "sdl_input_driver_initialized": true,
+      "guest_memory_wait_entered": true,
+      "guest_memory_wait_completed": false
+    },
+    "mapped_hashes_verified_in_inferior": false
+  },
+  "corrected_alias_follow_up": {
+    "platform": "Linux AMD64",
+    "termination": "GDB and its exact-XEX inferior were SIGKILLed after the bounded observation; the title remained at WAIT_REG_MEM and no clean shutdown was observed.",
+    "duration_after_first_wait_seconds_approx": 115,
+    "controller_input_sent": false,
+    "guest_memory_written_by_probe": false,
+    "context_guest_address": "0xFB963000",
+    "wait_guest_physical_word": "0x1B964004",
+    "wait_reference": "0x00000001",
+    "guest_virtual_field_address": "0xFB963004",
+    "guest_virtual_mapping_host_base": "0x100000000",
+    "correct_vE_host_alias": "0x1FB963004",
+    "pre_watch_sample": {
+      "physical_host_alias": "0x21B964004",
+      "physical_bytes": "00000000",
+      "vE_host_alias": "0x1FB963004",
+      "vE_bytes": "00000000",
+      "aliases_equal": true
+    },
+    "watchpoints": [
+      {"alias": "physical", "host_address": "0x21B964004"},
+      {"alias": "vA0000000", "host_address": "0x1BB964004"},
+      {"alias": "vC0000000", "host_address": "0x1DB964004"},
+      {"alias": "vE0000000_exact_context_alias", "host_address": "0x1FB963004"}
+    ],
+    "hardware_write_watchpoints_armed": 4,
+    "writes_observed_through_exact_watched_aliases": 0,
+    "source1_callback_hits": 0,
+    "memory_wait_completion_logged": false,
+    "mapped_hashes_verified_in_inferior": false,
+    "script": {
+      "path": "/tmp/nfs-shift-p1-correct-e-alias-20261026/trace.gdb",
+      "sha256": "b6d27a407d3fb3be663ebc68a46fef96186bb7f8958d5feb18c8896dc5939d5f"
+    },
+    "trace": {
+      "path": "/tmp/nfs-shift-p1-correct-e-alias-20261026/gdb.log",
+      "sha256": "5b570c4fcfb257aadfc98367ae90d2b4be773eea954576d391fc6a17c37515bd"
+    },
+    "runtime_log": {
+      "path": "/tmp/nfs-shift-p1-correct-e-alias-20261026/bin/logs/nfs_shift_001.log",
+      "sha256": "60100dda189bb5fdce96292a790e63976ee616579430a7a38c31a4f73d314e9d"
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "With the identified Process 2 plugin, the exact retail XEX passed four captured COHER_STATUS_HOST waits and entered the captured guest-memory WAIT_REG_MEM at 0x1B964004.",
+      "The exact-XEX GDB run reached the first retail queue wait with head/target/tail 3/13/21 and completion bit 0x02 clear.",
+      "No source-1 callback or CPU write through the physical and A/C aliases was observed in the initial GDB interval; its fourth E-window address was displaced and did not cover this target.",
+      "A corrected GDB run derived the E-window host alias from guest context 0xFB963000, confirmed it aliases the physical target while both read zero, then watched all four exact aliases without a write for about 115 seconds.",
+      "A separate exact-XEX run sent Start/A through a Linux virtual Xbox 360 pad while the title remained at the same wait; GDB observed no guest input query, SDL device enumeration, or controller-added callback during the 22-second probe window."
+    ],
+    "not_proven": [
+      "That no device/DMA write or write through an unwatched alias occurred.",
+      "The owner of the expected guest word, the missing source-1 callback, or the causal relationship between the memory wait and software-queue predicate.",
+      "That the expected word will remain zero beyond the bounded corrected watch interval.",
+      "Whether the runtime input driver will enumerate the pad once the guest reaches its input polling path.",
+      "A clean title shutdown, verified visible retail output, main-menu entry, or offline-race entry."
+    ],
+    "next_p1_step": "Trace the guest producer and device visibility path for the zero context+4 word. The corrected watch excludes ordinary CPU stores through the four mapped aliases only for this bounded run; preserve the retail WAIT_REG_MEM and queue predicate."
+  }
+}

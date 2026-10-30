@@ -1,0 +1,60 @@
+{
+  "schema": "shift.xbox360.callback-setter-analysis.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "live_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c"
+  },
+  "static_basis": {
+    "setter": {
+      "start": "0x823A5730",
+      "end_exclusive": "0x823A5738",
+      "instruction_count": 2,
+      "instructions": [
+        {
+          "address": "0x823A5730",
+          "bytes_big_endian": "9083409c",
+          "operation": "stw r4,0x409C(r3)",
+          "effect": "store the low 32 bits of r4 to guest address r3+0x409C"
+        },
+        {
+          "address": "0x823A5734",
+          "bytes_big_endian": "4e800020",
+          "operation": "blr",
+          "effect": "return through LR; this block computes no return value"
+        }
+      ],
+      "arguments": {
+        "r3": "base pointer to registration object",
+        "r4": "32-bit value stored in callback slot"
+      }
+    },
+    "deferred_queue_producer": {
+      "function": "0x823A4758",
+      "callback_slot_offset": "0x409C",
+      "callback_load": "lwz from object+0x409C followed by mtctr/bctrl"
+    },
+    "direct_callsite": {
+      "address": "0x8264D30C",
+      "target": "0x823A5730",
+      "preceding_argument_setup": [
+        "lwz r3,0(r26)",
+        "addi r4,r11,-25752 with r11=0x82650000, producing 0x82649B68"
+      ]
+    }
+  },
+  "runtime_context": {
+    "run_scope": "separate 45-second exact-XEX Linux/GDB run",
+    "observed_setter_call": {
+      "entry": "0x823A5730",
+      "r3_object": "0xB7365F00",
+      "r4_value": "0x82649B68"
+    },
+    "conclusion_scope": "The static store offset matches the producer callback slot. This does not prove a later producer hit, callback invocation, frontend progress, or offline race progress."
+  },
+  "limitations": [
+    "The setter stores a callback pointer but does not establish how often or under what conditions the producer invokes it.",
+    "The recorded runtime arguments and static producer layout do not prove that 0x823A4758 executed in that run.",
+    "No claim is made about the callback's semantics or visible retail output."
+  ]
+}

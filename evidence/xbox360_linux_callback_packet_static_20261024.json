@@ -1,0 +1,69 @@
+{
+  "schema": "shift.xbox360.linux-callback-packet-static.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3",
+    "live_memory_elf_sha256": "2ffe352bda115285e58661cb5fc5ebe0a8c845d1e7a9ae07bee89e514636c00c"
+  },
+  "static_observation": {
+    "source": "Exact live-memory-derived PPC ELF, disassembled with llvm-objdump",
+    "caller": {
+      "function": "0x823A4908",
+      "callee": "0x823B3598",
+      "callsite": "0x823A4A3C",
+      "register_values_at_call": {
+        "r3": "object in r31",
+        "r4": "word-stream pointer selected from object+0x30 or returned by 0x823B33A0",
+        "r5": "0",
+        "r6": "0x823A4758",
+        "r7": "value held in r30"
+      },
+      "verified_instruction_bytes": [
+        "0x823A4A28: 3d 60 82 3a  lis r11,-32198",
+        "0x823A4A30: 38 cb 47 58  addi r6,r11,18264",
+        "0x823A4A34: 38 a0 00 00  li r5,0",
+        "0x823A4A38: 7f e3 fb 78  mr r3,r31",
+        "0x823A4A3C: 48 00 eb 5d  bl 0x823B3598"
+      ],
+      "derived_pointer": "The lis/addi pair forms 0x823A4758 in r6."
+    },
+    "callee": {
+      "function": "0x823B3598",
+      "parameter_copy": {
+        "address": "0x823B35B0",
+        "instruction": "mr r28,r6",
+        "bytes": "7c dc 33 78"
+      },
+      "word_stream_write": {
+        "address": "0x823B362C",
+        "instruction": "stwu r28,4(r29)",
+        "bytes": "97 9d 00 04",
+        "context": "r29 is initialized from r4; adjacent stwu instructions append words to that destination."
+      }
+    }
+  },
+  "related_runtime_evidence": {
+    "probe": "evidence/xbox360_linux_queue_callback_registration_probe_20261024.json",
+    "candidate_function": "0x823A4758",
+    "candidate_function_hits": 0,
+    "source0_consumer": "0x823A4640",
+    "source0_consumer_sampled_entries": 8,
+    "deferred_queue_read_indices": [0, 0, 0, 0, 0, 0, 0, 0],
+    "deferred_queue_write_indices": [0, 0, 0, 0, 0, 0, 0, 0]
+  },
+  "interpretation": {
+    "supported": [
+      "Retail caller 0x823A4908 passes the exact address 0x823A4758 to 0x823B3598 in r6.",
+      "Retail callee 0x823B3598 preserves that value in r28 and appends it as a word through the pointer in r29."
+    ],
+    "unverified": [
+      "The word stream's command type and whether this word is a GPU callback/event target.",
+      "Whether ReXGlue's Linux GPU worker is expected to invoke 0x823A4758 for this stream and why the sampled retail callback queue remained empty.",
+      "Whether this path causes black output, frontend stall, menu failure, or race failure."
+    ],
+    "next_owner": "Process 2 to validate packet semantics and Linux Xenos/Vulkan handling; Process 1 retains guest/scheduler semantics."
+  }
+}

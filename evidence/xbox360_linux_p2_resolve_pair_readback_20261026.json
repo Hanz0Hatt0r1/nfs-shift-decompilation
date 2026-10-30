@@ -1,0 +1,102 @@
+{
+  "schema": "shift.xbox360.linux.p2-resolve-pair-readback.v1",
+  "captured_on": "2026-10-26",
+  "target": {
+    "title_id": "454108B4",
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58"
+  },
+  "binaries": {
+    "host_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "rexglue_runtime_sha256": "d8faeb3973a1a2564dea021f19d0418fa718268dadebd414b0006a94a9062253",
+    "gpu_plugin_sha256": "0b93aa89499b37bd0d274f42e50f0d1b11ae4ea3224bc6e3a57e5270a0447756",
+    "gpu_plugin_build_id": "ce5d4848f01d7d5e5e8a1e57fc04105cf9368ced",
+    "gpu_plugin_source_commit": "d51832d8f9876885e7c074eb206a54834aaca8b9",
+    "runtime_link_resolution_checked": true
+  },
+  "run": {
+    "platform": "Linux AMD64",
+    "duration_seconds": 58.963,
+    "exit_code": 0,
+    "termination": "Harness sent SIGINT after the selected readback and six controller pulses; the still-live game returned 0.",
+    "instrumentation": "No GDB or breakpoints; guest memory was not patched.",
+    "arguments": [
+      "--game_data_root=/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "controller": {
+      "device": "Linux uinput Microsoft X-Box 360 pad, VID:PID 045e:028e",
+      "pulse_duration_ms": 650,
+      "pulses": [
+        {
+          "at_seconds": 8.691,
+          "button": "A"
+        },
+        {
+          "at_seconds": 15.682,
+          "button": "Start"
+        },
+        {
+          "at_seconds": 24.679,
+          "button": "A"
+        },
+        {
+          "at_seconds": 35.679,
+          "button": "A"
+        },
+        {
+          "at_seconds": 46.694,
+          "button": "Start"
+        },
+        {
+          "at_seconds": 58.698,
+          "button": "A"
+        }
+      ],
+      "same_run_guest_consumption_proven": false
+    },
+    "renderer_log": {
+      "path_outside_git": "/tmp/nfs-p1-resolve-pair-20261026/bin/logs/nfs_shift_005.log",
+      "bytes": 3328346,
+      "sha256": "6360e619a36c9f9490c2614d08691d7c8d8baffc24d14c6fbcefead720e797af",
+      "ring_wake_events": 1915,
+      "ring_snapshot_events": 1915,
+      "ring_complete_events": 1915,
+      "copy_convert_accepts": 1435,
+      "draw_submission_batches": 1435,
+      "vulkan_frame_refresh_failures": 0,
+      "guest_faults": 0,
+      "sigsegv": 0,
+      "sigbus": 0,
+      "unresolved_captured_draws": 1,
+      "menu_background_xml_open_failures": 4,
+      "cameraconfig_xml_open_failures": 1
+    },
+    "readback": {
+      "path_outside_git": "/tmp/nfs-p1-resolve-pair-20261026/retail-frame-400.raw",
+      "frame": 400,
+      "width": 1280,
+      "height": 720,
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "bytes": 3686400,
+      "sha256": "e94e580f80b4522e921a3c0cf72c929eed0fb7093da4e372c782eaf83827e991",
+      "non_black_pixels": 0,
+      "fnv1a64": "D78AD60E15E72325",
+      "retained_in_git": false
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The latest P2 resolve-capable Linux pair consumed and completed 1,915 ring batches, accepted 1,435 Copy/Convert operations and submitted 1,435 captured draw batches without a Vulkan refresh failure or logged guest fault.",
+      "The selected Vulkan presenter frame 400 is fully black by both the plugin readback counter and independent raw-pixel analysis.",
+      "The run emitted six Start/A uinput pulses, but did not establish that the frontend consumed them."
+    ],
+    "not_proven": [
+      "Whether missing menu_background.xml or cameraconfig.xml caused the black frame.",
+      "Whether the black Vulkan output represents retail scene state or incomplete renderer state.",
+      "Main-menu entry, offline-race entry, or playable output.",
+      "A renderer regression relative to prior frame-400 captures, because the old and new binary pairs and run states differ."
+    ]
+  }
+}
+

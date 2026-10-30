@@ -1,0 +1,79 @@
+{
+  "schema": "shift.xbox360.rexglue.frontend-wait-sample.v1",
+  "date": "2026-10-25",
+  "input": {
+    "retail_xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "host_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "runtime_override_sha256": "81117e5b5127cc2d511131810e6e7fae7130b9e1238e4850650b7366f0ec2c90",
+    "gpu_plugin_sha256": "badeb5c4052776fafca38fd265ff8c4c6091d1165ccd1da1a1bd385587a60637"
+  },
+  "run": {
+    "duration_seconds": 85.38,
+    "termination": "After the process remained live, the harness sent SIGINT. The app exited with status 0 and logged its normal title-termination message.",
+    "debugger": "GDB attached once after 71.54 seconds to list threads and collect two-frame stacks; no software breakpoints were set.",
+    "input": {
+      "device": "uinput Xbox 360 controller, vendor 0x045e product 0x028e",
+      "pulses": [
+        {"at_seconds": 10, "button": "A", "duration_seconds": 0.65},
+        {"at_seconds": 20, "button": "Start", "duration_seconds": 0.65},
+        {"at_seconds": 30, "button": "A", "duration_seconds": 0.65},
+        {"at_seconds": 40, "button": "Start", "duration_seconds": 0.65},
+        {"at_seconds": 60, "button": "A", "duration_seconds": 0.65},
+        {"at_seconds": 70, "button": "Start", "duration_seconds": 0.65}
+      ],
+      "retail_consumption_observed": false
+    },
+    "artifacts": {
+      "runner": {
+        "path": "/tmp/nfs-p1-frontier-after-bink-20261025/run.py",
+        "sha256": "f33722c32aef038c58a48a908134188448678ad1f1a70a887ad38c3af3b4a2cb"
+      },
+      "gdb_attach_log": {
+        "path": "/tmp/nfs-p1-frontier-after-bink-20261025/gdb-attach.log",
+        "sha256": "00e20693f8f0ccee081d3c04bf65f145f682aa868841456ac984dcc43da59a7a"
+      },
+      "app_console_log": {
+        "path": "/tmp/nfs-p1-frontier-after-bink-20261025/console.log",
+        "sha256": "c848530a35e0d41b82034e1221ea6ce931b239251fb36b13b8769e6ed8776aea"
+      },
+      "runtime_log": {
+        "path": "/home/pes/work/xbox360-wsi-check-20261025/bin/logs/nfs_shift_115.log",
+        "sha256": "3677ea4976eaaf2f0e9046e78f15cb9d870e6cbc2bbc29b51a1ad56006fedf01"
+      }
+    }
+  },
+  "observed": {
+    "main_guest_thread": {
+      "thread_name": "Core 0/0: Main",
+      "pc": "sub_826F0380",
+      "caller": "__imp__sub_823A0310",
+      "meaning": "At the snapshot, the main guest thread was in the retail wait helper. Static 0x823A0310 tests object+10941 bit 0x02 and performs a timed wait when that bit is clear; this run did not sample the predicate byte, so its live value is unknown."
+    },
+    "host_runtime_log": {
+      "captured_indexed_draw_submissions": 98,
+      "packets_per_submission": 14,
+      "accepted_source0_sample0_copy_convert_entries": 860,
+      "host_core_warning_entries": 6144,
+      "host_allowed_cpu_ids": "0-3",
+      "guest_modeled_cpu_count": 6,
+      "asset_errors": [
+        "Two ResolvePath(render\\shaders) calls returned device not found; later draw submission continued."
+      ],
+      "guest_sigsegv_or_sigbus": false
+    }
+  },
+  "interpretation": {
+    "supported": "This non-breakpoint-heavy exact-XEX run reproduced the retail main-thread wait stack after repeated captured draw and Copy/Convert activity. It did not crash. The current stack and host log narrow the runtime frontier but do not establish why the thread was waiting or whether that path prevented frontend progress.",
+    "not_proven": [
+      "That the live predicate bit 0x02 was clear at the GDB snapshot.",
+      "That the six synthetic button pulses were consumed by the active retail scene.",
+      "Visible splash, video, main-menu output, or offline-race output.",
+      "That the four-host-CPU scheduling advisory caused the wait or lack of menu progress.",
+      "That the two render\\shaders path failures caused the wait or lack of visible output."
+    ]
+  },
+  "limitations": [
+    "A single GDB attach paused threads briefly; there were no software breakpoints, but the run was not entirely uninstrumented.",
+    "No pixel readback or scene-specific guest state was captured."
+  ]
+}
