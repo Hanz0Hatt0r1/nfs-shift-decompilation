@@ -22,7 +22,7 @@
     "media_id": "60DAC9C5",
     "xex_filename": "default.xex",
     "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
-    "xex_status": "unverified",
+    "xex_status": "verified",
     "xex_note": "The retail dump is deliberately kept outside Git and was not present at a verified local path during this pass; the recorded SHA-256 comes from evidence/xbox360_rexglue_preflight_20261022.md and must be re-checked against the user-owned dump with sha256sum before citing it as verified.",
     "proprietary": true
   },
@@ -31,14 +31,26 @@
     "fork_repository": "https://github.com/Hanz0Hatt0r1/rexglue-sdk",
     "version": "0.10.0",
     "base_release_tag": "f5337cdc947ff6d4c4196737e2c807a48f2a1fc2",
-    "fork_commit": "32afce4",
-    "fork_commit_full": null,
-    "fork_commit_status": "unverified",
-    "fork_commit_note": "git -C /home/pes/work/rexglue-sdk-xbox360-memory-lifecycle-20261025 log --oneline -1 reported 32afce4 'fix(input): route retail keyboard keystrokes'. The full 40-hex object id was NOT resolved during this pass, so only the abbreviation is asserted. Run `git -C <clone> rev-parse HEAD` and fill in fork_commit_full before citing an exact commit.",
+    "fork_commit": "32afce4e6522f74b5e30031865fceeb9fb08ab5e",
+    "fork_commit_full": "32afce4e6522f74b5e30031865fceeb9fb08ab5e",
+    "fork_commit_status": "verified",
+    "fork_commit_note": "git -C /home/pes/work/rexglue-sdk-xbox360-memory-lifecycle-20261025 rev-parse HEAD resolved 32afce4 -> 32afce4e6522f74b5e30031865fceeb9fb08ab5e ('fix(input): route retail keyboard keystrokes').",
     "clone_path_seen": "/home/pes/work/rexglue-sdk-xbox360-memory-lifecycle-20261025",
     "platform": "linux-amd64",
     "integrated": false,
-    "build_recipe": "tools/xbox360/build/pins.json"
+    "build_recipe": "tools/xbox360/build/pins.json",
+    "fork_commits_ahead_of_base": [
+      "b3648b013b02770fa5ca8d4618235b2326c911ca feat(vulkan): request optional geometry shader",
+      "fb151b9 feat(vulkan): expose optional depth stencil resolve capability",
+      "097e9f1 fix(vulkan): synchronize presentation resource lifetime",
+      "ede359f fix(vulkan): enable swapchain maintenance prerequisites",
+      "58e4d4b fix(linux): unlink private guest memory mappings",
+      "32afce4e6522f74b5e30031865fceeb9fb08ab5e fix(input): route retail keyboard keystrokes"
+    ],
+    "pinned_artifact_sdk_commit": "b3648b013b02770fa5ca8d4618235b2326c911ca",
+    "pinned_artifact_sdk_commit_note": "The pinned librexgpu-shift-native.so fd615ada... was produced from SDK b3648b0, which is an ANCESTOR of fork HEAD 32afce4e6522f74b5e30031865fceeb9fb08ab5e, not HEAD itself. Evidence: /home/pes/work/nfs-shift-xbox-live-ring-20261023/evidence/process2_linux_current_head_ordered_capture_20261028.json contains \"sdk_commit\": \"b3648b0\". Five commits separate b3648b0 from HEAD and they touch vulkan_presenter.cpp, vulkan_device.cpp, vulkan_instance.cpp, memory_posix.cpp and xam_input.cpp, so rebuilding at fork HEAD will NOT reproduce the pinned plugin. Reconciling every artifact onto one SDK commit is open work (T-PIN).",
+    "reproduction_gap": true,
+    "reproduction_gap_note": "Rebuild from the recorded SDK does not currently reproduce the pinned plugin; the pinned librexruntime.so 693abc48... matches neither the fork HEAD tree nor the rexui tree (which ships be70fe8e...)."
   },
   "recipe": {
     "source": "tools/xbox360/build/README.md",
@@ -122,5 +134,9 @@
     "most_common_xenos_hash": "19053b691d7d1f8f17bbe3e90be38ba3acc60439cbe5c1dfcad271e07b47ce43",
     "most_common_xenos_hash_copies": 32,
     "status": "verified"
+  },
+  "_lead_verification_20261030": {
+    "xex_recomputed_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "xex_path": "/home/pes/PortProton/prefixes/DEFAULT/drive_c/GOG Games/360 Utility Batch Create Extract v1.2 Language Support/Need for Speed - Shift (Europe) xbox/default.xex"
   }
 }
