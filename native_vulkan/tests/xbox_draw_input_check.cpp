@@ -1260,6 +1260,62 @@ int main() {
                 rg16_edram_address.byte_offset == 0 &&
                 rg16_edram_address.bytes_per_sample == 4,
             "captured 16_16_FLOAT target was not mapped as 32bpp EDRAM");
+    // Guest render-target codes 3 (k_2_10_10_10_FLOAT) and 12
+    // (k_2_10_10_10_FLOAT_AS_16_16_16_16) are one stored surface: same
+    // packing, same stored values, differing only in blending precision
+    // (xenos.h GetStorageColorFormat maps 12 -> 3, and neither is 64bpp). A
+    // retail frame describes the same EDRAM surface with both codes across a
+    // draw/Copy-Convert boundary, so their tile addressing must be identical
+    // or the copy cannot find the surface the draw wrote.
+    {
+        shift::xbox::CapturedRasterState float10_raster = live_raster_state;
+        float10_raster.width = 2560;
+        float10_raster.height = 1440;
+        float10_raster.surface_pitch = 1280;
+        float10_raster.sample_count = 4;
+        float10_raster.color_format =
+            shift::xbox::CapturedColorTargetFormat::Rgb10A2Float;
+        float10_raster.depth_only = false;
+        float10_raster.guest_color_format = 3;
+        shift::xbox::CapturedRasterState as16_raster = float10_raster;
+        as16_raster.guest_color_format = 12;
+        // x/y are LOGICAL pixels after the MSAA sample expansion: the 4x
+        // surface is 2560x1440, so logical coordinates run to 1280x720.
+        for (const auto& probe : {std::array<uint32_t, 3>{{0, 0, 0}},
+                                  std::array<uint32_t, 3>{{799, 15, 1}},
+                                  std::array<uint32_t, 3>{{1279, 719, 3}}}) {
+            shift::xbox::CapturedEdramSampleAddress float10_address{};
+            shift::xbox::CapturedEdramSampleAddress as16_address{};
+            require(shift::xbox::captured_xenos_edram_sample_address(
+                        float10_raster, false, probe[0], probe[1], probe[2],
+                        &float10_address, &error) &&
+                        shift::xbox::captured_xenos_edram_sample_address(
+                            as16_raster, false, probe[0], probe[1], probe[2],
+                            &as16_address, &error),
+                    "captured 10_10_10_2 float target forms were not both mappable");
+            require(float10_address.tile_index == as16_address.tile_index &&
+                        float10_address.sample_index_in_tile ==
+                            as16_address.sample_index_in_tile &&
+                        float10_address.byte_offset == as16_address.byte_offset,
+                    "10_10_10_2 float storage formats 3 and 12 mapped to different EDRAM");
+        }
+        std::vector<shift::xbox::CapturedEdramRasterTile> float10_tiles;
+        std::vector<shift::xbox::CapturedEdramRasterTile> as16_tiles;
+        require(shift::xbox::captured_xenos_edram_raster_tiles(
+                    float10_raster, false, &float10_tiles, &error) &&
+                    shift::xbox::captured_xenos_edram_raster_tiles(
+                        as16_raster, false, &as16_tiles, &error) &&
+                    float10_tiles.size() == as16_tiles.size() &&
+                    std::equal(float10_tiles.begin(), float10_tiles.end(),
+                               as16_tiles.begin(),
+                               [](const auto& left, const auto& right) {
+                                   return left.physical_tile_index ==
+                                              right.physical_tile_index &&
+                                       left.tile_x == right.tile_x &&
+                                       left.tile_y == right.tile_y;
+                               }),
+                "10_10_10_2 float storage formats 3 and 12 produced different EDRAM tile sets");
+    }
     const std::array<std::array<uint32_t, 4>, 6> captured_downsample_extents = {{
         {0x018000A0u, 0x42220000u, 0x00510051u, 81u},
         {0x00080050u, 0x41580000u, 0x001B001Bu, 27u},

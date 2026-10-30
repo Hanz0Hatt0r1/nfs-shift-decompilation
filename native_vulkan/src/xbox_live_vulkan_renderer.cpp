@@ -191,6 +191,16 @@ struct EdramTargetKeyHash {
   }
 };
 
+// Guest render-target codes 3 (k_2_10_10_10_FLOAT) and 12
+// (k_2_10_10_10_FLOAT_AS_16_16_16_16) describe one stored surface; they differ
+// only in blending precision, and xenos.h::GetStorageColorFormat maps 12 to 3.
+// Neither is 64bpp, so EDRAM tile addressing is identical. The cache key must
+// use the storage format, or the same surface is cached twice under two keys
+// and a lookup can miss a target that exists.
+uint32_t edram_storage_guest_color_format(uint32_t guest_color_format) {
+  return guest_color_format == 12u ? 3u : guest_color_format;
+}
+
 EdramTargetKey make_edram_target_key(const CapturedRasterState& raster,
                                     VkFormat color_format) {
   return {{{raster.color_base_tiles,
@@ -198,7 +208,7 @@ EdramTargetKey make_edram_target_key(const CapturedRasterState& raster,
             raster.width,
             raster.height,
             raster.surface_pitch,
-            raster.guest_color_format,
+            edram_storage_guest_color_format(raster.guest_color_format),
             static_cast<uint32_t>(color_format),
             raster.sample_count,
             static_cast<uint32_t>(raster.depth_format),
@@ -5576,10 +5586,19 @@ bool submit_captured_vulkan_operation_stream(
     }
     TextureCacheState* texture_cache_state = texture_cache
         ? &CapturedVulkanTextureCacheAccess::get(*texture_cache) : nullptr;
+    // Guest render-target codes 3 (k_2_10_10_10_FLOAT) and 12
+    // (k_2_10_10_10_FLOAT_AS_16_16_16_16) are the same surface with the same
+    // packing and the same stored values; they differ only in blending
+    // precision. xenos.h expresses exactly this with GetStorageColorFormat,
+    // which maps 12 to 3, and neither is a 64bpp format, so EDRAM tile
+    // addressing is byte-identical for both. Comparing the raw register code
+    // therefore rejected a draw/copy pair whose formats resolve to one
+    // identical storage layout. Normalise through the storage format first.
     const auto same_target_layout = [](const CapturedRasterState& a,
                                        const CapturedRasterState& b) {
         return a.color_base_tiles == b.color_base_tiles &&
-            a.guest_color_format == b.guest_color_format &&
+            edram_storage_guest_color_format(a.guest_color_format) ==
+                edram_storage_guest_color_format(b.guest_color_format) &&
             a.depth_base_tiles == b.depth_base_tiles && a.width == b.width &&
             a.height == b.height && a.color_format == b.color_format &&
             a.depth_format == b.depth_format &&
