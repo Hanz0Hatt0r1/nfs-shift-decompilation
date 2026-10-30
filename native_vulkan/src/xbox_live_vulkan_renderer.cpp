@@ -1932,12 +1932,25 @@ bool create_draw_resources(
     const CapturedVulkanTexture *captured = nullptr;
     VkImageView external_image_view = VK_NULL_HANDLE;
   };
+  // A shader that samples a texture can run against a draw that carries no
+  // captured texture records at all. That is the unbound-sampler case: the
+  // guest bound nothing, so the console returns a black texel for every fetch
+  // instead of faulting. `source.texture_width`/`texture_height` are zero here,
+  // which the validation below would otherwise reject as an incomplete
+  // resource, turning an unbound sampler into a lost frame.
+  std::vector<uint8_t> default_black_texel{0, 0, 0, 255};
   std::vector<TextureInput> texture_inputs;
   if (source.textures.empty()) {
-      texture_inputs.push_back({0, &source.texture_sampling, source.texture_width,
-                              source.texture_height,
+      const bool default_is_unbound =
+          source.texture_width == 0 || source.texture_height == 0 ||
+          source.texture_rgba8.empty();
+      const std::vector<uint8_t>* default_pixels =
+          default_is_unbound ? &default_black_texel : &source.texture_rgba8;
+      texture_inputs.push_back({0, &source.texture_sampling,
+                              default_is_unbound ? 1u : source.texture_width,
+                              default_is_unbound ? 1u : source.texture_height,
                               CapturedVulkanTexture::Format::Rgba8,
-                              &source.texture_rgba8, nullptr,
+                              default_pixels, nullptr,
                               VK_NULL_HANDLE});
   } else {
     texture_inputs.reserve(source.textures.size());
@@ -1947,6 +1960,38 @@ bool create_draw_resources(
                                 &texture.pixels, &texture,
                                 texture.external_image_view});
     }
+  }
+  // A texture fetch constant whose descriptor decodes to a zero extent is not
+  // bound either. The guest only supplies the fetch constant, so one that never
+  // arrived really means nothing is bound and the shader samples zeroes. Xenos
+  // does not fault for that; rejecting the whole draw for it loses the frame.
+  // Sample a single opaque black texel instead, which is what the console
+  // produces.
+  std::vector<CapturedVulkanTexture> unbound_textures;
+  std::vector<std::vector<uint8_t>> unbound_texture_pixels;
+  // Reserve before taking element addresses: the `captured` and `pixels` fields
+  // below point into these containers, and a later reallocation would dangle.
+  unbound_textures.reserve(texture_inputs.size());
+  unbound_texture_pixels.reserve(texture_inputs.size());
+  for (size_t i = 0; i < texture_inputs.size(); ++i) {
+    TextureInput &texture = texture_inputs[i];
+    if (!texture.captured || texture.external_image_view != VK_NULL_HANDLE) {
+      continue;
+    }
+    if (texture.width != 0 && texture.height != 0) continue;
+    CapturedVulkanTexture replacement = *texture.captured;
+    replacement.width = 1;
+    replacement.height = 1;
+    replacement.guest_copy_source = false;
+    replacement.external_image_view = VK_NULL_HANDLE;
+    replacement.format = CapturedVulkanTexture::Format::Rgba8;
+    unbound_texture_pixels.push_back({0, 0, 0, 255});
+    unbound_textures.push_back(replacement);
+    texture.width = 1;
+    texture.height = 1;
+    texture.format = CapturedVulkanTexture::Format::Rgba8;
+    texture.captured = &unbound_textures.back();
+    texture.pixels = &unbound_texture_pixels.back();
   }
   uint64_t total_texture_size = 0;
   for (size_t i = 0; i < texture_inputs.size(); ++i) {
