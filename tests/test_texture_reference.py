@@ -69,6 +69,30 @@ def test_decode_dxt3_preserves_explicit_alpha():
     assert image["pixels"][:4] == bytes((0, 0, 255, 255))
 
 
+
+def test_dxt3_uses_four_color_bc2_palette_when_first_endpoint_is_lower():
+    # BC2 color endpoints c0 < c1 must NOT use BC1 transparent selector 3.
+    # Explicit alpha nibble F is independent of color selection.
+    alpha = bytes([0x8F] * 8)
+    color = struct.pack("<HHI", 0x001F, 0x07E0, 0xFFFFFFFF)
+    image = decode_dds(_dds_header(fourcc=b"DXT3") + alpha + color)
+    assert image["source_format"] == "DXT3"
+    assert image["pixels"][:8] == bytes((0, 170, 85, 255, 0, 170, 85, 136))
+
+
+def test_dxt5_uses_four_color_bc3_palette_when_first_endpoint_is_lower():
+    alpha = bytes((255, 0)) + bytes(6)
+    color = struct.pack("<HHI", 0x001F, 0x07E0, 0xFFFFFFFF)
+    image = decode_dds(_dds_header(fourcc=b"DXT5") + alpha + color)
+    assert image["pixels"][:4] == bytes((0, 170, 85, 255))
+
+
+def test_dxt1_retains_three_color_transparency_when_first_endpoint_is_lower():
+    color = struct.pack("<HHI", 0x001F, 0x07E0, 0xFFFFFFFF)
+    image = decode_dds(_dds_header(fourcc=b"DXT1") + color)
+    assert image["pixels"][:4] == bytes((0, 0, 0, 0))
+
+
 def test_decode_dxt5_preserves_alpha_table():
     alpha = bytes((0, 255)) + bytes(6)
     color = struct.pack("<HHI", 0xF800, 0x07E0, 0)

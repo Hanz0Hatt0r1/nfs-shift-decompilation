@@ -32,14 +32,18 @@ def _rgb565(value: int) -> tuple[int, int, int]:
     return r, g, b
 
 
-def _decode_dxt1_block(block: bytes) -> list[tuple[int, int, int, int]]:
+def _decode_dxt1_block(
+    block: bytes, *, four_color: bool = False
+) -> list[tuple[int, int, int, int]]:
     if len(block) != 8:
         raise ValueError("DXT1 block must contain 8 bytes")
     c0 = _u16(block, 0)
     c1 = _u16(block, 2)
     p0 = _rgb565(c0)
     p1 = _rgb565(c1)
-    if c0 > c1:
+    # BC2/DXT3 and BC3/DXT5 always use four opaque color entries, even
+    # when c0 <= c1. Only BC1/DXT1 enters three-color/transparent mode.
+    if four_color or c0 > c1:
         colors = [
             (*p0, 255),
             (*p1, 255),
@@ -60,7 +64,7 @@ def _decode_dxt1_block(block: bytes) -> list[tuple[int, int, int, int]]:
 def _decode_dxt3_block(block: bytes) -> list[tuple[int, int, int, int]]:
     if len(block) != 16:
         raise ValueError("DXT3 block must contain 16 bytes")
-    colors = _decode_dxt1_block(block[8:])
+    colors = _decode_dxt1_block(block[8:], four_color=True)
     alpha_bits = int.from_bytes(block[:8], "little")
     out = []
     for i, color in enumerate(colors):
@@ -98,7 +102,7 @@ def _decode_dxt5_block(block: bytes) -> list[tuple[int, int, int, int]]:
         raise ValueError("DXT5 block must contain 16 bytes")
     alpha_table = _decode_dxt5_alpha_table(block[0], block[1])
     alpha_bits = int.from_bytes(block[2:8], "little")
-    colors = _decode_dxt1_block(block[8:])
+    colors = _decode_dxt1_block(block[8:], four_color=True)
     return [
         (*color[:3], alpha_table[(alpha_bits >> (3 * i)) & 7])
         for i, color in enumerate(colors)
