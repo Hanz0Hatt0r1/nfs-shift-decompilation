@@ -151,11 +151,23 @@ with the pinned RevEngInstr snapshot `08a31b94c304f8b7a57996974dafe352413f7924`.
 Across v527–v542, replay progressed through the missing-export chain from
 `0x0057da20` to the `0x00587xxx` class accessors. In v542, Ghidra-confirmed
 `0x00587c20` (`MOV EAX, 0x00ad5598; RET`) returned that exact pointer; the next
-retail call from `0x00587790` stopped at the still-missing
-`rvi_005879f0`. The PE entrypoint remains incomplete. Guest draw translation,
-frontend readiness, a race, and retail rendering remain unproven. See the
+retail call from `0x00587790` stopped at `rvi_005879f0`. That describes the
+v542 snapshot, not the later P1 frontier. The v543 exact Ghidra supplement
+exported `rvi_005879f0`; a focused v661 replay traced the retail call from
+`0x00587790` and confirmed its return value `EAX=0x00ad5488`. Execution then
+stopped at the next missing export, `rvi_00587b90`. See the
 [`Process 1 scheduler-quantum evidence`](../evidence/retail_frontier_20261021/process1_scheduler_return_quantum.json)
-for the full frontier chain, hashes, commands, and limits. Latest main is `380f0283` (#2133), which updates captured mobile D3D9 target formats in the Vulkan bridge; it changes no Process 1 files.
+for the v527–v542 history and the
+[`v661 target trace`](../evidence/retail_frontier_20261021/process1_pcode_target_v661_005879f0.json)
+for the exact function/module/report hashes and targeted call evidence. The
+later cumulative v659 replay included this supplement and reached the host
+frame loop for 1,440 frames without a P-code execution or missing-export
+failure; guest draw translation remained false. That replay and the
+inconclusive 2,880-frame timeout are recorded in the
+[`v621–v659 frontier`](../evidence/retail_frontier_20261021/process1_pcode_frontier_v621_v659.json)
+and [v660 extended-probe record](../evidence/retail_frontier_20261021/process1_pcode_frontier_v660_extended_probe.json).
+Current main is `201364e9` (#2138); those later merges are renderer-side and do
+not change the P-code evidence above.
 
 The v569–v576 follow-up adds exact missing accessors from the pinned retail
 PE, preserves unknown runtime targets for Ghidra BRANCHIND, and overrides
@@ -228,6 +240,16 @@ detach. Native GDB could not recover guest instruction pointers because of
 the Wine i386:x64-32 target architecture. This was not a fresh controlled
 launch and does not confirm frontend or race entry; see the
 [live process evidence](../evidence/retail_frontier_20261021/original_shift_live_wine_observation.json).
+
+A separate controlled launch on 2026-10-21 ran the same original PE32 under
+WineDbg/GDB for 117 seconds. The main retail thread entered a Gecko → D3D9 →
+WineD3D call path while a Wine OpenGL thread was active; 22 guest threads were
+listed. The known conditional stop at `0x0083a006` did not recur. The X11 root
+client list showed the Wine Desktop container; its nested window tree was not
+enumerated, so game-window presence is unconfirmed. Frontend and race entry
+were not confirmed. GDB's Ctrl-C stopped a different thread at a
+Wine/preloader address; that is not classified as a game fault. See the
+[controlled retail sample](../evidence/retail_frontier_20261021/original_shift_controlled_wine_sample_20261021.json).
 
 The v621–v632 P-code continuation merged the exact `0x0049f2c0` body,
 preserved lower-address Ghidra blocks while honoring each declared entrypoint,
@@ -821,3 +843,44 @@ v215/v217/v218/v219/v240 replays establish the bounded retail-requested Vulkan
 clear and queue-present milestone; v240 also narrows the pending UI consumer
 path. The separate milestones still to measure are first retail draw, frontend
 and offline race.
+
+## Latest original-retail checkpoint — 2026-10-21
+
+The user navigated the original retail executable past its title screen under
+Wine 11.17 using an isolated copy of the game root and Wine prefix. The copied
+game's broken `d3dx9_41.dll` link was repaired to an available native 32-bit
+DLL only inside that copy. The original PE and native D3DX module loaded,
+WineD3D compiled shaders, and a live capture showed the cockpit race HUD at
+00:41.570, 108 km/h, gear 3. A later capture showed the main menu with Career,
+Quick Race, Online, Car Garage, and Options. This confirms both an active race
+scene and the original frontend. The race frame came from a compositor capture
+that unexpectedly included the desktop; the later main-menu image was captured
+directly from the game's X11 window. The user's input sequence was not
+recorded, and the screenshots are separate captures, not continuous video.
+This does not establish P-code gameplay or native Windows behavior. A
+separate GDB run captured eight successful UI-readiness returns and a
+successful `D3DXCreateEffect` call.
+See the [interactive original-game evidence](../evidence/retail_frontier_20261021/original_shift_native_d3dx_gameplay_20261021.json)
+and its [race capture](../evidence/retail_frontier_20261021/original_shift_native_d3dx_gameplay_20261021.png)
+and [main-menu capture](../evidence/retail_frontier_20261021/original_shift_native_d3dx_main_menu_20261021.png).
+
+The v659 bounded P-code replay remains at 1,440 host frames with no P-code
+execution or missing-export blocker. Its cumulative manifest includes the
+exact supplements for `rvi_005879f0` and `rvi_00587b90`. A targeted v663 trace
+observed nine successful calls to `rvi_00587b90`, each returning
+`EAX=0x00ad5574`, including calls from `0x00587790` and `0x005878a0`. This
+clears that identified missing-export blocker on the observed path. The v663
+1,600-frame window timed out at 300 seconds before producing final frame or
+dispatch totals; it is not a complete replay. See the
+[v663 target trace record](../evidence/retail_frontier_20261021/process1_pcode_target_v663_00587b90.json).
+
+Guest draw translation remains false. The original retail race and main menu
+are confirmed; the recompiled P-code runtime has not reached either milestone.
+The earlier cockpit-looking debugger capture was an intro cinematic, so it is
+separately labeled and is not used as race evidence. Process 1 leaves the
+guest-draw renderer work to Process 2.
+
+A 2,880-frame extension with a 300-second wall limit timed out after loading
+the PE and before producing frame or dispatch totals. It yields no new P-code
+blocker and is unverified, not a successful frontier. See the
+[v660 extended-probe record](../evidence/retail_frontier_20261021/process1_pcode_frontier_v660_extended_probe.json).

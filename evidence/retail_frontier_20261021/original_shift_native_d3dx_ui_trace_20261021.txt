@@ -1,0 +1,117 @@
+Breakpoint 1 at 0x5089a0
+Type commands for breakpoint(s) 1, one per line.
+End with a line saying just "end".
+Breakpoint 2 at 0x54be00
+Type commands for breakpoint(s) 2, one per line.
+End with a line saying just "end".
+Breakpoint 3 at 0x83dcac
+Type commands for breakpoint(s) 3, one per line.
+End with a line saying just "end".
+Breakpoint 4 at 0x83a006
+Continuing.
+
+Program received signal SIGTRAP, Trace/breakpoint trap.
+0x7bcf0576 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+Continuing.
+[New Thread 388]
+[New Thread 384]
+[New Thread 380]
+[New Thread 376]
+[New Thread 372]
+ORIGINAL_UI_GATE n=1 ecx=0xab8a5f8 caller=0x40bb04
+ORIGINAL_UI_GATE n=2 ecx=0xab8a5f8 caller=0x40bb04
+ORIGINAL_UI_GATE n=3 ecx=0xab8a5f8 caller=0x40bb04
+ORIGINAL_UI_GATE n=4 ecx=0xab8a5f8 caller=0x40bb04
+ORIGINAL_UI_READY_RETURN n=1 eax=0x1 al=0x1 receiver=0xab8ad78 field218=0 field340=0x1
+[New Thread 396]
+[New Thread 392]
+ORIGINAL_UI_READY_RETURN n=2 eax=0x1 al=0x1 receiver=0xab8be38 field218=0 field340=0xac5204
+ORIGINAL_UI_READY_RETURN n=3 eax=0x1 al=0x1 receiver=0xab8c178 field218=0 field340=0x1
+ORIGINAL_UI_READY_RETURN n=4 eax=0x1 al=0x1 receiver=0xab8b778 field218=0 field340=0x1
+ORIGINAL_UI_READY_RETURN n=5 eax=0x1 al=0x1 receiver=0xab8a6b8 field218=0 field340=0x1
+ORIGINAL_UI_READY_RETURN n=6 eax=0x1 al=0x1 receiver=0xab8aa18 field218=0 field340=0x1
+[New Thread 440]
+[New Thread 436]
+[New Thread 432]
+[New Thread 428]
+[New Thread 424]
+[New Thread 420]
+[New Thread 416]
+[New Thread 412]
+[New Thread 400]
+ORIGINAL_UI_READY_RETURN n=7 eax=0x1 al=0x1 receiver=0xab8bad8 field218=0 field340=0
+[New Thread 464]
+[New Thread 460]
+[New Thread 456]
+[New Thread 444]
+ORIGINAL_UI_READY_RETURN n=8 eax=0x1 al=0x1 receiver=0xab8b438 field218=0 field340=0xac5204
+[New Thread 472]
+[New Thread 468]
+[Thread 472 exited]
+[Thread 468 exited]
+ORIGINAL_D3DX_EFFECT_RETURN n=1 eax=0 out_m4=0
+[New Thread 504]
+[New Thread 492]
+[New Thread 488]
+
+Thread 24 "01f8" received signal SIGSEGV, Segmentation fault.
+[Switching to Thread 504]
+0xffbb113c in ?? ()
+  Id   Target Id         Frame
+  1    Thread 320 "0140" 0x7b37b467 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/d3d9.dll
+  2    Thread 388 "0184" 0x784dca85 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/opengl32.dll
+  3    Thread 384 "0180" 0x7bc8d2b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  4    Thread 380 "017c" 0x7bc8d2b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  5    Thread 376 "0178" 0x7bc8d2b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  6    Thread 372 "0174" 0x7bc8d2b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  7    Thread 396 "018c" 0x7bc8d5b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  8    Thread 392 "0188" 0x7bc8d5b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  9    Thread 440 "01b8" 0x7bc8d2b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  10   Thread 436 "01b4" 0x7bc8d2b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  11   Thread 432 "01b0" 0x7bc8d2b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  12   Thread 428 "01ac" 0x7bc8d820 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  13   Thread 424 "01a8" 0x7bc8d5b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  14   Thread 420 "01a4" 0x7bc8d5b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  15   Thread 416 "01a0" 0x789e1c48 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/win32u.dll
+  16   Thread 412 "019c" 0x789e1c48 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/win32u.dll
+  17   Thread 400 "0190" 0x7bc8d2b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  18   Thread 464 "01d0" 0x7bc8d5b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  19   Thread 460 "01cc" 0x7bc8d5b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  20   Thread 456 "01c8" 0x7bc8d2b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  21   Thread 444 "01bc" 0x7bc8dd90 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+* 24   Thread 504 "01f8" 0xffbb113c in ?? ()
+  25   Thread 492 "01ec" 0x7bc8d2b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+  26   Thread 488 "01e8" 0x7bc8d2b0 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/ntdll.dll
+[Switching to thread 1 (Thread 320)]
+#0  0x7b37b467 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/d3d9.dll
+#0  0x7b37b467 in ?? () from /home/pes/.wine/drive_c/windows/syswow64/d3d9.dll
+#1  0x0084e7af in GeckoFnl!?GetSuperConstructor@AptPrototype@@QBEPAVAptValue@@XZ () from /home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/original-native-d3dx-20261021/SHIFT.exe
+#2  0x0d0f9960 in ?? ()
+#3  0x00863492 in GeckoFnl!?GetSuperConstructor@AptPrototype@@QBEPAVAptValue@@XZ () from /home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/original-native-d3dx-20261021/SHIFT.exe
+#4  0x02dbd614 in ?? ()
+#5  0x0084c736 in GeckoFnl!?GetSuperConstructor@AptPrototype@@QBEPAVAptValue@@XZ () from /home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/original-native-d3dx-20261021/SHIFT.exe
+#6  0x0a8dbec0 in ?? ()
+#7  0x008308d8 in GeckoFnl!?c_cih@AptValue@@QBEPAVAptCIH@@_N@Z () from /home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/original-native-d3dx-20261021/SHIFT.exe
+#8  0x00000000 in ?? ()
+eip            0x7b37b467          0x7b37b467
+eax            0x7b37b460          2067248224
+ebx            0x2dd9101           48075009
+ecx            0x7b395c00          2067356672
+edx            0xa1                161
+esi            0x0                 0
+edi            0xa8db310           177058576
+esp            0x129fa04           0x129fa04
+ebp            0x129fa0c           0x129fa0c
+=> 0x7b37b467:	push   %ebx
+   0x7b37b468:	sub    $0x50,%esp
+   0x7b37b46b:	mov    0x8(%ebp),%ebx
+   0x7b37b46e:	testb  $0x8,0x7b38e03c
+   0x7b37b475:	jne    0x7b37b580
+   0x7b37b47b:	call   0x7b371240
+   0x7b37b480:	mov    0x10(%ebp),%eax
+   0x7b37b483:	mov    %eax,0x8(%esp)
+   0x7b37b487:	mov    0xc(%ebp),%eax
+   0x7b37b48a:	mov    %eax,0x4(%esp)
+   0x7b37b48e:	mov    0x78(%ebx),%eax
+   0x7b37b491:	mov    %eax,(%esp)
+Remote communication error.  Target disconnected: error while reading: Connection reset by peer.

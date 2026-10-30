@@ -1,0 +1,59 @@
+{
+  "format": "NFSShift.Process1PcodeTargetTrace/1",
+  "collected_at": "2026-10-21T13:11:12Z",
+  "probe": {
+    "version": "v661 focused replay of v543 manifest",
+    "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "frames_requested": 2000,
+    "timeout_seconds": 300,
+    "validation": true,
+    "manifest": {
+      "path_outside_repository": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v542-missing-005879f0/module-manifest-v543-005879f0.json",
+      "sha256": "79c711408782859f890195d959bf5df90b10e337c46711bf47b1f0b8f2015395"
+    }
+  },
+  "target_function": {
+    "address": "0x005879f0",
+    "ghidra_name": "FUN_005879f0",
+    "instructions": 2,
+    "pcode_operations": 4,
+    "observed_semantics": "MOV EAX,0xad5488; RET",
+    "supplement_path_outside_repository": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v542-missing-005879f0/compiled/libnfs_shift_pcode_supplement.so",
+    "supplement_sha256": "831512b517de69174714c40af95fc3cc0688b2ce295172ef99ad8b24dad864c0"
+  },
+  "call_trace": {
+    "dispatch": 7929750,
+    "completion_dispatch": 7929750,
+    "thread": 1003253,
+    "caller": "0x00587790",
+    "target": "0x005879f0",
+    "return_address": "0x005877c5",
+    "entry_ecx": "0x362276e0",
+    "entry_eax": "0x00ad5478",
+    "returned_eax": "0x00ad5488",
+    "resolved": true,
+    "completed": true
+  },
+  "result": {
+    "status": "blocked_at_next_export",
+    "next_blocker": "P-code module has no exported function rvi_00587b90 called from guest function 0x00587790",
+    "dispatches": 7929766,
+    "unique_functions": 5127,
+    "frames_rendered": null,
+    "retail_rendering_proven": false,
+    "counts_are_gameplay_proof": false
+  },
+  "verification": {
+    "build": "incremental native runtime build passed; no targets needed rebuilding",
+    "focused_ctest": {
+      "command": "/usr/bin/ctest --test-dir /tmp/process1-retail-runtime-final-build --output-on-failure -R '^shift_runtime_recompiled_pcode_module$'",
+      "result": "passed",
+      "tests_passed": 1
+    },
+    "probe_log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v661-target-005879f0.log",
+    "probe_log_sha256": "65b32a01b471fee57d6c1555c082bc1032e836fa19d3ce55f1f045f3975efc2c",
+    "probe_report_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v661-target-005879f0.json",
+    "probe_report_sha256": "af2781ce6246c4f40bfa79f86182f9d14d20cd69e713d7a0b84f440fe67adc7f"
+  },
+  "interpretation": "The exact Ghidra P-code supplement for 0x005879f0 is present and the retail caller returned EAX=0x00ad5488. The replay moved to a separate missing export at 0x00587b90. Dispatch and unique-function totals are diagnostic only."
+}

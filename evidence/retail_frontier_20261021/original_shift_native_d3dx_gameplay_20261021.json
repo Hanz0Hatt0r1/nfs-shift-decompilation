@@ -1,0 +1,106 @@
+{
+  "format": "NFSShift.OriginalRetailInteractiveRun/1",
+  "captured_at": "2026-10-21T13:03:30+03:00",
+  "program": {
+    "path_outside_repository": "/home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/original-native-d3dx-20261021/SHIFT.exe",
+    "image_type": "PE32 GUI, Intel i386",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "execution": {
+    "host": "Linux x86_64",
+    "compatibility_layer": "system Wine 11.17",
+    "prefix_clone": "/home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/wine-prefix-copy-native-d3dx-20261021",
+    "prefix_source": "/home/pes/.wine",
+    "game_root_copy": "/home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/original-native-d3dx-20261021",
+    "display": ":1",
+    "wine_pid": "0124",
+    "host_pid_at_capture": 905155,
+    "observed_process_age_seconds_at_capture": 548,
+    "launch": "Original SHIFT.exe launched directly under Wine; no recompiled runtime involved.",
+    "environment": {
+      "WINEDLLOVERRIDES": "d3dx9_41=n"
+    },
+    "wine_log": {
+      "path_outside_repository": "/tmp/process1-retail-runtime-evidence/original-shift-native-d3dx-isolated-prefix-20261021.log",
+      "bytes": 727083,
+      "sha256": "0ddc842ab350c5a11d17da8c4872b7c75d626f4d2cc437ce6c8b2fcb20ecda63"
+    }
+  },
+  "dependency": {
+    "name": "d3dx9_41.dll",
+    "retail_copy_original_link": "/home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/original-native-d3dx-20261021/d3dx9_41.dll",
+    "isolated_copy_link_repaired_to": "/home/pes/PortProton/data/tmp/plugins_v20/d3d_extras/x32/d3dx9_41.dll",
+    "image_type": "PE32 DLL, Intel i386",
+    "sha256": "6ac4df203af419d3f3b7d9a99e14a3490ea3ad307c474bfe36baea642b1421f6",
+    "wine_loader_log_confirms_native_module_loaded": true
+  },
+  "window": {
+    "x11_id": "0x2200005",
+    "parent_id": "0x1200004",
+    "class": ["shift.exe", "shift.exe"],
+    "client_size": [1920, 1080]
+  },
+  "observations": {
+    "original_retail_pe_loaded": true,
+    "game_process_alive_at_capture": true,
+    "active_race_confirmed": true,
+    "menu_visible_in_race_capture": false,
+    "original_main_menu_confirmed_later": true,
+    "visible_hud": {
+      "race_timer": "00:41.570",
+      "speed": "108 km/h",
+      "gear": 3,
+      "camera": "cockpit",
+      "scene": "moving on-track race view with rear-view mirror"
+    },
+    "input_provenance": "The user manually pressed controls after the title-screen capture; exact keys and transition sequence were not logged.",
+    "render_path_evidence": "The Wine log records the original executable and native 32-bit D3DX9_41 loading, followed by WineD3D shader compilation and D3D state activity.",
+    "screenshot": {
+      "path": "evidence/retail_frontier_20261021/original_shift_native_d3dx_gameplay_20261021.png",
+      "width": 2304,
+      "height": 1150,
+      "capture_method": "grim compositor capture; the requested region unexpectedly returned the full desktop",
+      "sha256": "97eb8431be468ef0e2a60b6d3ff816f3ab6644c9561e77b0df406891f7cccc8b"
+    },
+    "later_main_menu_capture": {
+      "captured_at": "2026-10-21T13:07:01+03:00",
+      "visible": true,
+      "screen_items": ["Career", "Quick Race", "Online", "Car Garage", "Options"],
+      "selected_item": "Options",
+      "screenshot": {
+        "path": "evidence/retail_frontier_20261021/original_shift_native_d3dx_main_menu_20261021.png",
+        "width": 1920,
+        "height": 1080,
+        "capture_method": "ImageMagick import -window 0x2200005; X11 WM_NAME=Need for Speed SHIFT; _NET_WM_PID=905155",
+        "sha256": "ac740b161995d03bc4bd5ff7364838975e0883a49f1e3a57382f3b9d7bf86c00"
+      }
+    },
+    "preceding_intro_capture": {
+      "path": "evidence/retail_frontier_20261021/original_shift_native_d3dx_intro_cinematic_20261021.png",
+      "sha256": "7e8130eb2cde1f57616f90e740574aad993d7887871a7bae47eeadf975898a44",
+      "classification": "Intro cinematic; it has no race HUD and is not used as active-race evidence."
+    }
+  },
+  "related_debugger_sample": {
+    "trace_path": "evidence/retail_frontier_20261021/original_shift_native_d3dx_ui_trace_20261021.txt",
+    "trace_sha256": "d9894cd3289624d1a7a4e1d81f6e60aa417bb87b81944f7cfb3cb541a8c5e52b",
+    "raw_trace_path_outside_repository": "/tmp/process1-retail-runtime-evidence/original-native-d3dx-ui-20261021.gdb.log",
+    "raw_trace_sha256": "07553ce90b0a1428d62a3a52857bcf093a445d10c394fea7ff6c4087cd5be1c7",
+    "trace_normalization": "Trailing whitespace was removed from the committed copy; the final debugger transport-disconnect line is retained.",
+    "separate_run_observations": [
+      "Original UI readiness method returned AL=1 in all eight captured calls.",
+      "Native D3DXCreateEffect returned HRESULT 0 for the embedded retail effect.",
+      "The retail main thread was in Wine d3d9.dll with a SHIFT.exe caller stack."
+    ],
+    "separate_run_prefix": "/home/pes/.wine",
+    "debugger_limit": "The debugger stopped on a Wine helper/preloader thread outside SHIFT.exe; this is not classified as a retail fault."
+  },
+  "interpretation": "The original retail executable reached an active race with a visible cockpit HUD and later displayed its main menu on this isolated Wine run. This confirms original-game frontend and race scenes, not P-code gameplay, native Windows behavior, or renderer parity.",
+  "limitations": [
+    "Observed under Wine 11.17, not native Windows.",
+    "The native 32-bit D3DX link was repaired only inside the isolated game-root copy; the primary game files and Wine prefix were not changed by that repair.",
+    "The user-driven key sequence was not recorded, and the race and main-menu screenshots are separate captures rather than a continuous video.",
+    "The active race scene is original-executable evidence and is separate from the recompiled P-code frame-loop replay.",
+    "The captured desktop image includes host desktop areas around the game window."
+  ]
+}
