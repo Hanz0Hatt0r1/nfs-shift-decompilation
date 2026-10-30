@@ -45,3 +45,8 @@ jobs:
         run: |
           python3 tools/xbox360/test_linux_missing_asset_caller_semantics.py
           python3 tools/xbox360/test_linux_menu_background_missing_flow.py
+      - name: Check reproducible build pins and scene-gate analyser
+        run: |
+          python3 tools/xbox360/build/verify_pins.py
+          python3 tools/xbox360/test_build_pins.py
+          python3 tools/xbox360/test_analyse_menu_setup_scene_gate_run_20261029.py
