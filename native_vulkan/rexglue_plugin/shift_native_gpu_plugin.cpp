@@ -11,6 +11,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
@@ -3100,6 +3101,30 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                       packet_bytes, packet.byte_length, &writes, &error)) {
                 raw_register_writes += static_cast<uint32_t>(writes.size());
                 for (const shift::xbox::GuestRegisterWrite& write : writes) {
+                  // Trace the three render-target identity registers. Whether the
+                  // guest ever writes RB_SURFACE_INFO = 0x14020500 decides between
+                  // "the guest really asked for a 4x surface at pitch 1280" and
+                  // "the copy decoded a stale/partial register snapshot".
+                  if (write.register_index == 0x2000u ||
+                      write.register_index == 0x2001u ||
+                      write.register_index == 0x2002u) {
+                    static const std::string trace_target_registers =
+                        [] {
+                          const char* raw = std::getenv(
+                              "SHIFT_NATIVE_VULKAN_TRACE_TARGET_REGISTERS");
+                          return std::string(raw && std::strcmp(raw, "0") != 0
+                                                 ? raw
+                                                 : "");
+                        }();
+                    if (!trace_target_registers.empty()) {
+                      if (FILE* trace = std::fopen(
+                              trace_target_registers.c_str(), "a")) {
+                        std::fprintf(trace, "write reg=0x%04X value=0x%08X\n",
+                                     write.register_index, write.value);
+                        std::fclose(trace);
+                      }
+                    }
+                  }
                   ApplyScratchRegisterWrite(write.register_index, write.value);
                   ApplyCoherencyRegisterWrite(write.register_index, write.value);
                   raster_register_state.apply(write);
