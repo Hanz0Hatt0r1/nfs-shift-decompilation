@@ -2373,10 +2373,26 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         }
       }
       if (ring_generation != observed_ring_generation) {
-        raster_register_state.reset();
-        shader_register_state.reset();
-        vertex_shader_program.clear();
-        pixel_shader_program.clear();
+        // A ring reinit replaces the command buffer, not the GPU context: the
+        // Xenos register file (RB_SURFACE_INFO, RB_COLOR_INFO, RB_DEPTH_INFO,
+        // the viewports, blend control ...) persists across it in real
+        // hardware, and the guest is free to submit draws against state it
+        // configured before the switch. Clearing that state here made every
+        // such draw unresolvable ("incomplete captured raster register state",
+        // valid_mask without the surface/color/depth bits), which in turn left
+        // the presenter Copy/Convert without the EDRAM surface it resolves.
+        // Only per-frame bookkeeping is reset; captured register state is kept.
+        static const bool preserve_state = [] {
+          const char* raw =
+              std::getenv("SHIFT_NATIVE_VULKAN_RESET_STATE_ON_RING_GENERATION");
+          return !(raw && *raw && std::strcmp(raw, "0") != 0);
+        }();
+        if (!preserve_state) {
+          raster_register_state.reset();
+          shader_register_state.reset();
+          vertex_shader_program.clear();
+          pixel_shader_program.clear();
+        }
         recycle_frame_draws();
         frame_copy = {};
         frame_copy_ready = false;

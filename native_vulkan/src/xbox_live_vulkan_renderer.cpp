@@ -3,8 +3,10 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <cstdlib>
 #include <cstring>
 #include <deque>
+#include <fstream>
 #include <functional>
 #include <initializer_list>
 #include <limits>
@@ -1314,6 +1316,24 @@ VkSampleCountFlagBits sample_count_flag(uint32_t samples) {
     }
 }
 
+// Diagnostics are opt-in and file-based because this translation unit has no
+// logging facility. Kept intentionally tiny and only on the EDRAM cache paths
+// that matter for source-target lifetime questions.
+bool edram_trace_enabled() {
+  static const bool enabled = [] {
+    const char* raw = std::getenv("SHIFT_NATIVE_VULKAN_TRACE_EDRAM");
+    return raw && *raw && std::strcmp(raw, "0") != 0;
+  }();
+  return enabled;
+}
+
+void edram_trace(const std::string& line) {
+  if (!edram_trace_enabled()) return;
+  const char* path = std::getenv("SHIFT_NATIVE_VULKAN_TRACE_EDRAM");
+  std::ofstream file(path, std::ios::app);
+  if (file) file << line << '\n';
+}
+
 bool acquire_edram_target(
     TextureCacheState* cache,
     const VkPhysicalDeviceMemoryProperties& memory_properties,
@@ -1374,6 +1394,17 @@ bool acquire_edram_target(
     }
     found = cache->edram_targets.emplace(key, std::move(created)).first;
     cache->edram_target_bytes += found->second.estimated_bytes;
+    {
+      std::ostringstream trace;
+      trace << "create frame=" << cache->frame << " base=0x" << std::hex
+            << key.values[0] << " depth=0x" << key.values[1] << std::dec
+            << " extent=" << key.values[2] << 'x' << key.values[3]
+            << " pitch=" << key.values[4] << " gcf=" << key.values[5]
+            << " cf=" << key.values[6] << " samples=" << key.values[7]
+            << " depth_only=" << key.values[9] << " count="
+            << cache->edram_targets.size();
+      edram_trace(trace.str());
+    }
   } else if (needs_depth && found->second.depth.image == VK_NULL_HANDLE) {
     ImageResource depth{};
     if (!create_render_attachment(
@@ -1508,11 +1539,28 @@ CachedEdramTarget* find_initialized_edram_target(
   if (color_format == VK_FORMAT_UNDEFINED) return nullptr;
   const EdramTargetKey key = make_edram_target_key(raster, color_format);
   const auto found = cache->edram_targets.find(key);
-  if (found == cache->edram_targets.end() ||
-      !found->second.color_initialized ||
-      found->second.last_used_frame > cache->frame ||
-      cache->frame + 1u - found->second.last_used_frame >
-          kEdramTargetCacheLifetimeFrames) {
+  const bool present = found != cache->edram_targets.end();
+  const bool initialized = present && found->second.color_initialized;
+  const bool not_future = present && found->second.last_used_frame <= cache->frame;
+  const bool fresh = present && not_future &&
+      cache->frame + 1u - found->second.last_used_frame <=
+          kEdramTargetCacheLifetimeFrames;
+  if (!present || !initialized || !not_future || !fresh) {
+    if (edram_trace_enabled()) {
+      std::ostringstream trace;
+      trace << "lookup-miss frame=" << cache->frame << " base=0x" << std::hex
+            << key.values[0] << " depth=0x" << key.values[1] << std::dec
+            << " extent=" << key.values[2] << 'x' << key.values[3]
+            << " pitch=" << key.values[4] << " gcf=" << key.values[5]
+            << " cf=" << key.values[6] << " samples=" << key.values[7]
+            << " depth_only=" << key.values[9] << " present=" << present;
+      if (present) {
+        trace << " initialized=" << found->second.color_initialized
+              << " last_used=" << found->second.last_used_frame;
+      }
+      trace << " cached=" << cache->edram_targets.size();
+      edram_trace(trace.str());
+    }
     return nullptr;
   }
   return &found->second;
