@@ -5934,6 +5934,48 @@ bool submit_captured_vulkan_operation_stream(
                            "same-layout Xenos EDRAM source target";
                 if (!operation.source_raster_ready) {
                     message << "; source layout registers did not decode";
+                } else {
+                    message << "; source layout="
+                            << describe_target_layout(operation.source_raster);
+                    // Report every cached EDRAM target and how close it came, so
+                    // a near-miss on one field is visible instead of hidden.
+                    const VkFormat source_color_format = captured_color_format(
+                        operation.source_raster.color_format, false);
+                    const EdramTargetKey source_key =
+                        make_edram_target_key(operation.source_raster,
+                                              source_color_format);
+                    message << "; cached targets=";
+                    if (texture_cache_state->edram_targets.empty()) {
+                        message << "none";
+                    }
+                    bool first_entry = true;
+                    for (const auto& [key, target] : texture_cache_state->edram_targets) {
+                        if (!first_entry) message << ", ";
+                        first_entry = false;
+                        message << "{color_base=0x" << std::hex
+                                << key.values[0] << ",depth_base=0x"
+                                << key.values[1] << std::dec
+                                << ",extent=" << key.values[2] << 'x'
+                                << key.values[3] << ",pitch=" << key.values[4]
+                                << ",guest_color_format=" << key.values[5]
+                                << ",color_format=" << key.values[6]
+                                << ",samples=" << key.values[7]
+                                << ",depth_format=" << key.values[8]
+                                << ",depth_only=" << key.values[9]
+                                << ",color_init=" << target.color_initialized
+                                << ",last_used_frame=" << target.last_used_frame
+                                << '}';
+                    }
+                    message << "; this-frame draw layouts=";
+                    for (size_t draw_index = 0; draw_index < draws.size();
+                         ++draw_index) {
+                        if (draw_index) message << ", ";
+                        message << describe_target_layout(draws[draw_index].raster);
+                    }
+                    message << "; frame=" << texture_cache_state->frame
+                            << ",exact_key_match="
+                            << (texture_cache_state->edram_targets.find(source_key) !=
+                                texture_cache_state->edram_targets.end());
                 }
                 return fail(message.str(), error);
             }
