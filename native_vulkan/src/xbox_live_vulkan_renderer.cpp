@@ -5955,7 +5955,21 @@ bool submit_captured_vulkan_operation_stream(
                     message << "; source layout registers did not decode";
                 } else {
                     message << "; source layout="
-                            << describe_target_layout(operation.source_raster);
+                            << describe_target_layout(operation.source_raster)
+                            << "; source registers: surface_info=0x" << std::hex
+                            << operation.source_surface_info << " (pitch="
+                            << std::dec
+                            << (operation.source_surface_info & 0x3FFFu)
+                            << ",msaa_mode="
+                            << ((operation.source_surface_info >> 16) & 0x3u)
+                            << "), color_info=0x" << std::hex
+                            << operation.source_color_info << ", depth_info=0x"
+                            << operation.source_depth_info
+                            << ", mode_control=" << std::dec
+                            << operation.source_mode_control
+                            << "; decoded source extent="
+                            << operation.source_width << 'x'
+                            << operation.source_height;
                     // Report every cached EDRAM target and how close it came, so
                     // a near-miss on one field is visible instead of hidden.
                     const VkFormat source_color_format = captured_color_format(
