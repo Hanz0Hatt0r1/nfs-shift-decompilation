@@ -79,28 +79,44 @@ on 2026-10-30 from the logs themselves, not copied from the prose.
 Artifact identities in both `run_metadata.json` files:
 XEX `8c86a34f…`, host `ff4278b3…`, runtime `693abc48…`.
 
-## The one wording change this forces
+## The one wording correction this forces
 
-Earlier notes said the GUI event queue had "zero enqueues". That is **not
-observable** from these captures: the trace breakpoints the dequeue/poll side,
-and no enqueue event family exists. The analyser therefore reports
+Earlier notes said the GUI event queue had "zero enqueues". The raw data is more
+precise than that in one direction and weaker in another:
+
+- The trace **does** arm enqueue breakpoints and report their hit counts in
+  `P1_MAIN_MENU_EVENT_QUEUE_SUMMARY`: `enqueue_calls 0`, `enqueue_returns 0`,
+  `direct_append_calls 0`, `direct_append_returns 0`, against
+  `constructor_calls 70`, `open_calls 9`, `process_event_queue_calls 16`.
+  So `0` is a *measured* count, not an absent measurement.
+- What is still missing is a **positive control**: nothing yet proves those
+  enqueue breakpoints would fire on a real enqueue (right address, right slot,
+  reachable). Until that control exists, "0 enqueues" is an armed-but-unproven
+  negative.
+
+The analyser encodes exactly this and refuses to flatten it:
 
 ```
-enqueue_evidence: "not instrumented: the trace observes GUI queue polls only;
-absence of enqueue events cannot be read as zero enqueues"
+gui_queue_enqueue_calls: 0
+gui_queue_direct_appends: 0
+enqueue_evidence: "instrumented, no positive control: the queue summary reports
+enqueue breakpoint hit counts, but nothing yet proves those breakpoints fire on
+a real enqueue"
 ```
 
 The defensible statement is: *the menu GUI queue was constructed 70 times, opened
-9 times and polled 16 times in the captured window, and the capture instruments
-no enqueue path.* Whether the guest enqueues nothing, enqueues into a different
-object, or enqueues through an uninstrumented function remains open — which is
-exactly what `docs/P1_FRONTEND_FRONTIER_PLAN_20261030.md` H1/H2 must settle with
-a v119 capture that adds an enqueue-side probe **and** a positive control.
+9 times and polled 16 times in the captured window, and the enqueue breakpoints
+armed on it were never hit — with no positive control yet proving those
+breakpoints would fire.* Whether the guest enqueues nothing, enqueues into a
+different object, or enqueues through a path the breakpoint does not cover
+remains open — which is what `docs/P1_FRONTEND_FRONTIER_PLAN_20261030.md` H1/H2
+must settle with a v119 capture that adds the enqueue-side probe **and** the
+positive control.
 
 ## Next step
 
 The v119 capture in `docs/P1_FRONTEND_FRONTIER_PLAN_20261030.md` must add the
-enqueue-side instrumentation together with a positive control (a known-productive
-queue, or an injected host-side enqueue in a fixture build — never a guest-memory
-patch). Until that control exists, "0 enqueues" stays classified as
-*uninstrumented*, not as a measured zero.
+positive control for the enqueue breakpoints — a known-productive queue, or an
+injected host-side enqueue in a fixture build (never a guest-memory patch). Until
+that control exists, "0 enqueues" stays classified as *armed but unproven*, not
+as a settled fact.

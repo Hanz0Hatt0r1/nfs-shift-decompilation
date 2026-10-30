@@ -127,6 +127,30 @@ class SyntheticContractTests(unittest.TestCase):
         self.assertIn("not instrumented", gui["enqueue_evidence"])
         self.assertNotEqual(gui["gui_queue_enqueue_calls"], 0)
 
+    def test_queue_summary_counters_are_reported_with_caveat(self):
+        """A summary carrying enqueue counters is instrumented, not proven."""
+        with tempfile.TemporaryDirectory() as tmp:
+            run = _write_run(
+                Path(tmp),
+                [
+                    'P1_STATE2_UPDATE {"elapsed_seconds": 1.0}',
+                    'P1_MAINMENU_SCENE_GATE_METHOD_CALL {"function": "sub_82DD9020"}',
+                    'P1_SCENE_GATE_FIELD_WRITE {"before": 0, "after": 1}',
+                    'P1_MAIN_MENU_EVENT_QUEUE_SUMMARY {"constructor_calls": 70, '
+                    '"enqueue_calls": 0, "enqueue_returns": 0, '
+                    '"direct_append_calls": 0, "direct_append_returns": 0, '
+                    '"open_calls": 9, "process_event_queue_calls": 16}',
+                ],
+            )
+            out = analyse_run(run)
+        gui = out["gui_queue"]
+        # The measured value is exposed...
+        self.assertEqual(gui["gui_queue_enqueue_calls"], 0)
+        self.assertEqual(gui["gui_queue_direct_appends"], 0)
+        # ...but never presented as a proven zero.
+        self.assertIn("no positive control", gui["enqueue_evidence"])
+        self.assertIn("instrumented", gui["enqueue_evidence"])
+
     def test_missing_required_families_are_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
             run = _write_run(Path(tmp), ['P1_STATE2_UPDATE {"elapsed_seconds": 1.0}'])
@@ -178,13 +202,17 @@ class LiveNativeRunTests(unittest.TestCase):
         self.assertAlmostEqual(write["elapsed_seconds"], 76.303, places=2)
         self.assertIn("sub_82DD9020", write["host_symbol"])
 
-    def test_gui_queue_constructed_and_polled_without_enqueue_observability(self):
+    def test_gui_queue_constructed_and_polled_with_enqueue_breakpoints_unhit(self):
         gui = self.out["gui_queue"]
         self.assertEqual(gui["ctor_calls"], 70)
         self.assertEqual(gui["ctor_returns"], 70)
         self.assertEqual(gui["open_calls"], 9)
         self.assertEqual(gui["process_calls"], 16)
-        self.assertIn("not instrumented", gui["enqueue_evidence"])
+        # The queue summary proves the enqueue breakpoints were armed and never
+        # hit; it does NOT prove they would fire on a real enqueue.
+        self.assertEqual(gui["gui_queue_enqueue_calls"], 0)
+        self.assertEqual(gui["gui_queue_direct_appends"], 0)
+        self.assertIn("no positive control", gui["enqueue_evidence"])
 
     def test_retail_input_reaches_the_predicate(self):
         self.assertEqual(self.out["input"]["predicate_samples"], 36)

@@ -106,6 +106,7 @@ def analyse_run(run_dir: str | Path) -> dict:
     """Return the JSON-serialisable summary for one run directory."""
     run_dir = Path(run_dir)
     counts: dict[str, int] = {}
+    queue_summary: dict = {}
     state2_times: list[float] = []
     gate_set_calls: list[dict] = []
     gate_clear_calls: list[dict] = []
@@ -145,6 +146,13 @@ def analyse_run(run_dir: str | Path) -> dict:
                 input_edges.append(str(button))
         elif name == "P1_RETAIL_INPUT_PREDICATE":
             predicate_values.append(payload.get("predicate"))
+        elif name == "P1_MAIN_MENU_EVENT_QUEUE_SUMMARY":
+            queue_summary = payload
+            for family in (
+                "P1_GUI_QUEUE_ENQUEUE_CALL",
+                "P1_GUI_QUEUE_DIRECT_APPEND",
+            ):
+                counts.setdefault(family, 0)
 
     # Interval facts for state 2.
     state2_first = state2_times[0] if state2_times else None
@@ -161,16 +169,39 @@ def analyse_run(run_dir: str | Path) -> dict:
         optional[label] = observed if instrumented else "unknown: family not emitted"
 
     # Enqueue observability is a property of the trace, not of the guest. The
-    # current captures breakpoint the dequeue/poll path, so a missing enqueue
-    # family means "not instrumented", never "the guest enqueued nothing".
+    # v112/v118 trace arms enqueue breakpoints and reports their hit counts in
+    # P1_MAIN_MENU_EVENT_QUEUE_SUMMARY (enqueue_calls / direct_append_calls).
+    # A summary carrying those keys proves the breakpoints were armed, but not
+    # that they would fire on a real enqueue -- no positive control exists yet.
+    # Both the count and that caveat are therefore reported, never collapsed
+    # into a bare zero.
     polls = counts.get("P1_MAIN_MENU_GUI_EVENT_QUEUE_PROCESS", 0)
-    enqueue_instrumented = any(
+    summary_keys = (
+        "enqueue_calls",
+        "enqueue_returns",
+        "direct_append_calls",
+        "direct_append_returns",
+    )
+    has_summary_counters = any(key in (queue_summary or {}) for key in summary_keys)
+    enqueue_instrumented = has_summary_counters or any(
         counts.get(family, 0) > 0
         for families in _OPTIONAL_COUNT_FAMILIES.values()
         for family in families
     )
-    if enqueue_instrumented:
-        enqueue_evidence = "instrumented"
+    if has_summary_counters:
+        optional["gui_queue_enqueue_calls"] = queue_summary.get("enqueue_calls")
+        optional["gui_queue_direct_appends"] = queue_summary.get("direct_append_calls")
+        enqueue_evidence = (
+            "instrumented, no positive control: the queue summary reports enqueue "
+            "breakpoint hit counts, but nothing yet proves those breakpoints fire "
+            "on a real enqueue"
+        )
+    elif enqueue_instrumented:
+        optional["gui_queue_enqueue_calls"] = sum(
+            counts.get(family, 0)
+            for family in _OPTIONAL_COUNT_FAMILIES["gui_queue_enqueue_calls"]
+        )
+        enqueue_evidence = "instrumented: enqueue events observed"
     elif polls:
         enqueue_evidence = (
             "not instrumented: the trace observes GUI queue polls only; "
