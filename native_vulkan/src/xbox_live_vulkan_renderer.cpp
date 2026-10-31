@@ -3114,8 +3114,39 @@ bool submit_mixed_sample_copy_frame(
         copy.single_sample_pixel_shader_spirv.empty() ||
         (copy.source_gamma &&
          copy.gamma_single_sample_pixel_shader_spirv.empty())) {
-        return fail("mixed captured frame requires 4x-MSAA followed by 1x and a single-sample Copy/Convert shader",
-                    error);
+        // Name the condition that actually failed instead of listing all three.
+        // This used to say only "requires 4x-MSAA followed by 1x", which reads
+        // as a sample-order problem even when the real cause is a missing
+        // single-sample shader.
+        std::ostringstream message;
+        message << "mixed captured frame is unsupported: draws=" << draws.size();
+        if (!draws.empty()) {
+            message << ", first_draw_samples=" << draws.front().raster.sample_count;
+        }
+        message << ", single_sample_shader="
+                << !copy.single_sample_pixel_shader_spirv.empty();
+        message << ", samples=";
+        for (size_t i = 0; i < draws.size(); ++i) {
+            if (i) message << ',';
+            message << draws[i].raster.sample_count;
+        }
+        message << ", detail=";
+        for (size_t i = 0; i < draws.size(); ++i) {
+            const CapturedRasterState& r = draws[i].raster;
+            if (i) message << ' ';
+            message << i << ":s" << r.sample_count << ",m" << r.color_write_mask
+                    << ",dw" << r.depth_write_enabled
+                    << ",dt" << r.depth_test_enabled
+                    << ",cb" << r.color_base_tiles
+                    << ",db" << r.depth_base_tiles
+                    << ",e" << r.width << 'x' << r.height
+                    << ",cf" << static_cast<unsigned>(r.color_format);
+        }
+        if (copy.source_gamma) {
+            message << ", gamma_single_sample_shader="
+                    << !copy.gamma_single_sample_pixel_shader_spirv.empty();
+        }
+        return fail(message.str(), error);
     }
 
     bool needs_msaa_depth = false;
@@ -4516,9 +4547,19 @@ bool submit_captured_vulkan_frame(
     if (raster_samples == VkSampleCountFlagBits{}) {
         return fail("captured sample count is outside the Vulkan 1.1 subset", error);
     }
+    // A draw that writes no colour is a state-only packet: it records raster
+    // state without touching the target, so its sample count does not describe
+    // a second render pass over the same surface. Measured in the retail menu
+    // frame, the 4x draws in an otherwise 1x frame all carry color_write_mask 0
+    // while every colour-writing draw is 1x; counting those as a mixed frame
+    // selected the 4x-then-1x resolve path, which cannot run without a leading
+    // 4x pass and rejected the frame.
+    const auto writes_color = [](const CapturedVulkanDraw& draw) {
+        return !draw.raster.depth_only && draw.raster.color_write_mask != 0;
+    };
     const bool mixed_sample_counts = std::any_of(
-        draws.begin() + 1, draws.end(), [samples](const CapturedVulkanDraw& draw) {
-            return draw.raster.sample_count != samples;
+        draws.begin() + 1, draws.end(), [&](const CapturedVulkanDraw& draw) {
+            return draw.raster.sample_count != samples && writes_color(draw);
         });
     const bool single_sample_copy = !mixed_sample_counts && samples == 1;
     const VkFormat copy_destination_format = copy
@@ -4772,7 +4813,14 @@ bool submit_captured_vulkan_frame(
                         error);
         }
         const CapturedRasterState& raster = draw.raster;
-        if (raster.sample_count != samples) {
+        // A draw that writes neither colour nor depth/stencil records raster
+        // state only and never touches the target, so it has no sample count of
+        // its own to match. The retail menu frame contains 4x packets of that
+        // shape inside an otherwise 1x frame.
+        const bool state_only_draw =
+            !raster.depth_only && raster.color_write_mask == 0 &&
+            !raster.depth_write_enabled && !raster.stencil_test_enabled;
+        if (raster.sample_count != samples && !state_only_draw) {
             const CapturedRasterState& frame_raster = draws.front().raster;
             std::ostringstream message;
             message << "captured Vulkan draw " << draw_index << " sample count "
