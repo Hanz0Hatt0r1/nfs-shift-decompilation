@@ -3134,7 +3134,18 @@ bool submit_mixed_sample_copy_frame(
                 << static_cast<unsigned>(target.color_format);
         return fail(message.str(), error);
     }
-    if (source_width != target.width || source_height != target.height) {
+    // Same tile-granular reasoning as the single-target path: a resolve over
+    // the same tile rows as the draw describes the same EDRAM surface even when
+    // the pixel heights differ within a tile.
+    CapturedRasterState mixed_copy_source = target;
+    mixed_copy_source.width = source_width;
+    mixed_copy_source.height = source_height;
+    const CapturedRasterState mixed_granular_source =
+        edram_tile_granular_layout(mixed_copy_source);
+    const CapturedRasterState mixed_granular_target =
+        edram_tile_granular_layout(target);
+    if (mixed_granular_source.width != mixed_granular_target.width ||
+        mixed_granular_source.height != mixed_granular_target.height) {
         std::ostringstream message;
         message << "mixed captured Copy/Convert source extent " << source_width
                 << 'x' << source_height << " does not match first render target "
@@ -4672,9 +4683,25 @@ bool submit_captured_vulkan_frame(
             ? captured_color_format(frame_target.color_format,
                                     linear_rgba8_intermediate)
             : VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    // The EDRAM surface is tile-granular, so a 320x243 draw and a 320x248
+    // resolve over the same rows describe one and the same 4x16-tile surface:
+    // both round to a 256-row backing. Comparing the raw extents treats those as
+    // different surfaces and rejects the frame, so compare what the hardware
+    // actually allocates. The granular extent is already what the cache key and
+    // the allocated image use, so nothing downstream depends on the exact count.
+    CapturedRasterState copy_source_target = frame_target;
+    copy_source_target.width = source_width;
+    copy_source_target.height = source_height;
+    const CapturedRasterState granular_source =
+        edram_tile_granular_layout(copy_source_target);
+    const CapturedRasterState granular_target =
+        edram_tile_granular_layout(frame_target);
+    const bool copy_extents_match_tiles =
+        granular_source.width == granular_target.width &&
+        granular_source.height == granular_target.height;
     if (copy &&
         (raster_color_format == VK_FORMAT_UNDEFINED ||
-         source_width != frame_target.width || source_height != frame_target.height ||
+         !copy_extents_match_tiles ||
          std::any_of(draws.begin(), draws.end(), [&](const CapturedVulkanDraw& draw) {
              const bool depth_only_view =
                  is_captured_gamma_depth_only_view_alias(frame_target,
