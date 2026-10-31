@@ -1,5 +1,6 @@
 #include "shift_xbox_draw_input.hpp"
 
+#include <sstream>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -546,6 +547,8 @@ bool decode_captured_shader_control_flow(
     constexpr uint32_t kControlFlowExecEnd = 2;
     constexpr uint32_t kControlFlowConditionalExec = 3;
     constexpr uint32_t kControlFlowConditionalExecEnd = 4;
+    constexpr uint32_t kControlFlowLoopStart = 7;
+    constexpr uint32_t kControlFlowLoopEnd = 8;
     constexpr uint32_t kControlFlowConditionalJump = 11;
     constexpr uint32_t kControlFlowAllocate = 12;
     constexpr uint32_t kControlFlowTripletBytes = 12;
@@ -609,6 +612,8 @@ bool decode_captured_shader_control_flow(
                 raw_opcode != kControlFlowExecEnd &&
                 raw_opcode != kControlFlowConditionalExec &&
                 raw_opcode != kControlFlowConditionalExecEnd &&
+                raw_opcode != kControlFlowLoopStart &&
+                raw_opcode != kControlFlowLoopEnd &&
                 raw_opcode != kControlFlowConditionalJump &&
                 raw_opcode != kControlFlowAllocate) {
                 const std::string message =
@@ -647,6 +652,28 @@ bool decode_captured_shader_control_flow(
                 if (static_cast<uint64_t>(decoded.address) >=
                     static_cast<uint64_t>(control_flow_triplet_count) * 2) {
                     return fail("captured shader jump target is out of range", error);
+                }
+            } else if (raw_opcode == kControlFlowLoopStart) {
+                // ucode.h ControlFlowLoopStartInstruction: address_:13,
+                // is_repeat_:1, loop_id_:5; addr_mode at word1 bit 11.
+                decoded.address = word0 & 0x1FFFu;
+                decoded.loop_is_repeat = ((word0 >> 13) & 1u) != 0;
+                decoded.loop_id = (word0 >> 16) & 0x1Fu;
+                if (static_cast<uint64_t>(decoded.address) >
+                    static_cast<uint64_t>(control_flow_triplet_count) * 2) {
+                    return fail("captured shader loop skip target is out of range", error);
+                }
+            } else if (raw_opcode == kControlFlowLoopEnd) {
+                // ucode.h ControlFlowLoopEndInstruction: address_:13,
+                // loop_id_:5, is_predicated_break_:1 at bit 19;
+                // condition_ at word1 bit 10.
+                decoded.address = word0 & 0x1FFFu;
+                decoded.loop_id = (word0 >> 16) & 0x1Fu;
+                decoded.loop_predicated_break = ((word0 >> 19) & 1u) != 0;
+                decoded.condition = ((word1 >> 10) & 1u) != 0;
+                if (static_cast<uint64_t>(decoded.address) >=
+                    static_cast<uint64_t>(control_flow_triplet_count) * 2) {
+                    return fail("captured shader loop body target is out of range", error);
                 }
             } else if (raw_opcode == kControlFlowAllocate) {
                 decoded.allocation_size = word0 & 0x7u;
@@ -1637,7 +1664,8 @@ bool decode_captured_raster_state(
         (registers.color_mask & ~0xFFFFu) != 0 || registers.window_offset != 0 ||
         (registers.blend_control_0 != 0x07010706u &&
          registers.blend_control_0 != 0x07060706u &&
-         registers.blend_control_0 != 0x00010001u)) {
+         registers.blend_control_0 != 0x00010001u &&
+         registers.blend_control_0 != 0x00010701u)) {
         return fail("unsupported captured target or raster state", error);
     }
 
@@ -1766,6 +1794,12 @@ bool decode_captured_raster_state(
         ((registers.clip_control >> 16) & 1u) != 0;
     output->viewport_transform_control = registers.viewport_transform_control;
     output->clip_disabled_window_coordinates = output->clip_disabled;
+    // NOTE: no EDRAM-capacity rejection here. A 1280x720 surface at 4x MSAA is
+    // genuinely 2560x1440 physical samples (14.7 MiB), which does not fit the
+    // 10 MiB EDRAM store - that is exactly why the Xbox 360 uses predicated
+    // tiling, rendering such surfaces in horizontal strips. Decoding the full
+    // physical extent is therefore correct and must not fail; see
+    // captured_xenos_edram_layout_fits_store for where the limit does matter.
     if (error) {
         error->clear();
     }
@@ -2185,6 +2219,145 @@ bool captured_xenos_edram_alias_tiles(
     return true;
 }
 
+namespace {
+// xenos.h GetStorageColorFormat: codes 3 and 12 are one stored surface.
+uint32_t edram_storage_guest_color_format_local(uint32_t guest_color_format) {
+    return guest_color_format == 12u ? 3u : guest_color_format;
+}
+}  // namespace
+
+bool captured_xenos_edram_layout_is_tile_subset(
+    const CapturedRasterState& inner,
+    const CapturedRasterState& outer,
+    bool* is_subset,
+    std::string* error) {
+    if (!is_subset) {
+        return fail("missing Xenos EDRAM tile-subset result", error);
+    }
+    *is_subset = false;
+    // Tile containment alone is not reuse: a different render-target code, depth
+    // format, sample count or depth-only mode over the same tiles is a genuine
+    // reinterpretation of stored values and still needs shared EDRAM backing. A
+    // mip level of one chain keeps all of those identical and only shrinks.
+    if (edram_storage_guest_color_format_local(inner.guest_color_format) !=
+            edram_storage_guest_color_format_local(outer.guest_color_format) ||
+        inner.color_format != outer.color_format ||
+        inner.depth_format != outer.depth_format ||
+        inner.sample_count != outer.sample_count ||
+        inner.depth_only != outer.depth_only ||
+        inner.color_base_tiles != outer.color_base_tiles ||
+        inner.depth_base_tiles != outer.depth_base_tiles) {
+        if (error) error->clear();
+        return true;
+    }
+    for (bool depth_target : {false, true}) {
+        std::vector<CapturedEdramRasterTile> inner_tiles;
+        std::vector<CapturedEdramRasterTile> outer_tiles;
+        if (!captured_xenos_edram_raster_tiles(inner, depth_target, &inner_tiles,
+                                               error) ||
+            !captured_xenos_edram_raster_tiles(outer, depth_target, &outer_tiles,
+                                               error)) {
+            return false;
+        }
+        std::array<bool, 2048> occupied{};
+        for (const CapturedEdramRasterTile& tile : outer_tiles) {
+            occupied[tile.physical_tile_index & 2047u] = true;
+        }
+        for (const CapturedEdramRasterTile& tile : inner_tiles) {
+            if (!occupied[tile.physical_tile_index & 2047u]) return true;
+        }
+    }
+    *is_subset = true;
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_xenos_edram_tile_footprint(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    CapturedEdramTileFootprint* output,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    if (!output || !raster.width || !raster.height || !raster.surface_pitch ||
+        (raster.sample_count != 1 && raster.sample_count != 2 &&
+         raster.sample_count != 4)) {
+        return fail("invalid captured Xenos EDRAM target layout", error);
+    }
+    const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+    const uint32_t sample_height = raster.sample_count / sample_width;
+    if (raster.width % sample_width || raster.height % sample_height) {
+        return fail("captured Xenos EDRAM extent is not sample aligned", error);
+    }
+    // Only the pitch participates in the sample widening for tile addressing
+    // (xenos.h GetSurfacePitchTiles); the height contributes whole tile rows.
+    const uint64_t pitch_samples =
+        static_cast<uint64_t>(raster.surface_pitch) * sample_width;
+    const uint64_t pitch_tiles =
+        (pitch_samples + kTileWidthSamples - 1u) / kTileWidthSamples;
+    const uint64_t tile_rows =
+        (static_cast<uint64_t>(raster.height) + kTileHeightSamples - 1u) /
+        kTileHeightSamples;
+    output->pitch_tiles = static_cast<uint32_t>(pitch_tiles);
+    output->tile_rows = static_cast<uint32_t>(tile_rows);
+    output->total_tiles = static_cast<uint32_t>(pitch_tiles * tile_rows);
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_xenos_edram_layout_fits_store(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    uint32_t* required_tiles,
+    std::string* error) {
+    constexpr uint32_t kTileWidthSamples = 80;
+    constexpr uint32_t kTileHeightSamples = 16;
+    constexpr uint32_t kTileCount = 2048;
+    if (!raster.width || !raster.height || !raster.surface_pitch ||
+        (raster.sample_count != 1 && raster.sample_count != 2 &&
+         raster.sample_count != 4)) {
+        return fail("invalid captured Xenos EDRAM target layout", error);
+    }
+    // Same sample geometry the address mapping uses: 4x is 2x2 within a pixel,
+    // so both axes carry two samples, while 2x is horizontal only.
+    const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+    const uint32_t sample_height = raster.sample_count / sample_width;
+    if (raster.width % sample_width || raster.height % sample_height) {
+        return fail("captured Xenos EDRAM extent is not sample aligned", error);
+    }
+    const bool color_64bpp = !depth_target &&
+        (raster.guest_color_format == 5u ||
+         raster.guest_color_format == 7u ||
+         raster.guest_color_format == 15u);
+    if (color_64bpp) {
+        return fail("captured 64bpp Xenos EDRAM color addressing is unsupported",
+                    error);
+    }
+    // xenos.h GetSurfacePitchTiles: the pitch is widened by 4x MSAA, then
+    // doubled again for 64bpp; the height contributes whole tile rows.
+    const uint64_t pitch_samples =
+        static_cast<uint64_t>(raster.surface_pitch) * sample_width;
+    const uint64_t pitch_tiles =
+        (pitch_samples + kTileWidthSamples - 1u) / kTileWidthSamples;
+    const uint64_t tile_rows =
+        (static_cast<uint64_t>(raster.height) + kTileHeightSamples - 1u) /
+        kTileHeightSamples;
+    const uint64_t tiles = pitch_tiles * tile_rows;
+    if (required_tiles) *required_tiles = static_cast<uint32_t>(tiles);
+    if (tiles > kTileCount) {
+        std::ostringstream message;
+        message << "captured Xenos EDRAM layout needs " << tiles
+                << " tiles but the store holds only " << kTileCount
+                << " (extent=" << raster.width << 'x' << raster.height
+                << ", pitch=" << raster.surface_pitch
+                << ", samples=" << raster.sample_count << ')';
+        if (error) *error = message.str();
+        return false;
+    }
+    if (error) error->clear();
+    return true;
+}
+
 bool captured_xenos_edram_layouts_are_tile_disjoint(
     const CapturedRasterState& a,
     const CapturedRasterState& b,
@@ -2214,18 +2387,69 @@ bool captured_xenos_edram_layouts_are_tile_disjoint(
         const uint32_t logical_height = raster.height / sample_height;
         const uint32_t tile_logical_width = kTileWidthSamples / sample_width;
         const uint32_t tile_logical_height = kTileHeightSamples / sample_height;
-        const uint64_t columns =
-            (static_cast<uint64_t>(logical_width) + tile_logical_width - 1u) /
-            tile_logical_width;
-        const uint64_t rows =
-            (static_cast<uint64_t>(logical_height) + tile_logical_height - 1u) /
-            tile_logical_height;
+        // Enumerate only the tiles this operation actually touches. Hardware is
+        // scissor-bound: a predicated-tiling strip describes a full surface but
+        // writes one scissored rectangle, and that rectangle is far smaller than
+        // the surface. Enumerating the whole extent instead is actively wrong for
+        // any surface larger than the 2048-tile store, because the tile addresses
+        // wrap and the scan marks every tile 0..2047 occupied - which then makes
+        // *every* other layout in the frame look aliased and rejects the frame.
+        uint64_t columns;
+        uint64_t rows;
+        if (raster.scissor_has_area && raster.scissor_x1 > raster.scissor_x0 &&
+            raster.scissor_y1 > raster.scissor_y0) {
+            const uint64_t scissor_x0 = raster.scissor_x0 / sample_width;
+            const uint64_t scissor_y0 = raster.scissor_y0 / sample_height;
+            const uint64_t scissor_x1 =
+                (static_cast<uint64_t>(raster.scissor_x1) + sample_width - 1u) /
+                sample_width;
+            const uint64_t scissor_y1 =
+                (static_cast<uint64_t>(raster.scissor_y1) + sample_height - 1u) /
+                sample_height;
+            columns =
+                (std::min(scissor_x1, static_cast<uint64_t>(logical_width)) +
+                 tile_logical_width - 1u) /
+                    tile_logical_width -
+                std::min(scissor_x0, static_cast<uint64_t>(logical_width)) /
+                    tile_logical_width;
+            rows =
+                (std::min(scissor_y1, static_cast<uint64_t>(logical_height)) +
+                 tile_logical_height - 1u) /
+                    tile_logical_height -
+                std::min(scissor_y0, static_cast<uint64_t>(logical_height)) /
+                    tile_logical_height;
+        } else {
+            columns =
+                (static_cast<uint64_t>(logical_width) + tile_logical_width - 1u) /
+                tile_logical_width;
+            rows =
+                (static_cast<uint64_t>(logical_height) + tile_logical_height - 1u) /
+                tile_logical_height;
+        }
         // EDRAM tile addresses wrap at 2048. Scanning one period per axis is
         // sufficient and bounds work even for malformed giant captures.
         const uint64_t scan_columns = std::min<uint64_t>(columns, kTileCount);
         const uint64_t scan_rows = std::min<uint64_t>(rows, kTileCount);
-        for (uint64_t tile_y = 0; tile_y < scan_rows; ++tile_y) {
-            for (uint64_t tile_x = 0; tile_x < scan_columns; ++tile_x) {
+        const uint64_t first_tile_x =
+            raster.scissor_has_area
+                ? std::min<uint64_t>(raster.scissor_x0 / sample_width,
+                                     logical_width) /
+                      tile_logical_width
+                : 0;
+        const uint64_t first_tile_y =
+            raster.scissor_has_area
+                ? std::min<uint64_t>(raster.scissor_y0 / sample_height,
+                                     logical_height) /
+                      tile_logical_height
+                : 0;
+        for (uint64_t row = 0; row < scan_rows; ++row) {
+            for (uint64_t column = 0; column < scan_columns; ++column) {
+                const uint64_t tile_x = first_tile_x + column;
+                const uint64_t tile_y = first_tile_y + row;
+                if (tile_x * tile_logical_width >= logical_width ||
+                    tile_y * tile_logical_height >= logical_height) {
+                    continue;
+                }
                 const uint32_t x = static_cast<uint32_t>(
                     tile_x * tile_logical_width);
                 const uint32_t y = static_cast<uint32_t>(

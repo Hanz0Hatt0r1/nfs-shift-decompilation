@@ -128,6 +128,8 @@ enum class ShaderControlFlowOpcode : uint8_t {
     ExecEnd = 2,
     ConditionalExec = 3,
     ConditionalExecEnd = 4,
+    LoopStart = 7,
+    LoopEnd = 8,
     ConditionalJump = 11,
     Allocate = 12,
 };
@@ -146,6 +148,11 @@ struct CapturedShaderControlFlow {
     uint32_t allocation_size;
     uint32_t allocation_type;
     bool allocation_unserialized;
+    // kLoopStart: target to skip to when the loop runs zero iterations.
+    // kLoopEnd: address of the first loop-body instruction.
+    uint32_t loop_id;
+    bool loop_is_repeat;
+    bool loop_predicated_break;
 };
 
 enum class ShaderScheduledInstructionKind : uint8_t {
@@ -564,6 +571,52 @@ bool captured_xenos_edram_layouts_are_tile_disjoint(
     const CapturedRasterState& b,
     bool* disjoint,
     uint32_t* overlap_tile,
+    std::string* error);
+
+// The physical EDRAM tile footprint of a captured layout. Two layouts with the
+// same base tiles, pitch tiles and tile rows, and the same formats and sample
+// count, describe the same hardware surface even when their decoded pixel
+// extents differ slightly: EDRAM addressing is tile-granular, and a resolve may
+// cover a margin the last draw did not (a 320x243 draw and a 320x248 resolve
+// over the same rows both span 4x16 tiles). Comparing pixel extents instead
+// rejects such a resolve even though it reads exactly the tiles the draw wrote.
+struct CapturedEdramTileFootprint {
+    uint32_t pitch_tiles = 0;
+    uint32_t tile_rows = 0;
+    uint32_t total_tiles = 0;
+};
+
+bool captured_xenos_edram_tile_footprint(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    CapturedEdramTileFootprint* output,
+    std::string* error);
+
+// Xenos EDRAM is a fixed 10 MiB store of 2,048 tiles, each 80x16 32bpp samples
+// (xenos.h kEdramTileWidthSamples / kEdramTileHeightSamples / kEdramTileCount).
+// A layout whose tile footprint exceeds that store cannot exist on the console,
+// so a decoded render-target footprint larger than 2,048 tiles means the
+// registers were interpreted with the wrong extent (for example a 4x MSAA
+// surface whose height was scaled as well as its pitch, which double-applies the
+// sample expansion). Reporting it as a decode failure keeps the diagnosis at the
+// decode site instead of surfacing much later as an inexplicable cache miss.
+bool captured_xenos_edram_layout_fits_store(
+    const CapturedRasterState& raster,
+    bool depth_target,
+    uint32_t* required_tiles,
+    std::string* error);
+
+// True when every EDRAM tile of `inner` is also a tile of `outer`. A mip chain
+// reuses one EDRAM region across levels: the guest resolves a level to guest
+// memory and then renders the next, smaller level into the head of the same
+// tiles, so the smaller layout is a tile subset of the larger one rather
+// than a conflicting view of it. Both color and depth must be subsets for the
+// reuse to be safe; the caller decides whether the earlier layout has been
+// drained.
+bool captured_xenos_edram_layout_is_tile_subset(
+    const CapturedRasterState& inner,
+    const CapturedRasterState& outer,
+    bool* is_subset,
     std::string* error);
 
 // Checks only framebuffer effects represented by the captured raster state.

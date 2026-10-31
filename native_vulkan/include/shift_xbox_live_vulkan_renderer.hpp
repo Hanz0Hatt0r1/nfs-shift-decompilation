@@ -20,6 +20,9 @@ struct CapturedVulkanTexture {
         R8,
         Rg16Float,
         Rgba16Unorm,
+        // GPUSIGN TextureSign::kSigned (two's complement) sampled through a
+        // SNORM view of the same texels.
+        Rgba8Snorm,
     };
 
     uint32_t fetch_constant_index = 0;

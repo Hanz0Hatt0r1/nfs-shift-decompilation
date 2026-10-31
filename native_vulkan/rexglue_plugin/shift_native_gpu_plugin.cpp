@@ -11,6 +11,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
@@ -1269,6 +1270,13 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     shift::xbox::CapturedShaderTranslationOptions options{};
     options.pixel_b128 = constants.pixel_b128;
     options.pixel_b129 = constants.pixel_b129;
+    // Loop constants drive static loop unrolling in the translator.
+    {
+      const shift::xbox::CapturedShaderLoopConstantBank loop_bank =
+          shader_state.snapshot_loop_constants();
+      options.loop_constants = loop_bank.words;
+      options.loop_constant_valid = loop_bank.valid;
+    }
     options.gamma_color_target =
         raster_state.color_format ==
         shift::xbox::CapturedColorTargetFormat::Rgba8Gamma;
@@ -1297,6 +1305,26 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (!shader_translation_cache_.translate(
             shift::xbox::CapturedShaderStage::Pixel, pixel_program.data(),
             pixel_program.size(), options, &pixel_translation, error)) {
+      // Diagnostic: dump the exact retail bytes that failed to translate, so
+      // the failure can be analysed offline instead of guessed at.
+      if (const char* dump_prefix =
+              std::getenv("SHIFT_NATIVE_VULKAN_DUMP_FAILED_SHADER_PREFIX");
+          dump_prefix && *dump_prefix) {
+        const auto dump_failed = [&](const char* tag,
+                                     const std::vector<uint8_t>& bytes) {
+          std::ostringstream path;
+          path << dump_prefix << ".draw" << draw_slot << '.' << tag << ".bin";
+          std::ofstream file(path.str(), std::ios::binary | std::ios::trunc);
+          if (!bytes.empty()) {
+            file.write(reinterpret_cast<const char*>(bytes.data()),
+                       static_cast<std::streamsize>(bytes.size()));
+          }
+          REXLOG_INFO("shift-native: saved failed {} shader bytes={} path={}",
+                      tag, bytes.size(), path.str());
+        };
+        dump_failed("vs", vertex_program);
+        dump_failed("ps", pixel_program);
+      }
       if (error) *error = "captured pixel shader: " + *error;
       return false;
     }
@@ -1741,11 +1769,20 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
           }
           return false;
         }
+        // GPUSIGN TextureSign::kSigned means two's complement texel data, so
+        // an 8-bit RGBA fetch with any signed channel must be sampled through
+        // SNORM; UNORM would clamp negatives to zero.
+        bool signed_rgba8 = false;
+        for (shift::xbox::TextureSign sign : resolved.sampling.signs) {
+          if (sign == shift::xbox::TextureSign::Signed) signed_rgba8 = true;
+        }
         texture.format = use_native_r8
             ? shift::xbox::CapturedVulkanTexture::Format::R8
             : fetch.format == 31u
                 ? shift::xbox::CapturedVulkanTexture::Format::Rg16Float
-                : shift::xbox::CapturedVulkanTexture::Format::Rgba8;
+                : signed_rgba8
+                      ? shift::xbox::CapturedVulkanTexture::Format::Rgba8Snorm
+                      : shift::xbox::CapturedVulkanTexture::Format::Rgba8;
         total_texture_bytes += fetch.byte_length;
         prepared.textures.push_back(std::move(texture));
       }
@@ -2524,10 +2561,26 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         }
       }
       if (ring_generation != observed_ring_generation) {
-        raster_register_state.reset();
-        shader_register_state.reset();
-        vertex_shader_program.clear();
-        pixel_shader_program.clear();
+        // A ring reinit replaces the command buffer, not the GPU context: the
+        // Xenos register file (RB_SURFACE_INFO, RB_COLOR_INFO, RB_DEPTH_INFO,
+        // the viewports, blend control ...) persists across it in real
+        // hardware, and the guest is free to submit draws against state it
+        // configured before the switch. Clearing that state here made every
+        // such draw unresolvable ("incomplete captured raster register state",
+        // valid_mask without the surface/color/depth bits), which in turn left
+        // the presenter Copy/Convert without the EDRAM surface it resolves.
+        // Only per-frame bookkeeping is reset; captured register state is kept.
+        static const bool preserve_state = [] {
+          const char* raw =
+              std::getenv("SHIFT_NATIVE_VULKAN_RESET_STATE_ON_RING_GENERATION");
+          return !(raw && *raw && std::strcmp(raw, "0") != 0);
+        }();
+        if (!preserve_state) {
+          raster_register_state.reset();
+          shader_register_state.reset();
+          vertex_shader_program.clear();
+          pixel_shader_program.clear();
+        }
         recycle_frame_draws();
         frame_copy = {};
         frame_copy_ready = false;

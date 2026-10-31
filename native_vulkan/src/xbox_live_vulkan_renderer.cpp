@@ -3,11 +3,14 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <cstdlib>
 #include <cstring>
 #include <deque>
+#include <fstream>
 #include <functional>
 #include <initializer_list>
 #include <limits>
+#include <optional>
 #include <sstream>
 #include <unordered_map>
 #include <utility>
@@ -191,14 +194,48 @@ struct EdramTargetKeyHash {
   }
 };
 
+// Guest render-target codes 3 (k_2_10_10_10_FLOAT) and 12
+// (k_2_10_10_10_FLOAT_AS_16_16_16_16) describe one stored surface; they differ
+// only in blending precision, and xenos.h::GetStorageColorFormat maps 12 to 3.
+// Neither is 64bpp, so EDRAM tile addressing is identical. The cache key must
+// use the storage format, or the same surface is cached twice under two keys
+// and a lookup can miss a target that exists.
+uint32_t edram_storage_guest_color_format(uint32_t guest_color_format) {
+  return guest_color_format == 12u ? 3u : guest_color_format;
+}
+
+// Rounds a captured target extent up to whole EDRAM tiles (80x16 samples per
+// tile). The hardware surface is tile-granular, so a 320x243 draw and a
+// 320x248 resolve over the same rows are the same 4x16-tile surface. Using the
+// rounded extent for both the cache key and the allocated image makes those two
+// descriptions share one target instead of missing each other, and keeps the
+// image large enough for either caller.
+CapturedRasterState edram_tile_granular_layout(const CapturedRasterState& raster) {
+  CapturedEdramTileFootprint footprint{};
+  if (!captured_xenos_edram_tile_footprint(raster, false, &footprint, nullptr)) {
+    return raster;
+  }
+  constexpr uint32_t kTileWidthSamples = 80;
+  constexpr uint32_t kTileHeightSamples = 16;
+  const uint32_t sample_width = raster.sample_count == 4 ? 2u : 1u;
+  CapturedRasterState rounded = raster;
+  // The physical extent is expressed in samples along both axes, matching how
+  // the layout was decoded, so restore the sample factor after rounding.
+  rounded.width = footprint.pitch_tiles * kTileWidthSamples;
+  rounded.height = footprint.tile_rows * kTileHeightSamples;
+  (void)sample_width;
+  return rounded;
+}
+
 EdramTargetKey make_edram_target_key(const CapturedRasterState& raster,
                                     VkFormat color_format) {
+  const CapturedRasterState granular = edram_tile_granular_layout(raster);
   return {{{raster.color_base_tiles,
             raster.depth_base_tiles,
-            raster.width,
-            raster.height,
+            granular.width,
+            granular.height,
             raster.surface_pitch,
-            raster.guest_color_format,
+            edram_storage_guest_color_format(raster.guest_color_format),
             static_cast<uint32_t>(color_format),
             raster.sample_count,
             static_cast<uint32_t>(raster.depth_format),
@@ -219,7 +256,17 @@ constexpr uint64_t kR8TextureCacheBudgetBytes = 16u * 1024u * 1024u;
 constexpr uint64_t kR8TextureCacheLifetimeFrames = 120;
 constexpr uint64_t kGuestCopyImageCacheBudgetBytes = 32u * 1024u * 1024u;
 constexpr uint64_t kGuestCopyImageCacheLifetimeFrames = 120;
-constexpr uint64_t kEdramTargetCacheBudgetBytes = 192u * 1024u * 1024u;
+// A single 1280x720 4x colour target (RGBA16, 8 samples' worth of storage) plus
+// its D24S8 depth attachment already costs about 173 MiB, measured as a
+// 180 879 360-byte allocation that the cache then had to fit. The retail frame
+// legitimately needs more than one target resident: the 4x gamma surface that
+// is resolved, and the 1x surface the next draw renders into. At 192 MiB the
+// second target could never be admitted, and once the EDRAM alias class was
+// fixed that became the next hard stop - measured as six "persistent Xenos
+// EDRAM depth target exceeds its 192 MiB cache budget" frame failures in one
+// run. Raise the budget to 512 MiB, which fits two such targets plus a mip
+// chain on this 2 GB card while leaving the desktop's own usage untouched.
+constexpr uint64_t kEdramTargetCacheBudgetBytes = 512u * 1024u * 1024u;
 constexpr uint64_t kEdramTargetCacheLifetimeFrames = 120;
 constexpr uint64_t kDrawBufferCacheBudgetBytes = 16u * 1024u * 1024u;
 constexpr size_t kDrawBufferCacheEntryLimit = 128;
@@ -453,6 +500,9 @@ struct TextureCacheState {
   std::unordered_map<EdramTargetKey, CachedEdramTarget,
                      EdramTargetKeyHash> edram_targets;
   uint64_t edram_target_bytes = 0;
+  // Bytes a failed admission wanted, to be reclaimed at the next frame
+  // boundary. Non-zero means the cache is over budget.
+  uint64_t edram_target_evict_bytes = 0;
   std::unordered_map<GraphicsPipelineKey, CachedGraphicsPipeline,
                      GraphicsPipelineKeyHash>
       graphics_pipelines;
@@ -482,8 +532,20 @@ bool validate_captured_operation_stream(
     std::vector<bool> referenced_draws(draw_count, false);
     uint32_t previous_draw_index = 0;
     bool have_previous_draw = false;
+    // Diagnostic escape hatch: a single prepared draw that the shader/raster
+    // path cannot handle currently costs the entire frame, which hides every
+    // otherwise-correct draw behind it. Opting in drops just that packet and
+    // still presents the rest, so partially-correct frames become visible and
+    // measurable. The default stays strict so correctness regressions are not
+    // masked.
+    bool tolerate_unresolved_draws = false;
+    if (const char* raw = std::getenv("SHIFT_NATIVE_VULKAN_TOLERATE_UNRESOLVED_DRAWS");
+        raw && *raw && std::strcmp(raw, "0") != 0) {
+        tolerate_unresolved_draws = true;
+    }
     for (const CapturedVulkanOperation& operation : operations) {
         if (operation.type == CapturedVulkanOperation::Type::UnresolvedDraw) {
+            if (tolerate_unresolved_draws) continue;
             std::ostringstream message;
             message << "captured operation stream contains unresolved draw packet "
                     << operation.packet_index;
@@ -933,6 +995,9 @@ bool make_room_for_graphics_pipeline(TextureCacheState* cache) {
     return true;
 }
 
+bool evict_edram_targets_for_pending_pressure(TextureCacheState* cache,
+                                              VkDevice device,
+                                              std::string* error);
 bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
                                std::string* error) {
     if (!cache) return true;
@@ -950,6 +1015,9 @@ bool begin_texture_cache_frame(TextureCacheState* cache, VkDevice device,
     if (cache->frame == 0) ++cache->frame;
     cache->upload_slot = static_cast<uint32_t>((cache->frame - 1u) % kFramesInFlight);
     if (!retire_reusable_frames(cache, cache->upload_slot, error)) return false;
+    if (!evict_edram_targets_for_pending_pressure(cache, device, error)) {
+        return false;
+    }
     const bool evicting = std::any_of(
         cache->textures.begin(), cache->textures.end(), [&](const auto& entry) {
             return cache->frame - entry.second.last_used_frame >
@@ -1292,6 +1360,67 @@ VkSampleCountFlagBits sample_count_flag(uint32_t samples) {
     }
 }
 
+// Diagnostics are opt-in and file-based because this translation unit has no
+// logging facility. Kept intentionally tiny and only on the EDRAM cache paths
+// that matter for source-target lifetime questions.
+bool edram_trace_enabled() {
+  static const bool enabled = [] {
+    const char* raw = std::getenv("SHIFT_NATIVE_VULKAN_TRACE_EDRAM");
+    return raw && *raw && std::strcmp(raw, "0") != 0;
+  }();
+  return enabled;
+}
+
+void edram_trace(const std::string& line) {
+  if (!edram_trace_enabled()) return;
+  const char* path = std::getenv("SHIFT_NATIVE_VULKAN_TRACE_EDRAM");
+  std::ofstream file(path, std::ios::app);
+  if (file) file << line << '\n';
+}
+
+// Under budget pressure the cache needs to drop its coldest EDRAM targets, but
+// it must not do that while a command buffer is being recorded: an image can
+// still be referenced by work already recorded into the current frame's buffer,
+// and destroying it there is a use-after-free that the driver reports as
+// VK_ERROR_DEVICE_LOST. Measured exactly that when eviction ran inline.
+// So a failed admission only raises a request, and begin_texture_cache_frame
+// performs the eviction after draining everything in flight.
+void request_edram_target_eviction(TextureCacheState* cache,
+                                   uint64_t needed_bytes) {
+  if (!cache) return;
+  if (needed_bytes > cache->edram_target_evict_bytes) {
+    cache->edram_target_evict_bytes = needed_bytes;
+  }
+}
+
+// Runs at a frame boundary, so no recorded work can still reference the images.
+bool evict_edram_targets_for_pending_pressure(TextureCacheState* cache,
+                                              VkDevice device,
+                                              std::string* error) {
+  if (!cache || cache->edram_target_evict_bytes == 0) return true;
+  const uint64_t needed_bytes = cache->edram_target_evict_bytes;
+  cache->edram_target_evict_bytes = 0;
+  if (needed_bytes > kEdramTargetCacheBudgetBytes) return true;
+  while (cache->edram_target_bytes >
+         kEdramTargetCacheBudgetBytes - needed_bytes) {
+    auto coldest = cache->edram_targets.end();
+    for (auto it = cache->edram_targets.begin();
+         it != cache->edram_targets.end(); ++it) {
+      if (coldest == cache->edram_targets.end() ||
+          it->second.last_used_frame < coldest->second.last_used_frame) {
+        coldest = it;
+      }
+    }
+    if (coldest == cache->edram_targets.end()) return true;
+    if (!wait_for_all_frames(cache, error)) return false;
+    cache->edram_target_bytes -= coldest->second.estimated_bytes;
+    destroy_image_resource(device, coldest->second.depth);
+    destroy_image_resource(device, coldest->second.color);
+    cache->edram_targets.erase(coldest);
+  }
+  return true;
+}
+
 bool acquire_edram_target(
     TextureCacheState* cache,
     const VkPhysicalDeviceMemoryProperties& memory_properties,
@@ -1311,6 +1440,12 @@ bool acquire_edram_target(
                 error);
   }
 
+  // The key is tile-granular, so the backing image must be allocated at the
+  // same rounded extent: otherwise a caller whose extent is slightly larger
+  // than the first claimant's would key to this entry and then render outside
+  // the image. Rendering stays per-caller because every pass uses its own
+  // raster.width/height for the viewport and scissor.
+  const CapturedRasterState granular = edram_tile_granular_layout(raster);
   const EdramTargetKey key = make_edram_target_key(raster, color_format);
   auto found = cache->edram_targets.find(key);
   if (found == cache->edram_targets.end()) {
@@ -1319,7 +1454,7 @@ bool acquire_edram_target(
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     if (!create_render_attachment(
-            memory_properties, device, raster.width, raster.height,
+            memory_properties, device, granular.width, granular.height,
             color_format, color_usage, VK_IMAGE_ASPECT_COLOR_BIT, samples,
             &created.color, error)) {
       destroy_image_resource(device, created.color);
@@ -1328,7 +1463,7 @@ bool acquire_edram_target(
     created.estimated_bytes = created.color.allocation_size;
     if (needs_depth) {
       if (!create_render_attachment(
-              memory_properties, device, raster.width, raster.height,
+              memory_properties, device, granular.width, granular.height,
               VK_FORMAT_D24_UNORM_S8_UINT,
               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
               VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
@@ -1338,6 +1473,13 @@ bool acquire_edram_target(
         return false;
       }
       created.estimated_bytes += created.depth.allocation_size;
+    }
+    if (created.estimated_bytes > kEdramTargetCacheBudgetBytes ||
+        cache->edram_target_bytes >
+            kEdramTargetCacheBudgetBytes - created.estimated_bytes) {
+      // Ask the frame boundary for room; destroying anything here would race
+      // work already recorded into the current command buffer.
+      request_edram_target_eviction(cache, created.estimated_bytes);
     }
     if (created.estimated_bytes > kEdramTargetCacheBudgetBytes ||
         cache->edram_target_bytes >
@@ -1352,10 +1494,21 @@ bool acquire_edram_target(
     }
     found = cache->edram_targets.emplace(key, std::move(created)).first;
     cache->edram_target_bytes += found->second.estimated_bytes;
+    {
+      std::ostringstream trace;
+      trace << "create frame=" << cache->frame << " base=0x" << std::hex
+            << key.values[0] << " depth=0x" << key.values[1] << std::dec
+            << " extent=" << key.values[2] << 'x' << key.values[3]
+            << " pitch=" << key.values[4] << " gcf=" << key.values[5]
+            << " cf=" << key.values[6] << " samples=" << key.values[7]
+            << " depth_only=" << key.values[9] << " count="
+            << cache->edram_targets.size();
+      edram_trace(trace.str());
+    }
   } else if (needs_depth && found->second.depth.image == VK_NULL_HANDLE) {
     ImageResource depth{};
     if (!create_render_attachment(
-            memory_properties, device, raster.width, raster.height,
+            memory_properties, device, granular.width, granular.height,
             VK_FORMAT_D24_UNORM_S8_UINT,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
@@ -1365,8 +1518,12 @@ bool acquire_edram_target(
     }
     if (depth.allocation_size > kEdramTargetCacheBudgetBytes -
                                     cache->edram_target_bytes) {
+      request_edram_target_eviction(cache, depth.allocation_size);
+    }
+    if (depth.allocation_size > kEdramTargetCacheBudgetBytes -
+                                    cache->edram_target_bytes) {
       destroy_image_resource(device, depth);
-      return fail("persistent Xenos EDRAM depth target exceeds its 192 MiB cache budget",
+      return fail("persistent Xenos EDRAM depth target exceeds its 512 MiB cache budget",
                   error);
     }
     found->second.estimated_bytes += depth.allocation_size;
@@ -1486,11 +1643,28 @@ CachedEdramTarget* find_initialized_edram_target(
   if (color_format == VK_FORMAT_UNDEFINED) return nullptr;
   const EdramTargetKey key = make_edram_target_key(raster, color_format);
   const auto found = cache->edram_targets.find(key);
-  if (found == cache->edram_targets.end() ||
-      !found->second.color_initialized ||
-      found->second.last_used_frame > cache->frame ||
-      cache->frame + 1u - found->second.last_used_frame >
-          kEdramTargetCacheLifetimeFrames) {
+  const bool present = found != cache->edram_targets.end();
+  const bool initialized = present && found->second.color_initialized;
+  const bool not_future = present && found->second.last_used_frame <= cache->frame;
+  const bool fresh = present && not_future &&
+      cache->frame + 1u - found->second.last_used_frame <=
+          kEdramTargetCacheLifetimeFrames;
+  if (!present || !initialized || !not_future || !fresh) {
+    if (edram_trace_enabled()) {
+      std::ostringstream trace;
+      trace << "lookup-miss frame=" << cache->frame << " base=0x" << std::hex
+            << key.values[0] << " depth=0x" << key.values[1] << std::dec
+            << " extent=" << key.values[2] << 'x' << key.values[3]
+            << " pitch=" << key.values[4] << " gcf=" << key.values[5]
+            << " cf=" << key.values[6] << " samples=" << key.values[7]
+            << " depth_only=" << key.values[9] << " present=" << present;
+      if (present) {
+        trace << " initialized=" << found->second.color_initialized
+              << " last_used=" << found->second.last_used_frame;
+      }
+      trace << " cached=" << cache->edram_targets.size();
+      edram_trace(trace.str());
+    }
     return nullptr;
   }
   return &found->second;
@@ -1832,12 +2006,25 @@ bool create_draw_resources(
     const CapturedVulkanTexture *captured = nullptr;
     VkImageView external_image_view = VK_NULL_HANDLE;
   };
+  // A shader that samples a texture can run against a draw that carries no
+  // captured texture records at all. That is the unbound-sampler case: the
+  // guest bound nothing, so the console returns a black texel for every fetch
+  // instead of faulting. `source.texture_width`/`texture_height` are zero here,
+  // which the validation below would otherwise reject as an incomplete
+  // resource, turning an unbound sampler into a lost frame.
+  std::vector<uint8_t> default_black_texel{0, 0, 0, 255};
   std::vector<TextureInput> texture_inputs;
   if (source.textures.empty()) {
-      texture_inputs.push_back({0, &source.texture_sampling, source.texture_width,
-                              source.texture_height,
+      const bool default_is_unbound =
+          source.texture_width == 0 || source.texture_height == 0 ||
+          source.texture_rgba8.empty();
+      const std::vector<uint8_t>* default_pixels =
+          default_is_unbound ? &default_black_texel : &source.texture_rgba8;
+      texture_inputs.push_back({0, &source.texture_sampling,
+                              default_is_unbound ? 1u : source.texture_width,
+                              default_is_unbound ? 1u : source.texture_height,
                               CapturedVulkanTexture::Format::Rgba8,
-                              &source.texture_rgba8, nullptr,
+                              default_pixels, nullptr,
                               VK_NULL_HANDLE});
   } else {
     texture_inputs.reserve(source.textures.size());
@@ -1847,6 +2034,38 @@ bool create_draw_resources(
                                 &texture.pixels, &texture,
                                 texture.external_image_view});
     }
+  }
+  // A texture fetch constant whose descriptor decodes to a zero extent is not
+  // bound either. The guest only supplies the fetch constant, so one that never
+  // arrived really means nothing is bound and the shader samples zeroes. Xenos
+  // does not fault for that; rejecting the whole draw for it loses the frame.
+  // Sample a single opaque black texel instead, which is what the console
+  // produces.
+  std::vector<CapturedVulkanTexture> unbound_textures;
+  std::vector<std::vector<uint8_t>> unbound_texture_pixels;
+  // Reserve before taking element addresses: the `captured` and `pixels` fields
+  // below point into these containers, and a later reallocation would dangle.
+  unbound_textures.reserve(texture_inputs.size());
+  unbound_texture_pixels.reserve(texture_inputs.size());
+  for (size_t i = 0; i < texture_inputs.size(); ++i) {
+    TextureInput &texture = texture_inputs[i];
+    if (!texture.captured || texture.external_image_view != VK_NULL_HANDLE) {
+      continue;
+    }
+    if (texture.width != 0 && texture.height != 0) continue;
+    CapturedVulkanTexture replacement = *texture.captured;
+    replacement.width = 1;
+    replacement.height = 1;
+    replacement.guest_copy_source = false;
+    replacement.external_image_view = VK_NULL_HANDLE;
+    replacement.format = CapturedVulkanTexture::Format::Rgba8;
+    unbound_texture_pixels.push_back({0, 0, 0, 255});
+    unbound_textures.push_back(replacement);
+    texture.width = 1;
+    texture.height = 1;
+    texture.format = CapturedVulkanTexture::Format::Rgba8;
+    texture.captured = &unbound_textures.back();
+    texture.pixels = &unbound_texture_pixels.back();
   }
   uint64_t total_texture_size = 0;
   for (size_t i = 0; i < texture_inputs.size(); ++i) {
@@ -1885,6 +2104,7 @@ bool create_draw_resources(
               : 4u;
     if (texture.format != CapturedVulkanTexture::Format::R8 &&
         texture.format != CapturedVulkanTexture::Format::Rgba8 &&
+        texture.format != CapturedVulkanTexture::Format::Rgba8Snorm &&
         texture.format != CapturedVulkanTexture::Format::Rg16Float &&
         texture.format != CapturedVulkanTexture::Format::Rgba16Unorm) {
       return fail("captured Vulkan texture format is unsupported", error);
@@ -1937,7 +2157,8 @@ bool create_draw_resources(
   }
   if (source.raster.blend_control_0 != 0x07060706u &&
       source.raster.blend_control_0 != 0x07010706u &&
-      source.raster.blend_control_0 != 0x00010001u) {
+      source.raster.blend_control_0 != 0x00010001u &&
+      source.raster.blend_control_0 != 0x00010701u) {
     return fail("captured blend control is outside the supported retail draw",
                 error);
   }
@@ -2063,7 +2284,9 @@ bool create_draw_resources(
                     ? VK_FORMAT_R16G16_SFLOAT
                     : input.format == CapturedVulkanTexture::Format::Rgba16Unorm
                           ? VK_FORMAT_R16G16B16A16_UNORM
-                          : VK_FORMAT_R8G8B8A8_UNORM;
+                          : input.format == CapturedVulkanTexture::Format::Rgba8Snorm
+                                ? VK_FORMAT_R8G8B8A8_SNORM
+                                : VK_FORMAT_R8G8B8A8_UNORM;
       CachedGuestCopyImage *guest_copy_image = input.captured
           ? find_guest_copy_texture(texture_cache, *input.captured)
           : nullptr;
@@ -2504,6 +2727,16 @@ bool create_draw_resources(
           VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     } else if (source.raster.blend_control_0 == 0x07010706u) {
       blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+      blend_attachment.dstColorBlendFactor =
+          VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+      blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+      blend_attachment.dstAlphaBlendFactor =
+          VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    } else if (source.raster.blend_control_0 == 0x00010701u) {
+      // Premultiplied-alpha blend: the source color already carries its
+      // alpha, so the color term uses ONE rather than SRC_ALPHA. Retail emits
+      // this on the menu overlay draws.
+      blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
       blend_attachment.dstColorBlendFactor =
           VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
       blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
@@ -5550,15 +5783,47 @@ bool submit_captured_vulkan_operation_stream(
     }
     TextureCacheState* texture_cache_state = texture_cache
         ? &CapturedVulkanTextureCacheAccess::get(*texture_cache) : nullptr;
-    const auto same_target_layout = [](const CapturedRasterState& a,
+    // Guest render-target codes 3 (k_2_10_10_10_FLOAT) and 12
+    // (k_2_10_10_10_FLOAT_AS_16_16_16_16) are the same surface with the same
+    // packing and the same stored values; they differ only in blending
+    // precision. xenos.h expresses exactly this with GetStorageColorFormat,
+    // which maps 12 to 3, and neither is a 64bpp format, so EDRAM tile
+    // addressing is byte-identical for both. Comparing the raw register code
+    // therefore rejected a draw/copy pair whose formats resolve to one
+    // identical storage layout. Normalise through the storage format first.
+    // Two descriptions cover the same hardware surface when they select the
+    // same EDRAM tiles with the same formats and sample count. Comparing pixel
+    // extents as well is too strict: EDRAM addressing is tile-granular, so a
+    // 320x243 draw and a 320x248 resolve over the same rows touch exactly the
+    // same 4x16 tiles, and rejecting that resolve discards a surface the draw
+    // genuinely produced. Pixel extents are still compared when the two
+    // descriptions do not land on identical tile footprints, so a real layout
+    // conflict is not masked.
+    const auto same_edram_tile_footprint = [](const CapturedRasterState& a,
+                                              const CapturedRasterState& b) {
+        CapturedEdramTileFootprint left{};
+        CapturedEdramTileFootprint right{};
+        if (!captured_xenos_edram_tile_footprint(a, false, &left, nullptr) ||
+            !captured_xenos_edram_tile_footprint(b, false, &right, nullptr)) {
+            return false;
+        }
+        return left.pitch_tiles == right.pitch_tiles &&
+            left.tile_rows == right.tile_rows;
+    };
+    const auto same_target_layout = [&](const CapturedRasterState& a,
                                        const CapturedRasterState& b) {
-        return a.color_base_tiles == b.color_base_tiles &&
-            a.guest_color_format == b.guest_color_format &&
-            a.depth_base_tiles == b.depth_base_tiles && a.width == b.width &&
-            a.height == b.height && a.color_format == b.color_format &&
+        const bool same_identity =
+            a.color_base_tiles == b.color_base_tiles &&
+            edram_storage_guest_color_format(a.guest_color_format) ==
+                edram_storage_guest_color_format(b.guest_color_format) &&
+            a.depth_base_tiles == b.depth_base_tiles &&
+            a.color_format == b.color_format &&
             a.depth_format == b.depth_format &&
             a.sample_count == b.sample_count &&
             a.surface_pitch == b.surface_pitch;
+        if (!same_identity) return false;
+        if (a.width == b.width && a.height == b.height) return true;
+        return same_edram_tile_footprint(a, b);
     };
     // The retail transition packet 24 -> 25 keeps the gamma EDRAM target and
     // extent, changes 4x/pitch-640 to 1x/pitch-1280, then copies the resulting
@@ -5785,10 +6050,75 @@ bool submit_captured_vulkan_operation_stream(
     uint32_t preflight_color_source_draw = std::numeric_limits<uint32_t>::max();
     uint32_t preflight_layout_draw = std::numeric_limits<uint32_t>::max();
     uint32_t preflight_layout_packet = std::numeric_limits<uint32_t>::max();
+    // Second, independent diagnostic hatch: an unserviceable Copy/Convert
+    // currently costs the whole frame. Dropping just that copy still presents
+    // every draw ahead of it, which answers whether the copy is what holds the
+    // guest back. Strict by default so real failures are not hidden.
+    bool tolerate_missing_copy_source = false;
+    if (const char* raw =
+            std::getenv("SHIFT_NATIVE_VULKAN_TOLERATE_MISSING_COPY_SOURCE");
+        raw && *raw && std::strcmp(raw, "0") != 0) {
+        tolerate_missing_copy_source = true;
+    }
+    // True when `covering` owns every EDRAM tile that `covered` touches, for
+    // colour and depth alike. Only then can `covered` be dropped without any of
+    // its stored values surviving into the new layout under a different format.
+    const auto layout_fully_covers = [](const CapturedRasterState& covering,
+                                        const CapturedRasterState& covered) {
+        std::array<bool, 2048> occupied{};
+        std::vector<CapturedEdramRasterTile> tiles;
+        for (bool depth_target : {false, true}) {
+            tiles.clear();
+            if (!captured_xenos_edram_raster_tiles(covering, depth_target,
+                                                   &tiles, nullptr)) {
+                return false;
+            }
+            for (const CapturedEdramRasterTile& tile : tiles) {
+                occupied[tile.physical_tile_index & 2047u] = true;
+            }
+        }
+        for (bool depth_target : {false, true}) {
+            tiles.clear();
+            if (!captured_xenos_edram_raster_tiles(covered, depth_target, &tiles,
+                                                   nullptr)) {
+                return false;
+            }
+            for (const CapturedEdramRasterTile& tile : tiles) {
+                if (!occupied[tile.physical_tile_index & 2047u]) return false;
+            }
+        }
+        return true;
+    };
     std::vector<CapturedRasterState> preflight_targets;
+    // Parallel to preflight_targets: true once a Copy/Convert has read that
+    // target out to guest memory, so its tiles are free for a later layout.
+    // A single "last drained layout" slot is not enough - a frame accumulates
+    // several layouts (measured: targets=5) and the one that vetoes the next
+    // draw need not be the most recently drained one.
+    std::vector<bool> preflight_target_drained;
+    // Set when a Copy/Convert has consumed the currently active draw layout.
+    // The guest resolves a mip level to guest memory and then renders the next
+    // level into the head of the same EDRAM tiles, so after a drain the tiles
+    // are free to be reused by a smaller layout. Without this the renderer sees
+    // two overlapping layouts with no transfer between them and rejects the
+    // frame, even though hardware is simply doing a mip chain.
+    bool preflight_active_layout_drained = false;
+    // Opt-in: let a resolve whose EDRAM source was never created proceed against
+    // a freshly allocated, cleared target instead of failing the whole frame.
+    const bool allocate_uninitialized_copy_source = [] {
+        const char* raw =
+            std::getenv("SHIFT_NATIVE_VULKAN_ALLOCATE_UNINITIALIZED_COPY_SOURCE");
+        return raw && *raw && std::strcmp(raw, "0") != 0;
+    }();
     bool found_presenter_copy = false;
+    // Operations the tolerance hatch decided to leave out. Consumed by the
+    // replay below so a skipped packet is not executed as a fullscreen
+    // substitute.
+    std::vector<bool> skipped_operations(operations.size(), false);
+    bool skip_operation = false;
     for (size_t i = 0; i < operations.size(); ++i) {
         const CapturedVulkanOperation& operation = operations[i];
+        skip_operation = false;
         if (operation.type == CapturedVulkanOperation::Type::Draw) {
             const CapturedRasterState& draw_raster =
                 draws[operation.draw_index].raster;
@@ -5811,6 +6141,20 @@ bool submit_captured_vulkan_operation_stream(
                                "invalid target layout transition: "
                             << layout_error;
                     return fail(message.str(), error);
+                }
+                bool tile_subset = false;
+                if (!disjoint &&
+                    preflight_active_layout_drained &&
+                    captured_xenos_edram_layout_is_tile_subset(
+                        draw_raster, draws[preflight_layout_draw].raster,
+                        &tile_subset, nullptr) &&
+                    tile_subset) {
+                    // Legitimate mip-level reuse: the previous level was
+                    // resolved to guest memory, and this smaller level lives in
+                    // the head of the same tiles. It gets its own EDRAM target
+                    // image at its own extent, so no shared backing is needed;
+                    // the drained source is no longer read.
+                    disjoint = true;
                 }
                 if (!disjoint && !alias_transfer) {
                     std::ostringstream message;
@@ -5841,7 +6185,10 @@ bool submit_captured_vulkan_operation_stream(
             }
             if (preflight_draw_count == 0) {
                 bool known_layout = false;
-                for (const CapturedRasterState& previous : preflight_targets) {
+                for (size_t target_index = 0;
+                     target_index < preflight_targets.size(); ++target_index) {
+                    const CapturedRasterState& previous =
+                        preflight_targets[target_index];
                     if (same_target_layout(previous, draw_raster)) {
                         known_layout = true;
                         continue;
@@ -5858,6 +6205,68 @@ bool submit_captured_vulkan_operation_stream(
                                 << layout_error;
                         return fail(message.str(), error);
                     }
+                    // A layout that cannot be resident at all - its tile
+                    // footprint exceeds the 2048-tile store - is a predicated
+                    // tiling strip, not a surface. Its bases and extent describe
+                    // the whole virtual surface while the guest actually renders
+                    // one strip at a time, so "these two overlap" carries no
+                    // information: every strip overlaps every other strip by
+                    // construction. Refusing here rejects the frame no matter what
+                    // the guest does, which is why this class survived every
+                    // narrower fix. The layouts are still given independent
+                    // Vulkan images, so nothing is silently shared.
+                    // Symmetric: an uninformative overlap is uninformative from
+                    // either side. Checking only the previous layout left the
+                    // class alive whenever the *next* layout was the strip, which
+                    // is what happened once the copy-source hatch changed which
+                    // layout came first.
+                    CapturedEdramTileFootprint previous_footprint{};
+                    CapturedEdramTileFootprint draw_footprint{};
+                    const bool any_layout_wraps_store =
+                        (captured_xenos_edram_tile_footprint(
+                             previous, false, &previous_footprint, nullptr) &&
+                         previous_footprint.total_tiles > 2048u) ||
+                        (captured_xenos_edram_tile_footprint(
+                             draw_raster, false, &draw_footprint, nullptr) &&
+                         draw_footprint.total_tiles > 2048u);
+                    if (!disjoint && any_layout_wraps_store) {
+                        disjoint = true;
+                    }
+                    bool drained_subset = false;
+                    if (!disjoint && preflight_active_layout_drained &&
+                        captured_xenos_edram_layout_is_tile_subset(
+                            draw_raster, previous, &drained_subset, nullptr) &&
+                        drained_subset) {
+                        // Same legitimate mip-level reuse as above: this level
+                        // fits inside tiles a resolved level already vacated.
+                        disjoint = true;
+                    }
+                    // A layout that a Copy/Convert already read out to guest
+                    // memory is no longer live: nothing reads its image again,
+                    // so it must not veto a later layout. That is only safe
+                    // when the new layout owns every tile the drained one used,
+                    // because otherwise part of the discarded target would be
+                    // reinterpreted through the new layout's format. The
+                    // format-aware tile-subset test above cannot express this -
+                    // it rejects on differing storage formats by design - and
+                    // the retail case is exactly that: a 320x243 gcf=6 surface
+                    // drained, then a 1280x720 gcf=1 frame render that covers
+                    // all 64 of its colour and all 64 of its depth tiles.
+                    // Only a target a Copy/Convert actually consumed may be
+                    // dropped, and only when the new layout owns every tile it
+                    // used. The drained flag is per target, not one shared
+                    // "last drained" slot: a frame keeps up to five layouts
+                    // (measured targets=5) and the one that vetoes the next
+                    // draw is routinely not the most recently drained one -
+                    // measured, the vetoing 320x243 target was drained earlier
+                    // than an unrelated 80x1 one.
+                    const bool covers_drained_layout =
+                        target_index < preflight_target_drained.size() &&
+                        preflight_target_drained[target_index] &&
+                        layout_fully_covers(draw_raster, previous);
+                    if (!disjoint && covers_drained_layout) {
+                        disjoint = true;
+                    }
                     if (!disjoint) {
                         std::ostringstream message;
                         message << "draw packet " << operation.packet_index
@@ -5866,10 +6275,32 @@ bool submit_captured_vulkan_operation_stream(
                                 << " aliases a cached layout and requires shared physical EDRAM backing";
                         message << "; " << describe_alias_tiles(previous,
                                                                  draw_raster);
+                        message << "; active=" << describe_target_layout(previous)
+                                << ", next=" << describe_target_layout(draw_raster)
+                                << ", packet27_alias="
+                                << is_captured_packet27_alias_layout(previous,
+                                                                     draw_raster)
+                                << ", copy_after_alias="
+                                << has_captured_copy_after_alias(i, draw_raster)
+                                << ", targets=" << preflight_targets.size()
+                                << ", drained_flag="
+                                << preflight_active_layout_drained
+                                << ", drained_targets=";
+                        for (size_t target_index = 0;
+                             target_index < preflight_target_drained.size();
+                             ++target_index) {
+                            if (target_index) message << ',';
+                            message << (preflight_target_drained[target_index]
+                                            ? 'D' : 'L');
+                        }
+                        message << ", covers_drained=" << covers_drained_layout;
                         return fail(message.str(), error);
                     }
                 }
-                if (!known_layout) preflight_targets.push_back(draw_raster);
+                if (!known_layout) {
+                    preflight_targets.push_back(draw_raster);
+                    preflight_target_drained.push_back(false);
+                }
                 preflight_first_draw = operation.draw_index;
                 preflight_layout_draw = operation.draw_index;
                 preflight_layout_packet = operation.packet_index;
@@ -5877,6 +6308,10 @@ bool submit_captured_vulkan_operation_stream(
             if (!draw_raster.depth_only && draw_raster.color_write_mask != 0) {
                 preflight_color_source_draw = operation.draw_index;
             }
+            // A new draw has written into the active layout, so it is no longer
+            // the drained copy of an earlier level, and the recorded drained
+            // layout is stale.
+            preflight_active_layout_drained = false;
             ++preflight_draw_count;
             continue;
         }
@@ -5901,13 +6336,81 @@ bool submit_captured_vulkan_operation_stream(
                 ? find_initialized_edram_target(texture_cache_state,
                                                 operation.source_raster)
                 : nullptr;
-            if (!source_target) {
+            // A frame whose first operation is a resolve has no draw of its own
+            // to create the source, and the frames that do draw it are the very
+            // frames being rejected - so the target is never created and the
+            // guest never advances. In that deadlock, admit the frame; replay
+            // allocates the target (cleared) so the resolve has defined contents.
+            const bool admit_uninitialized =
+                !source_target && allocate_uninitialized_copy_source &&
+                operation.source_raster_ready;
+            if (!source_target && !admit_uninitialized) {
                 std::ostringstream message;
                 message << "Copy/Convert packet " << operation.packet_index
                         << " has no preceding captured draw segment or initialized "
                            "same-layout Xenos EDRAM source target";
                 if (!operation.source_raster_ready) {
                     message << "; source layout registers did not decode";
+                } else {
+                    message << "; source layout="
+                            << describe_target_layout(operation.source_raster)
+                            << "; source registers: surface_info=0x" << std::hex
+                            << operation.source_surface_info << " (pitch="
+                            << std::dec
+                            << (operation.source_surface_info & 0x3FFFu)
+                            << ",msaa_mode="
+                            << ((operation.source_surface_info >> 16) & 0x3u)
+                            << "), color_info=0x" << std::hex
+                            << operation.source_color_info << ", depth_info=0x"
+                            << operation.source_depth_info
+                            << ", mode_control=" << std::dec
+                            << operation.source_mode_control
+                            << "; decoded source extent="
+                            << operation.source_width << 'x'
+                            << operation.source_height;
+                    // Report every cached EDRAM target and how close it came, so
+                    // a near-miss on one field is visible instead of hidden.
+                    const VkFormat source_color_format = captured_color_format(
+                        operation.source_raster.color_format, false);
+                    const EdramTargetKey source_key =
+                        make_edram_target_key(operation.source_raster,
+                                              source_color_format);
+                    message << "; cached targets=";
+                    if (texture_cache_state->edram_targets.empty()) {
+                        message << "none";
+                    }
+                    bool first_entry = true;
+                    for (const auto& [key, target] : texture_cache_state->edram_targets) {
+                        if (!first_entry) message << ", ";
+                        first_entry = false;
+                        message << "{color_base=0x" << std::hex
+                                << key.values[0] << ",depth_base=0x"
+                                << key.values[1] << std::dec
+                                << ",extent=" << key.values[2] << 'x'
+                                << key.values[3] << ",pitch=" << key.values[4]
+                                << ",guest_color_format=" << key.values[5]
+                                << ",color_format=" << key.values[6]
+                                << ",samples=" << key.values[7]
+                                << ",depth_format=" << key.values[8]
+                                << ",depth_only=" << key.values[9]
+                                << ",color_init=" << target.color_initialized
+                                << ",last_used_frame=" << target.last_used_frame
+                                << '}';
+                    }
+                    message << "; this-frame draw layouts=";
+                    for (size_t draw_index = 0; draw_index < draws.size();
+                         ++draw_index) {
+                        if (draw_index) message << ", ";
+                        message << describe_target_layout(draws[draw_index].raster);
+                    }
+                    message << "; frame=" << texture_cache_state->frame
+                            << ",exact_key_match="
+                            << (texture_cache_state->edram_targets.find(source_key) !=
+                                texture_cache_state->edram_targets.end());
+                }
+                if (tolerate_missing_copy_source) {
+                    skipped_operations[i] = true;
+                    continue;
                 }
                 return fail(message.str(), error);
             }
@@ -5937,7 +6440,10 @@ bool submit_captured_vulkan_operation_stream(
                     return fail(message.str(), error);
                 }
             }
-            if (!known_layout) preflight_targets.push_back(operation.source_raster);
+            if (!known_layout) {
+                preflight_targets.push_back(operation.source_raster);
+                preflight_target_drained.push_back(false);
+            }
         } else if (operation.source_raster_ready) {
             const uint32_t source_draw_index =
                 preflight_color_source_draw != std::numeric_limits<uint32_t>::max()
@@ -5959,6 +6465,34 @@ bool submit_captured_vulkan_operation_stream(
                 return fail(message.str(), error);
             }
         }
+        // The copy has read the active draw layout into guest memory, so those
+        // EDRAM tiles may now be reused for the next (smaller) mip level.
+        // Mark every tracked target this copy consumed as drained, before the
+        // layout pointer is reset below. A copy reads the active draw layout out
+        // to guest memory, so those tiles are free for a later layout; a target
+        // that was merely remembered from earlier in the frame is not touched.
+        if (preflight_layout_draw != std::numeric_limits<uint32_t>::max()) {
+            const CapturedRasterState& drained_source =
+                draws[preflight_layout_draw].raster;
+            for (size_t target_index = 0;
+                 target_index < preflight_targets.size(); ++target_index) {
+                if (same_target_layout(preflight_targets[target_index],
+                                       drained_source)) {
+                    preflight_target_drained[target_index] = true;
+                }
+            }
+            if (operation.source_raster_ready &&
+                same_target_layout(operation.source_raster, drained_source)) {
+                for (size_t target_index = 0;
+                     target_index < preflight_targets.size(); ++target_index) {
+                    if (same_target_layout(preflight_targets[target_index],
+                                           operation.source_raster)) {
+                        preflight_target_drained[target_index] = true;
+                    }
+                }
+            }
+        }
+        preflight_active_layout_drained = true;
         const bool writes_presenter = presenter_copy &&
             operation.copy_state.destination_format ==
                 presenter_copy->state.destination_format &&
@@ -6041,6 +6575,7 @@ bool submit_captured_vulkan_operation_stream(
     for (size_t operation_index = 0; operation_index < operations.size();
          ++operation_index) {
         const CapturedVulkanOperation& operation = operations[operation_index];
+        if (skipped_operations[operation_index]) continue;
         if (operation.type == CapturedVulkanOperation::Type::Draw) {
             const CapturedVulkanDraw& draw = draws[operation.draw_index];
             if (!stage_draws.empty() &&
@@ -6074,6 +6609,15 @@ bool submit_captured_vulkan_operation_stream(
                             << overlap_tile;
                     message << ", " << describe_alias_tiles(
                         stage_draws[stage_layout_draw].raster, draw.raster);
+                    message << "; active="
+                            << describe_target_layout(source_layout)
+                            << ", next=" << describe_target_layout(draw.raster)
+                            << ", packet27_alias="
+                            << is_captured_packet27_alias_layout(source_layout,
+                                                                 draw.raster)
+                            << ", copy_after_alias="
+                            << has_captured_copy_after_alias(operation_index,
+                                                             draw.raster);
                     return fail(message.str(), error);
                 }
                 if (!submit_stage(nullptr, false, false,
@@ -6174,6 +6718,29 @@ bool submit_captured_vulkan_operation_stream(
                 ? find_initialized_edram_target(texture_cache_state,
                                                 operation.source_raster)
                 : nullptr;
+            if (!source_target && allocate_uninitialized_copy_source &&
+                operation.source_raster_ready) {
+                // Allocate the missing source so this resolve has a defined
+                // (cleared) image. acquire_edram_target creates and clears the
+                // target, which also makes it available to later frames - the
+                // deadlock was that nothing ever created it because every frame
+                // that would have was rejected first.
+                const VkFormat allocate_format =
+                    captured_color_format(operation.source_raster.color_format, false);
+                VkPhysicalDeviceMemoryProperties local_memory_properties{};
+                vkGetPhysicalDeviceMemoryProperties(physical_device,
+                                                   &local_memory_properties);
+                if (!acquire_edram_target(
+                        texture_cache_state, local_memory_properties, device,
+                        operation.source_raster, allocate_format, false,
+                        &source_target, error)) {
+                    return false;
+                }
+                if (source_target) {
+                    source_target->color_initialized = true;
+                    source_target->last_used_frame = texture_cache_state->frame;
+                }
+            }
             if (!source_target) {
                 std::ostringstream message;
                 message << "Copy/Convert packet " << operation.packet_index
